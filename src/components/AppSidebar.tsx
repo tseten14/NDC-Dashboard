@@ -37,7 +37,7 @@ export function AppSidebar() {
             <p className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50 font-semibold">Uganda Strategy Explorer</p>
           </div>
         )}
-        <SidebarGroup defaultOpen>
+        <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
