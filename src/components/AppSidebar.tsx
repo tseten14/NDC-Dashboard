@@ -7,11 +7,16 @@ import {
 import {
   LayoutDashboard, Target, TrendingUp, Building2, Eye, Trees,
   BarChart3, Users, LineChart, FileText, Download, Settings,
+  Database, GitBranch, Workflow, Search,
 } from "lucide-react";
 
 const navItems = [
   { title: "Overview", url: "/", icon: LayoutDashboard },
   { title: "NDC Layer", url: "/ndc", icon: Target },
+  { title: "Indicators", url: "/indicators", icon: Database },
+  { title: "Interlinkages", url: "/interlinkages", icon: GitBranch },
+  { title: "Causal Chains", url: "/causal-chains", icon: Workflow },
+  { title: "Project Check", url: "/project-check", icon: Search },
   { title: "Tenfold Growth", url: "/tenfold", icon: TrendingUp },
   { title: "NDP IV", url: "/ndp-iv", icon: Building2 },
   { title: "Vision 2040", url: "/vision-2040", icon: Eye },
