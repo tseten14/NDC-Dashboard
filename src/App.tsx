@@ -20,6 +20,10 @@ import Projections from "./pages/Projections.tsx";
 import InvestmentTemplates from "./pages/InvestmentTemplates.tsx";
 import ExportsAPI from "./pages/ExportsAPI.tsx";
 import Admin from "./pages/Admin.tsx";
+import Indicators from "./pages/Indicators.tsx";
+import Interlinkages from "./pages/Interlinkages.tsx";
+import CausalChains from "./pages/CausalChains.tsx";
+import ProjectCheck from "./pages/ProjectCheck.tsx";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +43,10 @@ function AppLayout() {
               <Routes>
                 <Route path="/" element={<Overview />} />
                 <Route path="/ndc" element={<NDCLayer />} />
+                <Route path="/indicators" element={<Indicators />} />
+                <Route path="/interlinkages" element={<Interlinkages />} />
+                <Route path="/causal-chains" element={<CausalChains />} />
+                <Route path="/project-check" element={<ProjectCheck />} />
                 <Route path="/tenfold" element={<TenfoldLayer />} />
                 <Route path="/ndp-iv" element={<NDPIVLayer />} />
                 <Route path="/vision-2040" element={<Vision2040 />} />
