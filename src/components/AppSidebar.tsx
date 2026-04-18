@@ -4,14 +4,22 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
+import { useState } from "react";
 import {
-  LayoutDashboard, Target, TrendingUp, Building2, Eye, Trees,
-  BarChart3, Users, LineChart, FileText, Download, Settings,
+  LayoutDashboard, Network, ShieldCheck, Wallet, Upload, ChevronDown, ChevronRight,
+  Target, TrendingUp, Building2, Eye, Trees, BarChart3, Users, LineChart, FileText, Download, Settings,
   Database, GitBranch, Workflow, Search,
 } from "lucide-react";
 
-const navItems = [
-  { title: "Overview", url: "/", icon: LayoutDashboard },
+const primary = [
+  { title: "Executive Overview", url: "/", icon: LayoutDashboard },
+  { title: "Delivery & Accountability", url: "/delivery", icon: Network },
+  { title: "Evidence & MRV", url: "/evidence", icon: ShieldCheck },
+  { title: "Finance & Investment", url: "/finance", icon: Wallet },
+  { title: "Data Ingestion", url: "/ingest", icon: Upload },
+];
+
+const advanced = [
   { title: "NDC Layer", url: "/ndc", icon: Target },
   { title: "Indicators", url: "/indicators", icon: Database },
   { title: "Interlinkages", url: "/interlinkages", icon: GitBranch },
@@ -33,20 +41,23 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const [advOpen, setAdvOpen] = useState(advanced.some(a => location.pathname.startsWith(a.url) && a.url !== "/"));
 
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
         {!collapsed && (
           <div className="p-3 border-b border-sidebar-border">
-            <p className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50 font-semibold">Uganda Strategy Explorer</p>
+            <p className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50 font-semibold">Uganda NDC Data Explorer</p>
+            <p className="text-[9px] text-sidebar-foreground/40 mt-0.5">Decision-support cockpit</p>
           </div>
         )}
+
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Cockpit</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map(item => (
+              {primary.map(item => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end={item.url === "/"} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
@@ -58,6 +69,32 @@ export function AppSidebar() {
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel
+            className="cursor-pointer flex items-center gap-1 select-none"
+            onClick={() => setAdvOpen(o => !o)}
+          >
+            {advOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            Advanced
+          </SidebarGroupLabel>
+          {advOpen && (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {advanced.map(item => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink to={item.url} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {!collapsed && <span className="text-xs">{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
