@@ -23,6 +23,22 @@ import type { SectorId, TimeMode, GeographyLevel } from "@/data/uganda-ndc-data"
 export default function NDCLayer() {
   const state = useAppContext();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Deep-link support: /?target=...&sector=...
+  useEffect(() => {
+    const t = searchParams.get("target");
+    const s = searchParams.get("sector");
+    if (s && s !== state.selectedSector) state.setSelectedSector(s);
+    if (t && t !== state.selectedTargetId) state.setSelectedTargetId(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const handleSummarySelect = useCallback((targetId: string, sectorId: string) => {
+    state.setSelectedSector(sectorId);
+    state.setSelectedTargetId(targetId);
+    setSearchParams({ target: targetId, sector: sectorId });
+  }, [state, setSearchParams]);
 
   const selectedTarget = state.selectedTargetId
     ? ndcTargets.find(t => t.id === state.selectedTargetId) ?? null
