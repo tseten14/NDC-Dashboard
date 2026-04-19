@@ -1,5 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAppContext } from "@/hooks/use-app-state";
+import { TargetStatusSummary } from "@/components/TargetStatusSummary";
 import { NDCTargetsColumn } from "@/components/columns/NDCTargets";
 import { NDCActivitiesColumn } from "@/components/columns/NDCActivities";
 import { ObservedDataColumn } from "@/components/columns/ObservedData";
@@ -21,6 +23,22 @@ import type { SectorId, TimeMode, GeographyLevel } from "@/data/uganda-ndc-data"
 export default function NDCLayer() {
   const state = useAppContext();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Deep-link support: /?target=...&sector=...
+  useEffect(() => {
+    const t = searchParams.get("target");
+    const s = searchParams.get("sector");
+    if (s && s !== state.selectedSector) state.setSelectedSector(s);
+    if (t && t !== state.selectedTargetId) state.setSelectedTargetId(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const handleSummarySelect = useCallback((targetId: string, sectorId: string) => {
+    state.setSelectedSector(sectorId);
+    state.setSelectedTargetId(targetId);
+    setSearchParams({ target: targetId, sector: sectorId });
+  }, [state, setSearchParams]);
 
   const selectedTarget = state.selectedTargetId
     ? ndcTargets.find(t => t.id === state.selectedTargetId) ?? null
@@ -108,6 +126,9 @@ export default function NDCLayer() {
           <span className="text-[10px] text-at-risk font-medium">⚠ Preliminary data — some KPIs not yet verified by sector MRV authority</span>
         </div>
       )}
+
+      {/* Target Status Summary — 'all targets first' anchor */}
+      <TargetStatusSummary onSelectTarget={handleSummarySelect} />
 
       {/* Five-column layout */}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-border overflow-hidden">

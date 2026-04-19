@@ -15,6 +15,7 @@ import DeliveryAccountability from "./pages/DeliveryAccountability.tsx";
 import EvidenceMRV from "./pages/EvidenceMRV.tsx";
 import FinanceInvestment from "./pages/FinanceInvestment.tsx";
 import DataIngestion from "./pages/DataIngestion.tsx";
+import StrategyLibrary from "./pages/StrategyLibrary.tsx";
 
 // Advanced (legacy) — kept under /advanced sub-IA
 import Overview from "./pages/Overview.tsx";
@@ -50,8 +51,12 @@ function AppLayout() {
               </div>
               <main className="flex-1 overflow-hidden">
                 <Routes>
-                  {/* Cockpit */}
-                  <Route path="/" element={<ExecutiveOverview />} />
+                  {/* Main: NDC Layer is HOME */}
+                  <Route path="/" element={<NDCLayer />} />
+                  <Route path="/library" element={<StrategyLibrary />} />
+
+                  {/* Admin / Advanced cockpit pages */}
+                  <Route path="/executive" element={<ExecutiveOverview />} />
                   <Route path="/delivery" element={<DeliveryAccountability />} />
                   <Route path="/evidence" element={<EvidenceMRV />} />
                   <Route path="/finance" element={<FinanceInvestment />} />
