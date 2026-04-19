@@ -127,6 +127,9 @@ export default function NDCLayer() {
         </div>
       )}
 
+      {/* Target Status Summary — 'all targets first' anchor */}
+      <TargetStatusSummary onSelectTarget={handleSummarySelect} />
+
       {/* Five-column layout */}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-border overflow-hidden">
         <div className="overflow-hidden">

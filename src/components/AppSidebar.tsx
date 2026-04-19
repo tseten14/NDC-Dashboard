@@ -8,19 +8,20 @@ import { useState } from "react";
 import {
   LayoutDashboard, Network, ShieldCheck, Wallet, Upload, ChevronDown, ChevronRight,
   Target, TrendingUp, Building2, Eye, Trees, BarChart3, Users, LineChart, FileText, Download, Settings,
-  Database, GitBranch, Workflow, Search,
+  Database, GitBranch, Workflow, Search, Library,
 } from "lucide-react";
 
 const primary = [
-  { title: "Executive Overview", url: "/", icon: LayoutDashboard },
+  { title: "NDC Layer (Home)", url: "/", icon: Target },
+  { title: "Strategy Library", url: "/library", icon: Library },
+];
+
+const advanced = [
+  { title: "Executive Overview", url: "/executive", icon: LayoutDashboard },
   { title: "Delivery & Accountability", url: "/delivery", icon: Network },
   { title: "Evidence & MRV", url: "/evidence", icon: ShieldCheck },
   { title: "Finance & Investment", url: "/finance", icon: Wallet },
   { title: "Data Ingestion", url: "/ingest", icon: Upload },
-];
-
-const advanced = [
-  { title: "NDC Layer", url: "/ndc", icon: Target },
   { title: "Indicators", url: "/indicators", icon: Database },
   { title: "Interlinkages", url: "/interlinkages", icon: GitBranch },
   { title: "Causal Chains", url: "/causal-chains", icon: Workflow },
