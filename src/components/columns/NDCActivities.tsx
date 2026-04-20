@@ -4,8 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Building2, MapPin, Send, User } from "lucide-react";
+import { Building2, MapPin, Send, User, Plus, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
+import { useCapturedActivities } from "@/hooks/use-captured-activities";
+import { WorkflowBadge } from "@/components/WorkflowBadge";
+import { ActionTemplates } from "@/components/ActionTemplates";
+import { useCurrentRole } from "@/hooks/use-current-role";
 
 interface NDCActivitiesProps {
   selectedTargetId: string | null;
@@ -14,6 +19,9 @@ interface NDCActivitiesProps {
 }
 
 export function NDCActivitiesColumn({ selectedTargetId, geographyLevel, selectedDistrictId }: NDCActivitiesProps) {
+  const { canCreateActivity } = useCurrentRole();
+  const { activities: captured } = useCapturedActivities(selectedTargetId);
+
   if (!selectedTargetId) {
     return <EmptyState />;
   }
@@ -29,14 +37,52 @@ export function NDCActivitiesColumn({ selectedTargetId, geographyLevel, selected
     );
   }
 
+  const totalCount = activities.length + captured.length;
+  const showGapTemplates = totalCount === 0;
+
   return (
     <div className="flex flex-col h-full">
-      <div className="px-3 py-2 border-b border-border bg-muted/50">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Activities / Measures</h3>
-        <p className="text-[10px] text-muted-foreground mt-0.5">{activities.length} activit{activities.length !== 1 ? "ies" : "y"}</p>
+      <div className="px-3 py-2 border-b border-border bg-muted/50 flex items-start justify-between gap-2">
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Activities / Measures</h3>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            {totalCount} activit{totalCount !== 1 ? "ies" : "y"}
+            {captured.length > 0 && <span className="ml-1 text-on-track">({captured.length} captured)</span>}
+          </p>
+        </div>
+        {canCreateActivity() && (
+          <Button asChild size="sm" variant="outline" className="h-6 text-[10px] gap-1 shrink-0">
+            <Link to={`/activities/new?targetId=${selectedTargetId}`}>
+              <Plus className="h-3 w-3" /> Add
+            </Link>
+          </Button>
+        )}
       </div>
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-2">
+          {/* Captured (real DB) activities */}
+          {captured.map(a => (
+            <Card key={a.id} className="border-on-track/40">
+              <CardContent className="p-3 space-y-1.5">
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="text-xs font-semibold text-foreground leading-tight flex-1">{a.title}</h4>
+                  <WorkflowBadge state={a.workflow_state} />
+                </div>
+                {a.description && <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">{a.description}</p>}
+                {a.ministry && (
+                  <div className="flex items-center gap-1">
+                    <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="text-[10px] text-muted-foreground truncate">{a.ministry}</span>
+                  </div>
+                )}
+                <Button asChild size="sm" variant="outline" className="h-6 text-[10px] gap-1 w-full">
+                  <Link to={`/activities/${a.id}`}><ExternalLink className="h-3 w-3" /> Open activity</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+
+          {/* Seeded activities (existing) */}
           {activities.map(activity => (
             <ActivityCard
               key={activity.id}
@@ -45,8 +91,9 @@ export function NDCActivitiesColumn({ selectedTargetId, geographyLevel, selected
               selectedDistrictId={selectedDistrictId}
             />
           ))}
-          {activities.length === 0 && (
-            <p className="text-xs text-muted-foreground p-3 text-center">No activities found for this selection.</p>
+
+          {showGapTemplates && (
+            <ActionTemplates targetId={selectedTargetId} reason="no-activities" />
           )}
         </div>
       </ScrollArea>
