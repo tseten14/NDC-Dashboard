@@ -7,7 +7,16 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAppState, AppStateContext } from "@/hooks/use-app-state";
 import { CockpitProvider } from "@/hooks/use-cockpit";
+import { CurrentRoleProvider } from "@/hooks/use-current-role";
+import { AuthGate } from "@/components/AuthGate";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
 import NotFound from "./pages/NotFound.tsx";
+
+// Auth + new role-based pages
+import Auth from "./pages/Auth.tsx";
+import MyWork from "./pages/MyWork.tsx";
+import ActivityForm from "./pages/ActivityForm.tsx";
+import ActivityDetail from "./pages/ActivityDetail.tsx";
 
 // Primary cockpit
 import ExecutiveOverview from "./pages/ExecutiveOverview.tsx";
@@ -17,7 +26,7 @@ import FinanceInvestment from "./pages/FinanceInvestment.tsx";
 import DataIngestion from "./pages/DataIngestion.tsx";
 import StrategyLibrary from "./pages/StrategyLibrary.tsx";
 
-// Advanced (legacy) — kept under /advanced sub-IA
+// Advanced (legacy)
 import Overview from "./pages/Overview.tsx";
 import NDCLayer from "./pages/NDCLayer.tsx";
 import TenfoldLayer from "./pages/TenfoldLayer.tsx";
@@ -37,7 +46,7 @@ import ProjectCheck from "./pages/ProjectCheck.tsx";
 
 const queryClient = new QueryClient();
 
-function AppLayout() {
+function ProtectedShell() {
   const state = useAppState();
   return (
     <AppStateContext.Provider value={state}>
@@ -46,23 +55,27 @@ function AppLayout() {
           <div className="min-h-screen flex w-full">
             <AppSidebar />
             <div className="flex-1 flex flex-col min-w-0">
-              <div className="flex items-center border-b border-border bg-card px-2 h-8">
+              <div className="flex items-center justify-between border-b border-border bg-card px-2 h-10">
                 <SidebarTrigger />
+                <RoleSwitcher />
               </div>
               <main className="flex-1 overflow-hidden">
                 <Routes>
-                  {/* Main: NDC Layer is HOME */}
+                  {/* Main */}
                   <Route path="/" element={<NDCLayer />} />
                   <Route path="/library" element={<StrategyLibrary />} />
+                  <Route path="/my-work" element={<MyWork />} />
+                  <Route path="/activities/new" element={<ActivityForm />} />
+                  <Route path="/activities/:id/edit" element={<ActivityForm />} />
+                  <Route path="/activities/:id" element={<ActivityDetail />} />
 
-                  {/* Admin / Advanced cockpit pages */}
+                  {/* Cockpit / Advanced */}
                   <Route path="/executive" element={<ExecutiveOverview />} />
                   <Route path="/delivery" element={<DeliveryAccountability />} />
                   <Route path="/evidence" element={<EvidenceMRV />} />
                   <Route path="/finance" element={<FinanceInvestment />} />
                   <Route path="/ingest" element={<DataIngestion />} />
 
-                  {/* Advanced (legacy) */}
                   <Route path="/legacy-overview" element={<Overview />} />
                   <Route path="/ndc" element={<NDCLayer />} />
                   <Route path="/indicators" element={<Indicators />} />
@@ -97,7 +110,12 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AppLayout />
+        <CurrentRoleProvider>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/*" element={<AuthGate><ProtectedShell /></AuthGate>} />
+          </Routes>
+        </CurrentRoleProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
