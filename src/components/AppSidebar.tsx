@@ -8,13 +8,14 @@ import { useState } from "react";
 import {
   LayoutDashboard, Network, ShieldCheck, Wallet, Upload, ChevronDown, ChevronRight,
   Target, TrendingUp, Building2, Eye, Trees, BarChart3, Users, LineChart, FileText, Download, Settings,
-  Database, GitBranch, Workflow, Search, Library, Briefcase,
+  Database, GitBranch, Workflow, Search, Library, Briefcase, ShieldAlert,
 } from "lucide-react";
 
 const primary = [
   { title: "NDC Layer (Home)", url: "/", icon: Target },
   { title: "Strategy Library", url: "/library", icon: Library },
   { title: "My Work", url: "/my-work", icon: Briefcase },
+  { title: "Climate Risk", url: "/risk", icon: ShieldAlert },
 ];
 
 const advanced = [

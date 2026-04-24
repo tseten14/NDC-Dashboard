@@ -26,6 +26,13 @@ import FinanceInvestment from "./pages/FinanceInvestment.tsx";
 import DataIngestion from "./pages/DataIngestion.tsx";
 import StrategyLibrary from "./pages/StrategyLibrary.tsx";
 
+// Climate Risk & Vulnerability module
+import RiskLayout from "./pages/risk/RiskLayout.tsx";
+import RiskOverview from "./pages/risk/RiskOverview.tsx";
+import RiskMap from "./pages/risk/RiskMap.tsx";
+import RiskScreening from "./pages/risk/RiskScreening.tsx";
+import RiskDrilldown from "./pages/risk/RiskDrilldown.tsx";
+
 // Advanced (legacy)
 import Overview from "./pages/Overview.tsx";
 import NDCLayer from "./pages/NDCLayer.tsx";
@@ -75,6 +82,14 @@ function ProtectedShell() {
                   <Route path="/evidence" element={<EvidenceMRV />} />
                   <Route path="/finance" element={<FinanceInvestment />} />
                   <Route path="/ingest" element={<DataIngestion />} />
+
+                  {/* Climate Risk & Vulnerability */}
+                  <Route path="/risk" element={<RiskLayout />}>
+                    <Route index element={<RiskOverview />} />
+                    <Route path="map" element={<RiskMap />} />
+                    <Route path="screening" element={<RiskScreening />} />
+                    <Route path="drilldown" element={<RiskDrilldown />} />
+                  </Route>
 
                   <Route path="/legacy-overview" element={<Overview />} />
                   <Route path="/ndc" element={<NDCLayer />} />
