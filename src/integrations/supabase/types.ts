@@ -115,6 +115,57 @@ export type Database = {
           },
         ]
       }
+      adaptation_options: {
+        Row: {
+          applicable_sectors: string[]
+          co_benefits: string | null
+          cost_range_max_usd: number | null
+          cost_range_min_usd: number | null
+          created_at: string
+          data_status: Database["public"]["Enums"]["data_status"]
+          description: string | null
+          evidence_links: string[] | null
+          expected_risk_reduction: string | null
+          hazard_types: string[]
+          id: string
+          name: string
+          related_activities: string[] | null
+          related_ndc_targets: string[] | null
+        }
+        Insert: {
+          applicable_sectors?: string[]
+          co_benefits?: string | null
+          cost_range_max_usd?: number | null
+          cost_range_min_usd?: number | null
+          created_at?: string
+          data_status?: Database["public"]["Enums"]["data_status"]
+          description?: string | null
+          evidence_links?: string[] | null
+          expected_risk_reduction?: string | null
+          hazard_types?: string[]
+          id: string
+          name: string
+          related_activities?: string[] | null
+          related_ndc_targets?: string[] | null
+        }
+        Update: {
+          applicable_sectors?: string[]
+          co_benefits?: string | null
+          cost_range_max_usd?: number | null
+          cost_range_min_usd?: number | null
+          created_at?: string
+          data_status?: Database["public"]["Enums"]["data_status"]
+          description?: string | null
+          evidence_links?: string[] | null
+          expected_risk_reduction?: string | null
+          hazard_types?: string[]
+          id?: string
+          name?: string
+          related_activities?: string[] | null
+          related_ndc_targets?: string[] | null
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -185,6 +236,123 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      exposure_layers: {
+        Row: {
+          confidence_rating: Database["public"]["Enums"]["confidence_rating"]
+          created_at: string
+          data_status: Database["public"]["Enums"]["data_status"]
+          exposure_type: string
+          geometry_type: string | null
+          id: string
+          license: string | null
+          name: string
+          notes: string | null
+          source_provider: string | null
+          source_url: string | null
+          vintage_date: string | null
+        }
+        Insert: {
+          confidence_rating?: Database["public"]["Enums"]["confidence_rating"]
+          created_at?: string
+          data_status?: Database["public"]["Enums"]["data_status"]
+          exposure_type: string
+          geometry_type?: string | null
+          id: string
+          license?: string | null
+          name: string
+          notes?: string | null
+          source_provider?: string | null
+          source_url?: string | null
+          vintage_date?: string | null
+        }
+        Update: {
+          confidence_rating?: Database["public"]["Enums"]["confidence_rating"]
+          created_at?: string
+          data_status?: Database["public"]["Enums"]["data_status"]
+          exposure_type?: string
+          geometry_type?: string | null
+          id?: string
+          license?: string | null
+          name?: string
+          notes?: string | null
+          source_provider?: string | null
+          source_url?: string | null
+          vintage_date?: string | null
+        }
+        Relationships: []
+      }
+      hazard_layers: {
+        Row: {
+          acute_or_chronic: Database["public"]["Enums"]["acute_chronic"]
+          api_endpoint: string | null
+          auth_ref: string | null
+          confidence_rating: Database["public"]["Enums"]["confidence_rating"]
+          created_at: string
+          data_access_mode: Database["public"]["Enums"]["data_access_mode"]
+          data_status: Database["public"]["Enums"]["data_status"]
+          geography_coverage: string | null
+          hazard_type: string
+          id: string
+          license: string | null
+          methodology_notes: string | null
+          name: string
+          scenario_name: string | null
+          source_provider: string | null
+          source_url: string | null
+          spatial_resolution: string | null
+          time_horizon: string | null
+          uncertainty_notes: string | null
+          updated_at: string
+          vintage_date: string | null
+        }
+        Insert: {
+          acute_or_chronic?: Database["public"]["Enums"]["acute_chronic"]
+          api_endpoint?: string | null
+          auth_ref?: string | null
+          confidence_rating?: Database["public"]["Enums"]["confidence_rating"]
+          created_at?: string
+          data_access_mode?: Database["public"]["Enums"]["data_access_mode"]
+          data_status?: Database["public"]["Enums"]["data_status"]
+          geography_coverage?: string | null
+          hazard_type: string
+          id: string
+          license?: string | null
+          methodology_notes?: string | null
+          name: string
+          scenario_name?: string | null
+          source_provider?: string | null
+          source_url?: string | null
+          spatial_resolution?: string | null
+          time_horizon?: string | null
+          uncertainty_notes?: string | null
+          updated_at?: string
+          vintage_date?: string | null
+        }
+        Update: {
+          acute_or_chronic?: Database["public"]["Enums"]["acute_chronic"]
+          api_endpoint?: string | null
+          auth_ref?: string | null
+          confidence_rating?: Database["public"]["Enums"]["confidence_rating"]
+          created_at?: string
+          data_access_mode?: Database["public"]["Enums"]["data_access_mode"]
+          data_status?: Database["public"]["Enums"]["data_status"]
+          geography_coverage?: string | null
+          hazard_type?: string
+          id?: string
+          license?: string | null
+          methodology_notes?: string | null
+          name?: string
+          scenario_name?: string | null
+          source_provider?: string | null
+          source_url?: string | null
+          spatial_resolution?: string | null
+          time_horizon?: string | null
+          uncertainty_notes?: string | null
+          updated_at?: string
+          vintage_date?: string | null
+        }
+        Relationships: []
       }
       output_records: {
         Row: {
@@ -266,6 +434,181 @@ export type Database = {
         }
         Relationships: []
       }
+      risk_assessments: {
+        Row: {
+          confidence_rating: Database["public"]["Enums"]["confidence_rating"]
+          created_at: string
+          data_provenance_summary: string | null
+          data_status: Database["public"]["Enums"]["data_status"]
+          expected_impact_summary: string | null
+          exposure_layer_id: string | null
+          geography_id: string | null
+          geography_unit: string
+          hazard_layer_id: string | null
+          id: string
+          related_activities: string[] | null
+          related_ndc_targets: string[] | null
+          related_projects: string[] | null
+          risk_level: Database["public"]["Enums"]["risk_level"]
+          risk_score: number | null
+          vulnerability_model_id: string | null
+        }
+        Insert: {
+          confidence_rating?: Database["public"]["Enums"]["confidence_rating"]
+          created_at?: string
+          data_provenance_summary?: string | null
+          data_status?: Database["public"]["Enums"]["data_status"]
+          expected_impact_summary?: string | null
+          exposure_layer_id?: string | null
+          geography_id?: string | null
+          geography_unit: string
+          hazard_layer_id?: string | null
+          id: string
+          related_activities?: string[] | null
+          related_ndc_targets?: string[] | null
+          related_projects?: string[] | null
+          risk_level?: Database["public"]["Enums"]["risk_level"]
+          risk_score?: number | null
+          vulnerability_model_id?: string | null
+        }
+        Update: {
+          confidence_rating?: Database["public"]["Enums"]["confidence_rating"]
+          created_at?: string
+          data_provenance_summary?: string | null
+          data_status?: Database["public"]["Enums"]["data_status"]
+          expected_impact_summary?: string | null
+          exposure_layer_id?: string | null
+          geography_id?: string | null
+          geography_unit?: string
+          hazard_layer_id?: string | null
+          id?: string
+          related_activities?: string[] | null
+          related_ndc_targets?: string[] | null
+          related_projects?: string[] | null
+          risk_level?: Database["public"]["Enums"]["risk_level"]
+          risk_score?: number | null
+          vulnerability_model_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_assessments_exposure_layer_id_fkey"
+            columns: ["exposure_layer_id"]
+            isOneToOne: false
+            referencedRelation: "exposure_layers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_hazard_layer_id_fkey"
+            columns: ["hazard_layer_id"]
+            isOneToOne: false
+            referencedRelation: "hazard_layers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_vulnerability_model_id_fkey"
+            columns: ["vulnerability_model_id"]
+            isOneToOne: false
+            referencedRelation: "vulnerability_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      risk_cells: {
+        Row: {
+          confidence: Database["public"]["Enums"]["confidence_rating"]
+          created_at: string
+          data_status: Database["public"]["Enums"]["data_status"]
+          district_id: string
+          hazard_layer_id: string
+          id: string
+          intensity_score_0_100: number
+          notes: string | null
+          related_activities: string[] | null
+          related_ndc_targets: string[] | null
+          risk_level: Database["public"]["Enums"]["risk_level"]
+          scenario: string | null
+          source_provider: string | null
+          source_url: string | null
+          time_horizon: string | null
+          vintage: string | null
+        }
+        Insert: {
+          confidence?: Database["public"]["Enums"]["confidence_rating"]
+          created_at?: string
+          data_status?: Database["public"]["Enums"]["data_status"]
+          district_id: string
+          hazard_layer_id: string
+          id: string
+          intensity_score_0_100: number
+          notes?: string | null
+          related_activities?: string[] | null
+          related_ndc_targets?: string[] | null
+          risk_level?: Database["public"]["Enums"]["risk_level"]
+          scenario?: string | null
+          source_provider?: string | null
+          source_url?: string | null
+          time_horizon?: string | null
+          vintage?: string | null
+        }
+        Update: {
+          confidence?: Database["public"]["Enums"]["confidence_rating"]
+          created_at?: string
+          data_status?: Database["public"]["Enums"]["data_status"]
+          district_id?: string
+          hazard_layer_id?: string
+          id?: string
+          intensity_score_0_100?: number
+          notes?: string | null
+          related_activities?: string[] | null
+          related_ndc_targets?: string[] | null
+          risk_level?: Database["public"]["Enums"]["risk_level"]
+          scenario?: string | null
+          source_provider?: string | null
+          source_url?: string | null
+          time_horizon?: string | null
+          vintage?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_cells_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "risk_districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_cells_hazard_layer_id_fkey"
+            columns: ["hazard_layer_id"]
+            isOneToOne: false
+            referencedRelation: "hazard_layers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      risk_districts: {
+        Row: {
+          created_at: string
+          geojson: Json
+          id: string
+          name: string
+          region: string | null
+        }
+        Insert: {
+          created_at?: string
+          geojson: Json
+          id: string
+          name: string
+          region?: string | null
+        }
+        Update: {
+          created_at?: string
+          geojson?: Json
+          id?: string
+          name?: string
+          region?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -323,6 +666,48 @@ export type Database = {
         }
         Relationships: []
       }
+      vulnerability_models: {
+        Row: {
+          applies_to_exposure_type: string | null
+          applies_to_hazard_type: string | null
+          assumptions: string | null
+          created_at: string
+          data_status: Database["public"]["Enums"]["data_status"]
+          id: string
+          model_reference: string | null
+          name: string
+          source_provider: string | null
+          source_url: string | null
+          uncertainty_notes: string | null
+        }
+        Insert: {
+          applies_to_exposure_type?: string | null
+          applies_to_hazard_type?: string | null
+          assumptions?: string | null
+          created_at?: string
+          data_status?: Database["public"]["Enums"]["data_status"]
+          id: string
+          model_reference?: string | null
+          name: string
+          source_provider?: string | null
+          source_url?: string | null
+          uncertainty_notes?: string | null
+        }
+        Update: {
+          applies_to_exposure_type?: string | null
+          applies_to_hazard_type?: string | null
+          assumptions?: string | null
+          created_at?: string
+          data_status?: Database["public"]["Enums"]["data_status"]
+          id?: string
+          model_reference?: string | null
+          name?: string
+          source_provider?: string | null
+          source_url?: string | null
+          uncertainty_notes?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -341,6 +726,7 @@ export type Database = {
       }
     }
     Enums: {
+      acute_chronic: "Acute" | "Chronic"
       app_role:
         | "ProjectDeveloper"
         | "FieldOfficer"
@@ -348,7 +734,11 @@ export type Database = {
         | "MRVOfficer"
         | "SeniorDecisionMaker"
         | "Admin"
+      confidence_rating: "Low" | "Medium" | "High"
+      data_access_mode: "Upload" | "API" | "Computed"
+      data_status: "Illustrative" | "Preliminary" | "Validated"
       relationship_type: "Direct" | "Enabling" | "Proxy"
+      risk_level: "Low" | "Medium" | "High" | "Extreme"
       validation_status: "Seeded" | "Uploaded" | "Verified" | "Modelled"
       workflow_state: "Draft" | "Submitted" | "Approved" | "Returned"
     }
@@ -478,6 +868,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      acute_chronic: ["Acute", "Chronic"],
       app_role: [
         "ProjectDeveloper",
         "FieldOfficer",
@@ -486,7 +877,11 @@ export const Constants = {
         "SeniorDecisionMaker",
         "Admin",
       ],
+      confidence_rating: ["Low", "Medium", "High"],
+      data_access_mode: ["Upload", "API", "Computed"],
+      data_status: ["Illustrative", "Preliminary", "Validated"],
       relationship_type: ["Direct", "Enabling", "Proxy"],
+      risk_level: ["Low", "Medium", "High", "Extreme"],
       validation_status: ["Seeded", "Uploaded", "Verified", "Modelled"],
       workflow_state: ["Draft", "Submitted", "Approved", "Returned"],
     },
