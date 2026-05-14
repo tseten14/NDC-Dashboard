@@ -6,20 +6,34 @@ function num(v) {
   return Number.isFinite(n) ? +n.toFixed(4) : null;
 }
 
+function isMissingTableError(error) {
+  const msg = error?.message ?? "";
+  return (
+    msg.includes("Could not find the table") ||
+    msg.includes("relation") && msg.includes("does not exist")
+  );
+}
+
 /**
  * Panel payload for non-MtCO₂e targets (t2, t3, t5, t8) keyed by target_id.
  */
 export async function getIndicatorPanel(since = 2015, to = 2024) {
   const supabase = getSupabaseAdmin();
   const { data: metaRows, error: e1 } = await supabase.from("ndc_indicator_meta").select("*");
-  if (e1) throw new Error(e1.message);
+  if (e1) {
+    if (isMissingTableError(e1)) return {};
+    throw new Error(e1.message);
+  }
   const { data: yearlyRows, error: e2 } = await supabase
     .from("ndc_indicator_yearly")
     .select("target_id, year, value")
     .gte("year", since)
     .lte("year", to)
     .order("year", { ascending: true });
-  if (e2) throw new Error(e2.message);
+  if (e2) {
+    if (isMissingTableError(e2)) return {};
+    throw new Error(e2.message);
+  }
 
   const byTarget = {};
   for (const row of yearlyRows ?? []) {
@@ -55,7 +69,10 @@ export async function getCatalogActivities(targetId = null) {
   let q = supabase.from("ndc_catalog_activities").select("id, target_id, sort_order, body").order("sort_order", { ascending: true });
   if (targetId) q = q.eq("target_id", targetId);
   const { data, error } = await q;
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (isMissingTableError(error)) return [];
+    throw new Error(error.message);
+  }
   return data ?? [];
 }
 
@@ -65,6 +82,9 @@ export async function getCatalogMitigation(targetId = null, sectorId = null) {
   if (targetId) q = q.eq("target_id", targetId);
   if (sectorId) q = q.eq("sector_id", sectorId);
   const { data, error } = await q;
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (isMissingTableError(error)) return [];
+    throw new Error(error.message);
+  }
   return data ?? [];
 }
