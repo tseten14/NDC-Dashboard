@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { indicatorRegistry } from "@/data/indicator-registry";
-import { ndcTargets, ndcActivities, getObservedDataForTarget, calculateProgress } from "@/data/uganda-ndc-data";
+import { ndcTargets, ndcActivities } from "@/data/uganda-ndc-data";
+import { useEmissionsData } from "@/context/EmissionsDataContext";
+import { isMtco2eEmissionsTarget } from "@/lib/emissions-integration";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,7 +39,10 @@ const STRATEGY_LABEL: Record<Strategy, string> = {
   NDC: "Updated NDC",
 };
 
-function indicatorToRow(ind: Indicator): RegistryRow {
+function indicatorToRow(
+  ind: Indicator,
+  getProgressForTarget: ReturnType<typeof useEmissionsData>["getProgressForTarget"],
+): RegistryRow {
   // Heuristic: link to NDC target if name overlaps sector keywords (best-effort).
   const matchedNdc = findLinkedNdcTarget(ind);
   const acts = matchedNdc ? ndcActivities.filter(a => a.targetId === matchedNdc.id).length : 0;
@@ -46,8 +51,7 @@ function indicatorToRow(ind: Indicator): RegistryRow {
     if (acts === 0) {
       status = "no-activity";
     } else {
-      const obs = getObservedDataForTarget(matchedNdc.id);
-      const { status: s } = calculateProgress(matchedNdc, obs);
+      const { status: s } = getProgressForTarget(matchedNdc);
       status = s;
     }
   } else if (acts === 0) {
@@ -87,7 +91,9 @@ function findLinkedNdcTarget(ind: Indicator): NDCTarget | undefined {
   ];
   for (const [kw, sectorId] of sectorMap) {
     if (txt.includes(kw)) {
-      return ndcTargets.find(t => t.sectorId === sectorId);
+      const bySector = ndcTargets.filter(t => t.sectorId === sectorId);
+      const emissionsFirst = bySector.find(t => isMtco2eEmissionsTarget(t));
+      return emissionsFirst ?? bySector[0];
     }
   }
   return undefined;
@@ -95,10 +101,14 @@ function findLinkedNdcTarget(ind: Indicator): NDCTarget | undefined {
 
 export default function StrategyLibrary() {
   const navigate = useNavigate();
+  const { getProgressForTarget } = useEmissionsData();
   const [strategy, setStrategy] = useState<Strategy | "ALL">("ALL");
   const [q, setQ] = useState("");
 
-  const rows = useMemo<RegistryRow[]>(() => indicatorRegistry.map(indicatorToRow), []);
+  const rows = useMemo<RegistryRow[]>(
+    () => indicatorRegistry.map(ind => indicatorToRow(ind, getProgressForTarget)),
+    [getProgressForTarget],
+  );
   const filtered = rows.filter(r =>
     (strategy === "ALL" || r.strategy === strategy) &&
     (q === "" || (r.name + " " + r.goal + " " + r.sector).toLowerCase().includes(q.toLowerCase()))

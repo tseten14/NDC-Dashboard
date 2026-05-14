@@ -1,9 +1,12 @@
 import { type NDCTarget, type TimeMode, type ObservedDataSet, type QAQCStatus, getObservedDataForTarget } from "@/data/uganda-ndc-data";
+import { useEmissionsData } from "@/context/EmissionsDataContext";
+import { buildLiveObservedDataSet, getClimateTraceSectorForTarget, buildIndicatorPanelObservedDataSet, isIndicatorPanelTarget } from "@/lib/emissions-integration";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, CheckCircle2, HelpCircle, XCircle, Database } from "lucide-react";
+import { AlertTriangle, CheckCircle2, HelpCircle, XCircle, Database, Satellite } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -16,12 +19,55 @@ interface ObservedDataProps {
   selectedMitigationOptions: string[];
 }
 
-export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigationOptions }: ObservedDataProps) {
+export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigationOptions: _omit }: ObservedDataProps) {
+  const emissions = useEmissionsData();
+
   if (!selectedTarget) {
     return <EmptyState />;
   }
 
-  const observedData = getObservedDataForTarget(selectedTarget.id);
+  const apiSector = getClimateTraceSectorForTarget(selectedTarget);
+  const ts = apiSector ? emissions.timeseriesBySector[apiSector] : undefined;
+  const pr = apiSector ? emissions.progressBySector[apiSector] : undefined;
+
+  const indEntry =
+    isIndicatorPanelTarget(selectedTarget) ? emissions.indicatorTargets?.[selectedTarget.id] : undefined;
+
+  const fetchingLive =
+    !!apiSector &&
+    !emissions.sectorError[apiSector] &&
+    !!emissions.sectorLoading[apiSector] &&
+    !ts;
+
+  const fetchingIndicator =
+    isIndicatorPanelTarget(selectedTarget) &&
+    !emissions.indicatorPanelError &&
+    emissions.indicatorPanelLoading &&
+    !indEntry;
+
+  if (fetchingLive || fetchingIndicator) {
+    return <LoadingLiveState />;
+  }
+
+  let observedData: ObservedDataSet | undefined;
+  if (apiSector && ts && pr && emissions.getObservedMode(selectedTarget) === "live") {
+    observedData = buildLiveObservedDataSet(
+      selectedTarget,
+      ts.timeseries,
+      pr.baseline_year,
+      pr.baseline_value,
+      pr.target_year,
+      pr.target_value,
+    );
+  } else if (
+    indEntry?.timeseries?.length &&
+    emissions.getObservedMode(selectedTarget) === "live"
+  ) {
+    observedData = buildIndicatorPanelObservedDataSet(selectedTarget, indEntry);
+  } else {
+    observedData = getObservedDataForTarget(selectedTarget.id);
+  }
+
   if (!observedData) {
     return <NoDataState />;
   }
@@ -35,8 +81,20 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-3 py-2 border-b border-border bg-muted/50">
+      <div className="px-3 py-2 border-b border-border bg-muted/50 flex items-center justify-between gap-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Observed Data</h3>
+        {apiSector && emissions.getObservedMode(selectedTarget) === "live" && (
+          <Badge variant="outline" className="text-[8px] h-4 gap-0.5 shrink-0">
+            <Satellite className="h-2.5 w-2.5" />
+            Climate TRACE
+          </Badge>
+        )}
+        {isIndicatorPanelTarget(selectedTarget) && emissions.getObservedMode(selectedTarget) === "live" && !apiSector && (
+          <Badge variant="outline" className="text-[8px] h-4 gap-0.5 shrink-0">
+            <Database className="h-2.5 w-2.5" />
+            Indicators API
+          </Badge>
+        )}
       </div>
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-2">
@@ -168,6 +226,21 @@ function sourceTypeLabel(type: string): string {
     validated: "Validated (National Authority)",
   };
   return map[type] || type;
+}
+
+function LoadingLiveState() {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="px-3 py-2 border-b border-border bg-muted/50">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Observed Data</h3>
+      </div>
+      <div className="flex-1 p-3 space-y-2">
+        <Skeleton className="h-4 w-[75%]" />
+        <Skeleton className="h-[180px] w-full rounded-md" />
+        <Skeleton className="h-16 w-full rounded-md" />
+      </div>
+    </div>
+  );
 }
 
 function EmptyState() {

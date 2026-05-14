@@ -8,6 +8,7 @@ import { Building2, MapPin, Send, User, Plus, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { useCapturedActivities } from "@/hooks/use-captured-activities";
+import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { WorkflowBadge } from "@/components/WorkflowBadge";
 import { ActionTemplates } from "@/components/ActionTemplates";
 import { useCurrentRole } from "@/hooks/use-current-role";
@@ -21,12 +22,17 @@ interface NDCActivitiesProps {
 export function NDCActivitiesColumn({ selectedTargetId, geographyLevel, selectedDistrictId }: NDCActivitiesProps) {
   const { canCreateActivity } = useCurrentRole();
   const { activities: captured } = useCapturedActivities(selectedTargetId);
+  const emissions = useEmissionsData();
 
   if (!selectedTargetId) {
     return <EmptyState />;
   }
 
   let activities = getActivitiesForTarget(selectedTargetId);
+  const fromCatalog = emissions.getActivitiesFromCatalog(selectedTargetId);
+  if (fromCatalog.length > 0) {
+    activities = fromCatalog;
+  }
 
   // Filter by district if applicable
   if (geographyLevel === "district" && selectedDistrictId) {

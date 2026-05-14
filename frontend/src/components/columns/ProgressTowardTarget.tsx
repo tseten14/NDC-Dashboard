@@ -1,4 +1,7 @@
-import { type NDCTarget, type ProgressStatus, calculateProgress, getObservedDataForTarget } from "@/data/uganda-ndc-data";
+import { useMemo } from "react";
+import { type NDCTarget, type ProgressStatus, getObservedDataForTarget } from "@/data/uganda-ndc-data";
+import { useEmissionsData } from "@/context/EmissionsDataContext";
+import { getClimateTraceSectorForTarget, isIndicatorPanelTarget, buildIndicatorPanelObservedDataSet } from "@/lib/emissions-integration";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -18,13 +21,52 @@ const statusConfig: Record<ProgressStatus, { label: string; color: string; bg: s
 };
 
 export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
+  const emissions = useEmissionsData();
+
   if (!selectedTarget) {
     return <EmptyState />;
   }
 
-  const observedData = getObservedDataForTarget(selectedTarget.id);
-  const { percent, status } = calculateProgress(selectedTarget, observedData);
+  const { percent, status, source } = emissions.getProgressForTarget(selectedTarget);
   const cfg = statusConfig[status];
+
+  const apiSector = getClimateTraceSectorForTarget(selectedTarget);
+  const pr = apiSector ? emissions.progressBySector[apiSector] : undefined;
+
+  const indEntry = isIndicatorPanelTarget(selectedTarget)
+    ? emissions.indicatorTargets?.[selectedTarget.id]
+    : undefined;
+
+  const observedForData = useMemo(() => {
+    if (indEntry?.timeseries?.length) return buildIndicatorPanelObservedDataSet(selectedTarget, indEntry);
+    return getObservedDataForTarget(selectedTarget.id) ?? null;
+  }, [selectedTarget, indEntry]);
+
+  const latestRow = observedForData?.historicalData?.[observedForData.historicalData.length - 1];
+
+  const latestDisplay =
+    source === "api" && pr?.latest_value != null
+      ? `${pr.latest_value} ${selectedTarget.unit}`
+      : latestRow != null
+        ? `${latestRow.value} ${selectedTarget.unit}`
+        : null;
+
+  const baselineDisplay =
+    source === "api" && pr
+      ? `Baseline (${pr.baseline_year}): ${pr.baseline_value} ${selectedTarget.unit}`
+      : `Baseline (${selectedTarget.baselineYear}): ${selectedTarget.baselineValue} ${selectedTarget.unit}`;
+
+  const targetDisplay =
+    source === "api" && pr
+      ? `Target (${pr.target_year}): ${pr.target_value} ${selectedTarget.unit}`
+      : `Target (${selectedTarget.targetYear}): ${selectedTarget.targetValue} ${selectedTarget.unit}`;
+
+  const dataUsedLabel =
+    source === "api"
+      ? "Climate TRACE v6 (seeded to Supabase) + NDC baseline/target"
+      : source === "catalog"
+        ? "Indicators API (Supabase) + NDC baseline/target"
+        : "Latest observed value from MRV data sources";
 
   return (
     <div className="flex flex-col h-full">
@@ -61,11 +103,17 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
 
               {/* Target summary */}
               <div className="mt-3 text-[10px] text-muted-foreground space-y-0.5">
-                <p>Baseline ({selectedTarget.baselineYear}): {selectedTarget.baselineValue} {selectedTarget.unit}</p>
-                <p>Target ({selectedTarget.targetYear}): {selectedTarget.targetValue} {selectedTarget.unit}</p>
-                {observedData && (
+                <p>{baselineDisplay}</p>
+                <p>{targetDisplay}</p>
+                {latestDisplay && (
                   <p className="font-medium text-foreground">
-                    Latest: {observedData.historicalData[observedData.historicalData.length - 1]?.value} {selectedTarget.unit}
+                    Latest: {latestDisplay}
+                    {source === "api" && pr?.latest_year != null && (
+                      <span className="text-muted-foreground font-normal"> ({pr.latest_year})</span>
+                    )}
+                    {source === "catalog" && latestRow != null && (
+                      <span className="text-muted-foreground font-normal"> ({latestRow.year})</span>
+                    )}
                   </p>
                 )}
               </div>
@@ -86,9 +134,9 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                   <TooltipContent side="bottom" className="max-w-[260px] p-3">
                     <div className="text-xs space-y-1.5">
                       <p className="font-semibold">Progress Methodology</p>
-                      <p><strong>Data used:</strong> Latest observed value from MRV data sources</p>
-                      <p><strong>Baseline:</strong> {selectedTarget.baselineYear} ({selectedTarget.baselineValue} {selectedTarget.unit})</p>
-                      <p><strong>Target:</strong> {selectedTarget.targetYear} ({selectedTarget.targetValue} {selectedTarget.unit})</p>
+                      <p><strong>Data used:</strong> {dataUsedLabel}</p>
+                      <p><strong>Baseline:</strong> {baselineDisplay}</p>
+                      <p><strong>Target:</strong> {targetDisplay}</p>
                       <p><strong>Method:</strong> {selectedTarget.metricType === "emissions-reduction" ? "Emissions-based" : "Activity-proxy-based"} progress calculation</p>
                       <p className="text-muted-foreground italic">QA/QC warnings degrade status. Insufficient data yields "Unknown."</p>
                     </div>
@@ -99,11 +147,11 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
           </Card>
 
           {/* Data quality note */}
-          {observedData && observedData.provenance.qaqcStatus !== "ok" && (
+          {observedForData && observedForData.provenance.qaqcStatus !== "ok" && (
             <Card className="border-at-risk/30">
               <CardContent className="p-3">
                 <p className="text-[10px] text-at-risk font-medium">
-                  ⚠ Progress status may be degraded due to data quality issues ({observedData.provenance.qaqcStatus}).
+                  ⚠ Progress status may be degraded due to data quality issues ({observedForData.provenance.qaqcStatus}).
                 </p>
               </CardContent>
             </Card>

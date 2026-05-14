@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { EmissionsDataProvider } from "@/context/EmissionsDataContext";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -56,7 +57,8 @@ const queryClient = new QueryClient();
 function ProtectedShell() {
   const state = useAppState();
   return (
-    <AppStateContext.Provider value={state}>
+    <EmissionsDataProvider>
+      <AppStateContext.Provider value={state}>
       <CockpitProvider>
         <SidebarProvider>
           <div className="min-h-screen flex w-full">
@@ -116,6 +118,7 @@ function ProtectedShell() {
         </SidebarProvider>
       </CockpitProvider>
     </AppStateContext.Provider>
+    </EmissionsDataProvider>
   );
 }
 

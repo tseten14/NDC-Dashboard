@@ -10,6 +10,7 @@ const tailwindConfigPath = path.resolve(__dirname, "config/tailwind.config.ts");
 
 export default defineConfig({
   root: __dirname,
+  envDir: path.resolve(__dirname, ".."),
   server: {
     host: "::",
     port: 8080,

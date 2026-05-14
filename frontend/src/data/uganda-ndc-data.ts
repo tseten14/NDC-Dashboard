@@ -172,8 +172,8 @@ export const ndcTargets: NDCTarget[] = [
     targetText: "Reduce GHG emissions from the energy sector by 27% below BAU by 2030 through improved energy efficiency and renewable energy deployment.",
     targetYear: 2030,
     baselineYear: 2015,
-    baselineValue: 18.3,
-    targetValue: 13.36,
+    baselineValue: 6.2,
+    targetValue: 3.1,
     unit: "MtCO₂e",
     conditionality: "Mixed",
     metricType: "emissions-reduction",
@@ -208,8 +208,8 @@ export const ndcTargets: NDCTarget[] = [
     targetText: "Reduce industrial process emissions by 20% through cleaner production standards and HFC phase-down by 2030.",
     targetYear: 2030,
     baselineYear: 2015,
-    baselineValue: 5.2,
-    targetValue: 4.16,
+    baselineValue: 1.8,
+    targetValue: 1.2,
     unit: "MtCO₂e",
     conditionality: "Conditional",
     metricType: "emissions-reduction",
@@ -370,8 +370,8 @@ export const observedDataSets: ObservedDataSet[] = [
   {
     targetId: "t4",
     dataProviders: ["Emissions Tracing (Climate TRACE)", "Ministry MRV"],
-    historicalData: makeHistorical(18.3, 2015, 2024, -0.4),
-    projectionBaseline: makeProjection(14.7, 13.36, 2025, 2030),
+    historicalData: makeHistorical(6.2, 2015, 2024, -0.15),
+    projectionBaseline: makeProjection(5.0, 3.1, 2025, 2030),
     provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "warning", lastUpdated: "2024-08-15T12:00:00Z", isValidated: false },
   },
   {
@@ -391,8 +391,8 @@ export const observedDataSets: ObservedDataSet[] = [
   {
     targetId: "t7",
     dataProviders: ["Ministry MRV"],
-    historicalData: makeHistorical(5.2, 2015, 2024, -0.08),
-    projectionBaseline: makeProjection(4.48, 4.16, 2025, 2030),
+    historicalData: makeHistorical(1.8, 2015, 2024, -0.03),
+    projectionBaseline: makeProjection(1.55, 1.2, 2025, 2030),
     provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "inconsistent", lastUpdated: "2024-03-15T10:00:00Z", isValidated: false },
   },
   {

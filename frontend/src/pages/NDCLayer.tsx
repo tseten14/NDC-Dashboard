@@ -2,18 +2,19 @@ import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAppContext } from "@/hooks/use-app-state";
 import { TargetStatusSummary } from "@/components/TargetStatusSummary";
+import { LiveEmissionsBanner } from "@/components/LiveEmissionsBanner";
 import { NDCTargetsColumn } from "@/components/columns/NDCTargets";
 import { NDCActivitiesColumn } from "@/components/columns/NDCActivities";
 import { ObservedDataColumn } from "@/components/columns/ObservedData";
 import { ProgressTowardTargetColumn } from "@/components/columns/ProgressTowardTarget";
 import { MitigationOptionsColumn } from "@/components/columns/MitigationOptions";
 import { ndcTargets, sectorDefinitions, getDataCompleteness, getLastRefreshTimestamp } from "@/data/uganda-ndc-data";
+import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { ugandaDistricts } from "@/data/uganda-districts";
-import { progressRecords } from "@/data/uganda-strategy-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Download, FileSpreadsheet, FileText, Database, Clock, AlertTriangle } from "lucide-react";
+import { RefreshCw, Download, FileSpreadsheet, FileText, Database, Clock } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { exportToExcel, exportToPDF } from "@/lib/export";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ import type { SectorId, TimeMode, GeographyLevel } from "@/data/uganda-ndc-data"
 
 export default function NDCLayer() {
   const state = useAppContext();
+  const emissions = useEmissionsData();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -44,17 +46,18 @@ export default function NDCLayer() {
     ? ndcTargets.find(t => t.id === state.selectedTargetId) ?? null
     : null;
 
-  // Check if any linked KPI has Preliminary status
-  const hasPreliminary = progressRecords.some(p => p.validation_status === "Preliminary");
-
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
     toast.info("Fetching latest data from sector APIs...");
     setTimeout(() => { setIsRefreshing(false); toast.success("Dashboard data refreshed"); }, 1500);
   }, []);
 
-  const completeness = getDataCompleteness();
-  const lastRefresh = getLastRefreshTimestamp();
+  const completeness = emissions.isApiReachable
+    ? emissions.dashboardCompleteness
+    : getDataCompleteness();
+  const lastRefresh = emissions.isApiReachable
+    ? emissions.dashboardLastRefreshIso
+    : getLastRefreshTimestamp();
 
   return (
     <div className="flex flex-col h-full">
@@ -119,13 +122,8 @@ export default function NDCLayer() {
         </div>
       </div>
 
-      {/* Validation Gate Banner */}
-      {hasPreliminary && (
-        <div className="px-3 py-1 bg-at-risk/10 border-b border-at-risk/30 flex items-center gap-2">
-          <AlertTriangle className="h-3 w-3 text-at-risk" />
-          <span className="text-[10px] text-at-risk font-medium">⚠ Preliminary data — some KPIs not yet verified by sector MRV authority</span>
-        </div>
-      )}
+      {/* Live Climate TRACE data (real, from Express API + Supabase) */}
+      <LiveEmissionsBanner />
 
       {/* Target Status Summary — 'all targets first' anchor */}
       <TargetStatusSummary onSelectTarget={handleSummarySelect} />

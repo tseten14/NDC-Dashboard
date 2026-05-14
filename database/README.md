@@ -13,6 +13,6 @@ From the repository root, point the CLI at this directory (exact flag depends on
 ## Layout
 
 - `config.toml` — local Supabase CLI / project metadata  
-- `migrations/` — versioned SQL changes
+- `migrations/` — versioned SQL changes (includes `climatetrace_emissions` for Climate TRACE seeding)
 
 Update `project_id` in `config.toml` if you use the Supabase CLI against a different hosted project.

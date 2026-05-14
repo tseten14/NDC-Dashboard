@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BookOpen, FlaskConical, Plus, DollarSign, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useEmissionsData } from "@/context/EmissionsDataContext";
 
 interface MitigationOptionsProps {
   selectedTarget: NDCTarget | null;
@@ -36,11 +37,17 @@ export function MitigationOptionsColumn({
   selectedMitigationOptions, onToggleMitigationOption,
   decisionLog, onAddToDecisionLog, onUpdateDecisionStatus,
 }: MitigationOptionsProps) {
+  const emissions = useEmissionsData();
+
   if (!selectedTarget) {
     return <EmptyState />;
   }
 
-  const options = getMitigationOptionsForTarget(selectedTarget.id, selectedSector);
+  let options = getMitigationOptionsForTarget(selectedTarget.id, selectedSector);
+  const fromCatalog = emissions.getMitigationFromCatalog(selectedTarget.id, selectedSector);
+  if (fromCatalog.length > 0) {
+    options = fromCatalog;
+  }
 
   return (
     <div className="flex flex-col h-full">

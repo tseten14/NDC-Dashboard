@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ndcTargets, ndcActivities, observedDataSets, calculateProgress, getObservedDataForTarget, type NDCTarget } from "@/data/uganda-ndc-data";
+import { ndcTargets, ndcActivities, getObservedDataForTarget, type NDCTarget } from "@/data/uganda-ndc-data";
+import { useEmissionsData } from "@/context/EmissionsDataContext";
+import { getClimateTraceSectorForTarget } from "@/lib/emissions-integration";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Library, AlertTriangle, CheckCircle2, Database } from "lucide-react";
@@ -20,29 +22,38 @@ interface TargetSnapshot {
   gap: GapKind;
 }
 
-function classifyTargets(): TargetSnapshot[] {
-  return ndcTargets.map(t => {
-    const acts = ndcActivities.filter(a => a.targetId === t.id);
-    const obs = getObservedDataForTarget(t.id);
-    const hasData = !!obs && obs.historicalData.length > 0 && obs.provenance.qaqcStatus !== "missing";
-    const { status } = calculateProgress(t, obs);
-    let gap: GapKind = "ok";
-    if (acts.length === 0) gap = "implementation";
-    else if (!hasData) gap = "mrv";
-    else if (status === "off-track" || status === "at-risk") gap = "delivery";
-    return { target: t, activitiesCount: acts.length, hasData, status, gap };
-  });
-}
-
 export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps) {
-  const snapshots = useMemo(classifyTargets, []);
+  const emissions = useEmissionsData();
+
+  const snapshots = useMemo((): TargetSnapshot[] => {
+    return ndcTargets.map(t => {
+      const acts = ndcActivities.filter(a => a.targetId === t.id);
+      const obs = getObservedDataForTarget(t.id);
+      const { status } = emissions.getProgressForTarget(t);
+
+      const apiSector = getClimateTraceSectorForTarget(t);
+      const hasApiData =
+        !!apiSector &&
+        emissions.getObservedMode(t) === "live" &&
+        !emissions.sectorError[apiSector];
+
+      const hasData =
+        hasApiData ||
+        (!!obs && obs.historicalData.length > 0 && obs.provenance.qaqcStatus !== "missing");
+
+      let gap: GapKind = "ok";
+      if (acts.length === 0) gap = "implementation";
+      else if (!hasData) gap = "mrv";
+      else if (status === "off-track" || status === "at-risk") gap = "delivery";
+      return { target: t, activitiesCount: acts.length, hasData, status, gap };
+    });
+  }, [emissions]);
 
   const onTrack = snapshots.filter(s => s.status === "on-track").length;
   const offTrack = snapshots.filter(s => s.status === "off-track" || s.status === "at-risk").length;
   const implGaps = snapshots.filter(s => s.gap === "implementation").length;
   const mrvGaps = snapshots.filter(s => s.gap === "mrv").length;
 
-  // Top 3 gaps prioritized: implementation > delivery > mrv
   const priority: Record<GapKind, number> = { implementation: 3, delivery: 2, mrv: 1, ok: 0 };
   const topGaps = [...snapshots]
     .filter(s => s.gap !== "ok")
@@ -52,7 +63,6 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
   return (
     <div className="px-3 py-2 border-b border-border bg-muted/20">
       <div className="flex items-center gap-3 flex-wrap">
-        {/* Compact KPIs */}
         <div className="flex items-center gap-2">
           <Stat icon={<CheckCircle2 className="h-3 w-3 text-on-track" />} label="On-track" value={onTrack} />
           <Stat icon={<AlertTriangle className="h-3 w-3 text-off-track" />} label="Off-track" value={offTrack} />
@@ -60,7 +70,6 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
           <Stat icon={<Database className="h-3 w-3 text-muted-foreground" />} label="MRV gaps" value={mrvGaps} hint="Targets missing observed data" />
         </div>
 
-        {/* Top 3 gaps */}
         <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto">
           <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">Top gaps</span>
           {topGaps.length === 0 && (
@@ -82,7 +91,6 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
           ))}
         </div>
 
-        {/* Browse Library */}
         <Button asChild size="sm" variant="outline" className="h-6 text-[10px] gap-1 shrink-0">
           <Link to="/library">
             <Library className="h-3 w-3" />

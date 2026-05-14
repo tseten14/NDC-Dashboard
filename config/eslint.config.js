@@ -8,7 +8,14 @@ export default tseslint.config(
   { ignores: ["dist", "node_modules", "frontend/dist"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
-    files: ["frontend/**/*.{ts,tsx}"],
+    files: [
+      "frontend/**/*.{ts,tsx}",
+      "services/**/*.js",
+      "routes/**/*.js",
+      "scripts/**/*.js",
+      "server.js",
+      "config/ndcTargets.js",
+    ],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
