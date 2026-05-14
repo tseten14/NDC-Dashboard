@@ -2,6 +2,16 @@
 
 Web application for exploring and managing Uganda’s Nationally Determined Contribution (NDC) data: decision-support cockpit, strategy library, climate risk views, and role-based delivery tools.
 
+## Repository layout
+
+| Layer | Folder | What lives here |
+| ----- | ------ | ---------------- |
+| **1. Frontend** | `frontend/` | Vite + React app (`src/`, `public/`, `index.html`, `vite.config.ts`, Tailwind under `frontend/config/`) |
+| **2. Backend** | `backend/` | Placeholder for future server code (e.g. Supabase Edge Functions). The hosted API today is **Supabase** — see `backend/README.md`. |
+| **3. Database** | `database/` | Postgres migrations and `config.toml` for the Supabase CLI — see `database/README.md`. |
+
+Repo-wide tooling: **`config/`** (ESLint, Playwright). Root **`package.json`** drives install and scripts. Add shadcn components from the **`frontend/`** directory (`cd frontend` then `npx shadcn@latest add …`).
+
 ## Stack
 
 - [Vite](https://vitejs.dev/) + [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
@@ -21,20 +31,21 @@ npm install
 npm run dev
 ```
 
-The dev server runs at [http://localhost:8080](http://localhost:8080) (see `vite.config.ts`).
+The dev server runs at [http://localhost:8080](http://localhost:8080) (see `frontend/vite.config.ts`).
 
-Apply database migrations from `supabase/migrations/` in the Supabase SQL Editor (oldest file first) or via the [Supabase CLI](https://supabase.com/docs/guides/cli).
+Apply database migrations from **`database/migrations/`** in the Supabase SQL Editor (oldest file first) or via the [Supabase CLI](https://supabase.com/docs/guides/cli) using the `database/` directory as your project folder.
 
 ## Scripts
 
-| Command        | Description              |
-| -------------- | ------------------------ |
-| `npm run dev`  | Start Vite dev server    |
-| `npm run build`| Production build         |
+| Command | Description |
+| ------- | ----------- |
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | Production build (output: `frontend/dist`) |
 | `npm run preview` | Preview production build |
-| `npm run test` | Run Vitest               |
-| `npm run lint` | Run ESLint               |
+| `npm run test` | Run Vitest |
+| `npm run test:e2e` | Run Playwright (`config/playwright.config.ts`) |
+| `npm run lint` | Run ESLint on `frontend/` |
 
 ## Deploy
 
-Build static assets with `npm run build` and host the `dist/` folder on any static host (e.g. Netlify, Vercel, Cloudflare Pages). Configure the same `VITE_*` environment variables in the host’s dashboard.
+Build with `npm run build`, then host **`frontend/dist/`** on your static host. Configure the same `VITE_*` environment variables on your host.

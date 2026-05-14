@@ -4,13 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "dev": "vite --config frontend/vite.config.ts",
+    "build": "vite build --config frontend/vite.config.ts",
+    "build:dev": "vite build --config frontend/vite.config.ts --mode development",
+    "lint": "eslint frontend --config config/eslint.config.js",
+    "test:e2e": "playwright test --config config/playwright.config.ts",
+    "preview": "vite preview --config frontend/vite.config.ts",
+    "test": "vitest run --config frontend/vite.config.ts",
+    "test:watch": "vitest --config frontend/vite.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

@@ -1,8 +1,19 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
+
+const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    path.join(frontendRoot, "index.html"),
+    path.join(frontendRoot, "pages/**/*.{ts,tsx}"),
+    path.join(frontendRoot, "components/**/*.{ts,tsx}"),
+    path.join(frontendRoot, "app/**/*.{ts,tsx}"),
+    path.join(frontendRoot, "src/**/*.{ts,tsx}"),
+  ],
   prefix: "",
   theme: {
     container: {
@@ -97,5 +108,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;
