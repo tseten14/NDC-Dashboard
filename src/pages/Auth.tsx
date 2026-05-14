@@ -56,11 +56,16 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-base">Uganda NDC Data Explorer</CardTitle>
-          <CardDescription className="text-xs">
-            Sign in to access role-based delivery tools.
-          </CardDescription>
+        <CardHeader className="text-center space-y-3">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
+            <img src="/app-icon.svg" alt="" className="h-9 w-9" width={36} height={36} />
+          </div>
+          <div className="text-center space-y-1.5">
+            <CardTitle className="text-base">Uganda NDC Data Explorer</CardTitle>
+            <CardDescription className="text-xs">
+              Sign in to access role-based delivery tools.
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin">

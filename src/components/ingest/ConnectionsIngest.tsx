@@ -81,7 +81,7 @@ export function ConnectionsIngest() {
         <div className="flex justify-end">
           <Button size="sm" className="h-7 text-xs" onClick={add}>Register</Button>
         </div>
-        <p className="text-[9px] text-muted-foreground italic">Credentials are not stored client-side. Backend connector to be wired via Lovable Cloud — registration here creates the contract.</p>
+        <p className="text-[9px] text-muted-foreground italic">Credentials are not stored client-side. Backend connector to be wired by your platform team — registration here creates the contract.</p>
       </div>
 
       {/* List */}

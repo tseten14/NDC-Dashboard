@@ -49,12 +49,17 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
-        {!collapsed && (
-          <div className="p-3 border-b border-sidebar-border">
-            <p className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50 font-semibold">Uganda NDC Data Explorer</p>
-            <p className="text-[9px] text-sidebar-foreground/40 mt-0.5">Decision-support cockpit</p>
+        <div className={`border-b border-sidebar-border ${collapsed ? "flex justify-center py-3" : "p-3 flex gap-2.5 items-start"}`}>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary/15 ring-1 ring-sidebar-primary/25">
+            <img src="/app-icon.svg" alt="" className="h-7 w-7" width={28} height={28} />
           </div>
-        )}
+          {!collapsed && (
+            <div className="min-w-0 pt-0.5">
+              <p className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50 font-semibold leading-tight">Uganda NDC Data Explorer</p>
+              <p className="text-[9px] text-sidebar-foreground/40 mt-0.5">Decision-support cockpit</p>
+            </div>
+          )}
+        </div>
 
         <SidebarGroup>
           <SidebarGroupLabel>Cockpit</SidebarGroupLabel>
