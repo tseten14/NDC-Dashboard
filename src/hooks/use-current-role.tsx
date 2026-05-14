@@ -78,12 +78,15 @@ export function CurrentRoleProvider({ children }: { children: ReactNode }) {
       }
     });
     // 2. Then check existing
-    supabase.auth.getSession().then(({ data: { session: sess } }) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      if (sess?.user) loadRoles(sess.user.id).finally(() => setLoading(false));
-      else setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: sess } }) => {
+        setSession(sess);
+        setUser(sess?.user ?? null);
+        if (sess?.user) loadRoles(sess.user.id).finally(() => setLoading(false));
+        else setLoading(false);
+      })
+      .catch(() => setLoading(false));
     return () => sub.subscription.unsubscribe();
   }, [loadRoles]);
 
