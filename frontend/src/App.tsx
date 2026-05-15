@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
+import { Globe2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { EmissionsDataProvider } from "@/context/EmissionsDataContext";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,8 +12,11 @@ import { useAppState, AppStateContext } from "@/hooks/use-app-state";
 import { CockpitProvider } from "@/hooks/use-cockpit";
 import { CurrentRoleProvider } from "@/hooks/use-current-role";
 import { AuthGate } from "@/components/AuthGate";
+import { CountryGate } from "@/components/CountryGate";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { CountryProvider, useCountry } from "@/context/CountryContext";
 import NotFound from "./pages/NotFound.tsx";
+import CountrySelect from "./pages/CountrySelect.tsx";
 
 // Auth + new role-based pages
 import Auth from "./pages/Auth.tsx";
@@ -54,6 +59,38 @@ import ProjectCheck from "./pages/ProjectCheck.tsx";
 
 const queryClient = new QueryClient();
 
+function ShellHeader() {
+  const { country, clearCountry } = useCountry();
+  const navigate = useNavigate();
+
+  return (
+    <div className="flex items-center justify-between border-b border-border bg-card px-2 h-10 gap-2">
+      <SidebarTrigger />
+      <div className="flex items-center gap-2 min-w-0">
+        {country && (
+          <span className="hidden sm:inline text-xs text-muted-foreground truncate">
+            {country.flag} {country.name}
+          </span>
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-7 text-xs gap-1 shrink-0"
+          onClick={() => {
+            clearCountry();
+            navigate("/select-country");
+          }}
+        >
+          <Globe2 className="h-3.5 w-3.5" />
+          <span className="hidden md:inline">Change country</span>
+        </Button>
+        <RoleSwitcher />
+      </div>
+    </div>
+  );
+}
+
 function ProtectedShell() {
   const state = useAppState();
   return (
@@ -64,10 +101,7 @@ function ProtectedShell() {
           <div className="min-h-screen flex w-full">
             <AppSidebar />
             <div className="flex-1 flex flex-col min-w-0">
-              <div className="flex items-center justify-between border-b border-border bg-card px-2 h-10">
-                <SidebarTrigger />
-                <RoleSwitcher />
-              </div>
+              <ShellHeader />
               <main className="flex-1 overflow-hidden">
                 <Routes>
                   {/* Main */}
@@ -127,14 +161,33 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <CurrentRoleProvider>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/*" element={<AuthGate><ProtectedShell /></AuthGate>} />
-          </Routes>
-        </CurrentRoleProvider>
-      </BrowserRouter>
+      <CountryProvider>
+        <BrowserRouter>
+          <CurrentRoleProvider>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route
+                path="/select-country"
+                element={
+                  <AuthGate>
+                    <CountrySelect />
+                  </AuthGate>
+                }
+              />
+              <Route
+                path="/*"
+                element={
+                  <AuthGate>
+                    <CountryGate>
+                      <ProtectedShell />
+                    </CountryGate>
+                  </AuthGate>
+                }
+              />
+            </Routes>
+          </CurrentRoleProvider>
+        </BrowserRouter>
+      </CountryProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

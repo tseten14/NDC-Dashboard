@@ -49,28 +49,28 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
-        <div className={`border-b border-sidebar-border ${collapsed ? "flex justify-center py-3" : "p-3 flex gap-2.5 items-start"}`}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary/15 ring-1 ring-sidebar-primary/25">
-            <img src="/app-icon.svg" alt="" className="h-7 w-7" width={28} height={28} />
+        <div className={`border-b border-sidebar-border ${collapsed ? "flex justify-center py-2" : "px-2 py-2 flex gap-2 items-start"}`}>
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary/15 ring-1 ring-sidebar-primary/25">
+            <img src="/app-icon.svg" alt="" className="h-6 w-6" width={24} height={24} />
           </div>
           {!collapsed && (
-            <div className="min-w-0 pt-0.5">
-              <p className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50 font-semibold leading-tight">Uganda NDC Data Explorer</p>
-              <p className="text-[9px] text-sidebar-foreground/40 mt-0.5">Decision-support cockpit</p>
+            <div className="min-w-0 flex-1 pt-0.5">
+              <p className="text-[9px] uppercase tracking-wide text-sidebar-foreground/55 font-semibold leading-snug">NDC DATA EXPLORER</p>
+              <p className="text-[8px] text-sidebar-foreground/40 mt-0.5 leading-tight">Decision-support cockpit</p>
             </div>
           )}
         </div>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Cockpit</SidebarGroupLabel>
+        <SidebarGroup className="p-1.5">
+          <SidebarGroupLabel className="h-7 px-1.5 text-[10px]">Cockpit</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-0.5">
               {primary.map(item => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild size="sm">
                     <NavLink to={item.url} end={item.url === "/"} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span className="text-xs">{item.title}</span>}
+                      <item.icon className="h-3.5 w-3.5 shrink-0" />
+                      {!collapsed && <span className="text-[11px] leading-tight truncate">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -79,9 +79,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
+        <SidebarGroup className="p-1.5">
           <SidebarGroupLabel
-            className="cursor-pointer flex items-center gap-1 select-none"
+            className="h-7 px-1.5 text-[10px] cursor-pointer flex items-center gap-1 select-none"
             onClick={() => setAdvOpen(o => !o)}
           >
             {advOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -89,13 +89,13 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           {advOpen && (
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="gap-0.5">
                 {advanced.map(item => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild size="sm">
                       <NavLink to={item.url} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
-                        <item.icon className="mr-2 h-4 w-4" />
-                        {!collapsed && <span className="text-xs">{item.title}</span>}
+                        <item.icon className="h-3.5 w-3.5 shrink-0" />
+                        {!collapsed && <span className="text-[11px] leading-tight truncate">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
