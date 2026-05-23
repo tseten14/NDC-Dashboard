@@ -1,9 +1,9 @@
 // Climate Risk module — data from Express API.
 import { useEffect, useState, useMemo } from "react";
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL ??
-  (import.meta.env.DEV ? "http://localhost:8787" : "");
+import { resolveApiHost } from "@/lib/api";
+
+const API_BASE = resolveApiHost();
 
 async function fetchRiskJSON<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);

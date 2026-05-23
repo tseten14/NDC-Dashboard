@@ -36,9 +36,9 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-const BASE =
-  import.meta.env.VITE_API_BASE_URL ??
-  (import.meta.env.DEV ? "http://localhost:8787" : "");
+import { resolveApiHost } from "@/lib/api";
+
+const BASE = resolveApiHost();
 const ACCEPTED = ".csv,.json,.txt,.pdf";
 const ACCEPTED_EXT = ["csv", "json", "txt", "pdf"];
 const MAX_FILES = 10;

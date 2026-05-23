@@ -6,11 +6,18 @@
 import type { IndicatorPanelEntry } from "./emissions-integration";
 
 /** Host only in dev; production uses same-origin paths (/api/v1/...). */
-export const API_HOST =
-  import.meta.env.VITE_API_BASE_URL ??
-  (import.meta.env.DEV ? "http://localhost:8787" : "");
+export function resolveApiHost(): string {
+  const env = import.meta.env.VITE_API_BASE_URL?.trim();
+  if (import.meta.env.DEV) {
+    return env || "http://localhost:8787";
+  }
+  if (env && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/i.test(env)) {
+    return env.replace(/\/$/, "");
+  }
+  return "";
+}
 
-const BASE = API_HOST;
+const BASE = resolveApiHost();
 
 async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);

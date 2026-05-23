@@ -24,12 +24,25 @@ export function LiveEmissionsBanner() {
   const { summary: data, summaryIsLoading: isLoading, summaryError: error, health } = useEmissionsData();
 
   if (error) {
+    const isDev = import.meta.env.DEV;
     return (
       <div className="px-3 py-1.5 border-b border-border bg-destructive/5 flex items-center gap-2">
         <AlertCircle className="h-3 w-3 text-destructive shrink-0" />
-        <span className="text-[10px] text-destructive">
-          Live emissions API unreachable. Start it with{" "}
-          <code className="font-mono">npm run start:api</code>
+        <span className="text-[10px] text-destructive leading-snug">
+          {isDev ? (
+            <>
+              Live emissions API unreachable. Start it with{" "}
+              <code className="font-mono">npm run start:api</code>
+            </>
+          ) : (
+            <>
+              Emissions API unavailable ({error.message || "request failed"}). Check{" "}
+              <a href="/api/health" className="underline font-medium" target="_blank" rel="noreferrer">
+                /api/health
+              </a>{" "}
+              after redeploy, or set <code className="font-mono">USE_MOCK_DATA=true</code> on Vercel.
+            </>
+          )}
         </span>
       </div>
     );

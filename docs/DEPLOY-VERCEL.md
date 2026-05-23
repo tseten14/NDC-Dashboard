@@ -23,7 +23,7 @@ No `VITE_API_BASE_URL` is required in production — the frontend calls `/api/v1
 
 | Variable | Required | Notes |
 |----------|----------|--------|
-| `USE_MOCK_DATA` | No | Set `true` to use mock emissions instead of Climate TRACE live API |
+| `USE_MOCK_DATA` | No | Defaults to `true` in `vercel.json` (fast, reliable). Set `false` for live Climate TRACE (slower; may timeout on Hobby) |
 | `VITE_API_BASE_URL` | No | Leave unset for same-origin `/api/v1` |
 
 ## Limits on Vercel
@@ -50,10 +50,9 @@ npm run dev:all
 
 | Path | Role |
 |------|------|
-| `vercel.json` | Build output `frontend/dist`, SPA rewrites, API function config |
-| `api/index.js` | Vercel Express entry (`/api` + `/v1` routes) |
-| `server/createApp.js` | Shared route definitions |
-| `server.js` | Local-only listener on port 8787 |
+| `vercel.json` | Build output `frontend/dist`, SPA rewrites, `USE_MOCK_DATA=true` by default |
+| `server.js` | **Default export** for Vercel Express; `listen()` only when not on Vercel |
+| `server/createApp.js` | Shared route definitions (`/api/v1/*`) |
 
 ## Troubleshooting
 
