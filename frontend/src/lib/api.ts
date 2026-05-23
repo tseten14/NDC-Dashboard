@@ -38,20 +38,6 @@ export interface SectorSummaryEntry {
   progress_pct: number | null;
 }
 
-export interface EmissionsSummary {
-  on_track: number;
-  off_track: number;
-  mixed: number;
-  impl_gaps: number;
-  mrv_gaps: number;
-  global_rank: number | null;
-  total_co2e_mtco2e: number | null;
-  yoy_change_mtco2e: number | null;
-  data_stale: boolean;
-  from_cache: boolean;
-  sectors: Partial<Record<NdcSectorKey, SectorSummaryEntry>>;
-}
-
 export interface TimeseriesPoint {
   year: number;
   value: number | null;
@@ -81,6 +67,36 @@ export interface ProgressResponse {
   progress_pct: number | null;
   status: SectorStatus;
   data_source: string;
+  methodology?: "ndc_baseline_vs_trace_observed";
+  scope_note?: string | null;
+  trace_yoy_pct?: number | null;
+  baseline_vs_trace_delta_mt?: number | null;
+  missing_slugs?: string[];
+}
+
+export interface SlugBreakdownBySector {
+  reference_year: number;
+  slugs: string[];
+  values_mt: Record<string, number | null>;
+  missing_slugs: string[];
+}
+
+export interface EmissionsReconciliation {
+  reference_year: number;
+  country_total_mt: number | null;
+  sector_sum_mt: number | null;
+  ui_sector_sum_mt: number | null;
+  delta_mt: number | null;
+  unmapped_slugs: string[];
+  missing_slugs: string[];
+  slug_breakdown: Record<string, number | null>;
+  note?: string;
+}
+
+export interface EmissionsCoverage {
+  methodology: string;
+  sector_scope_notes: Record<string, string>;
+  unmapped_slugs: string[];
 }
 
 export interface EmissionsDashboard {
@@ -102,6 +118,26 @@ export interface EmissionsDashboard {
   timeseries: Partial<Record<NdcSectorKey, TimeseriesPoint[]>>;
   progress: Partial<Record<NdcSectorKey, ProgressResponse>>;
   sectors: Partial<Record<NdcSectorKey, SectorSummaryEntry>>;
+  slug_breakdown_by_sector?: Partial<Record<NdcSectorKey, SlugBreakdownBySector>>;
+  reconciliation?: EmissionsReconciliation;
+  coverage?: EmissionsCoverage;
+}
+
+export interface EmissionsSummary {
+  on_track: number;
+  off_track: number;
+  mixed: number;
+  impl_gaps: number;
+  mrv_gaps: number;
+  global_rank: number | null;
+  total_co2e_mtco2e: number | null;
+  yoy_change_mtco2e: number | null;
+  data_stale: boolean;
+  from_cache: boolean;
+  data_source?: string;
+  api_docs_url?: string;
+  sectors: Partial<Record<NdcSectorKey, SectorSummaryEntry>>;
+  reconciliation?: EmissionsReconciliation;
 }
 
 export const emissionsApi = {
@@ -153,6 +189,20 @@ export interface CatalogMitigationRow {
   sort_order: number;
   body: Record<string, unknown>;
 }
+
+export interface IngestHealthResponse {
+  ok: boolean;
+  analysis: {
+    tabular_engine: "pandas" | "javascript_fallback";
+    python3: boolean;
+    pandas_version?: string | null;
+    install_hint?: string | null;
+  };
+}
+
+export const ingestApi = {
+  health: () => getJSON<IngestHealthResponse>("/api/v1/ingest/health"),
+};
 
 export const cockpitApi = {
   indicatorPanel: (since = 2015, to = 2024) =>

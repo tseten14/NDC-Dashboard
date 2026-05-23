@@ -6,7 +6,19 @@ import {
   type ReactNode,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { emissionsApi, cockpitApi, type EmissionsSummary, type ProgressResponse, type TimeseriesResponse, type CatalogActivityRow, type CatalogMitigationRow } from "@/lib/api";
+import {
+  emissionsApi,
+  cockpitApi,
+  type EmissionsSummary,
+  type EmissionsDashboard,
+  type EmissionsReconciliation,
+  type EmissionsCoverage,
+  type SlugBreakdownBySector,
+  type ProgressResponse,
+  type TimeseriesResponse,
+  type CatalogActivityRow,
+  type CatalogMitigationRow,
+} from "@/lib/api";
 import {
   CLIMATE_TRACE_API_SECTORS,
   type ClimatetraceApiSector,
@@ -23,6 +35,10 @@ const STALE_MS = 15 * 60 * 1000;
 
 export interface EmissionsDataContextValue {
   summary: EmissionsSummary | undefined;
+  dashboard: EmissionsDashboard | undefined;
+  reconciliation: EmissionsReconciliation | undefined;
+  coverage: EmissionsCoverage | undefined;
+  slugBreakdownBySector: Partial<Record<ClimatetraceApiSector, SlugBreakdownBySector>>;
   summaryError: Error | null;
   summaryIsLoading: boolean;
   health: { status: string; latency_ms?: number; http_status?: number; last_checked: string } | undefined;
@@ -103,9 +119,16 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
       yoy_change_mtco2e: d.yoy_change_mtco2e,
       data_stale: d.data_stale,
       from_cache: d.from_cache,
+      data_source: d.data_source,
       sectors: d.sectors,
+      reconciliation: d.reconciliation,
     };
   }, [dashboardQuery.data]);
+
+  const dashboard = dashboardQuery.data;
+  const reconciliation = dashboard?.reconciliation;
+  const coverage = dashboard?.coverage;
+  const slugBreakdownBySector = dashboard?.slug_breakdown_by_sector ?? {};
 
   const timeseriesBySector = useMemo(() => {
     const d = dashboardQuery.data;
@@ -255,6 +278,10 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       summary,
+      dashboard,
+      reconciliation,
+      coverage,
+      slugBreakdownBySector,
       summaryError: dashboardQuery.error as Error | null,
       summaryIsLoading: dashboardQuery.isLoading,
       health: healthQuery.data,
@@ -280,6 +307,10 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
     }),
     [
       summary,
+      dashboard,
+      reconciliation,
+      coverage,
+      slugBreakdownBySector,
       dashboardQuery.error,
       dashboardQuery.isLoading,
       healthQuery.data,

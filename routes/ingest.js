@@ -146,6 +146,7 @@ async function analyzeCsv(buffer, filename) {
     columns,
     sample: rows.slice(0, 5),
     analysis_engine: "javascript",
+    validation: sections.validation,
     parse_errors: (parsed.errors ?? []).slice(0, 10).map((e) => ({
       row: e.row,
       code: e.code,
@@ -293,6 +294,7 @@ async function analyzeJson(buffer, filename) {
       columns,
       sample: data.slice(0, 5),
       analysis_engine: "javascript",
+      validation: sections.validation,
       keywords: scanKeywords(text.slice(0, 100_000)),
       warnings: [
         ...warnings,

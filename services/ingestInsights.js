@@ -25,6 +25,42 @@ const SECTOR_CANONICAL = {
   forestry: "afolu",
 };
 
+const NATIONAL_TOKENS = new Set([
+  "national",
+  "country",
+  "uganda",
+  "all",
+  "total",
+  "nationwide",
+  "n/a",
+  "na",
+  "",
+]);
+
+function isNationalDistrictValue(val) {
+  if (val == null) return true;
+  const s = String(val).trim().toLowerCase();
+  return NATIONAL_TOKENS.has(s);
+}
+
+/** Exclude district rows when national rows are also present (pandas parity). */
+function filterNationalRows(rows, districtCol) {
+  if (!districtCol) return { rows, note: null };
+  const hasNational = rows.some((r) => isNationalDistrictValue(r[districtCol]));
+  const hasSub = rows.some((r) => !isNationalDistrictValue(r[districtCol]));
+  if (hasNational && hasSub) {
+    const filtered = rows.filter((r) => isNationalDistrictValue(r[districtCol]));
+    if (filtered.length > 0) {
+      return {
+        rows: filtered,
+        note:
+          "Charts use national-level rows only; district-level rows were excluded to avoid double-counting.",
+      };
+    }
+  }
+  return { rows, note: null };
+}
+
 const MINISTRY_HINTS = [
   "ministry of water and environment",
   "ministry of energy",
@@ -943,14 +979,37 @@ export function buildTabularSections(rows, columns, filename) {
   if (districtCol)
     insights.push(`The "${districtCol}" column allows breakdowns by district or region within Uganda.`);
 
+  let chartRows = rows;
+  let nationalNote = null;
+  if (districtCol) {
+    const filtered = filterNationalRows(rows, districtCol);
+    chartRows = filtered.rows;
+    nationalNote = filtered.note;
+  }
+
   const sectorBar = [];
+  let sectorBarNote = null;
   if (sectorCol && valueCol) {
     const agg = new Map();
-    for (const r of rows) {
+    let latestYear = null;
+    if (yearCol) {
+      for (const r of chartRows) {
+        const y = safeNumber(r[yearCol]);
+        if (y != null) latestYear = latestYear == null ? y : Math.max(latestYear, y);
+      }
+    }
+    for (const r of chartRows) {
+      if (yearCol && latestYear != null) {
+        const y = safeNumber(r[yearCol]);
+        if (y == null || y !== latestYear) continue;
+      }
       const s = r[sectorCol] == null ? null : String(r[sectorCol]).trim().toLowerCase();
       const v = safeNumber(r[valueCol]);
       if (!s || v == null) continue;
       agg.set(s, (agg.get(s) || 0) + v);
+    }
+    if (yearCol && latestYear != null) {
+      sectorBarNote = `Sector chart shows the latest year in the file (${latestYear}) only, so sectors are not summed across multiple years.`;
     }
     for (const [name, total] of agg.entries()) {
       sectorBar.push({ name, total: +total.toFixed(2) });
@@ -961,7 +1020,7 @@ export function buildTabularSections(rows, columns, filename) {
   const timeSeries = [];
   if (yearCol && valueCol) {
     const agg = new Map();
-    for (const r of rows) {
+    for (const r of chartRows) {
       const y = safeNumber(r[yearCol]);
       const v = safeNumber(r[valueCol]);
       if (y == null || v == null) continue;
@@ -999,6 +1058,10 @@ export function buildTabularSections(rows, columns, filename) {
   if (valueCol) colBits.push(`value (“${valueCol}”)`);
   if (sectorCol) colBits.push(`sector (“${sectorCol}”)`);
   if (districtCol) colBits.push(`location (“${districtCol}”)`);
+
+  const validationNotes = [];
+  if (nationalNote) validationNotes.push(nationalNote);
+  if (sectorBarNote) validationNotes.push(sectorBarNote);
 
   const recommendations = [];
   if (incompleteCols.length)
@@ -1053,6 +1116,10 @@ export function buildTabularSections(rows, columns, filename) {
   }
 
   return {
+    validation:
+      validationNotes.length > 0
+        ? { notes: validationNotes, aggregation_engine: "javascript_fallback" }
+        : { aggregation_engine: "javascript_fallback" },
     about: {
       title: filename.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "),
       doc_type,
@@ -1073,6 +1140,7 @@ export function buildTabularSections(rows, columns, filename) {
       presentation: "bullets",
       overview:
         "These charts summarise your spreadsheet — sector totals, trends by year, and any columns with many blank cells.",
+      validation_notes: validationNotes.length ? validationNotes : undefined,
       insights,
       highlights: tabularHighlights,
       chart_guides: buildChartGuides(

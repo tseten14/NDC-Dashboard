@@ -77,6 +77,11 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
         ? "Indicators API + NDC baseline/target"
         : "Latest observed value from MRV data sources";
 
+  const baselineMismatch =
+    source === "api" &&
+    pr?.baseline_vs_trace_delta_mt != null &&
+    Math.abs(pr.baseline_vs_trace_delta_mt) >= 5;
+
   return (
     <div className="flex flex-col h-full">
       <div className="px-3 py-2 border-b border-border bg-muted/50">
@@ -84,6 +89,17 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
       </div>
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-3">
+          {baselineMismatch && pr && (
+            <div className="p-2 rounded-md bg-at-risk/10 border border-at-risk/30 text-xs">
+              <p className="font-medium text-at-risk">NDC baseline differs from TRACE observed</p>
+              <p className="text-muted-foreground mt-0.5">
+                Policy baseline ({pr.baseline_value} Mt) vs TRACE latest ({pr.latest_value} Mt, {pr.latest_year}): Δ{" "}
+                {pr.baseline_vs_trace_delta_mt! >= 0 ? "+" : ""}
+                {pr.baseline_vs_trace_delta_mt} Mt. Progress % uses NDC targets, not TRACE-aligned baselines.
+              </p>
+            </div>
+          )}
+
           {/* Main progress card */}
           <Card className={cn("ring-2", cfg.ring)}>
             <CardContent className="p-4 flex flex-col items-center text-center">
@@ -110,8 +126,21 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                 {cfg.label}
               </Badge>
 
+              {source === "api" && (
+                <p className="mt-2 text-xs text-muted-foreground max-w-[220px]">
+                  % toward NDC target using Climate TRACE observed emissions — not official national MRV.
+                </p>
+              )}
+
+              {source === "api" && pr?.trace_yoy_pct != null && (
+                <p className="text-xs text-muted-foreground">
+                  TRACE YoY ({pr.latest_year}): {pr.trace_yoy_pct >= 0 ? "+" : ""}
+                  {pr.trace_yoy_pct}%
+                </p>
+              )}
+
               {/* Target summary */}
-              <div className="mt-3 text-[10px] text-muted-foreground space-y-0.5">
+              <div className="mt-3 text-xs text-muted-foreground space-y-0.5">
                 <p>{baselineDisplay}</p>
                 <p>{targetDisplay}</p>
                 {latestDisplay && (
@@ -147,6 +176,12 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                       <p><strong>Baseline:</strong> {baselineDisplay}</p>
                       <p><strong>Target:</strong> {targetDisplay}</p>
                       <p><strong>Method:</strong> {selectedTarget.metricType === "emissions-reduction" ? "Emissions-based" : "Activity-proxy-based"} progress calculation</p>
+                      {pr?.methodology === "ndc_baseline_vs_trace_observed" && (
+                        <p>
+                          <strong>Formula:</strong> (NDC baseline − TRACE latest) / (NDC baseline − NDC target)
+                        </p>
+                      )}
+                      {pr?.scope_note && <p className="italic">{pr.scope_note}</p>}
                       <p className="text-muted-foreground italic">QA/QC warnings degrade status. Insufficient data yields "Unknown."</p>
                     </div>
                   </TooltipContent>

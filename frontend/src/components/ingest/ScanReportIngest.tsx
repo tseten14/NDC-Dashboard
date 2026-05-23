@@ -2,7 +2,7 @@
  * Auto-scan ingest: drag/drop multiple files (csv/json/txt/pdf), upload to
  * /api/v1/ingest/scan with live progress, render structured report from the backend.
  */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -36,7 +36,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-import { resolveApiHost } from "@/lib/api";
+import { ingestApi, resolveApiHost } from "@/lib/api";
 
 const BASE = resolveApiHost();
 const ACCEPTED = ".csv,.json,.txt,.pdf";
@@ -178,7 +178,15 @@ export function ScanReportIngest() {
   const [progress, setProgress] = useState(0);
   const [report, setReport] = useState<ScanReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tabularEngine, setTabularEngine] = useState<"pandas" | "javascript_fallback" | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    ingestApi
+      .health()
+      .then((h) => setTabularEngine(h.analysis.tabular_engine))
+      .catch(() => setTabularEngine(null));
+  }, []);
 
   const addFiles = useCallback(
     async (list: FileList | null) => {
@@ -312,6 +320,28 @@ export function ScanReportIngest() {
 
   return (
     <div className="space-y-3">
+      {tabularEngine && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-muted-foreground">Tabular scan engine:</span>
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-xs h-5",
+              tabularEngine === "pandas"
+                ? "border-[hsl(var(--on-track))]/40 text-[hsl(var(--on-track))]"
+                : "border-at-risk/40 text-at-risk",
+            )}
+          >
+            {tabularEngine === "pandas" ? "pandas (high accuracy)" : "JavaScript fallback (lower accuracy)"}
+          </Badge>
+          {tabularEngine === "javascript_fallback" && (
+            <span className="text-xs text-muted-foreground">
+              Run <code className="font-mono text-[10px]">npm run setup:ingest-python</code> locally for pandas parity.
+            </span>
+          )}
+        </div>
+      )}
+
       {phase !== "done" && (
         <div
           onDrop={onDrop}

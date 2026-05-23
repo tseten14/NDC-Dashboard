@@ -4,7 +4,7 @@
   "installCommand": "npm install",
   "framework": null,
   "env": {
-    "USE_MOCK_DATA": "true"
+    "USE_MOCK_DATA": "false"
   },
   "rewrites": [
     {

@@ -15,6 +15,7 @@
     "test:watch": "vitest --config frontend/vite.config.ts",
     "start:api": "node server.js",
     "setup:ingest-python": "pip3 install -r requirements-ingest.txt",
+    "verify:climatetrace": "node scripts/verify_climatetrace_v7.mjs",
     "vercel:deploy": "vercel --prod"
   },
   "dependencies": {

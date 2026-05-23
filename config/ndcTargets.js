@@ -77,6 +77,7 @@ export const SECTOR_MAP = {
   waste: ["waste"],
 };
 
+/** Slugs mapped to dashboard sectors (excludes mineral-extraction — reported separately). */
 export const ALL_SECTOR_SLUGS = [
   "forestry-and-land-use",
   "agriculture",
@@ -88,5 +89,23 @@ export const ALL_SECTOR_SLUGS = [
   "waste",
 ];
 
-/** Years to attempt when seeding (extend if API returns 2024). */
-export const YEARS = [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024];
+/** Climate TRACE slug not in any NDC UI bucket; included in country reconciliation only. */
+export const UNMAPPED_SECTOR_SLUGS = ["mineral-extraction"];
+
+/** All slugs used for country total reconciliation (mapped + unmapped). */
+export const ALL_TRACE_SLUGS = [...ALL_SECTOR_SLUGS, ...UNMAPPED_SECTOR_SLUGS];
+
+/** Per-dashboard-sector scope notes for UI / API provenance. */
+export const SECTOR_SCOPE_NOTES = {
+  afolu:
+    "Climate TRACE forestry-and-land-use only (not agriculture slug; separate Agriculture NDC target).",
+  energy: "Sums power + transportation + buildings + fossil-fuel-operations (broader than narrow inventory energy line).",
+  ippu: "Manufacturing slug only; excludes other IPPU / F-gas categories in TRACE.",
+  agriculture: "Climate TRACE agriculture slug only.",
+  waste: "Climate TRACE waste slug.",
+};
+
+/** Years requested from Climate TRACE v7 (aligned with defaultInventoryRange). */
+export const YEARS = [
+  2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025,
+];

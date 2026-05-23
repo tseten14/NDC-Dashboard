@@ -21,14 +21,15 @@ const STATUS_CLS: Record<string, string> = {
 };
 
 export function LiveEmissionsBanner() {
-  const { summary: data, summaryIsLoading: isLoading, summaryError: error, health } = useEmissionsData();
+  const { summary: data, summaryIsLoading: isLoading, summaryError: error, health, reconciliation, dashboardLastRefreshIso } =
+    useEmissionsData();
 
   if (error) {
     const isDev = import.meta.env.DEV;
     return (
       <div className="px-3 py-1.5 border-b border-border bg-destructive/5 flex items-center gap-2">
         <AlertCircle className="h-3 w-3 text-destructive shrink-0" />
-        <span className="text-[10px] text-destructive leading-snug">
+        <span className="text-xs text-destructive leading-snug">
           {isDev ? (
             <>
               Live emissions API unreachable. Start it with{" "}
@@ -36,11 +37,15 @@ export function LiveEmissionsBanner() {
             </>
           ) : (
             <>
-              Emissions API unavailable ({error.message || "request failed"}). Check{" "}
+              Live Climate TRACE unavailable ({error.message || "request failed"}). Check{" "}
               <a href="/api/health" className="underline font-medium" target="_blank" rel="noreferrer">
                 /api/health
               </a>{" "}
-              after redeploy, or set <code className="font-mono">USE_MOCK_DATA=true</code> on Vercel.
+              and{" "}
+              <a href="/api/v1/health/climatetrace" className="underline font-medium" target="_blank" rel="noreferrer">
+                Climate TRACE health
+              </a>
+              . First load may take up to 60s while sector data is fetched.
             </>
           )}
         </span>
@@ -48,21 +53,31 @@ export function LiveEmissionsBanner() {
     );
   }
 
+  const recon = reconciliation;
+  const refreshLabel = dashboardLastRefreshIso
+    ? new Date(dashboardLastRefreshIso).toLocaleString("en-UG", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+
   return (
     <div className="px-3 py-1.5 border-b border-border bg-card flex flex-wrap items-center gap-3">
       <div className="flex items-center gap-1.5">
-        <Satellite className="h-3 w-3 text-primary" />
-        <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+        <Satellite className="h-3.5 w-3.5 text-primary" />
+        <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
           Live Climate TRACE
         </span>
         {health?.status === "ok" && (
-          <span className="inline-flex items-center gap-1 text-[9px] text-[hsl(var(--on-track))]">
+          <span className="inline-flex items-center gap-1 text-[10px] text-[hsl(var(--on-track))]">
             <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--on-track))] animate-pulse" />
             {health.latency_ms ?? "—"}ms
           </span>
         )}
         {health && health.status !== "ok" && (
-          <span className="inline-flex items-center gap-1 text-[9px] text-[hsl(var(--at-risk))]">
+          <span className="inline-flex items-center gap-1 text-[10px] text-[hsl(var(--at-risk))]">
             <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--at-risk))]" />
             {health.status}
           </span>
@@ -86,7 +101,7 @@ export function LiveEmissionsBanner() {
                 <Badge
                   key={key}
                   variant="outline"
-                  className={cn("gap-1 text-[9px] h-5", STATUS_CLS[s.status] ?? STATUS_CLS.unknown)}
+                  className={cn("gap-1 text-[10px] h-5", STATUS_CLS[s.status] ?? STATUS_CLS.unknown)}
                   title={`Latest year: ${s.latest_year ?? "n/a"} • Climate TRACE v7`}
                 >
                   <Activity className="h-2.5 w-2.5" />
@@ -99,7 +114,7 @@ export function LiveEmissionsBanner() {
             )}
           </div>
 
-          <div className="ml-auto flex items-center gap-2 text-[9px] text-muted-foreground">
+          <div className="ml-auto flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
             {data.global_rank != null && (
               <span>
                 Global rank <span className="font-mono">#{data.global_rank}</span>
@@ -110,9 +125,26 @@ export function LiveEmissionsBanner() {
                 Total <span className="font-mono">{data.total_co2e_mtco2e.toFixed(0)} Mt</span>
               </span>
             )}
-            {data.from_cache && (
-              <Badge variant="outline" className="h-4 text-[8px]">cached</Badge>
+            {recon?.sector_sum_mt != null && recon.reference_year && (
+              <span title={recon.note}>
+                Slug sum ({recon.reference_year}){" "}
+                <span className="font-mono">{recon.sector_sum_mt.toFixed(1)} Mt</span>
+                {recon.delta_mt != null && Math.abs(recon.delta_mt) > 0.01 && (
+                  <span className="text-at-risk"> (Δ {recon.delta_mt})</span>
+                )}
+              </span>
             )}
+            {data.data_stale && (
+              <Badge variant="outline" className="h-4 text-[10px]">
+                stale rankings
+              </Badge>
+            )}
+            {data.from_cache && (
+              <Badge variant="outline" className="h-4 text-[10px]">
+                cached
+              </Badge>
+            )}
+            {refreshLabel && <span title="Dashboard cache refresh">Updated {refreshLabel}</span>}
           </div>
         </>
       )}

@@ -1,8 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAppContext } from "@/hooks/use-app-state";
 import { TargetStatusSummary } from "@/components/TargetStatusSummary";
 import { LiveEmissionsBanner } from "@/components/LiveEmissionsBanner";
+import { DataCoveragePanel } from "@/components/DataCoveragePanel";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { NDCTargetsColumn } from "@/components/columns/NDCTargets";
 import { NDCActivitiesColumn } from "@/components/columns/NDCActivities";
 import { ObservedDataColumn } from "@/components/columns/ObservedData";
@@ -10,7 +13,6 @@ import { ProgressTowardTargetColumn } from "@/components/columns/ProgressTowardT
 import { MitigationOptionsColumn } from "@/components/columns/MitigationOptions";
 import { ndcTargets, sectorDefinitions, getDataCompleteness, getLastRefreshTimestamp } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
-import { ugandaDistricts } from "@/data/uganda-districts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,6 +26,7 @@ import type { SectorId, TimeMode, GeographyLevel } from "@/data/uganda-ndc-data"
 export default function NDCLayer() {
   const state = useAppContext();
   const emissions = useEmissionsData();
+  const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -36,6 +39,14 @@ export default function NDCLayer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  useEffect(() => {
+    if (state.geographyLevel === "district") {
+      state.setGeographyLevel("national");
+      state.setSelectedDistrictId(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.geographyLevel]);
+
   const handleSummarySelect = useCallback((targetId: string, sectorId: string) => {
     state.setSelectedSector(sectorId);
     state.setSelectedTargetId(targetId);
@@ -46,11 +57,18 @@ export default function NDCLayer() {
     ? ndcTargets.find(t => t.id === state.selectedTargetId) ?? null
     : null;
 
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    toast.info("Fetching latest data from sector APIs...");
-    setTimeout(() => { setIsRefreshing(false); toast.success("Dashboard data refreshed"); }, 1500);
-  }, []);
+    toast.info("Refreshing Climate TRACE dashboard...");
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["emissions"] });
+      toast.success("Dashboard data refreshed");
+    } catch {
+      toast.error("Refresh failed — check API health");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [queryClient]);
 
   const completeness = emissions.isApiReachable
     ? emissions.dashboardCompleteness
@@ -64,9 +82,9 @@ export default function NDCLayer() {
       {/* NDC sub-controls */}
       <div className="px-3 py-1.5 border-b border-border bg-muted/30 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Sector</span>
+          <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Sector</span>
           <Select value={state.selectedSector} onValueChange={(v) => state.setSelectedSector(v)}>
-            <SelectTrigger className="w-[140px] h-6 text-[10px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[140px] h-7 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               {sectorDefinitions.map(s => <SelectItem key={s.id} value={s.id}><span className="text-xs">{s.name}</span></SelectItem>)}
             </SelectContent>
@@ -74,29 +92,39 @@ export default function NDCLayer() {
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Geography</span>
-          <div className="flex rounded-md border border-input overflow-hidden">
-            {(["national", "district"] as const).map(g => (
-              <button key={g} onClick={() => state.setGeographyLevel(g)}
-                className={cn("px-2 py-0.5 text-[10px] font-medium transition-colors border-r border-input last:border-r-0",
-                  state.geographyLevel === g ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"
-                )}>{g === "national" ? "National" : "District"}</button>
-            ))}
-          </div>
-          {state.geographyLevel === "district" && (
-            <Select value={state.selectedDistrictId || ""} onValueChange={(v) => state.setSelectedDistrictId(v || null)}>
-              <SelectTrigger className="w-[120px] h-6 text-[10px]"><SelectValue placeholder="District..." /></SelectTrigger>
-              <SelectContent className="max-h-[300px]">{ugandaDistricts.map(d => <SelectItem key={d} value={d}><span className="text-xs">{d}</span></SelectItem>)}</SelectContent>
-            </Select>
-          )}
+          <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Geography</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex rounded-md border border-input overflow-hidden opacity-90">
+                <button
+                  type="button"
+                  className={cn(
+                    "px-2 py-0.5 text-xs font-medium bg-primary text-primary-foreground",
+                  )}
+                >
+                  National
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground cursor-not-allowed border-l border-input"
+                >
+                  District
+                </button>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[240px] text-xs">
+              District-level Climate TRACE (GADM2) is not wired yet. Emissions charts use national (GADM0) data only.
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Time</span>
+          <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Time</span>
           <div className="flex rounded-md border border-input overflow-hidden">
             {(["historical", "projection"] as const).map(m => (
               <button key={m} onClick={() => state.setTimeMode(m)}
-                className={cn("px-2 py-0.5 text-[10px] font-medium transition-colors border-r border-input last:border-r-0",
+                className={cn("px-2 py-0.5 text-xs font-medium transition-colors border-r border-input last:border-r-0",
                   state.timeMode === m ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"
                 )}>{m === "historical" ? "Historical" : "Projection"}</button>
             ))}
@@ -104,14 +132,14 @@ export default function NDCLayer() {
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
-          <Badge variant="outline" className="gap-1 text-[9px] h-5"><Database className="h-2.5 w-2.5" />{completeness}%</Badge>
-          <Badge variant="outline" className="gap-1 text-[9px] h-5"><Clock className="h-2.5 w-2.5" />{new Date(lastRefresh).toLocaleDateString("en-UG", { day: "numeric", month: "short" })}</Badge>
-          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="gap-1 h-6 text-[10px]">
+          <Badge variant="outline" className="gap-1 text-[10px] h-5"><Database className="h-2.5 w-2.5" />{completeness}%</Badge>
+          <Badge variant="outline" className="gap-1 text-[10px] h-5"><Clock className="h-2.5 w-2.5" />{new Date(lastRefresh).toLocaleDateString("en-UG", { day: "numeric", month: "short" })}</Badge>
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="gap-1 h-7 text-xs">
             <RefreshCw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />Refresh
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1 h-6 text-[10px]"><Download className="h-3 w-3" />Export</Button>
+              <Button variant="outline" size="sm" className="gap-1 h-7 text-xs"><Download className="h-3 w-3" />Export</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => { exportToExcel(); toast.success("Excel exported"); }}><FileSpreadsheet className="h-4 w-4 mr-2" />Excel</DropdownMenuItem>
@@ -124,6 +152,7 @@ export default function NDCLayer() {
 
       {/* Live Climate TRACE data (Express API → Climate TRACE v7) */}
       <LiveEmissionsBanner />
+      <DataCoveragePanel />
 
       {/* Target Status Summary — 'all targets first' anchor */}
       <TargetStatusSummary onSelectTarget={handleSummarySelect} />

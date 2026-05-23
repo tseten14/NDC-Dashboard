@@ -68,9 +68,24 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
     observedData = getObservedDataForTarget(selectedTarget.id);
   }
 
+  if (apiSector && emissions.sectorError[apiSector]) {
+    return (
+      <SectorErrorState
+        message={emissions.sectorError[apiSector]?.message ?? "Climate TRACE data unavailable"}
+      />
+    );
+  }
+
   if (!observedData) {
     return <NoDataState />;
   }
+
+  const slugBreakdown = apiSector ? emissions.slugBreakdownBySector[apiSector] : undefined;
+  const liveProgress = apiSector ? emissions.progressBySector[apiSector] : undefined;
+  const hasNullGaps =
+    apiSector &&
+    emissions.getObservedMode(selectedTarget) === "live" &&
+    observedData.historicalData.some((p) => p.value == null);
 
   const chartData =
     timeMode === "historical"
@@ -109,6 +124,25 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
             ))}
           </div>
 
+          {apiSector && emissions.getObservedMode(selectedTarget) === "live" && liveProgress && (
+            <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs leading-snug">
+              <p className="text-foreground font-medium">NDC policy lines vs Climate TRACE observed</p>
+              <p className="text-muted-foreground mt-0.5">
+                Bars/lines show TRACE satellite-model totals. Dashed target path uses Uganda NDC baselines — these
+                differ from TRACE by design (not an API error).
+              </p>
+              {liveProgress.scope_note && (
+                <p className="text-muted-foreground mt-1 italic">{liveProgress.scope_note}</p>
+              )}
+            </div>
+          )}
+
+          {hasNullGaps && (
+            <p className="text-xs text-at-risk">
+              Some years have no TRACE data (strict aggregation — missing sector slug). Chart gaps are not interpolated.
+            </p>
+          )}
+
           {/* QA/QC Warning banner */}
           {observedData.provenance.qaqcStatus !== "ok" && (
             <div className="flex items-start gap-2 p-2 rounded-md bg-at-risk/10 border border-at-risk/30">
@@ -130,22 +164,48 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
                 {timeMode === "historical" ? (
                   <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="year" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
-                    <RTooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "6px", fontSize: 10 }} />
-                    <Legend wrapperStyle={{ fontSize: 9 }} />
-                    <Bar dataKey="value" name="Observed" fill="hsl(var(--chart-4))" radius={[2, 2, 0, 0]} />
-                    <Line dataKey="target" name="Target Path" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={false} />
+                    <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <RTooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "6px", fontSize: 11 }} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Bar
+                      dataKey="value"
+                      name="Climate TRACE observed"
+                      fill="hsl(var(--chart-4))"
+                      radius={[2, 2, 0, 0]}
+                      connectNulls={false}
+                    />
+                    <Line
+                      dataKey="target"
+                      name="NDC target path"
+                      stroke="hsl(var(--chart-2))"
+                      strokeWidth={2}
+                      strokeDasharray="4 4"
+                      dot={false}
+                    />
                   </BarChart>
                 ) : (
                   <ComposedChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="year" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
-                    <RTooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "6px", fontSize: 10 }} />
-                    <Legend wrapperStyle={{ fontSize: 9 }} />
-                    <Area dataKey="value" name="Projected" fill="hsl(var(--chart-1) / 0.15)" stroke="hsl(var(--chart-1))" />
-                    <Line dataKey="target" name="Target Path" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                    <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <RTooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "6px", fontSize: 11 }} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Area
+                      dataKey="value"
+                      name="Climate TRACE (projected)"
+                      fill="hsl(var(--chart-1) / 0.15)"
+                      stroke="hsl(var(--chart-1))"
+                      connectNulls={false}
+                    />
+                    <Line
+                      dataKey="target"
+                      name="NDC target path"
+                      stroke="hsl(var(--chart-2))"
+                      strokeWidth={2}
+                      dot={false}
+                      strokeDasharray="5 5"
+                    />
                   </ComposedChart>
                 )}
               </ResponsiveContainer>
@@ -186,6 +246,25 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
                   </div>
                 </div>
                 <ProvenanceRow label="Last updated" value={new Date(observedData.provenance.lastUpdated).toLocaleDateString("en-UG", { day: "numeric", month: "short", year: "numeric" })} />
+                {slugBreakdown && Object.keys(slugBreakdown.values_mt).length > 0 && (
+                  <div className="pt-1 border-t border-border mt-1">
+                    <p className="text-xs text-muted-foreground mb-1">
+                      TRACE slug breakdown ({slugBreakdown.reference_year})
+                    </p>
+                    {Object.entries(slugBreakdown.values_mt).map(([slug, mt]) => (
+                      <ProvenanceRow
+                        key={slug}
+                        label={slug}
+                        value={mt != null ? `${mt} Mt` : "missing"}
+                      />
+                    ))}
+                    {slugBreakdown.missing_slugs.length > 0 && (
+                      <p className="text-xs text-at-risk mt-1">
+                        Missing: {slugBreakdown.missing_slugs.join(", ")}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -252,6 +331,19 @@ function EmptyState() {
       </div>
       <div className="flex-1 flex items-center justify-center p-4">
         <p className="text-xs text-muted-foreground text-center">Select a target to view observed data</p>
+      </div>
+    </div>
+  );
+}
+
+function SectorErrorState({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="px-3 py-2 border-b border-border bg-muted/50">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Observed Data</h3>
+      </div>
+      <div className="flex-1 flex items-center justify-center p-4">
+        <p className="text-xs text-destructive text-center">{message}</p>
       </div>
     </div>
   );
