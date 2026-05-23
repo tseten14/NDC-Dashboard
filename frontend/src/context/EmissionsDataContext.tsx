@@ -5,7 +5,7 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { emissionsApi, cockpitApi, type EmissionsSummary, type ProgressResponse, type TimeseriesResponse, type CatalogActivityRow, type CatalogMitigationRow } from "@/lib/api";
 import {
   CLIMATE_TRACE_API_SECTORS,
@@ -20,8 +20,6 @@ import { ndcTargets, getObservedDataForTarget, calculateProgress, type NDCTarget
 import type { ProgressStatus } from "@/data/uganda-ndc-data";
 
 const STALE_MS = 15 * 60 * 1000;
-const SINCE = 2015;
-const TO = 2024;
 
 export interface EmissionsDataContextValue {
   summary: EmissionsSummary | undefined;
@@ -34,13 +32,10 @@ export interface EmissionsDataContextValue {
   sectorLoading: Partial<Record<ClimatetraceApiSector, boolean>>;
   sectorError: Partial<Record<ClimatetraceApiSector, Error | null>>;
   isApiReachable: boolean;
-  /** Data completeness % blending live MtCO₂e targets + static mock for other targets. */
   dashboardCompleteness: number;
-  /** Best-effort “last refresh” for header badges. */
   dashboardLastRefreshIso: string;
   getProgressForTarget: (target: NDCTarget) => { percent: number; status: ProgressStatus; source: "api" | "catalog" | "mock" };
   getObservedMode: (target: NDCTarget) => "live" | "mock";
-  /** Supabase-backed non-MtCO₂e indicators (t2,t3,t5,t8). */
   indicatorTargets: Record<string, IndicatorPanelEntry> | undefined;
   indicatorPanelLoading: boolean;
   indicatorPanelError: Error | null;
@@ -55,12 +50,15 @@ export interface EmissionsDataContextValue {
 const EmissionsDataContext = createContext<EmissionsDataContextValue | null>(null);
 
 export function EmissionsDataProvider({ children }: { children: ReactNode }) {
-  const summaryQuery = useQuery({
-    queryKey: ["emissions", "summary"],
-    queryFn: emissionsApi.summary,
+  const dashboardQuery = useQuery({
+    queryKey: ["emissions", "dashboard"],
+    queryFn: () => emissionsApi.dashboard(),
     staleTime: STALE_MS,
     retry: 1,
   });
+
+  const since = dashboardQuery.data?.since ?? 2015;
+  const to = dashboardQuery.data?.to ?? dashboardQuery.data?.inventory_year ?? 2024;
 
   const healthQuery = useQuery({
     queryKey: ["emissions", "health", "climatetrace"],
@@ -70,10 +68,11 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
   });
 
   const indicatorPanelQuery = useQuery({
-    queryKey: ["cockpit", "indicators", "panel", SINCE, TO],
-    queryFn: () => cockpitApi.indicatorPanel(SINCE, TO),
+    queryKey: ["cockpit", "indicators", "panel", since, to],
+    queryFn: () => cockpitApi.indicatorPanel(since, to),
     staleTime: STALE_MS,
     retry: 1,
+    enabled: dashboardQuery.isSuccess || dashboardQuery.isError,
   });
 
   const catalogActivitiesQuery = useQuery({
@@ -90,60 +89,64 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
     retry: 1,
   });
 
-  const tsQueries = useQueries({
-    queries: CLIMATE_TRACE_API_SECTORS.map((sector) => ({
-      queryKey: ["emissions", "timeseries", sector, SINCE, TO],
-      queryFn: () => emissionsApi.timeseries(sector, SINCE, TO),
-      staleTime: STALE_MS,
-      retry: 1,
-    })),
-  });
-
-  const prQueries = useQueries({
-    queries: CLIMATE_TRACE_API_SECTORS.map((sector) => ({
-      queryKey: ["emissions", "progress", sector],
-      queryFn: () => emissionsApi.progress(sector),
-      staleTime: STALE_MS,
-      retry: 1,
-    })),
-  });
+  const summary = useMemo((): EmissionsSummary | undefined => {
+    const d = dashboardQuery.data;
+    if (!d) return undefined;
+    return {
+      on_track: d.on_track,
+      off_track: d.off_track,
+      mixed: d.mixed,
+      impl_gaps: d.impl_gaps,
+      mrv_gaps: d.mrv_gaps,
+      global_rank: d.global_rank,
+      total_co2e_mtco2e: d.total_co2e_mtco2e,
+      yoy_change_mtco2e: d.yoy_change_mtco2e,
+      data_stale: d.data_stale,
+      from_cache: d.from_cache,
+      sectors: d.sectors,
+    };
+  }, [dashboardQuery.data]);
 
   const timeseriesBySector = useMemo(() => {
+    const d = dashboardQuery.data;
+    if (!d?.timeseries) return {};
     const out: Partial<Record<ClimatetraceApiSector, TimeseriesResponse>> = {};
-    CLIMATE_TRACE_API_SECTORS.forEach((s, i) => {
-      const d = tsQueries[i]?.data;
-      if (d) out[s] = d;
-    });
+    for (const sector of CLIMATE_TRACE_API_SECTORS) {
+      const series = d.timeseries[sector];
+      if (series) {
+        out[sector] = {
+          sector,
+          unit: "MtCO2e",
+          data_source: d.data_source,
+          data_license: "Creative Commons 4.0",
+          geography: "national",
+          timeseries: series,
+        };
+      }
+    }
     return out;
-  }, [tsQueries]);
+  }, [dashboardQuery.data]);
 
   const progressBySector = useMemo(() => {
-    const out: Partial<Record<ClimatetraceApiSector, ProgressResponse>> = {};
-    CLIMATE_TRACE_API_SECTORS.forEach((s, i) => {
-      const d = prQueries[i]?.data;
-      if (d) out[s] = d;
-    });
-    return out;
-  }, [prQueries]);
+    return dashboardQuery.data?.progress ?? {};
+  }, [dashboardQuery.data]);
 
   const sectorLoading = useMemo(() => {
+    const loading = dashboardQuery.isLoading;
     const out: Partial<Record<ClimatetraceApiSector, boolean>> = {};
-    CLIMATE_TRACE_API_SECTORS.forEach((s, i) => {
-      out[s] = !!(tsQueries[i]?.isLoading || prQueries[i]?.isLoading);
-    });
+    for (const s of CLIMATE_TRACE_API_SECTORS) out[s] = loading;
     return out;
-  }, [tsQueries, prQueries]);
+  }, [dashboardQuery.isLoading]);
 
+  const dashboardErr = dashboardQuery.error;
   const sectorError = useMemo(() => {
+    const err = dashboardErr instanceof Error ? dashboardErr : dashboardErr ? new Error(String(dashboardErr)) : null;
     const out: Partial<Record<ClimatetraceApiSector, Error | null>> = {};
-    CLIMATE_TRACE_API_SECTORS.forEach((s, i) => {
-      const e = tsQueries[i]?.error ?? prQueries[i]?.error;
-      out[s] = e instanceof Error ? e : e ? new Error(String(e)) : null;
-    });
+    for (const s of CLIMATE_TRACE_API_SECTORS) out[s] = err;
     return out;
-  }, [tsQueries, prQueries]);
+  }, [dashboardErr]);
 
-  const isApiReachable = !summaryQuery.isError && summaryQuery.data != null;
+  const isApiReachable = !dashboardQuery.isError && dashboardQuery.data != null;
 
   const indicatorTargets = indicatorPanelQuery.data?.targets;
   const indicatorPanelLoading = indicatorPanelQuery.isLoading;
@@ -198,15 +201,15 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
   }, [timeseriesBySector, sectorError, indicatorPanelQuery.data, indicatorPanelQuery.error]);
 
   const dashboardLastRefreshIso = useMemo(() => {
-    if (isApiReachable && summaryQuery.dataUpdatedAt) {
-      return new Date(summaryQuery.dataUpdatedAt).toISOString();
+    if (isApiReachable && dashboardQuery.dataUpdatedAt) {
+      return new Date(dashboardQuery.dataUpdatedAt).toISOString();
     }
     const dates = ndcTargets
       .map((t) => getObservedDataForTarget(t.id)?.provenance.lastUpdated)
       .filter(Boolean) as string[];
     if (dates.length === 0) return new Date().toISOString();
     return new Date(Math.max(...dates.map((d) => new Date(d).getTime()))).toISOString();
-  }, [isApiReachable, summaryQuery.dataUpdatedAt]);
+  }, [isApiReachable, dashboardQuery.dataUpdatedAt]);
 
   const getProgressForTarget = useCallback(
     (target: NDCTarget): { percent: number; status: ProgressStatus; source: "api" | "catalog" | "mock" } => {
@@ -251,9 +254,9 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
-      summary: summaryQuery.data,
-      summaryError: summaryQuery.error as Error | null,
-      summaryIsLoading: summaryQuery.isLoading,
+      summary,
+      summaryError: dashboardQuery.error as Error | null,
+      summaryIsLoading: dashboardQuery.isLoading,
       health: healthQuery.data,
       healthError: healthQuery.error as Error | null,
       timeseriesBySector,
@@ -276,9 +279,9 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
       getMitigationFromCatalog,
     }),
     [
-      summaryQuery.data,
-      summaryQuery.error,
-      summaryQuery.isLoading,
+      summary,
+      dashboardQuery.error,
+      dashboardQuery.isLoading,
       healthQuery.data,
       healthQuery.error,
       timeseriesBySector,

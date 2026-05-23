@@ -122,7 +122,7 @@ export default function NDCLayer() {
         </div>
       </div>
 
-      {/* Live Climate TRACE data (real, from Express API + Supabase) */}
+      {/* Live Climate TRACE data (Express API → Climate TRACE v7) */}
       <LiveEmissionsBanner />
 
       {/* Target Status Summary — 'all targets first' anchor */}

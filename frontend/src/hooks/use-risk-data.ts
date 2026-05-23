@@ -1,6 +1,15 @@
-// Hooks for Climate Risk & Vulnerability module — fetch hazard layers, districts, risk cells, adaptation options.
+// Climate Risk module — data from Express API.
 import { useEffect, useState, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ??
+  (import.meta.env.DEV ? "http://localhost:8787" : "");
+
+async function fetchRiskJSON<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`);
+  if (!res.ok) throw new Error(`Risk API ${res.status}`);
+  return res.json() as Promise<T>;
+}
 
 export type DataStatus = "Illustrative" | "Preliminary" | "Validated";
 export type ConfidenceRating = "Low" | "Medium" | "High";
@@ -65,8 +74,10 @@ export function useHazardLayers() {
   const [data, setData] = useState<HazardLayer[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    (supabase as any).from("hazard_layers").select("*").order("name")
-      .then(({ data }: any) => { setData(data || []); setLoading(false); });
+    fetchRiskJSON<{ layers: HazardLayer[] }>("/api/v1/risk/hazard-layers")
+      .then((r) => setData(r.layers || []))
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
   }, []);
   return { data, loading };
 }
@@ -75,8 +86,10 @@ export function useRiskDistricts() {
   const [data, setData] = useState<RiskDistrict[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    (supabase as any).from("risk_districts").select("*").order("name")
-      .then(({ data }: any) => { setData(data || []); setLoading(false); });
+    fetchRiskJSON<{ districts: RiskDistrict[] }>("/api/v1/risk/districts")
+      .then((r) => setData(r.districts || []))
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
   }, []);
   return { data, loading };
 }
@@ -85,8 +98,10 @@ export function useRiskCells() {
   const [data, setData] = useState<RiskCell[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    (supabase as any).from("risk_cells").select("*")
-      .then(({ data }: any) => { setData(data || []); setLoading(false); });
+    fetchRiskJSON<{ cells: RiskCell[] }>("/api/v1/risk/cells")
+      .then((r) => setData(r.cells || []))
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
   }, []);
   return { data, loading };
 }
@@ -95,16 +110,15 @@ export function useAdaptationOptions() {
   const [data, setData] = useState<AdaptationOption[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    (supabase as any).from("adaptation_options").select("*").order("name")
-      .then(({ data }: any) => { setData(data || []); setLoading(false); });
+    fetchRiskJSON<{ options: AdaptationOption[] }>("/api/v1/risk/adaptation-options")
+      .then((r) => setData(r.options || []))
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
   }, []);
   return { data, loading };
 }
 
-// Color helper for risk score (semantic tokens via inline style — using HSL values
-// from the earth-tone palette range without introducing new globals).
 export function riskColor(score: number): string {
-  // 0–25 calm green, 26–50 amber, 51–75 orange, 76–100 deep red
   if (score >= 76) return "hsl(0, 65%, 42%)";
   if (score >= 51) return "hsl(22, 75%, 48%)";
   if (score >= 26) return "hsl(38, 80%, 52%)";
@@ -118,18 +132,17 @@ export function riskLevelFromScore(score: number): RiskLevel {
   return "Low";
 }
 
-// Compose helpers
 export function useTopHotspots(limit = 5) {
   const { data: cells } = useRiskCells();
   const { data: districts } = useRiskDistricts();
   const { data: hazards } = useHazardLayers();
   return useMemo(() => {
-    const dById = new Map(districts.map(d => [d.id, d]));
-    const hById = new Map(hazards.map(h => [h.id, h]));
+    const dById = new Map(districts.map((d) => [d.id, d]));
+    const hById = new Map(hazards.map((h) => [h.id, h]));
     return [...cells]
       .sort((a, b) => b.intensity_score_0_100 - a.intensity_score_0_100)
       .slice(0, limit)
-      .map(c => ({
+      .map((c) => ({
         cell: c,
         district: dById.get(c.district_id),
         hazard: hById.get(c.hazard_layer_id),

@@ -1,14 +1,37 @@
 # Backend
 
-This repository is a **static SPA**; the live backend is your **Supabase project** (Postgres, Auth, Row Level Security, Storage, and optional **Edge Functions**).
+The **Express API** lives at the repository root (`server.js`, `routes/`, `services/`).
 
-Use this folder for **server-side code you add later**, for example:
+Run with:
 
-- `functions/` — Supabase Edge Functions (TypeScript), if you introduce them with the Supabase CLI  
-- Small Node scripts for migrations or data jobs (keep secrets out of git)
+```sh
+npm run start:api
+```
 
-The browser app in `frontend/` talks to Supabase using the keys in `.env` (`VITE_SUPABASE_*`).
+Or together with the frontend:
 
-## Node API (Climate TRACE)
+```sh
+npm run dev:all
+```
 
-The **Express** app for emissions JSON is at the repository root: `server.js`, with routes under `routes/` and services under `services/`. Run `npm run start:api` (see main README). It uses **`SUPABASE_SERVICE_ROLE_KEY`** to read/write `climatetrace_emissions` and calls the Climate TRACE HTTP API only for the cached “live snapshot” and health checks — not on every timeseries request.
+## Data sources
+
+| Route prefix | Source |
+| ------------ | ------ |
+| `/api/v1/emissions/*` | Climate TRACE v7 (live, cached in memory) |
+| `/api/v1/indicators/*`, `/api/v1/catalog/*` | Bundled `config/ndcCockpitCatalog.js` |
+| `/api/v1/risk/*` | Bundled `data/riskSeed.js` |
+| `/api/v1/mock/*` | Fixtures when `USE_MOCK_DATA=true` |
+| `/api/v1/ingest/*` | Upload scan (CSV/JSON/PDF/TXT); tabular charts use **pandas** when installed |
+
+### Ingest analysis (pandas)
+
+For accurate CSV/JSON charts (correct year totals, sector bars for the latest year only, national-row filtering):
+
+```sh
+pip install -r requirements-ingest.txt
+```
+
+Check: `GET /api/v1/ingest/health` → `analysis.python3: true`.
+
+Delivery activities are stored in the browser (`localStorage`) via `frontend/src/lib/activities-store.ts`.

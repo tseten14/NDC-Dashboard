@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useCurrentRole } from "@/hooks/use-current-role";
+import { createActivity, updateActivity, getActivityBundle } from "@/lib/activities-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,33 +58,44 @@ export default function ActivityForm() {
   // Load existing
   useEffect(() => {
     if (!isEdit || !id) return;
-    (async () => {
-      const [a, l, o, e] = await Promise.all([
-        supabase.from("activities").select("*").eq("id", id).single(),
-        supabase.from("activity_target_links").select("*").eq("activity_id", id),
-        supabase.from("output_records").select("*").eq("activity_id", id),
-        supabase.from("evidence_items").select("*").eq("activity_id", id),
-      ]);
-      if (a.data) {
-        setTitle(a.data.title); setDescription(a.data.description ?? "");
-        setOrganization(a.data.organization ?? ""); setMinistry(a.data.ministry ?? "");
-        setDistricts((a.data.districts ?? []).join(", "));
-        setStart(a.data.timeframe_start ?? ""); setEnd(a.data.timeframe_end ?? "");
-        setStatus(a.data.status as any);
-      }
-      if (l.data) setLinks(l.data.map(r => ({
-        strategy: r.strategy as any, targetId: r.target_id,
-        relationshipType: r.relationship_type as any, expectedContribution: r.expected_contribution ?? "",
-      })));
-      if (o.data) setOutputs(o.data.map(r => ({
-        id: r.id, metric_name: r.metric_name, unit: r.unit, value: String(r.value),
-        output_date: r.output_date, method: r.method ?? "",
-      })));
-      if (e.data) setEvidence(e.data.map(r => ({
-        id: r.id, evidence_type: r.evidence_type, link_or_file_ref: r.link_or_file_ref, notes: r.notes ?? "",
-      })));
-      setLoading(false);
-    })();
+    const { activity, links: l, outputs: o, evidence: e } = getActivityBundle(id);
+    if (activity) {
+      setTitle(activity.title);
+      setDescription(activity.description ?? "");
+      setOrganization(activity.organization ?? "");
+      setMinistry(activity.ministry ?? "");
+      setDistricts((activity.districts ?? []).join(", "));
+      setStart(activity.timeframe_start ?? "");
+      setEnd(activity.timeframe_end ?? "");
+      setStatus(activity.status);
+    }
+    setLinks(
+      l.map((r) => ({
+        strategy: r.strategy as DraftLink["strategy"],
+        targetId: r.target_id,
+        relationshipType: r.relationship_type as DraftLink["relationshipType"],
+        expectedContribution: r.expected_contribution ?? "",
+      })),
+    );
+    setOutputs(
+      o.map((r) => ({
+        id: r.id,
+        metric_name: r.metric_name,
+        unit: r.unit,
+        value: String(r.value),
+        output_date: r.output_date,
+        method: r.method ?? "",
+      })),
+    );
+    setEvidence(
+      e.map((r) => ({
+        id: r.id,
+        evidence_type: r.evidence_type,
+        link_or_file_ref: r.link_or_file_ref,
+        notes: r.notes ?? "",
+      })),
+    );
+    setLoading(false);
   }, [id, isEdit]);
 
   const addOutput = () => setOutputs([...outputs, {
@@ -106,60 +117,54 @@ export default function ActivityForm() {
     if (err) { toast.error(err); return; }
     setBusy(true);
 
-    const districtArr = districts.split(",").map(d => d.trim()).filter(Boolean);
-    const payload = {
-      title, description, organization, ministry,
+    const districtArr = districts.split(",").map((d) => d.trim()).filter(Boolean);
+    const validOutputs = outputs.filter((o) => o.metric_name && o.unit && o.value);
+    const validEv = evidence.filter((e) => e.link_or_file_ref);
+    const input = {
+      title,
+      description: description || null,
+      organization: organization || null,
+      ministry: ministry || null,
       districts: districtArr,
-      timeframe_start: start || null, timeframe_end: end || null,
-      status, workflow_state: submit ? "Submitted" as const : "Draft" as const,
+      timeframe_start: start || null,
+      timeframe_end: end || null,
+      status,
+      workflow_state: submit ? ("Submitted" as const) : ("Draft" as const),
       created_by: user.id,
+      links: links.map((l) => ({
+        strategy: l.strategy,
+        target_id: l.targetId,
+        relationship_type: l.relationshipType,
+        expected_contribution: l.expectedContribution || null,
+      })),
+      outputs: validOutputs.map((o) => ({
+        metric_name: o.metric_name,
+        unit: o.unit,
+        value: Number(o.value),
+        output_date: o.output_date,
+        method: o.method || null,
+        created_by: user.id,
+      })),
+      evidence: validEv.map((e) => ({
+        evidence_type: e.evidence_type,
+        link_or_file_ref: e.link_or_file_ref,
+        notes: e.notes || null,
+        submitted_by: user.id,
+      })),
     };
 
     let activityId = id;
-    if (isEdit && id) {
-      const { error } = await supabase.from("activities").update(payload).eq("id", id);
-      if (error) { toast.error(error.message); setBusy(false); return; }
-      // wipe & re-insert links/outputs/evidence (simple approach)
-      await supabase.from("activity_target_links").delete().eq("activity_id", id);
-      await supabase.from("output_records").delete().eq("activity_id", id);
-      await supabase.from("evidence_items").delete().eq("activity_id", id);
-    } else {
-      const { data, error } = await supabase.from("activities").insert(payload).select("id").single();
-      if (error || !data) { toast.error(error?.message ?? "Insert failed"); setBusy(false); return; }
-      activityId = data.id;
-    }
-
-    if (links.length > 0) {
-      await supabase.from("activity_target_links").insert(
-        links.map(l => ({
-          activity_id: activityId!, strategy: l.strategy, target_id: l.targetId,
-          relationship_type: l.relationshipType, expected_contribution: l.expectedContribution || null,
-        }))
-      );
-    }
-    if (outputs.length > 0) {
-      const validOutputs = outputs.filter(o => o.metric_name && o.unit && o.value);
-      if (validOutputs.length > 0) {
-        await supabase.from("output_records").insert(
-          validOutputs.map(o => ({
-            activity_id: activityId!, metric_name: o.metric_name, unit: o.unit,
-            value: Number(o.value), output_date: o.output_date, method: o.method || null,
-            created_by: user.id,
-          }))
-        );
+    try {
+      if (isEdit && id) {
+        updateActivity(id, input);
+        activityId = id;
+      } else {
+        activityId = createActivity(input);
       }
-    }
-    if (evidence.length > 0) {
-      const validEv = evidence.filter(e => e.link_or_file_ref);
-      if (validEv.length > 0) {
-        await supabase.from("evidence_items").insert(
-          validEv.map(e => ({
-            activity_id: activityId!, evidence_type: e.evidence_type,
-            link_or_file_ref: e.link_or_file_ref, notes: e.notes || null,
-            submitted_by: user.id,
-          }))
-        );
-      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Save failed");
+      setBusy(false);
+      return;
     }
 
     await logAudit(user.id, isEdit ? "update_activity" : "create_activity", "activity", activityId!,

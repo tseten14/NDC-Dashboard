@@ -1,263 +1,66 @@
 ================================================================================
   UGANDA NDC DATA EXPLORER — PROJECT DOCUMENTATION
 ================================================================================
-  This file describes what the project is for, who it serves, and how it is
-  built and operated. It is written for both non-technical readers and
-  technical staff (developers, data engineers, MRV teams).
 
---------------------------------------------------------------------------------
 PART A — NON-TECHNICAL OVERVIEW
---------------------------------------------------------------------------------
+--------------------------------
 
 A1. WHAT THIS PROJECT IS
--------------------------
-  The Uganda NDC Data Explorer is a web-based “decision-support cockpit” for
-  climate and development policy. It helps users explore Uganda’s climate
-  commitments under the Paris Agreement — specifically the Nationally
-  Determined Contribution (NDC) — alongside national strategies, indicators,
-  and delivery workflows.
+  A web-based decision-support cockpit for Uganda’s NDC and related national
+  strategies. It links targets, activities, observed emissions-style signals,
+  progress indicators, and climate risk in one workspace.
 
-  Think of it as a single workspace where policy, programme, and technical
-  staff can see how targets, activities, observed emissions-style signals,
-  and progress indicators relate to one another, without switching between
-  unrelated spreadsheets and PDFs.
+A2. DATA SOURCES
+  • Observed emissions: Climate TRACE API v7 (live via Express)
+  • NDC targets & strategies: bundled in the application
+  • Climate risk (demo): illustrative district layers in the repo
+  • Delivery activities: saved in the user’s browser (localStorage)
 
-
-A2. WHY IT EXISTS (POLICY AND PROGRAMME CONTEXT)
------------------------------------------------
-  Uganda, like other countries, publishes NDCs that describe greenhouse gas
-  targets and the measures to achieve them. Implementing those measures
-  involves many actors: ministries, districts, projects, MRV (measurement,
-  reporting, verification) teams, and development partners.
-
-  This application is meant to:
-    • Make NDC-related information easier to navigate than static documents.
-    • Support transparency around “what is committed” versus “what is being
-      delivered” and “what evidence exists.”
-    • Provide a structured place for role-based workflows (e.g. who can
-      record activities, who approves, who sees read-only briefings).
-
-  It does not replace official national inventories or legal submissions;
-  it supports internal coordination, briefing, and exploration.
+A3. USERS
+  Ministry staff, MRV focal points, programme managers, and executive briefings
+  (role switcher in the UI — demo mode, no remote sign-in).
 
 
-A3. WHO TYPICALLY USES IT
--------------------------
-  Intended audiences include (depending on configuration and access):
-    • Ministry and agency staff coordinating climate delivery.
-    • MRV and data focal points reviewing indicators and evidence.
-    • Programme managers tracking activities and finance-facing views.
-    • Senior decision-makers who need compact summaries (read-oriented).
-
-  Access is controlled through sign-in (see Part B — Authentication).
-
-
-A4. MAIN AREAS OF THE APPLICATION (USER-FACING)
-----------------------------------------------
-  The product is organised into several modules, including (non-exhaustive):
-
-    • NDC Layer (home-style view) — multi-column layout for targets,
-      activities, observed-style data, progress, and mitigation options.
-    • Strategy Library, My Work, Activity forms, Climate Risk views.
-    • “Cockpit” style pages: executive overview, delivery & accountability,
-      evidence & MRV, finance & investment, data ingestion, and many
-      advanced / legacy analytics pages.
-
-  Some panels still rely on curated or illustrative data in the codebase;
-  others can be backed by a database and external APIs as the system grows.
-  Observed emissions and progress signals can be informed by Climate TRACE
-  data when the database is seeded and the optional API is used (Part B).
-
-
-A5. DATA TRUST, LICENSING, AND LIMITATIONS (NON-TECHNICAL)
-----------------------------------------------------------
-  • External emissions snapshots may come from Climate TRACE (open data,
-    Creative Commons 4.0). Users should understand methodology differences
-    between satellite/remote-sensing style estimates and national inventory
-    methods.
-
-  • Climate TRACE national totals are not district-level: sub-national
-    geography is not supported for that source in the current design.
-
-  • “Missing years” in a chart should appear as gaps, not guessed values —
-    the technical pipeline avoids silent interpolation for seeded series.
-
-  • Service role keys and database credentials must never be shared in
-    public channels or committed to git; they are server-only secrets.
-
-
-A6. HOW TO RUN IT IN SIMPLE TERMS
----------------------------------
-    1. Install Node.js (LTS) and npm.
-    2. Copy .env.example to .env and add your Supabase project URL and keys.
-    3. Run database migrations in Supabase (SQL files in order).
-    4. Start the website locally with npm run dev (see Part B for URL).
-    5. Optionally start the small emissions API and run the Climate TRACE
-       seed script if you want API-driven observed/progress data.
-
-
---------------------------------------------------------------------------------
 PART B — TECHNICAL OVERVIEW
---------------------------------------------------------------------------------
-
-B1. HIGH-LEVEL ARCHITECTURE
 ---------------------------
-  The repository is split into three logical layers:
 
-    frontend/     Browser application (Vite + React + TypeScript).
-    backend/      Documentation placeholder for future serverless code;
-                  the optional Express emissions API lives at repo root.
-    database/     SQL migrations + Supabase config.toml for Postgres schema.
+B1. ARCHITECTURE
 
-  Additional folders:
-    config/       ESLint, Playwright, and shared JS config (e.g. ndcTargets.js).
-    services/     Node services used by server.js (Supabase admin client,
-                  Climate TRACE client/cache, emissions data helpers).
-    routes/       Express routers (real API + mock API under routes/mock/).
-    scripts/      One-off maintenance scripts (e.g. Climate TRACE seeding).
+  frontend/     React SPA (Vite)
+  server.js     Express API on port 8787 (default)
+  routes/       emissions, cockpit catalog, risk, mock
+  services/     Climate TRACE client, emissions aggregation, catalog
+  config/       NDC targets, Climate TRACE helpers, cockpit catalog
+  data/         Illustrative risk seed data
 
+B2. EXPRESS API
 
-B2. FRONTEND (TECHNICAL)
------------------------
-  Location:        frontend/
-  Build tool:       Vite 5
-  UI framework:     React 18 + TypeScript
-  Styling:          Tailwind CSS + shadcn/ui components
-  State / data:     TanStack Query, React Router, local state hooks
-  Auth:             Supabase Auth (email/password) via @supabase/supabase-js
-  Dev server:       Port 8080 (see frontend/vite.config.ts), host ::
+  GET  /api/v1/emissions/timeseries
+  GET  /api/v1/emissions/progress
+  GET  /api/v1/emissions/summary
+  GET  /api/v1/provenance
+  GET  /api/v1/health/climatetrace
+  GET  /api/v1/indicators/panel
+  GET  /api/v1/catalog/activities
+  GET  /api/v1/catalog/mitigation-options
+  GET  /api/v1/risk/*
 
-  Entry:            frontend/index.html → frontend/src/main.tsx
-  Aliases:          “@/” → frontend/src/
+  Climate TRACE v7: https://api.climatetrace.org/v7/
+  National sector totals: GET /v7/sources/emissions?gadmId=UGA&sectors=...
+  Live rank: GET /v7/rankings/countries
 
-  Production build output: frontend/dist/
+B3. ENVIRONMENT
 
-  Testing:
-    • Unit / component tests: Vitest (config merged in frontend/vite.config.ts)
-    • E2E scaffold: Playwright (config/playwright.config.ts), tests under
-      frontend/tests/e2e/
+  VITE_API_BASE_URL=http://localhost:8787
+  API_PORT=8787
+  USE_MOCK_DATA=false
 
-  Linting: ESLint flat config in config/eslint.config.js (frontend TS/TSX
-           plus Node API JS paths as configured in package.json).
+B4. NPM SCRIPTS
 
-
-B3. BACKEND AND DATA (TECHNICAL)
---------------------------------
-  Primary hosted backend: Supabase (Postgres, Auth, Row Level Security, and
-  optional Storage / Edge Functions). The React app uses the public anon /
-  publishable key in the browser.
-
-  Optional Node API (Climate TRACE integration):
-    Entry point:     server.js
-    Framework:       Express 4
-    Default port:     API_PORT or 8787
-    Env loader:       dotenv
-
-  Routes (real data, DB-backed where applicable):
-    GET  /api/v1/emissions/timeseries   ?sector=&since=&to=&geography=
-    GET  /api/v1/emissions/progress    ?sector=
-    GET  /api/v1/emissions/summary
-    GET  /api/v1/provenance
-    GET  /api/v1/health/climatetrace
-
-  Mock routes (fixtures), always available:
-    /api/v1/mock/...   (same path suffixes as above)
-
-  Toggle USE_MOCK_DATA=true to serve mock responses at /api/v1 instead of
-  the live DB-backed router (useful for demos without secrets).
-
-  Climate TRACE:
-    • Base URL: https://api.climatetrace.org/v6
-    • Primary mass unit for storage and API output: co2e_100yr converted to
-      MtCO2e (tonnes / 1_000_000, rounded to 2 decimal places).
-    • Seeding script: scripts/seed_emissions.js — throttled (300 ms between
-      upstream calls), supports --dry-run, --year=, --sector=.
-    • Live snapshot + rank: services/climatetrace.js with 24h in-memory cache
-      (node-cache). Stale responses possible if upstream fails but cache exists.
-
-  Database table (migration 20260514000000_climatetrace_emissions.sql):
-    climatetrace_emissions(country, year, sector, co2e_mtco2e, source, ...)
-    UNIQUE(country, year, sector) for upserts from the seed script.
-
-  Server-side Supabase access:
-    services/supabaseAdmin.js uses SUPABASE_SERVICE_ROLE_KEY (and
-    SUPABASE_URL or VITE_SUPABASE_URL). Never expose the service role key
-    to the browser bundle.
-
-
-B4. ENVIRONMENT VARIABLES (TECHNICAL)
--------------------------------------
-  Frontend (Vite — must be prefixed VITE_ to be visible in the client):
-    VITE_SUPABASE_URL
-    VITE_SUPABASE_PUBLISHABLE_KEY   (or legacy anon JWT)
-    VITE_SUPABASE_PROJECT_ID         (optional / informational)
-
-  Node API + seed scripts:
-    SUPABASE_URL                     (can mirror VITE_SUPABASE_URL)
-    SUPABASE_SERVICE_ROLE_KEY        (required for seed + API DB reads/writes)
-    API_PORT                         (default 8787)
-    USE_MOCK_DATA                    (true | false)
-    DOTENV                           (loaded automatically via dotenv)
-
-
-B5. DATABASE MIGRATIONS (TECHNICAL)
------------------------------------
-  All SQL migrations live under: database/migrations/
-
-  Apply in filename (timestamp) order in Supabase SQL Editor or via Supabase
-  CLI with working directory database/ (see database/README.md).
-
-  Earlier migrations define app tables (e.g. user roles, activities) used
-  by the authenticated UI; the Climate TRACE table is additive.
-
-
-B6. NPM SCRIPTS (REFERENCE)
----------------------------
-  npm run dev              — Vite dev server (frontend)
-  npm run build            — Production build → frontend/dist
-  npm run preview          — Preview production build
-  npm run test             — Vitest
-  npm run test:e2e         — Playwright
-  npm run lint             — ESLint
-  npm run start:api        — Express emissions API
-  npm run seed:climatetrace        — Full seed (writes DB)
-  npm run seed:climatetrace:dry    — Dry run (no DB writes)
-  npm run seed:climatetrace:year   — Example filtered seed
-
-
-B7. SECURITY AND OPERATIONS NOTES (TECHNICAL)
----------------------------------------------
-  • .env is gitignored; only .env.example is tracked. Rotate keys if leaked.
-  • RLS: climatetrace_emissions has a public SELECT policy for read access;
-    writes should use the service role from trusted server/CI only.
-  • CORS on the Express app is permissive (origin: true) — tighten for
-    production if the API is exposed on the public internet.
-  • Rate-limit external API calls in operations (seed already sleeps between
-    calls); do not remove throttling when extending the seed script.
-
-
-B8. DEPLOYMENT (TECHNICAL)
---------------------------
-  Frontend: static hosting of frontend/dist (Netlify, Vercel, S3+CloudFront,
-  etc.) with the same VITE_* environment variables configured in the host.
-
-  Supabase: hosted project; run migrations against the linked database.
-
-  Optional API: run server.js on a small Node host or behind a process
-  manager; set SUPABASE_* and API_PORT; protect with network rules or an
-  API gateway as appropriate.
-
-
-B9. REPOSITORY METADATA
------------------------
-  package.json name: uganda-ndc-data-explorer
-  Module system:     ES modules ("type": "module")
-  Node scripts:      .js files use import syntax consistent with ESM.
-
+  npm run dev:all       — frontend + API
+  npm run start:api     — API only
+  npm run build         — production frontend build
 
 ================================================================================
-  END OF DOCUMENTATION
+  See README.md for day-to-day developer commands.
 ================================================================================
-  For day-to-day developer commands, see README.md in the repository root.
-  For database-only notes, see database/README.md.
-  For backend/API notes, see backend/README.md.

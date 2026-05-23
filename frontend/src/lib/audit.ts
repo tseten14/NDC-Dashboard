@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { appendAudit } from "@/lib/activities-store";
 
 export async function logAudit(
   actorId: string,
@@ -7,8 +7,5 @@ export async function logAudit(
   entityId: string,
   diffSummary?: string,
 ) {
-  await supabase.from("audit_log").insert({
-    actor_id: actorId, action, entity_type: entityType, entity_id: entityId,
-    diff_summary: diffSummary ?? null,
-  });
+  appendAudit(actorId, action, entityType, entityId, diffSummary);
 }

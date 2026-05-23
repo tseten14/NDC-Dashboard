@@ -23,6 +23,26 @@ const statusConfig: Record<ProgressStatus, { label: string; color: string; bg: s
 export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
   const emissions = useEmissionsData();
 
+  const indEntry =
+    selectedTarget && isIndicatorPanelTarget(selectedTarget)
+      ? emissions.indicatorTargets?.[selectedTarget.id]
+      : undefined;
+
+  const observedForData = useMemo(() => {
+    if (!selectedTarget) return null;
+    if (indEntry?.timeseries?.length) return buildIndicatorPanelObservedDataSet(selectedTarget, indEntry);
+    return getObservedDataForTarget(selectedTarget.id) ?? null;
+  }, [selectedTarget, indEntry]);
+
+  const latestRow = useMemo(() => {
+    const rows = observedForData?.historicalData;
+    if (!rows?.length) return undefined;
+    for (let i = rows.length - 1; i >= 0; i--) {
+      if (rows[i].value != null) return rows[i];
+    }
+    return undefined;
+  }, [observedForData]);
+
   if (!selectedTarget) {
     return <EmptyState />;
   }
@@ -32,17 +52,6 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
 
   const apiSector = getClimateTraceSectorForTarget(selectedTarget);
   const pr = apiSector ? emissions.progressBySector[apiSector] : undefined;
-
-  const indEntry = isIndicatorPanelTarget(selectedTarget)
-    ? emissions.indicatorTargets?.[selectedTarget.id]
-    : undefined;
-
-  const observedForData = useMemo(() => {
-    if (indEntry?.timeseries?.length) return buildIndicatorPanelObservedDataSet(selectedTarget, indEntry);
-    return getObservedDataForTarget(selectedTarget.id) ?? null;
-  }, [selectedTarget, indEntry]);
-
-  const latestRow = observedForData?.historicalData?.[observedForData.historicalData.length - 1];
 
   const latestDisplay =
     source === "api" && pr?.latest_value != null
@@ -63,9 +72,9 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
 
   const dataUsedLabel =
     source === "api"
-      ? "Climate TRACE v6 (seeded to Supabase) + NDC baseline/target"
+      ? "Climate TRACE v7 (live API) + NDC baseline/target"
       : source === "catalog"
-        ? "Indicators API (Supabase) + NDC baseline/target"
+        ? "Indicators API + NDC baseline/target"
         : "Latest observed value from MRV data sources";
 
   return (

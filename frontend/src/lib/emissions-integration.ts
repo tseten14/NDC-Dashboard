@@ -45,6 +45,16 @@ function linearTargetValue(year: number, by: number, bv: number, ty: number, tv:
 /**
  * Build an ObservedDataSet from Climate TRACE timeseries + NDC baseline/target used by the API.
  */
+function latestNonNullPoint(timeseries: { year: number; value: number | null }[]) {
+  for (let i = timeseries.length - 1; i >= 0; i--) {
+    const { year, value } = timeseries[i];
+    if (value != null && !Number.isNaN(value)) {
+      return { year, value: Math.round(value * 100) / 100 };
+    }
+  }
+  return null;
+}
+
 export function buildLiveObservedDataSet(
   target: NDCTarget,
   timeseries: { year: number; value: number | null }[],
@@ -53,22 +63,16 @@ export function buildLiveObservedDataSet(
   targetYear: number,
   targetValue: number,
 ): ObservedDataSet {
-  let last = baselineValue;
-  const historicalData: ObservedDataPoint[] = timeseries.map(({ year, value }) => {
-    let v = value;
-    if (v == null || Number.isNaN(v)) v = last;
-    else last = v;
-    const rounded = Math.round(v * 100) / 100;
-    return {
-      year,
-      value: rounded,
-      target: Math.round(linearTargetValue(year, baselineYear, baselineValue, targetYear, targetValue) * 100) / 100,
-    };
-  });
+  const historicalData: ObservedDataPoint[] = timeseries.map(({ year, value }) => ({
+    year,
+    value:
+      value == null || Number.isNaN(value) ? null : Math.round(value * 100) / 100,
+    target: Math.round(linearTargetValue(year, baselineYear, baselineValue, targetYear, targetValue) * 100) / 100,
+  }));
 
-  const lastRow = historicalData[historicalData.length - 1];
-  const lastY = lastRow?.year ?? 2024;
-  const lastV = lastRow?.value ?? baselineValue;
+  const latest = latestNonNullPoint(timeseries);
+  const lastY = latest?.year ?? baselineYear;
+  const lastV = latest?.value ?? baselineValue;
 
   const projectionBaseline: ObservedDataPoint[] = [];
   const span = Math.max(1, targetYear - lastY);
@@ -92,7 +96,7 @@ export function buildLiveObservedDataSet(
 
   return {
     targetId: target.id,
-    dataProviders: ["Climate TRACE v6", "Uganda NDC API (Supabase)"],
+    dataProviders: ["Climate TRACE v7", "Uganda NDC API"],
     historicalData,
     projectionBaseline,
     provenance,
@@ -147,22 +151,18 @@ export function buildIndicatorPanelObservedDataSet(target: NDCTarget, entry: Ind
   const ty = m.targetYear;
   const tv = m.targetValue ?? target.targetValue;
 
-  let last = typeof bv === "number" ? bv : target.baselineValue;
-  const historicalData: ObservedDataPoint[] = entry.timeseries.map(({ year, value }) => {
-    let v = value;
-    if (v == null || Number.isNaN(v)) v = last;
-    else last = v;
-    const rounded = typeof v === "number" ? Math.round(v * 100) / 100 : 0;
-    return {
-      year,
-      value: rounded,
-      target: Math.round(linearTargetValue(year, by, bv, ty, tv) * 100) / 100,
-    };
-  });
+  const historicalData: ObservedDataPoint[] = entry.timeseries.map(({ year, value }) => ({
+    year,
+    value:
+      value == null || Number.isNaN(value)
+        ? null
+        : Math.round(value * 100) / 100,
+    target: Math.round(linearTargetValue(year, by, bv, ty, tv) * 100) / 100,
+  }));
 
-  const lastRow = historicalData[historicalData.length - 1];
-  const lastY = lastRow?.year ?? 2024;
-  const lastV = lastRow?.value ?? bv;
+  const latest = latestNonNullPoint(entry.timeseries);
+  const lastY = latest?.year ?? ty;
+  const lastV = latest?.value ?? (typeof bv === "number" ? bv : target.baselineValue);
 
   const projectionBaseline: ObservedDataPoint[] = [];
   const span = Math.max(1, ty - lastY);
@@ -186,7 +186,7 @@ export function buildIndicatorPanelObservedDataSet(target: NDCTarget, entry: Ind
 
   return {
     targetId: target.id,
-    dataProviders: m.dataProviders?.length ? m.dataProviders : ["Uganda NDC API (Supabase)"],
+    dataProviders: m.dataProviders?.length ? m.dataProviders : ["Uganda NDC API"],
     historicalData,
     projectionBaseline,
     provenance,

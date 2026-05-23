@@ -5,7 +5,12 @@
 
 import type { IndicatorPanelEntry } from "./emissions-integration";
 
-const BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
+/** Host only in dev; production uses same-origin paths (/api/v1/...). */
+export const API_HOST =
+  import.meta.env.VITE_API_BASE_URL ??
+  (import.meta.env.DEV ? "http://localhost:8787" : "");
+
+const BASE = API_HOST;
 
 async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
@@ -17,7 +22,7 @@ async function getJSON<T>(path: string): Promise<T> {
 }
 
 export type NdcSectorKey = "afolu" | "energy" | "ippu" | "agriculture" | "waste";
-export type SectorStatus = "on_track" | "at_risk" | "off_track" | "unknown";
+export type SectorStatus = "on_track" | "at_risk" | "mixed" | "off_track" | "unknown";
 
 export interface SectorSummaryEntry {
   latest_year: number | null;
@@ -71,14 +76,48 @@ export interface ProgressResponse {
   data_source: string;
 }
 
+export interface EmissionsDashboard {
+  since: number;
+  to: number;
+  inventory_year: number;
+  on_track: number;
+  off_track: number;
+  mixed: number;
+  impl_gaps: number;
+  mrv_gaps: number;
+  global_rank: number | null;
+  total_co2e_mtco2e: number | null;
+  yoy_change_mtco2e: number | null;
+  data_stale: boolean;
+  from_cache: boolean;
+  data_source: string;
+  api_docs_url: string;
+  timeseries: Partial<Record<NdcSectorKey, TimeseriesPoint[]>>;
+  progress: Partial<Record<NdcSectorKey, ProgressResponse>>;
+  sectors: Partial<Record<NdcSectorKey, SectorSummaryEntry>>;
+}
+
 export const emissionsApi = {
+  dashboard: (since?: number, to?: number) => {
+    const q = new URLSearchParams();
+    if (since != null) q.set("since", String(since));
+    if (to != null) q.set("to", String(to));
+    const qs = q.toString();
+    return getJSON<EmissionsDashboard>(`/api/v1/emissions/dashboard${qs ? `?${qs}` : ""}`);
+  },
   summary: () => getJSON<EmissionsSummary>("/api/v1/emissions/summary"),
-  timeseries: (sector: NdcSectorKey, since = 2015, to = 2024) =>
-    getJSON<TimeseriesResponse>(
-      `/api/v1/emissions/timeseries?sector=${sector}&since=${since}&to=${to}`,
-    ),
-  progress: (sector: NdcSectorKey) =>
-    getJSON<ProgressResponse>(`/api/v1/emissions/progress?sector=${sector}`),
+  timeseries: (sector: NdcSectorKey, since?: number, to?: number) => {
+    const q = new URLSearchParams({ sector });
+    if (since != null) q.set("since", String(since));
+    if (to != null) q.set("to", String(to));
+    return getJSON<TimeseriesResponse>(`/api/v1/emissions/timeseries?${q}`);
+  },
+  progress: (sector: NdcSectorKey, since?: number, to?: number) => {
+    const q = new URLSearchParams({ sector });
+    if (since != null) q.set("since", String(since));
+    if (to != null) q.set("to", String(to));
+    return getJSON<ProgressResponse>(`/api/v1/emissions/progress?${q}`);
+  },
   provenance: () => getJSON<Record<string, unknown>>("/api/v1/provenance"),
   climateTraceHealth: () =>
     getJSON<{ status: string; latency_ms?: number; http_status?: number; last_checked: string }>(

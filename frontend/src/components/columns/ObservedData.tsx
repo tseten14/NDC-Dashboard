@@ -72,12 +72,13 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
     return <NoDataState />;
   }
 
-  const chartData = timeMode === "historical"
-    ? observedData.historicalData
-    : [
-        ...observedData.historicalData.slice(-2),
-        ...observedData.projectionBaseline,
-      ];
+  const chartData =
+    timeMode === "historical"
+      ? observedData.historicalData
+      : [
+          ...observedData.historicalData.filter((p) => p.value != null).slice(-2),
+          ...observedData.projectionBaseline,
+        ];
 
   return (
     <div className="flex flex-col h-full">

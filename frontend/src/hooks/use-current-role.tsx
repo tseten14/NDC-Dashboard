@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { Session, User } from "@supabase/supabase-js";
+import { DEMO_USER, DEMO_ROLES } from "@/lib/auth-config";
 
 export type AppRole =
   | "ProjectDeveloper"
@@ -19,16 +18,19 @@ export const ALL_ROLES: { id: AppRole; label: string; description: string }[] = 
   { id: "Admin", label: "Admin", description: "System configuration" },
 ];
 
+export interface DemoUser {
+  id: string;
+  email: string;
+}
+
 interface RoleCtx {
-  user: User | null;
-  session: Session | null;
+  user: DemoUser | null;
   loading: boolean;
   activeRole: AppRole | null;
   availableRoles: AppRole[];
   setActiveRole: (r: AppRole) => void;
-  refreshRoles: () => Promise<void>;
-  signOut: () => Promise<void>;
-  // permission helpers
+  grantRole: (r: AppRole) => void;
+  signOut: () => void;
   canCreateActivity: () => boolean;
   canEditActivityAsCreator: () => boolean;
   canApproveMapping: () => boolean;
@@ -37,89 +39,88 @@ interface RoleCtx {
 }
 
 const Ctx = createContext<RoleCtx | null>(null);
-
 const ACTIVE_ROLE_KEY = "uganda-ndc-active-role";
+const ROLES_KEY = "uganda-ndc-available-roles";
+
+function loadStoredRoles(): AppRole[] {
+  try {
+    const raw = localStorage.getItem(ROLES_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as AppRole[];
+      if (parsed.length) return parsed;
+    }
+  } catch {
+    /* ignore */
+  }
+  return [...DEMO_ROLES];
+}
 
 export function CurrentRoleProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user] = useState<DemoUser>(DEMO_USER);
   const [loading, setLoading] = useState(true);
   const [availableRoles, setAvailableRoles] = useState<AppRole[]>([]);
   const [activeRole, setActiveRoleState] = useState<AppRole | null>(null);
 
-  const loadRoles = useCallback(async (uid: string) => {
-    const { data, error } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", uid);
-    if (error) {
-      console.error("Failed to load roles:", error);
-      setAvailableRoles([]);
-      return;
-    }
-    const roles = (data ?? []).map(r => r.role as AppRole);
+  useEffect(() => {
+    const roles = loadStoredRoles();
     setAvailableRoles(roles);
     const stored = localStorage.getItem(ACTIVE_ROLE_KEY) as AppRole | null;
-    if (stored && roles.includes(stored)) setActiveRoleState(stored);
-    else if (roles.length > 0) setActiveRoleState(roles[0]);
+    setActiveRoleState(stored && roles.includes(stored) ? stored : "MRVOfficer");
+    setLoading(false);
   }, []);
-
-  useEffect(() => {
-    // 1. Set up listener BEFORE getSession (per Supabase guidance)
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      if (sess?.user) {
-        // defer role load to avoid deadlocks
-        setTimeout(() => loadRoles(sess.user.id), 0);
-      } else {
-        setAvailableRoles([]);
-        setActiveRoleState(null);
-      }
-    });
-    // 2. Then check existing
-    supabase.auth
-      .getSession()
-      .then(({ data: { session: sess } }) => {
-        setSession(sess);
-        setUser(sess?.user ?? null);
-        if (sess?.user) loadRoles(sess.user.id).finally(() => setLoading(false));
-        else setLoading(false);
-      })
-      .catch(() => setLoading(false));
-    return () => sub.subscription.unsubscribe();
-  }, [loadRoles]);
 
   const setActiveRole = useCallback((r: AppRole) => {
     localStorage.setItem(ACTIVE_ROLE_KEY, r);
     setActiveRoleState(r);
   }, []);
 
-  const refreshRoles = useCallback(async () => {
-    if (user) await loadRoles(user.id);
-  }, [user, loadRoles]);
+  const grantRole = useCallback((r: AppRole) => {
+    setAvailableRoles((prev) => {
+      const next = prev.includes(r) ? prev : [...prev, r];
+      localStorage.setItem(ROLES_KEY, JSON.stringify(next));
+      return next;
+    });
+    setActiveRole(r);
+  }, [setActiveRole]);
 
-  const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+  const signOut = useCallback(() => {
     localStorage.removeItem(ACTIVE_ROLE_KEY);
+    setActiveRoleState("MRVOfficer");
   }, []);
 
-  const canCreateActivity = useCallback(() =>
-    activeRole === "ProjectDeveloper" || activeRole === "FieldOfficer" ||
-    activeRole === "MinistryDeliveryOfficer" || activeRole === "Admin", [activeRole]);
+  const canCreateActivity = useCallback(
+    () =>
+      activeRole === "ProjectDeveloper" ||
+      activeRole === "FieldOfficer" ||
+      activeRole === "MinistryDeliveryOfficer" ||
+      activeRole === "Admin",
+    [activeRole],
+  );
   const canEditActivityAsCreator = useCallback(() => canCreateActivity(), [canCreateActivity]);
-  const canApproveMapping = useCallback(() =>
-    activeRole === "MinistryDeliveryOfficer" || activeRole === "Admin", [activeRole]);
-  const canVerify = useCallback(() =>
-    activeRole === "MRVOfficer" || activeRole === "Admin", [activeRole]);
+  const canApproveMapping = useCallback(
+    () => activeRole === "MinistryDeliveryOfficer" || activeRole === "Admin",
+    [activeRole],
+  );
+  const canVerify = useCallback(() => activeRole === "MRVOfficer" || activeRole === "Admin", [activeRole]);
   const isReadOnly = useCallback(() => activeRole === "SeniorDecisionMaker", [activeRole]);
 
   return (
-    <Ctx.Provider value={{
-      user, session, loading, activeRole, availableRoles,
-      setActiveRole, refreshRoles, signOut,
-      canCreateActivity, canEditActivityAsCreator, canApproveMapping, canVerify, isReadOnly,
-    }}>
+    <Ctx.Provider
+      value={{
+        user,
+        loading,
+        activeRole,
+        availableRoles,
+        setActiveRole,
+        grantRole,
+        signOut,
+        canCreateActivity,
+        canEditActivityAsCreator,
+        canApproveMapping,
+        canVerify,
+        isReadOnly,
+      }}
+    >
       {children}
     </Ctx.Provider>
   );

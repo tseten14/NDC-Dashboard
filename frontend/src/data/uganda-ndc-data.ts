@@ -65,7 +65,8 @@ export interface DataProvenance {
 
 export interface ObservedDataPoint {
   year: number;
-  value: number;
+  /** null = no observation for that year (chart gap; not interpolated). */
+  value: number | null;
   target?: number;
 }
 
@@ -506,6 +507,14 @@ export function getMitigationOptionsForTarget(targetId: string, sectorId: Sector
   return mitigationOptions.filter(m => m.targetId === targetId || m.sectorId === sectorId);
 }
 
+function latestObservedValue(historicalData: ObservedDataPoint[]): number | null {
+  for (let i = historicalData.length - 1; i >= 0; i--) {
+    const v = historicalData[i].value;
+    if (v != null && !Number.isNaN(v)) return v;
+  }
+  return null;
+}
+
 export function calculateProgress(target: NDCTarget, observedData?: ObservedDataSet): {
   percent: number;
   status: ProgressStatus;
@@ -514,11 +523,24 @@ export function calculateProgress(target: NDCTarget, observedData?: ObservedData
     return { percent: 0, status: "unknown" };
   }
 
-  const latestValue = observedData.historicalData[observedData.historicalData.length - 1].value;
+  const latestValue = latestObservedValue(observedData.historicalData);
+  if (latestValue == null) {
+    return { percent: 0, status: "unknown" };
+  }
+
   const { baselineValue, targetValue } = target;
-  const totalChange = Math.abs(targetValue - baselineValue);
-  const currentChange = Math.abs(latestValue - baselineValue);
-  const percent = Math.min(100, Math.round((currentChange / totalChange) * 100));
+  let percent: number;
+  if (target.metricType === "emissions-reduction") {
+    const denom = baselineValue - targetValue;
+    if (!Number.isFinite(denom) || denom === 0) {
+      return { percent: 0, status: "unknown" };
+    }
+    percent = Math.min(100, Math.max(0, Math.round(((baselineValue - latestValue) / denom) * 100)));
+  } else {
+    const totalChange = Math.abs(targetValue - baselineValue);
+    const currentChange = Math.abs(latestValue - baselineValue);
+    percent = totalChange === 0 ? 0 : Math.min(100, Math.round((currentChange / totalChange) * 100));
+  }
 
   // QA/QC override
   const qaqc = observedData.provenance.qaqcStatus;

@@ -15,6 +15,7 @@ const SECTOR_LABEL: Record<string, string> = {
 const STATUS_CLS: Record<string, string> = {
   on_track: "bg-on-track/15 text-[hsl(var(--on-track))] border-[hsl(var(--on-track))]/30",
   at_risk: "bg-at-risk/15 text-[hsl(var(--at-risk))] border-[hsl(var(--at-risk))]/30",
+  mixed: "bg-at-risk/15 text-[hsl(var(--at-risk))] border-[hsl(var(--at-risk))]/30",
   off_track: "bg-off-track/15 text-[hsl(var(--off-track))] border-[hsl(var(--off-track))]/30",
   unknown: "bg-muted text-muted-foreground border-border",
 };
@@ -73,7 +74,7 @@ export function LiveEmissionsBanner() {
                   key={key}
                   variant="outline"
                   className={cn("gap-1 text-[9px] h-5", STATUS_CLS[s.status] ?? STATUS_CLS.unknown)}
-                  title={`Latest year: ${s.latest_year ?? "n/a"} • Climate TRACE v6`}
+                  title={`Latest year: ${s.latest_year ?? "n/a"} • Climate TRACE v7`}
                 >
                   <Activity className="h-2.5 w-2.5" />
                   {SECTOR_LABEL[key] ?? key.toUpperCase()}{" "}

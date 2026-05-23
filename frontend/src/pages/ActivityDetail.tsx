@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useCurrentRole } from "@/hooks/use-current-role";
+import {
+  getActivityBundle,
+  getValidationsForOutputIds,
+  setActivityWorkflow,
+  approveTargetLink,
+  addValidation,
+} from "@/lib/activities-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,21 +38,19 @@ export default function ActivityDetail() {
   const [vStatus, setVStatus] = useState("Verified");
   const [vNotes, setVNotes] = useState("");
 
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
     if (!id) return;
     setLoading(true);
-    const [a, l, o, e, au] = await Promise.all([
-      supabase.from("activities").select("*").eq("id", id).single(),
-      supabase.from("activity_target_links").select("*").eq("activity_id", id),
-      supabase.from("output_records").select("*").eq("activity_id", id),
-      supabase.from("evidence_items").select("*").eq("activity_id", id),
-      supabase.from("audit_log").select("*").eq("entity_id", id).order("created_at", { ascending: false }).limit(20),
-    ]);
-    setActivity(a.data); setLinks(l.data ?? []); setOutputs(o.data ?? []); setEvidence(e.data ?? []); setAudit(au.data ?? []);
-    if ((o.data ?? []).length > 0) {
-      const ids = o.data!.map(x => x.id);
-      const v = await supabase.from("validation_records").select("*").in("entity_id", ids);
-      setValidations(v.data ?? []);
+    const bundle = getActivityBundle(id);
+    setActivity(bundle.activity);
+    setLinks(bundle.links);
+    setOutputs(bundle.outputs);
+    setEvidence(bundle.evidence);
+    setAudit(bundle.audit);
+    if (bundle.outputs.length > 0) {
+      setValidations(getValidationsForOutputIds(bundle.outputs.map((x) => x.id)));
+    } else {
+      setValidations([]);
     }
     setLoading(false);
   }, [id]);
@@ -55,35 +59,35 @@ export default function ActivityDetail() {
 
   const transition = async (next: "Submitted" | "Approved" | "Returned" | "Draft", note?: string) => {
     if (!user || !id) return;
-    const { error } = await supabase.from("activities").update({ workflow_state: next }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    await logAudit(user.id, `transition_to_${next}`, "activity", id, note);
-    toast.success(`Activity → ${next}`);
-    load();
+    try {
+      setActivityWorkflow(id, next);
+      await logAudit(user.id, `transition_to_${next}`, "activity", id, note);
+      toast.success(`Activity → ${next}`);
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Update failed");
+    }
   };
 
-  const approveLink = async (linkId: string) => {
+  const approveLinkHandler = async (linkId: string) => {
     if (!user) return;
-    const { error } = await supabase.from("activity_target_links")
-      .update({ approval_status: "Approved", approved_by: user.id, approved_at: new Date().toISOString() })
-      .eq("id", linkId);
-    if (error) { toast.error(error.message); return; }
-    await logAudit(user.id, "approve_link", "activity_target_link", linkId);
-    toast.success("Link approved");
-    load();
+    try {
+      approveTargetLink(linkId, user.id);
+      await logAudit(user.id, "approve_link", "activity_target_link", linkId);
+      toast.success("Link approved");
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Approve failed");
+    }
   };
 
   const submitValidation = async () => {
     if (!user || !validateOpen) return;
-    const { error } = await supabase.from("validation_records").insert({
-      entity_type: validateOpen.entity, entity_id: validateOpen.entityId,
-      status: vStatus as any, notes: vNotes || null,
-      validated_by: user.id, validated_at: new Date().toISOString(),
-    });
-    if (error) { toast.error(error.message); return; }
+    addValidation(validateOpen.entity, validateOpen.entityId, vStatus, vNotes || null, user.id);
     await logAudit(user.id, "validate", validateOpen.entity, validateOpen.entityId, `Status: ${vStatus}`);
     toast.success("Validation recorded");
-    setValidateOpen(null); setVNotes("");
+    setValidateOpen(null);
+    setVNotes("");
     load();
   };
 
@@ -146,7 +150,7 @@ export default function ActivityDetail() {
                   <span className="text-[11px] flex-1">{t?.title ?? l.target_id}</span>
                   <Badge variant="outline" className={`text-[9px] ${l.approval_status === "Approved" ? "bg-on-track/15 text-on-track" : "bg-muted"}`}>{l.approval_status}</Badge>
                   {canApproveMapping() && l.approval_status === "Pending" && (
-                    <Button size="sm" variant="outline" onClick={() => approveLink(l.id)} className="h-6 text-[10px]">Approve</Button>
+                    <Button size="sm" variant="outline" onClick={() => approveLinkHandler(l.id)} className="h-6 text-[10px]">Approve</Button>
                   )}
                   {l.strategy === "NDC" && (
                     <Button size="sm" variant="ghost" asChild className="h-6 text-[10px]">

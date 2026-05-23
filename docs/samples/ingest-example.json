@@ -1,0 +1,5 @@
+[
+  { "sector": "afolu", "year": 2023, "value_mtco2e": 32.46, "district": "National" },
+  { "sector": "energy", "year": 2023, "value_mtco2e": 14.15, "district": "National" },
+  { "sector": "agriculture", "year": 2023, "value_mtco2e": 44.03, "district": "National" }
+]

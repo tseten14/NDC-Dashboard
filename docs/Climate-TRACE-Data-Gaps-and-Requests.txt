@@ -1,0 +1,221 @@
+Uganda NDC Data Explorer — Application Data Gaps & Climate TRACE Requests
+================================================================================
+Document date: 22 May 2026
+Project: Uganda NDC Data Explorer (national MRV cockpit prototype)
+API in use: Climate TRACE v7 (https://api.climatetrace.org/v7)
+Contact context: UN / University of Melbourne collaboration; demo 17 June 2026
+
+This file lists (A) known limitations in our application when using Climate TRACE,
+and (B) requests to the Climate TRACE team that would improve accuracy and fitness
+for NDC / national MRV dashboards like ours.
+
+
+PART A — PROBLEMS AND LIMITATIONS IN THE APPLICATION
+====================================================
+
+1. NDC BASELINES VS CLIMATE TRACE OBSERVATIONS (NOT AN API BUG)
+   - Uganda NDC targets use policy / national-inventory-style BAU baselines.
+   - Climate TRACE uses satellite + model-based national totals (co2e_100yr).
+   - Progress percentages can look misleading even when API data is correct.
+
+   Example (Uganda, 2023):
+   - Energy:    NDC baseline 6.2 MtCO2e  vs  TRACE observed ~14.15 MtCO2e
+   - AFOLU:     NDC baseline 42.5 MtCO2e vs  TRACE forestry-and-land-use ~32.46 MtCO2e
+   - Agriculture: NDC baseline 28.4 MtCO2e vs TRACE agriculture ~44.03 MtCO2e
+
+   The app currently plots TRACE observed values against NDC baseline/target lines.
+   This is intentional for the prototype but must be explained in demos and reports.
+
+2. INCOMPLETE TARGET COVERAGE (4 OF 8 NDC TARGETS NOT FROM TRACE)
+   Live Climate TRACE data backs only national MtCO2e-style trajectories:
+   - t1 AFOLU emissions (MtCO2e)
+   - t4 Energy emissions (MtCO2e)
+   - t6 Waste emissions (MtCO2e)
+   - t7 IPPU emissions (MtCO2e) — partial (see item 3)
+
+   These targets still use bundled / ministry-style indicator data (not TRACE):
+   - t2 Forest cover (% land area) — needs EO / National Forestry Authority
+   - t3 Renewable energy share (%) — needs MEMD / UERA statistics
+   - t5 Transport modal shift (%) — needs Ministry of Works and Transport MRV
+   - t8 Climate-smart agriculture adoption (%) — needs MAAIF programme data
+
+3. SECTOR MAPPING MISMATCHES (SCOPE, NOT FETCH ERRORS)
+   - AFOLU dashboard sector maps only to TRACE slug "forestry-and-land-use".
+     It does NOT include the agriculture slug (by design, to avoid double-counting
+     with the separate Agriculture NDC target). This is narrower than full IPCC AFOLU.
+   - IPPU maps only to "manufacturing". HFC / fluorinated-gases and other IPPU
+     categories are not included in the IPPU dashboard bucket.
+   - "Energy" sums power + transportation + buildings + fossil-fuel-operations.
+     This is broader than a narrow NDC "energy sector" inventory line.
+   - mineral-extraction (~0.04 MtCO2e nationally in 2023) is not assigned to any
+     dashboard sector; country ranking total is ~0.04 Mt higher than our sector sum.
+
+4. DISTRICT-LEVEL EMISSIONS NOT IMPLEMENTED
+   - UI supports National / District geography toggle.
+   - Emissions API returns national data only; district_unavailable flag is set.
+   - v7 supports GADM-based queries (/v7/sources, /v7/sources/emissions) but our
+     Express layer does not yet aggregate district timeseries for Uganda districts.
+
+5. PROGRESS METHODOLOGY VS OFFICIAL MRV
+   - Progress % = (NDC_baseline - TRACE_latest) / (NDC_baseline - NDC_target).
+   - Official Uganda MRV may use different years, gases, sectors, or LULUCF rules.
+   - Dashboard is an "observed emissions layer + NDC strategy shell", not BTR/CRT.
+
+6. COMPARISON TO OTHER INVENTORIES
+   - TRACE Uganda total (~100.6 MtCO2e, 2023, co2e_100yr) differs substantially
+     from EDGAR-style national GHG totals (~53 MtCO2e, 2023) due to methodology.
+   - Fossil CO2-only inventories (~8 Mt, 2023) are lower than our "energy" bucket
+     because TRACE energy includes transport, buildings, etc.
+   - Users may perceive TRACE as "wrong" when it differs from EDGAR/GCP; need
+     clear provenance labels (partially implemented in UI).
+
+7. API USAGE CONSTRAINTS WE WORK AROUND
+   - Repeating query parameter sectors=power&sectors=transport returns ONLY the first
+     sector (verified). We issue one request per sector slug and sum client-side.
+   - Comma-separated sectors= works for aggregation but we use per-slug calls for
+     clarity and cache granularity.
+   - Missing slug for a year → entire UI sector year is null (strict mode; avoids
+     under-counting partial energy totals).
+
+8. NON-EMISSIONS DASHBOARD LAYERS (OUT OF TRACE SCOPE)
+   - NDC activities: browser localStorage (demo persistence).
+   - Risk choropleth: bundled placeholder geometries / seed scores.
+   - Strategy library, mitigation options, catalog activities: static bundled data.
+   - QA/QC "validated" flags: largely static; not tied to live TRACE QA endpoints.
+
+9. DATA FRESHNESS AND YEARS
+   - latestInventoryYear() assumes current calendar year may be incomplete.
+   - Some sectors have sparser years than others; charts show gaps (no interpolation).
+   - 2025 country totals exist in v7; completeness varies by sector slug.
+
+10. DEMO / ENGINEERING DEBT
+    - No automated regression tests against TRACE reference totals in CI.
+    - Cache TTL 1h per slug; stale banner may show "cached" for rankings (24h).
+    - No user-facing "Data coverage" panel yet explaining items 1–3 above.
+
+
+PART B — REQUESTS TO CLIMATE TRACE (FOR GREATER ACCURACY & NDC FIT)
+===================================================================
+
+Reference: v7 docs https://api.climatetrace.org/v7/docs/index.html
+Verified reconciliation (Uganda 2023): country ranking 100.62 Mt vs sum of 8 sector
+slugs 100.58 Mt (delta ~0.04 Mt = mineral-extraction not in our map).
+
+
+A. NDC / NATIONAL INVENTORY ALIGNMENT
+-------------------------------------
+REQ-01  Publish NDC-relevant sector groupings or mapping tables
+        Provide documented mappings from TRACE sector slugs to IPCC 2006 categories
+        and common NDC sector labels (AFOLU, Energy, IPPU, Waste, Agriculture) with
+        guidance on avoiding double-counting when agriculture is reported separately.
+
+REQ-02  Optional "national inventory alignment" layer
+        Where TRACE differs from UNFCCC / EDGAR / national BUR figures, expose:
+        - official national total when available (with source year)
+        - TRACE total
+        - documented adjustment factors or scope notes per sector
+
+REQ-03  Separate LULUCF / forestry flux reporting
+        For forestry-and-land-use: distinguish emissions vs removals (net vs gross)
+        and flag years dominated by land-use change vs stable forest, to align with
+        AFOLU targets that reference deforestation / afforestation narratives.
+
+REQ-04  BAU / reference pathway metadata per country
+        If TRACE cannot supply NDC baselines, publish recommended reference years
+        and sector scopes so dashboards do not mix incompatible baseline years.
+
+
+B. API DESIGN & AGGREGATION
+---------------------------
+REQ-05  Reliable multi-sector aggregation in one request
+        Support either:
+        - comma-separated sectors= that always returns the UNION sum, or
+        - explicit sectors=all_no_forest (documented) with per-sector breakdown in
+          totals.summaries without requiring N parallel calls per year.
+
+REQ-06  Country + sector annual endpoint optimized for dashboards
+        e.g. GET /v7/countries/{gadmId}/emissions/annual?start=&end=&gas=
+        returning all sectors in one payload (tonnes + MtCO2e + metadata).
+
+REQ-07  Document behaviour of repeated query parameters
+        OpenAPI should state that duplicate sectors= keys use first value only, to
+        prevent integrator under-counting or over-counting.
+
+REQ-08  Include mineral-extraction and other minor sectors in sector enumerations
+        So national sector sums reconcile to country ranking within rounding.
+
+
+C. GEOGRAPHY (DISTRICT / SUBNATIONAL)
+--------------------------------------
+REQ-09  Standardized GADM2 (district) annual totals for Uganda
+        Document supported gadmId formats for Uganda districts and provide
+        bulk annual emissions by district + sector for dashboard drill-down.
+
+REQ-10  Rate limits and bulk download guidance for subnational warming
+        Clear quotas / batch endpoints so national MRV systems can pre-warm
+        district caches without hundreds of thousands of asset-level calls.
+
+
+D. GAS, METRIC, AND UNCERTAINTY
+-------------------------------
+REQ-11  Document co2e_100yr vs other GWPs in API responses
+        Include gas definition, GWP source (AR5/AR6), and whether totals are
+        gross emissions or net (especially AFOLU).
+
+REQ-12  Uncertainty intervals per country-sector-year
+        Even coarse confidence bounds would let dashboards show QA/QC states
+        instead of binary "validated / not validated".
+
+REQ-13  Versioned dataset releases
+        Expose dataset_version or release_id on responses so dashboards can pin
+        reproducible snapshots for BTR reporting cycles.
+
+
+E. NON-EMISSIONS INDICATORS (LINKED TO TRACE WHERE POSSIBLE)
+----------------------------------------------------------
+REQ-14  Crosswalk to activity / outcome indicators
+        Where TRACE assets support derived indicators (e.g. renewable share proxy,
+        forest extent proxy), document limitations vs ministry statistics.
+
+REQ-15  Power sector disaggregation
+        Separate grid vs off-grid, renewable vs fossil if available, to support
+        NDC targets on renewable energy share (t3) alongside MtCO2e (t4).
+
+
+F. QUALITY, PROVENANCE, AND SUPPORT
+---------------------------------
+REQ-16  Machine-readable provenance block on every aggregate response
+        Fields: methodology, spatial resolution, temporal resolution, last_updated,
+        data_sources[], known_limitations[], citation string.
+
+REQ-17  Changelog / migration notes v6 → v7 → future
+        Stable deprecation windows; sector slug rename alerts.
+
+REQ-18  Sandbox or sample national package for Uganda
+        Curated JSON/API examples matching v7 docs for demo integrators (UGA 2015–
+        latest, all sectors, rankings, one district sample).
+
+REQ-19  Support channel for MRV integrators
+        Technical contact for sector-mapping questions affecting national dashboards.
+
+
+PART C — WHAT WE HAVE VERIFIED (INTEGRATION IS CORRECT)
+=======================================================
+- Per-slug fetches match v7 /sources/emissions totals (tonnes → MtCO2e).
+- Sum of 8 mapped slugs ≈ country ranking (±0.04 Mt, 2023).
+- Dashboard API reproduces same numbers as direct v7 calls.
+- We do NOT forward-fill missing years (gaps remain null).
+- Energy sector requires all four slugs present before summing a year.
+
+
+PART D — RECOMMENDED DEMO TALKING POINTS
+========================================
+1. "Observed layer = Climate TRACE v7 (satellite + models, co2e_100yr)."
+2. "Targets / baselines = Uganda NDC policy text — not recalibrated to TRACE."
+3. "Four targets use ministry-style indicators until national feeds are connected."
+4. "District emissions and official inventory reconciliation are planned extensions."
+
+
+---
+Internal verification script: node scripts/verify_climatetrace_v7.mjs
+Application repo: ndc-data-explorer-e051f914

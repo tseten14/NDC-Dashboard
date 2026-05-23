@@ -18,8 +18,6 @@ import { CountryProvider, useCountry } from "@/context/CountryContext";
 import NotFound from "./pages/NotFound.tsx";
 import CountrySelect from "./pages/CountrySelect.tsx";
 
-// Auth + new role-based pages
-import Auth from "./pages/Auth.tsx";
 import MyWork from "./pages/MyWork.tsx";
 import ActivityForm from "./pages/ActivityForm.tsx";
 import ActivityDetail from "./pages/ActivityDetail.tsx";
@@ -100,9 +98,9 @@ function ProtectedShell() {
         <SidebarProvider>
           <div className="min-h-screen flex w-full">
             <AppSidebar />
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 min-h-0">
               <ShellHeader />
-              <main className="flex-1 overflow-hidden">
+              <main className="flex-1 min-h-0 overflow-hidden">
                 <Routes>
                   {/* Main */}
                   <Route path="/" element={<NDCLayer />} />
@@ -165,7 +163,6 @@ const App = () => (
         <BrowserRouter>
           <CurrentRoleProvider>
             <Routes>
-              <Route path="/auth" element={<Auth />} />
               <Route
                 path="/select-country"
                 element={

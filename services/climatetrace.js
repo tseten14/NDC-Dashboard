@@ -1,39 +1,50 @@
 import NodeCache from "node-cache";
+import {
+  CLIMATE_TRACE_BASE_URL,
+  CLIMATE_TRACE_DOCS_URL,
+  CLIMATE_TRACE_GADM_UGANDA,
+  CLIMATE_TRACE_GAS,
+  climateTraceUrl,
+  fetchUgandaCountryRanking,
+  latestInventoryYear,
+  toMtco2e,
+} from "../config/climateTrace.js";
 
 const cache = new NodeCache({ stdTTL: 86400 }); // 24h
 
-const BASE_URL = "https://api.climatetrace.org/v6";
-
-function toMtco2e(tonnes) {
-  if (tonnes == null || Number.isNaN(Number(tonnes))) return null;
-  return +(+tonnes / 1_000_000).toFixed(2);
-}
-
 /**
- * Latest-year Uganda snapshot from live API (national aggregate, all sectors).
+ * Latest-year Uganda snapshot from Climate TRACE v7 rankings + national aggregate.
  */
 export async function fetchLiveUgandaSnapshot() {
-  const cacheKey = "ct:live:UGA";
+  const cacheKey = "ct:live:UGA:v7";
   const cached = cache.get(cacheKey);
   if (cached) return { ...cached, from_cache: true };
 
   try {
-    const res = await fetch(`${BASE_URL}/country/emissions?countries=UGA`);
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    const data = await res.json();
-    const uga = Array.isArray(data) ? data.find((d) => d.country === "UGA") || data[0] : data;
+    const year = latestInventoryYear();
+    const ranking = await fetchUgandaCountryRanking(year);
 
-    if (!uga?.emissions?.co2e_100yr) {
-      throw new Error("Missing co2e_100yr in response");
+    let previousRank = null;
+    let yoyChangeMt = null;
+    try {
+      const prev = await fetchUgandaCountryRanking(year - 1);
+      previousRank = prev.rank ?? null;
+      if (ranking.emissionsQuantity != null && prev.emissionsQuantity != null) {
+        yoyChangeMt = toMtco2e(ranking.emissionsQuantity - prev.emissionsQuantity);
+      }
+    } catch {
+      // prior year may be unavailable for some builds
     }
 
     const result = {
-      co2e_mtco2e: toMtco2e(uga.emissions.co2e_100yr),
-      co2e_20yr_mtco2e: toMtco2e(uga.emissions.co2e_20yr),
-      co2_mtco2e: toMtco2e(uga.emissions.co2),
-      rank: uga.rank ?? null,
-      previous_rank: uga.previousRank ?? null,
-      yoy_change_mtco2e: toMtco2e(uga.emissionsChange?.co2e_100yr),
+      api_version: "v7",
+      inventory_year: year,
+      co2e_mtco2e: toMtco2e(ranking.emissionsQuantity),
+      rank: ranking.rank ?? null,
+      previous_rank: previousRank,
+      yoy_change_mtco2e: yoyChangeMt,
+      yoy_change_pct: ranking.emissionsPercentChange ?? null,
+      emissions_per_capita: ranking.emissionsPerCapita ?? null,
       stale: false,
       fetched_at: new Date().toISOString(),
     };
@@ -41,10 +52,11 @@ export async function fetchLiveUgandaSnapshot() {
     cache.set(cacheKey, result);
     return result;
   } catch (err) {
-    console.error("[ClimateTrace] Live API failed:", err.message);
+    console.error("[ClimateTrace v7] Live API failed:", err.message);
     const stale = cache.get(cacheKey);
     if (stale) return { ...stale, stale: true, error: err.message };
     return {
+      api_version: "v7",
       co2e_mtco2e: null,
       rank: null,
       previous_rank: null,
@@ -57,10 +69,18 @@ export async function fetchLiveUgandaSnapshot() {
 
 export async function checkApiHealth() {
   const start = Date.now();
+  const year = latestInventoryYear();
   try {
-    const res = await fetch(`${BASE_URL}/country/emissions?countries=UGA`);
+    const url = climateTraceUrl("/sources/emissions", {
+      year,
+      gas: CLIMATE_TRACE_GAS,
+      gadmId: CLIMATE_TRACE_GADM_UGANDA,
+    });
+    const res = await fetch(url);
     return {
       status: res.ok ? "ok" : "degraded",
+      api_version: "v7",
+      docs_url: CLIMATE_TRACE_DOCS_URL,
       latency_ms: Date.now() - start,
       http_status: res.status,
       last_checked: new Date().toISOString(),
@@ -68,9 +88,13 @@ export async function checkApiHealth() {
   } catch (err) {
     return {
       status: "down",
+      api_version: "v7",
+      docs_url: CLIMATE_TRACE_DOCS_URL,
       latency_ms: Date.now() - start,
       error: err.message,
       last_checked: new Date().toISOString(),
     };
   }
 }
+
+export { CLIMATE_TRACE_BASE_URL, CLIMATE_TRACE_DOCS_URL };
