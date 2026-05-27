@@ -9,17 +9,41 @@ export const ingestQcSchema = z.object({
   files_repaired_non_strict: z.number().optional(),
 });
 
-export const ingestFileReportSchema = z.object({
-  filename: z.string(),
-  size_bytes: z.number().optional(),
-  kind: z.string().optional(),
-  rows: z.number().optional(),
-  error: z.string().optional(),
-  warnings: z.array(z.string()).optional(),
-  parse_mode: z.string().optional(),
-  analysis_engine: z.string().optional(),
-  qc: ingestQcSchema.optional(),
-});
+/** PDF/text narrative + tabular chart payloads from ingestInsights. */
+const ingestInsightsBlock = z.record(z.unknown());
+
+export const ingestFileReportSchema = z
+  .object({
+    filename: z.string(),
+    size_bytes: z.number().optional(),
+    mime: z.string().optional(),
+    extension: z.string().optional(),
+    kind: z.string().optional(),
+    rows: z.number().optional(),
+    pages: z.number().optional(),
+    lines: z.number().optional(),
+    non_empty_lines: z.number().optional(),
+    words: z.number().optional(),
+    chars: z.number().optional(),
+    keys: z.array(z.string()).optional(),
+    preview: z.string().optional(),
+    sample: z.unknown().optional(),
+    error: z.string().optional(),
+    warnings: z.array(z.string()).optional(),
+    parse_mode: z.string().optional(),
+    parse_engine: z.string().optional(),
+    analysis_engine: z.string().optional(),
+    pandas_version: z.string().optional(),
+    keywords: z.record(z.array(z.string())).optional(),
+    parse_errors: z.array(z.record(z.unknown())).optional(),
+    about: ingestInsightsBlock.optional(),
+    analysis: ingestInsightsBlock.optional(),
+    recommendations: z.array(z.string()).optional(),
+    columns: z.array(z.record(z.unknown())).optional(),
+    validation: ingestInsightsBlock.optional(),
+    qc: ingestQcSchema.optional(),
+  })
+  .passthrough();
 
 export const ingestScanReportSchema = z.object({
   report_id: z.string(),

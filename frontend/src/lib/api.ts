@@ -278,6 +278,15 @@ export interface IngestParseWarning {
   rowNumbers?: number[];
 }
 
+export interface IngestPdfInsights {
+  pages: number;
+  chars: number;
+  parseEngine: string;
+  about: Record<string, unknown>;
+  analysis: Record<string, unknown>;
+  recommendations: string[];
+}
+
 export interface IngestUploadResponse {
   jobId: string;
   fileType: IngestFileType;
@@ -287,6 +296,7 @@ export interface IngestUploadResponse {
   columnMapping: Partial<Record<ObservationField, string | null>>;
   preview: Record<string, unknown>[];
   warnings: IngestParseWarning[];
+  pdfInsights?: IngestPdfInsights;
 }
 
 export interface IngestConfirmPayload {

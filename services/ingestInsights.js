@@ -872,6 +872,9 @@ export function buildPdfTextSections(text, filename) {
   const doc_type = inferDocType(text, mentions.sectors);
   const summary = buildSummary(text);
   const useParagraphs = preferParagraphMode(text, mentions);
+  const visuals = buildPdfVisuals(mentions);
+  const chartGuides = buildChartGuides(mentions, "narrative");
+  const highlights = buildTextHighlights(mentions);
 
   if (useParagraphs) {
     return {
@@ -887,17 +890,14 @@ export function buildPdfTextSections(text, filename) {
         numbers: mentions.numbers.slice(0, 50),
         sectors: mentions.sectors,
         years: mentions.years,
-        visuals: {},
+        highlights,
+        chart_guides: chartGuides,
+        visuals,
       },
       recommendations: buildRecommendationParagraphs(structured, mentions),
     };
   }
 
-  const sectorBar = mentions.sectors.slice(0, 8).map((s) => ({
-    name: s.name,
-    label: sectorLabel(s.name),
-    count: s.count,
-  }));
   const insights = buildTextInsights(mentions);
 
   return {
@@ -911,15 +911,24 @@ export function buildPdfTextSections(text, filename) {
       sectors: mentions.sectors,
       years: mentions.years,
       insights,
-      highlights: buildTextHighlights(mentions),
-      chart_guides: buildChartGuides(mentions, "narrative"),
-      visuals: {
-        sector_bar: sectorBar,
-        year_timeline: mentions.years,
-        unit_histogram: histogramByUnit(mentions.numbers),
-      },
+      highlights,
+      chart_guides: chartGuides,
+      visuals,
     },
     recommendations: buildTextRecommendations(mentions, "pdf"),
+  };
+}
+
+function buildPdfVisuals(mentions) {
+  const sectorBar = mentions.sectors.slice(0, 8).map((s) => ({
+    name: s.name,
+    label: sectorLabel(s.name),
+    count: s.count,
+  }));
+  return {
+    sector_bar: sectorBar,
+    year_timeline: mentions.years,
+    unit_histogram: histogramByUnit(mentions.numbers),
   };
 }
 

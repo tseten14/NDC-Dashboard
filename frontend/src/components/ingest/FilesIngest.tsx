@@ -28,6 +28,7 @@ import {
   type IngestUploadResponse,
   type ObservationField,
 } from "@/lib/api";
+import { AboutCard, AnalysisCard, RecommendationsCard } from "@/components/ingest/ScanReportIngest";
 
 const ACCEPTED_EXT = [".pdf", ".csv", ".json"];
 const ACCEPTED_MIME = new Set([
@@ -378,16 +379,37 @@ export function FilesIngest() {
               </div>
             )}
 
-            {uploadResult.fileType === "pdf" && uploadResult.rowCount === 0 && (
+            {uploadResult.fileType === "pdf" && uploadResult.rowCount === 0 && !uploadResult.pdfInsights && (
               <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/30 rounded p-2">
                 <AlertTriangle className="h-4 w-4 text-at-risk shrink-0 mt-0.5" />
                 <p>
-                  PDF text was extracted but no tabular rows were found. Export your data as CSV or JSON
+                  PDF text could not be analyzed. Try the Auto-scan tab, or export your data as CSV or JSON
                   for structured observation import.
                 </p>
               </div>
             )}
           </div>
+
+          {uploadResult.pdfInsights && (
+            <div className="space-y-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                PDF analysis
+                {uploadResult.pdfInsights.pages > 0 && (
+                  <span className="font-normal normal-case ml-1">
+                    · {uploadResult.pdfInsights.pages} page(s) · {uploadResult.pdfInsights.chars.toLocaleString()} chars
+                  </span>
+                )}
+              </p>
+              <AboutCard about={uploadResult.pdfInsights.about as Parameters<typeof AboutCard>[0]["about"]} />
+              <AnalysisCard
+                analysis={uploadResult.pdfInsights.analysis as Parameters<typeof AnalysisCard>[0]["analysis"]}
+                kind="pdf"
+              />
+              {uploadResult.pdfInsights.recommendations?.length > 0 && (
+                <RecommendationsCard items={uploadResult.pdfInsights.recommendations} />
+              )}
+            </div>
+          )}
 
           {/* Warnings panel */}
           {warnings.length > 0 && (

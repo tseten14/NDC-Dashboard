@@ -730,7 +730,7 @@ function SectionHeader({ icon, title, accent }: { icon: React.ReactNode; title: 
   );
 }
 
-function AboutCard({ about }: { about: AboutSection }) {
+export function AboutCard({ about }: { about: AboutSection }) {
   const topics = about.topics_plain?.length ? about.topics_plain : about.topics;
   const docLabel = about.doc_type_plain ?? about.doc_type;
   const paragraphMode = about.presentation === "paragraph" && (about.paragraphs?.length ?? 0) > 0;
@@ -864,7 +864,7 @@ const CHART_COLORS = [
   "hsl(var(--primary))",
 ];
 
-function AnalysisCard({
+export function AnalysisCard({
   analysis,
   columns,
   preview,
@@ -975,11 +975,11 @@ function AnalysisCard({
         </div>
       )}
 
-      {!paragraphMode && hasCharts && (
+      {hasCharts && (
         <p className="text-[9px] uppercase text-muted-foreground font-semibold mb-2">Charts</p>
       )}
 
-      {!paragraphMode && (
+      {hasCharts && (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {sectorData.length > 0 && (
           <Chart
@@ -1146,7 +1146,7 @@ function AnalysisCard({
   );
 }
 
-function RecommendationsCard({ items }: { items: string[] }) {
+export function RecommendationsCard({ items }: { items: string[] }) {
   const paragraphStyle = items.length <= 2 && items.some((r) => r.length > 120);
 
   return (

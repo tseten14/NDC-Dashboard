@@ -50,12 +50,14 @@ npm run dev:all
 
 | Path | Role |
 |------|------|
-| `vercel.json` | Build output `frontend/dist`, SPA rewrites, `USE_MOCK_DATA=true` by default |
-| `server.js` | **Default export** for Vercel Express; `listen()` only when not on Vercel |
-| `server/createApp.js` | Shared route definitions (`/api/v1/*`) |
+| `vercel.json` | Build → `public/`, rewrite `/api/*` → `api/index.js`, SPA fallback |
+| `api/index.js` | Re-exports `server.js` (Express under `/api`) for Vercel Functions |
+| `server.js` | Local `listen()`; same default export as Vercel |
+| `server/createApp.js` | Route definitions mounted at `/api/v1/*` and `/api/health` |
 
 ## Troubleshooting
 
 - **404 on refresh** — SPA rewrite is in `vercel.json`; redeploy if missing.
+- **404 on `/api/*`** — Ensure Vercel project **Output Directory** is empty (not `public` only). The `api/` folder must deploy alongside `public/`. `vercel.json` includes `/api/:path*` → `/api` rewrite.
 - **API 500 on ingest** — PDF/large files may exceed time/size; try smaller CSV/JSON.
 - **Emissions empty** — Climate TRACE may be slow; set `USE_MOCK_DATA=true` for demos.
