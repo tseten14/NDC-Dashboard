@@ -5,6 +5,7 @@ import type {
   DataProvenance,
   ProgressStatus,
 } from "@/data/uganda-ndc-data";
+import { deriveTraceDataQuality, reconciliationDeltaPercent, uiStatusFromApiStatus } from "@/lib/progress";
 
 export const CLIMATE_TRACE_API_SECTORS = ["afolu", "energy", "ippu", "agriculture", "waste"] as const;
 export type ClimatetraceApiSector = (typeof CLIMATE_TRACE_API_SECTORS)[number];
@@ -30,10 +31,15 @@ export function getClimateTraceSectorForTarget(target: NDCTarget): ClimatetraceA
 }
 
 export function apiStatusToProgressStatus(s: string): ProgressStatus {
-  if (s === "on_track") return "on-track";
-  if (s === "at_risk" || s === "mixed") return "at-risk";
-  if (s === "off_track") return "off-track";
-  return "unknown";
+  return uiStatusFromApiStatus(s);
+}
+
+export interface LiveObservedQualityHints {
+  missingSlugs?: string[];
+  dataStale?: boolean;
+  reconciliationDeltaPct?: number | null;
+  reconciliationDeltaMt?: number | null;
+  reconciliationReferenceMt?: number | null;
 }
 
 function linearTargetValue(year: number, by: number, bv: number, ty: number, tv: number): number {
@@ -62,6 +68,7 @@ export function buildLiveObservedDataSet(
   baselineValue: number,
   targetYear: number,
   targetValue: number,
+  qualityHints: LiveObservedQualityHints = {},
 ): ObservedDataSet {
   const historicalData: ObservedDataPoint[] = timeseries.map(({ year, value }) => ({
     year,
@@ -86,12 +93,23 @@ export function buildLiveObservedDataSet(
     });
   }
 
+  const derived = deriveTraceDataQuality({
+    missingSlugs: qualityHints.missingSlugs,
+    dataStale: qualityHints.dataStale,
+    reconciliationDeltaPct:
+      qualityHints.reconciliationDeltaPct ??
+      reconciliationDeltaPercent(
+        qualityHints.reconciliationDeltaMt,
+        qualityHints.reconciliationReferenceMt,
+      ),
+  });
+
   const provenance: DataProvenance = {
     sourceType: "observed-emissions-tracing",
     mrvOwnerMinistry: "Climate TRACE + national MRV",
-    qaqcStatus: "ok",
+    qaqcStatus: derived.qaqcStatus,
     lastUpdated: new Date().toISOString(),
-    isValidated: true,
+    isValidated: derived.isValidated,
   };
 
   return {

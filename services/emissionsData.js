@@ -17,6 +17,10 @@ import {
   getSlugBreakdownForYear,
   getMissingSlugsForSectorYear,
 } from "./climateTraceTimeseries.js";
+import { computeSectorProgress } from "../shared/progress.js";
+import { safeParseOrLog } from "../shared/validate.js";
+import { emissionsDashboardSchema } from "../shared/schemas/emissionsDashboard.schema.js";
+import { logReconciliationDelta } from "../server/logger.js";
 
 const SECTOR_KEYS = Object.keys(NDC_TARGETS);
 
@@ -64,29 +68,15 @@ export async function getTimeseries(sector, since, to) {
   return getUiSectorTimeseries(sector, sinceY, toY);
 }
 
-export function computeProgress(latestValue, sector) {
+export function computeProgress(latestValue, sector, latestYear = null) {
   const t = NDC_TARGETS[sector];
-  if (!t || latestValue == null) return null;
-
-  const denom = t.baseline - t.target;
-  if (!Number.isFinite(denom) || denom === 0) return null;
-
-  const pct = ((t.baseline - latestValue) / denom) * 100;
-  const clamped = Math.min(100, Math.max(0, Math.round(pct)));
-  return {
-    baseline_year: t.baseline_year,
-    baseline_value: t.baseline,
-    target_year: t.target_year,
-    target_value: t.target,
-    latest_value: latestValue,
-    progress_pct: clamped,
-    status: clamped >= 80 ? "on_track" : clamped >= 50 ? "mixed" : "off_track",
-  };
+  if (!t) return null;
+  return computeSectorProgress(latestValue, t, latestYear);
 }
 
 export function progressFromTimeseries(series, sector) {
   const latest = latestFromSeries(series);
-  return computeProgress(latest?.value ?? null, sector);
+  return computeProgress(latest?.value ?? null, sector, latest?.year ?? null);
 }
 
 async function buildReconciliation(refYear, countryTotalMt) {
@@ -113,6 +103,17 @@ async function buildReconciliation(refYear, countryTotalMt) {
   if (country_total_mt != null && sector_sum_mt != null) {
     delta_mt = +(country_total_mt - sector_sum_mt).toFixed(2);
   }
+
+  const delta_pct =
+    delta_mt != null && sector_sum_mt != null && sector_sum_mt !== 0
+      ? +Math.abs((delta_mt / sector_sum_mt) * 100).toFixed(2)
+      : null;
+
+  logReconciliationDelta({
+    target_id: "national",
+    delta_pct,
+    reference_year: refYear,
+  });
 
   return {
     reference_year: refYear,
@@ -150,7 +151,7 @@ export async function getEmissionsDashboard(since, to) {
       const t = NDC_TARGETS[sector];
       timeseries[sector] = series;
       const latest = latestFromSeries(series);
-      const prog = computeProgress(latest?.value ?? null, sector);
+      const prog = computeProgress(latest?.value ?? null, sector, latest?.year ?? null);
       const missingSlugs =
         latest?.year != null ? await getMissingSlugsForSectorYear(sector, latest.year) : [];
 
@@ -220,7 +221,7 @@ export async function getEmissionsDashboard(since, to) {
 
   const reconciliation = await buildReconciliation(refYear, live.co2e_mtco2e);
 
-  return {
+  const payload = {
     since: sinceY,
     to: toY,
     inventory_year: latestInventoryYear(),
@@ -248,6 +249,9 @@ export async function getEmissionsDashboard(since, to) {
       unmapped_slugs: UNMAPPED_SECTOR_SLUGS,
     },
   };
+
+  safeParseOrLog(emissionsDashboardSchema, payload, "emissions.dashboard");
+  return payload;
 }
 
 /** @deprecated Prefer getEmissionsDashboard — kept for single-sector routes */
@@ -277,14 +281,36 @@ export async function getSectorSummary() {
   };
 }
 
+function reconciliationDeltaPct(reconciliation) {
+  const delta = reconciliation?.delta_mt;
+  const ref = reconciliation?.sector_sum_mt;
+  if (delta == null || ref == null || ref === 0) return null;
+  return Math.abs((delta / ref) * 100);
+}
+
 export async function getProvenancePayload() {
   const range = defaultInventoryRange();
   let reconciliation = null;
+  let dataStale = false;
   try {
     const dash = await getEmissionsDashboard(range.since, range.to);
     reconciliation = dash.reconciliation;
+    dataStale = !!dash.data_stale;
   } catch {
     /* best-effort */
+  }
+
+  const missingSlugs = reconciliation?.missing_slugs?.length ?? 0;
+  const deltaPct = reconciliationDeltaPct(reconciliation);
+  let validated = !dataStale && missingSlugs === 0 && (deltaPct == null || deltaPct <= 5);
+  let qa_qc_status = "OK";
+  if (missingSlugs > 0 || dataStale) {
+    validated = false;
+    qa_qc_status = "Warning";
+  }
+  if (deltaPct != null && deltaPct > 5) {
+    validated = false;
+    qa_qc_status = "Inconsistent";
   }
 
   return {
@@ -298,8 +324,8 @@ export async function getProvenancePayload() {
     ndc_comparison_methodology: "ndc_baseline_vs_trace_observed",
     coverage_years: `${range.since}–${range.to} (national via /v7/sources/emissions; district via /v7/sources + GADM2)`,
     mrv_owner: "Ministry of Water and Environment",
-    qa_qc_status: "OK",
-    validated: true,
+    qa_qc_status,
+    validated,
     last_updated: new Date().toISOString().split("T")[0],
     sector_scope_notes: SECTOR_SCOPE_NOTES,
     unmapped_slugs: UNMAPPED_SECTOR_SLUGS,

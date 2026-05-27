@@ -27,3 +27,6 @@ dist-ssr
 *.sw?
 .vercel
 public
+
+# Local ingest staging (created by API confirm flow)
+data/ingest-imports/

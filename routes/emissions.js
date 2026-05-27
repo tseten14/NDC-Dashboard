@@ -26,7 +26,7 @@ router.get("/emissions/dashboard", async (req, res) => {
     const dashboard = await getEmissionsDashboard(since, to);
     return res.json(dashboard);
   } catch (err) {
-    console.error(err);
+    req.log?.error({ err }, "emissions_dashboard_failed");
     return res.status(500).json({ error: err.message });
   }
 });
@@ -56,7 +56,7 @@ router.get("/emissions/timeseries", async (req, res) => {
 
     return res.json(body);
   } catch (err) {
-    console.error(err);
+    req.log?.error({ err }, "emissions_dashboard_failed");
     return res.status(500).json({ error: err.message });
   }
 });
@@ -91,7 +91,7 @@ router.get("/emissions/progress", async (req, res) => {
       data_source: "Climate TRACE v7",
     });
   } catch (err) {
-    console.error(err);
+    req.log?.error({ err }, "emissions_dashboard_failed");
     return res.status(500).json({ error: err.message });
   }
 });
@@ -101,7 +101,7 @@ router.get("/emissions/summary", async (_req, res) => {
     const summary = await getSectorSummary();
     return res.json(summary);
   } catch (err) {
-    console.error(err);
+    req.log?.error({ err }, "emissions_dashboard_failed");
     return res.status(500).json({ error: err.message });
   }
 });
@@ -111,7 +111,7 @@ router.get("/provenance", async (_req, res) => {
     const payload = await getProvenancePayload();
     return res.json(payload);
   } catch (err) {
-    console.error(err);
+    req.log?.error({ err }, "emissions_dashboard_failed");
     return res.status(500).json({ error: err.message });
   }
 });

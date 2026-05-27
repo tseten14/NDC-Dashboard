@@ -19,8 +19,8 @@ function fmt(v: number | null | undefined, unit?: string): string {
   return String(v);
 }
 
-function StatusDot({ p }: { p: number | null }) {
-  const c = statusColor(p);
+function StatusDot({ p, ind }: { p: number | null; ind?: import("@/data/indicator-registry").Indicator }) {
+  const c = statusColor(p, ind);
   const cls = c === "on-track" ? "bg-on-track" : c === "at-risk" ? "bg-at-risk" : c === "off-track" ? "bg-off-track" : "bg-muted";
   return <span className={cn("inline-block h-2 w-2 rounded-full", cls)} />;
 }
@@ -117,7 +117,7 @@ export default function ExecutiveOverview() {
                   const conf = confidenceScore(i);
                   return (
                     <div key={i.id} className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0">
-                      <StatusDot p={p} />
+                      <StatusDot p={p} ind={i} />
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] font-medium text-foreground truncate">{i.indicator_name}</p>
                         <p className="text-[9px] text-muted-foreground">{i.sector_or_programme} · {i.strategy}</p>

@@ -69,49 +69,35 @@ export function DataCoveragePanel() {
           )}
 
           {mtTargets.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-[11px] border-collapse">
-                <thead>
-                  <tr className="border-b border-border text-left">
-                    <th className="py-1 pr-2 font-semibold text-foreground">Sector</th>
-                    <th className="py-1 pr-2 font-semibold text-foreground">NDC baseline</th>
-                    <th className="py-1 pr-2 font-semibold text-foreground">TRACE latest</th>
-                    <th className="py-1 font-semibold text-foreground">Δ (obs − policy)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mtTargets.map((t) => {
-                    const sector = getClimateTraceSectorForTarget(t);
-                    const pr = sector ? progressBySector[sector] : undefined;
-                    const delta = pr?.baseline_vs_trace_delta_mt;
-                    return (
-                      <tr key={t.id} className="border-b border-border/60">
-                        <td className="py-1 pr-2 text-foreground">{t.title}</td>
-                        <td className="py-1 pr-2 font-mono">
-                          {pr?.baseline_value ?? t.baselineValue} Mt ({pr?.baseline_year ?? t.baselineYear})
-                        </td>
-                        <td className="py-1 pr-2 font-mono">
-                          {pr?.latest_value != null ? (
-                            <>
-                              {pr.latest_value} Mt ({pr.latest_year})
-                            </>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td
-                          className={cn(
-                            "py-1 font-mono",
-                            delta != null && Math.abs(delta) > 5 && "text-at-risk font-medium",
-                          )}
-                        >
-                          {delta != null ? `${delta >= 0 ? "+" : ""}${delta} Mt` : "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2">
+              {mtTargets.map((t) => {
+                const sector = getClimateTraceSectorForTarget(t);
+                const pr = sector ? progressBySector[sector] : undefined;
+                const delta = pr?.baseline_vs_trace_delta_mt;
+                return (
+                  <div key={t.id} className="rounded-md border border-border bg-card p-2 space-y-1 text-[11px]">
+                    <p className="font-semibold text-foreground text-xs line-clamp-2">{t.targetText}</p>
+                    <p>
+                      <span className="text-muted-foreground">NDC baseline: </span>
+                      <span className="font-mono text-foreground">
+                        {pr?.baseline_value ?? t.baselineValue} Mt ({pr?.baseline_year ?? t.baselineYear})
+                      </span>
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">TRACE latest: </span>
+                      <span className="font-mono text-foreground">
+                        {pr?.latest_value != null ? `${pr.latest_value} Mt (${pr.latest_year})` : "—"}
+                      </span>
+                    </p>
+                    <p className={cn(delta != null && Math.abs(delta) > 5 && "text-at-risk font-medium")}>
+                      <span className="text-muted-foreground">Δ (obs − policy): </span>
+                      <span className="font-mono">
+                        {delta != null ? `${delta >= 0 ? "+" : ""}${delta} Mt` : "—"}
+                      </span>
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           )}
 

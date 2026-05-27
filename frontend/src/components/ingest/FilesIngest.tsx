@@ -1,219 +1,509 @@
-// Files Ingest — XLSX/CSV dropzone, parse, column-mapping wizard, validation preview, Draft → Publish.
-import { useCallback, useState } from "react";
-import * as XLSX from "xlsx";
-import Papa from "papaparse";
+// Files Ingest — PDF/CSV/JSON upload, server-side parse, column mapping, confirm import.
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UploadCloud, FileSpreadsheet, CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  UploadCloud,
+  FileSpreadsheet,
+  FileJson,
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  ChevronDown,
+  Loader2,
+  History,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  ingestApi,
+  type IngestJobRow,
+  type IngestParseWarning,
+  type IngestUploadResponse,
+  type ObservationField,
+} from "@/lib/api";
 
-type Step = "drop" | "map" | "preview" | "done";
-type DatasetKind = "indicator_progress" | "activity_outputs" | "district_values";
+const ACCEPTED_EXT = [".pdf", ".csv", ".json"];
+const ACCEPTED_MIME = new Set([
+  "application/pdf",
+  "text/csv",
+  "application/json",
+  "text/plain",
+]);
 
-const REQUIRED_COLS: Record<DatasetKind, string[]> = {
-  indicator_progress: ["indicator_id", "period_end", "value", "validation_status"],
-  activity_outputs: ["activity_id", "output_description", "quantity", "unit"],
-  district_values: ["indicator_id", "district", "year", "value"],
+const OBS_FIELDS: { key: ObservationField; label: string; required?: boolean }[] = [
+  { key: "year", label: "Year", required: true },
+  { key: "value", label: "Value", required: true },
+  { key: "source", label: "Source" },
+  { key: "target_id", label: "Target / indicator" },
+];
+
+const TYPE_BADGE: Record<string, string> = {
+  number: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30",
+  date: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30",
+  text: "bg-muted text-muted-foreground border-border",
 };
 
-interface ImportLog {
-  ts: string;
-  filename: string;
-  kind: DatasetKind;
-  rows_total: number;
-  rows_ok: number;
-  errors: { row: number; message: string }[];
-  status: "Draft" | "Published";
+const STATUS_BADGE: Record<string, string> = {
+  pending: "bg-at-risk/10 text-at-risk border-at-risk/30",
+  processing: "bg-primary/10 text-primary border-primary/30",
+  complete: "bg-on-track/10 text-on-track border-on-track/30",
+  failed: "bg-destructive/10 text-destructive border-destructive/30",
+};
+
+function extOf(name: string): string {
+  const i = name.lastIndexOf(".");
+  return i === -1 ? "" : name.slice(i).toLowerCase();
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function fileIcon(name: string) {
+  const ext = extOf(name);
+  if (ext === ".json") return FileJson;
+  if (ext === ".pdf") return FileText;
+  return FileSpreadsheet;
+}
+
+function formatCell(value: unknown, type?: string): string {
+  if (value == null || value === "") return "—";
+  if (type === "number") {
+    const n = Number(String(value).replace(/,/g, ""));
+    if (Number.isFinite(n)) return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  }
+  if (type === "date") {
+    const s = String(value);
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+      const d = new Date(s);
+      if (!Number.isNaN(d.getTime())) return d.toLocaleDateString();
+    }
+  }
+  return String(value);
+}
+
+function mappingReady(mapping: Partial<Record<ObservationField, string | null>>): boolean {
+  return Boolean(mapping.year && mapping.value);
 }
 
 export function FilesIngest() {
-  const [step, setStep] = useState<Step>("drop");
-  const [filename, setFilename] = useState("");
-  const [rows, setRows] = useState<Record<string, unknown>[]>([]);
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [kind, setKind] = useState<DatasetKind>("indicator_progress");
-  const [mapping, setMapping] = useState<Record<string, string>>({});
-  const [errors, setErrors] = useState<{ row: number; message: string }[]>([]);
-  const [logs, setLogs] = useState<ImportLog[]>(() => {
-    try { return JSON.parse(localStorage.getItem("ingest_logs") ?? "[]"); } catch { return []; }
-  });
+  const [uploading, setUploading] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadResult, setUploadResult] = useState<IngestUploadResponse | null>(null);
+  const [columnMapping, setColumnMapping] = useState<
+    Partial<Record<ObservationField, string | null>>
+  >({});
+  const [importDone, setImportDone] = useState(false);
+  const [jobs, setJobs] = useState<IngestJobRow[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
 
-  const onDrop = useCallback(async (file: File) => {
-    setFilename(file.name);
-    if (file.name.endsWith(".csv")) {
-      const text = await file.text();
-      const parsed = Papa.parse<Record<string, unknown>>(text, { header: true, skipEmptyLines: true });
-      setRows(parsed.data); setHeaders(parsed.meta.fields ?? []);
-    } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf);
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-      setRows(json); setHeaders(Object.keys(json[0] ?? {}));
-    } else {
-      toast.error("Unsupported file type. Use .xlsx or .csv.");
-      return;
-    }
-    setStep("map");
+  useEffect(() => {
+    void import("papaparse");
+    void import("xlsx");
   }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
+  const loadJobs = useCallback(async () => {
+    setJobsLoading(true);
+    try {
+      const res = await ingestApi.listJobs(10);
+      setJobs(res.jobs);
+    } catch {
+      setJobs([]);
+    } finally {
+      setJobsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadJobs();
+  }, [loadJobs]);
+
+  const validateFile = (file: File): boolean => {
+    const ext = extOf(file.name);
+    if (!ACCEPTED_EXT.includes(ext) && !ACCEPTED_MIME.has(file.type)) {
+      toast.error(`Unsupported file type. Upload PDF, CSV, or JSON (got ${ext || file.type || "unknown"}).`);
+      return false;
+    }
+    return true;
+  };
+
+  const handleUpload = async (file: File) => {
+    if (!validateFile(file)) return;
+    setSelectedFile(file);
+    setUploading(true);
+    setImportDone(false);
+    setUploadResult(null);
+    try {
+      const result = await ingestApi.uploadFile(file);
+      setUploadResult(result);
+      setColumnMapping(result.columnMapping);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+      setSelectedFile(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const f = e.dataTransfer.files[0];
-    if (f) onDrop(f);
+    if (f) void handleUpload(f);
   };
 
-  const validate = () => {
-    const required = REQUIRED_COLS[kind];
-    const errs: { row: number; message: string }[] = [];
-    rows.forEach((r, idx) => {
-      required.forEach(col => {
-        const src = mapping[col];
-        if (!src || r[src] === "" || r[src] === undefined || r[src] === null) {
-          errs.push({ row: idx + 2, message: `Missing required column "${col}".` });
-        }
+  const onConfirm = async () => {
+    if (!uploadResult || !mappingReady(columnMapping)) return;
+    setConfirming(true);
+    try {
+      const res = await ingestApi.confirmImport({
+        jobId: uploadResult.jobId,
+        finalColumnMapping: columnMapping,
       });
-    });
-    setErrors(errs);
-    setStep("preview");
+      if (res.status === "complete") {
+        toast.success(`Imported ${res.rowsImported} observation row(s)`);
+      } else {
+        toast.error(res.errors[0]?.message ?? "Import failed");
+      }
+      setImportDone(true);
+      await loadJobs();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Confirm failed");
+    } finally {
+      setConfirming(false);
+    }
   };
 
-  const publish = (status: "Draft" | "Published") => {
-    const log: ImportLog = {
-      ts: new Date().toISOString(),
-      filename,
-      kind,
-      rows_total: rows.length,
-      rows_ok: rows.length - errors.length,
-      errors: errors.slice(0, 100),
-      status,
-    };
-    const next = [log, ...logs].slice(0, 30);
-    setLogs(next);
-    localStorage.setItem("ingest_logs", JSON.stringify(next));
-    toast.success(`${rows.length - errors.length} rows ${status === "Published" ? "published" : "saved as Draft"}`);
-    setStep("done");
+  const reset = () => {
+    setSelectedFile(null);
+    setUploadResult(null);
+    setColumnMapping({});
+    setImportDone(false);
   };
 
-  const reset = () => { setStep("drop"); setFilename(""); setRows([]); setHeaders([]); setMapping({}); setErrors([]); };
+  const previewRows = uploadResult?.preview ?? [];
+  const previewHeaders = uploadResult?.headers ?? [];
+  const inferredTypes = uploadResult?.inferredTypes ?? {};
+  const warnings = uploadResult?.warnings ?? [];
 
   return (
-    <div className="space-y-3">
-      {step === "drop" && (
-        <div onDrop={handleDrop} onDragOver={e => e.preventDefault()}
-          className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition cursor-pointer"
-          onClick={() => document.getElementById("file-input")?.click()}>
-          <UploadCloud className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-          <p className="text-xs text-foreground font-medium">Drop .xlsx or .csv here, or click to browse</p>
-          <p className="text-[10px] text-muted-foreground mt-1">Indicator progress · Activity outputs · District values</p>
-          <input id="file-input" type="file" accept=".xlsx,.xls,.csv" className="hidden"
-            onChange={e => { const f = e.target.files?.[0]; if (f) onDrop(f); }} />
+    <div className="space-y-4">
+      {/* Drop zone */}
+      {!uploadResult && (
+        <div
+          onDrop={onDrop}
+          onDragOver={(e) => e.preventDefault()}
+          className={cn(
+            "border-2 border-dashed border-border rounded-lg p-8 text-center transition cursor-pointer",
+            uploading ? "opacity-60 pointer-events-none" : "hover:border-primary",
+          )}
+          onClick={() => !uploading && document.getElementById("ingest-file-input")?.click()}
+        >
+          {uploading ? (
+            <Loader2 className="h-8 w-8 mx-auto text-primary animate-spin mb-2" />
+          ) : (
+            <UploadCloud className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+          )}
+          <p className="text-xs text-foreground font-medium">
+            {uploading ? "Parsing on server…" : "Drop PDF, CSV, or JSON here, or click to browse"}
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Structured observation import · auto column detection
+          </p>
+          <input
+            id="ingest-file-input"
+            type="file"
+            accept=".pdf,.csv,.json,application/pdf,text/csv,application/json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handleUpload(f);
+              e.target.value = "";
+            }}
+          />
         </div>
       )}
 
-      {step === "map" && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <FileSpreadsheet className="h-4 w-4 text-primary" />
-            <span className="text-xs font-medium text-foreground">{filename}</span>
-            <Badge variant="outline" className="text-[10px]">{rows.length} rows</Badge>
+      {selectedFile && uploadResult && (
+        <>
+          {/* Selected file chip */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {(() => {
+              const Icon = fileIcon(selectedFile.name);
+              return <Icon className="h-4 w-4 text-primary shrink-0" />;
+            })()}
+            <span className="text-xs font-medium text-foreground">{selectedFile.name}</span>
+            <Badge variant="outline" className="text-[10px] uppercase">
+              {uploadResult.fileType}
+            </Badge>
+            <Badge variant="outline" className="text-[10px]">
+              {formatBytes(selectedFile.size)}
+            </Badge>
+            {!importDone && (
+              <Button size="sm" variant="ghost" className="h-6 text-[10px] ml-auto" onClick={reset}>
+                Change file
+              </Button>
+            )}
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Dataset type</label>
-            <Select value={kind} onValueChange={(v: DatasetKind) => { setKind(v); setMapping({}); }}>
-              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="indicator_progress">Indicator progress (id, period_end, value, validation_status)</SelectItem>
-                <SelectItem value="activity_outputs">Activity outputs (activity_id, output_description, quantity, unit)</SelectItem>
-                <SelectItem value="district_values">District values (indicator_id, district, year, value)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Map columns</label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {REQUIRED_COLS[kind].map(req => (
-                <div key={req} className="flex items-center gap-2">
-                  <span className="text-[10px] font-medium text-foreground w-32">{req}</span>
-                  <Select value={mapping[req] ?? ""} onValueChange={v => setMapping(m => ({ ...m, [req]: v }))}>
-                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="— pick column —" /></SelectTrigger>
-                    <SelectContent>
-                      {headers.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))}
+          {/* Parse result panel */}
+          <div className="rounded-lg border border-border bg-card/50 p-3 space-y-3">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-semibold text-foreground">Parse result</span>
+              <span className="text-muted-foreground">
+                {uploadResult.rowCount.toLocaleString()} rows · {previewHeaders.length} columns
+                {warnings.length > 0 && ` · ${warnings.length} warning${warnings.length === 1 ? "" : "s"}`}
+              </span>
             </div>
+
+            {previewHeaders.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {previewHeaders.map((h) => (
+                  <Badge
+                    key={h}
+                    variant="outline"
+                    className={cn("text-[10px] font-normal gap-1", TYPE_BADGE[inferredTypes[h] ?? "text"])}
+                  >
+                    <span className="font-medium">{h}</span>
+                    <span className="opacity-70">{inferredTypes[h] ?? "text"}</span>
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            {/* Column mapping editor */}
+            {previewHeaders.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                  Column mapping
+                </p>
+                <div className="overflow-x-auto touch-scroll-x">
+                  <table className="w-full text-[10px] min-w-[320px]">
+                    <thead>
+                      <tr className="text-muted-foreground border-b border-border">
+                        <th className="text-left p-1.5 font-semibold">Field</th>
+                        <th className="text-left p-1.5 font-semibold">Source column</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {OBS_FIELDS.map(({ key, label, required }) => (
+                        <tr key={key} className="border-b border-border/30">
+                          <td className="p-1.5 align-middle">
+                            <span className="font-medium text-foreground">{label}</span>
+                            {required && <span className="text-destructive ml-0.5">*</span>}
+                          </td>
+                          <td className="p-1.5">
+                            <Select
+                              value={columnMapping[key] ?? "__none__"}
+                              onValueChange={(v) =>
+                                setColumnMapping((m) => ({
+                                  ...m,
+                                  [key]: v === "__none__" ? null : v,
+                                }))
+                              }
+                            >
+                              <SelectTrigger className="h-7 text-xs">
+                                <SelectValue placeholder="— not mapped —" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__">— not mapped —</SelectItem>
+                                {previewHeaders.map((h) => (
+                                  <SelectItem key={h} value={h}>
+                                    {h}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Data preview */}
+            {previewHeaders.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                  Preview (first {Math.min(10, uploadResult.rowCount)} rows)
+                </p>
+                <div className="max-h-56 overflow-auto touch-scroll-x border border-border rounded">
+                  <table className="w-full text-[10px]">
+                    <thead className="bg-muted/40 sticky top-0">
+                      <tr>
+                        {previewHeaders.map((h) => (
+                          <th
+                            key={h}
+                            className={cn(
+                              "text-left p-1.5 font-semibold whitespace-nowrap",
+                              inferredTypes[h] === "number" && "text-right",
+                            )}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {uploadResult.preview.slice(0, 10).map((row, i) => (
+                        <tr key={i} className="border-t border-border/30">
+                          {previewHeaders.map((h) => (
+                            <td
+                              key={h}
+                              className={cn(
+                                "p-1.5 whitespace-nowrap max-w-[140px] truncate",
+                                inferredTypes[h] === "number" && "text-right tabular-nums",
+                              )}
+                              title={String(row[h] ?? "")}
+                            >
+                              {formatCell(row[h], inferredTypes[h])}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {uploadResult.fileType === "pdf" && uploadResult.rowCount === 0 && (
+              <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/30 rounded p-2">
+                <AlertTriangle className="h-4 w-4 text-at-risk shrink-0 mt-0.5" />
+                <p>
+                  PDF text was extracted but no tabular rows were found. Export your data as CSV or JSON
+                  for structured observation import.
+                </p>
+              </div>
+            )}
           </div>
 
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={reset}>Cancel</Button>
-            <Button size="sm" className="h-7 text-xs" onClick={validate}
-              disabled={REQUIRED_COLS[kind].some(c => !mapping[c])}>Validate & preview</Button>
-          </div>
-        </div>
-      )}
-
-      {step === "preview" && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            {errors.length === 0
-              ? <><CheckCircle2 className="h-4 w-4 text-on-track" /><span className="text-xs text-foreground">All {rows.length} rows pass validation.</span></>
-              : <><AlertTriangle className="h-4 w-4 text-at-risk" /><span className="text-xs text-foreground">{errors.length} row(s) have errors.</span></>
-            }
-          </div>
-          {errors.length > 0 && (
-            <div className="max-h-48 overflow-auto border border-border rounded text-[10px]">
-              <table className="w-full">
-                <thead className="bg-muted/30"><tr><th className="text-left p-1.5">Row</th><th className="text-left p-1.5">Error</th></tr></thead>
-                <tbody>{errors.slice(0, 50).map((e, i) => (<tr key={i} className="border-t border-border/30"><td className="p-1.5">{e.row}</td><td className="p-1.5">{e.message}</td></tr>))}</tbody>
-              </table>
+          {/* Warnings panel */}
+          {warnings.length > 0 && (
+            <div className="rounded-lg border border-at-risk/30 bg-at-risk/5 p-3 space-y-2">
+              <p className="text-[10px] uppercase tracking-wider text-at-risk font-semibold flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> Warnings
+              </p>
+              <div className="space-y-1">
+                {warnings.map((w: IngestParseWarning, i) => (
+                  <WarningRow key={i} warning={w} />
+                ))}
+              </div>
             </div>
           )}
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={reset}>Cancel</Button>
-            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => publish("Draft")}>Save as Draft</Button>
-            <Button size="sm" className="h-7 text-xs" onClick={() => publish("Published")} disabled={errors.length > 0}>Publish</Button>
-          </div>
-        </div>
+
+          {/* Confirm */}
+          {!importDone ? (
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                size="sm"
+                className="h-7 text-xs"
+                disabled={!mappingReady(columnMapping) || confirming || uploadResult.rowCount === 0}
+                onClick={() => void onConfirm()}
+              >
+                {confirming ? (
+                  <>
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Importing…
+                  </>
+                ) : (
+                  "Confirm & import"
+                )}
+              </Button>
+              {!mappingReady(columnMapping) && uploadResult.rowCount > 0 && (
+                <span className="text-[10px] text-muted-foreground self-center">
+                  Map year and value columns to enable import
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 py-2">
+              <CheckCircle2 className="h-5 w-5 text-on-track" />
+              <span className="text-xs text-foreground font-medium">Import submitted.</span>
+              <Button size="sm" variant="outline" className="h-7 text-xs ml-2" onClick={reset}>
+                Import another file
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
-      {step === "done" && (
-        <div className="text-center py-6 space-y-2">
-          <CheckCircle2 className="h-8 w-8 text-on-track mx-auto" />
-          <p className="text-xs text-foreground font-medium">Import recorded.</p>
-          <Button size="sm" className="h-7 text-xs" onClick={reset}>Import another file</Button>
-        </div>
-      )}
-
-      {logs.length > 0 && (
-        <div className="pt-3 border-t border-border">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">Import log (audit trail)</p>
-          <div className="max-h-40 overflow-auto">
+      {/* Import history */}
+      <div className="pt-3 border-t border-border">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 flex items-center gap-1">
+          <History className="h-3 w-3" /> Import history
+        </p>
+        {jobsLoading ? (
+          <p className="text-[10px] text-muted-foreground">Loading jobs…</p>
+        ) : jobs.length === 0 ? (
+          <p className="text-[10px] text-muted-foreground">No ingest jobs yet.</p>
+        ) : (
+          <div className="max-h-48 overflow-auto touch-scroll-x">
             <table className="w-full text-[10px]">
-              <thead><tr className="text-muted-foreground border-b border-border">
-                <th className="text-left p-1">Timestamp</th><th className="text-left p-1">File</th><th className="text-left p-1">Kind</th>
-                <th className="text-right p-1">OK/Total</th><th className="text-left p-1">Status</th>
-              </tr></thead>
+              <thead>
+                <tr className="text-muted-foreground border-b border-border">
+                  <th className="text-left p-1.5">Time</th>
+                  <th className="text-left p-1.5">File</th>
+                  <th className="text-left p-1.5">Type</th>
+                  <th className="text-left p-1.5">Status</th>
+                  <th className="text-right p-1.5">Rows</th>
+                </tr>
+              </thead>
               <tbody>
-                {logs.map((l, i) => (
-                  <tr key={i} className="border-b border-border/30">
-                    <td className="p-1">{l.ts.replace("T"," ").slice(0,16)}</td>
-                    <td className="p-1 font-medium text-foreground">{l.filename}</td>
-                    <td className="p-1">{l.kind}</td>
-                    <td className="p-1 text-right">{l.rows_ok}/{l.rows_total}</td>
-                    <td className="p-1"><Badge variant="outline" className={cn("text-[9px] h-4", l.status === "Published" ? "bg-on-track/10 text-on-track border-on-track/30" : "bg-at-risk/10 text-at-risk border-at-risk/30")}>{l.status}</Badge></td>
+                {jobs.map((j) => (
+                  <tr key={j.id} className="border-b border-border/30">
+                    <td className="p-1.5 whitespace-nowrap">
+                      {j.created_at.replace("T", " ").slice(0, 16)}
+                    </td>
+                    <td className="p-1.5 font-medium text-foreground max-w-[120px] truncate" title={j.filename}>
+                      {j.filename}
+                    </td>
+                    <td className="p-1.5 uppercase">{j.file_type}</td>
+                    <td className="p-1.5">
+                      <Badge variant="outline" className={cn("text-[9px] h-4 capitalize", STATUS_BADGE[j.status])}>
+                        {j.status}
+                      </Badge>
+                    </td>
+                    <td className="p-1.5 text-right tabular-nums">{j.row_count ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
+  );
+}
+
+function WarningRow({ warning }: { warning: IngestParseWarning }) {
+  const [open, setOpen] = useState(false);
+  const hasRows = Boolean(warning.rowNumbers?.length);
+
+  if (!hasRows) {
+    return <p className="text-[10px] text-foreground/90">{warning.message}</p>;
+  }
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center gap-1 text-[10px] text-left w-full hover:text-foreground">
+        <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform", open && "rotate-180")} />
+        <span>{warning.message}</span>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pl-4 pt-1 text-[10px] text-muted-foreground font-mono">
+        Rows: {warning.rowNumbers!.slice(0, 50).join(", ")}
+        {warning.rowNumbers!.length > 50 && ` … +${warning.rowNumbers!.length - 50} more`}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

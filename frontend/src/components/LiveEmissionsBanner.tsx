@@ -23,6 +23,7 @@ const STATUS_CLS: Record<string, string> = {
 export function LiveEmissionsBanner() {
   const { summary: data, summaryIsLoading: isLoading, summaryError: error, health, reconciliation, dashboardLastRefreshIso } =
     useEmissionsData();
+  const isDemoSource = !!data?.data_source && /bundled|mock/i.test(data.data_source);
 
   if (error) {
     const isDev = import.meta.env.DEV;
@@ -64,11 +65,11 @@ export function LiveEmissionsBanner() {
     : null;
 
   return (
-    <div className="px-3 py-1.5 border-b border-border bg-card flex flex-wrap items-center gap-3">
-      <div className="flex items-center gap-1.5">
+    <div className="px-3 py-1.5 border-b border-border bg-card flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
+      <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto min-w-0">
         <Satellite className="h-3.5 w-3.5 text-primary" />
         <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
-          Live Climate TRACE
+          {isDemoSource ? "Climate Data (Demo Source)" : "Live Climate TRACE"}
         </span>
         {health?.status === "ok" && (
           <span className="inline-flex items-center gap-1 text-[10px] text-[hsl(var(--on-track))]">
@@ -85,17 +86,17 @@ export function LiveEmissionsBanner() {
       </div>
 
       {isLoading && (
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-4 w-20" />
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <Skeleton className="skeleton-shimmer h-4 w-20" />
+          <Skeleton className="skeleton-shimmer h-4 w-20" />
+          <Skeleton className="skeleton-shimmer h-4 w-20" />
+          <Skeleton className="skeleton-shimmer h-4 w-20" />
         </div>
       )}
 
       {data && (
         <>
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto min-w-0">
             {(Object.entries(data.sectors) as [string, { latest_year: number | null; latest_value: number | null; status: string }][]).map(
               ([key, s]) => (
                 <Badge
@@ -114,7 +115,7 @@ export function LiveEmissionsBanner() {
             )}
           </div>
 
-          <div className="ml-auto flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+          <div className="w-full sm:ml-auto sm:w-auto flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground min-w-0">
             {data.global_rank != null && (
               <span>
                 Global rank <span className="font-mono">#{data.global_rank}</span>
@@ -142,6 +143,11 @@ export function LiveEmissionsBanner() {
             {data.from_cache && (
               <Badge variant="outline" className="h-4 text-[10px]">
                 cached
+              </Badge>
+            )}
+            {isDemoSource && (
+              <Badge variant="outline" className="h-4 text-[10px]">
+                demo data
               </Badge>
             )}
             {refreshLabel && <span title="Dashboard cache refresh">Updated {refreshLabel}</span>}

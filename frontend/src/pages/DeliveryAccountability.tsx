@@ -93,7 +93,7 @@ export default function DeliveryAccountability() {
                         const ind = getById(m.indicator_id);
                         if (!ind) return null;
                         const p = progressPct(ind);
-                        const sc = statusColor(p);
+                        const sc = statusColor(p, ind);
                         const dot = sc === "on-track" ? "bg-on-track" : sc === "at-risk" ? "bg-at-risk" : sc === "off-track" ? "bg-off-track" : "bg-muted";
                         return (
                           <div key={i} className="flex items-start gap-2 p-2 rounded bg-muted/30">

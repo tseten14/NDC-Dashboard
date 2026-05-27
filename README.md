@@ -32,7 +32,30 @@ Pick a country, choose a demo role from the top bar, and explore.
 | Climate risk map | Express → `data/riskSeed.js` |
 | My Work / activities | `localStorage` in this browser |
 
-Set `USE_MOCK_DATA=true` in `.env` for offline fixture mode (no Climate TRACE calls).
+Set `USE_MOCK_DATA=true` in `.env` for offline fixture mode (no Climate TRACE calls). The API logs a startup banner and exposes `mock_mode` on `/api/health` and `/api/v1/health`.
+
+## API security & configuration
+
+| Variable | Purpose |
+| -------- | ------- |
+| `FRONTEND_ORIGIN` | Only browser origin allowed by CORS (default `http://localhost:8080`) |
+| `INGEST_API_KEY` | Shared secret for **write** endpoints (`POST` under `/api/v1/ingest/*`) |
+| `VITE_INGEST_API_KEY` | Same value in the frontend `.env` so the ingest UI can send `x-api-key` |
+| `LOG_LEVEL` | Pino log level (`info` default) |
+
+**Write auth:** Include header `x-api-key: <INGEST_API_KEY>` on all ingest `POST` requests (upload, confirm, scan, import). `GET` routes stay public.
+
+**Rate limits (per IP):**
+
+| Scope | Limit |
+| ----- | ----- |
+| `GET /api/v1/*` | 200 requests / 15 minutes |
+| `POST /api/v1/ingest/*` | 20 requests / 15 minutes |
+| `POST /api/v1/client-errors` | 50 requests / hour |
+
+Exceeded limits return `429` with `{ "error": "rate_limited", "retry_after_seconds": N }`.
+
+**Ops endpoints (no auth):** `GET /api/v1/health`, `GET /api/v1/health/full`, `POST /api/v1/client-errors`.
 
 ## Scripts
 

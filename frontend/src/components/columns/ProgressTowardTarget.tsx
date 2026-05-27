@@ -2,8 +2,12 @@ import { useMemo } from "react";
 import { type NDCTarget, type ProgressStatus, getObservedDataForTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { getClimateTraceSectorForTarget, isIndicatorPanelTarget, buildIndicatorPanelObservedDataSet } from "@/lib/emissions-integration";
+import { DataLineageChip } from "@/components/DataLineageChip";
+import { buildTargetLineage } from "@/lib/lineage";
+import { ColumnLoadingState, NoDataPlaceholder, SelectTargetPlaceholder } from "@/components/dashboard/DashboardStates";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { HelpCircle } from "lucide-react";
@@ -44,19 +48,29 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
   }, [observedForData]);
 
   if (!selectedTarget) {
-    return <EmptyState />;
+    return <SelectTargetPlaceholder column="Progress" />;
   }
-
-  const { percent, status, source } = emissions.getProgressForTarget(selectedTarget);
-  const cfg = statusConfig[status];
 
   const apiSector = getClimateTraceSectorForTarget(selectedTarget);
   const pr = apiSector ? emissions.progressBySector[apiSector] : undefined;
+  const isLoadingProgress =
+    (!!apiSector && !!emissions.sectorLoading[apiSector] && !pr) ||
+    (isIndicatorPanelTarget(selectedTarget) && emissions.indicatorPanelLoading && !indEntry);
+
+  if (isLoadingProgress) {
+    return <ColumnLoadingState title="Progress" />;
+  }
+
+  const { percent, status, source } = emissions.getProgressForTarget(selectedTarget);
+  const hasProgressData = percent != null;
+  const displayPercent = hasProgressData ? percent : 0;
+  const cfg = statusConfig[status];
+  const lineage = buildTargetLineage(selectedTarget, emissions, source);
 
   const latestDisplay =
     source === "api" && pr?.latest_value != null
       ? `${pr.latest_value} ${selectedTarget.unit}`
-      : latestRow != null
+      : latestRow != null && latestRow.value != null
         ? `${latestRow.value} ${selectedTarget.unit}`
         : null;
 
@@ -82,6 +96,25 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
     pr?.baseline_vs_trace_delta_mt != null &&
     Math.abs(pr.baseline_vs_trace_delta_mt) >= 5;
 
+  if (!hasProgressData) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="px-3 py-2 border-b border-border bg-muted/50">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Progress</h3>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="p-4 space-y-3">
+            <NoDataPlaceholder hint="Progress requires observed values for the selected reporting period." />
+            <div className="text-xs text-muted-foreground space-y-0.5">
+              <p>{baselineDisplay}</p>
+              <p>{targetDisplay}</p>
+            </div>
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="px-3 py-2 border-b border-border bg-muted/50">
@@ -100,10 +133,8 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
             </div>
           )}
 
-          {/* Main progress card */}
           <Card className={cn("ring-2", cfg.ring)}>
             <CardContent className="p-4 flex flex-col items-center text-center">
-              {/* Circular progress indicator */}
               <div className="relative w-28 h-28 mb-3">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
                   <circle cx="60" cy="60" r="52" fill="none" stroke="hsl(var(--border))" strokeWidth="8" />
@@ -112,19 +143,25 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                     stroke={`hsl(var(--${status === "unknown" ? "neutral" : status}))`}
                     strokeWidth="8"
                     strokeLinecap="round"
-                    strokeDasharray={`${(percent / 100) * 327} 327`}
+                    strokeDasharray={`${(displayPercent / 100) * 327} 327`}
                     className="transition-all duration-700"
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className={cn("text-2xl font-bold", cfg.color)}>{percent}%</span>
+                  <span className={cn("text-2xl font-bold", cfg.color)}>{displayPercent}%</span>
                 </div>
               </div>
 
-              {/* Status label */}
+              <div className="w-full max-w-[220px] mb-2">
+                <Progress value={displayPercent} className="h-2" />
+              </div>
+
               <Badge variant="outline" className={cn("text-xs px-3 py-1 font-semibold", cfg.color, cfg.ring)}>
                 {cfg.label}
               </Badge>
+              {displayPercent === 0 && (
+                <p className="mt-1 text-[11px] text-muted-foreground">0% toward target — no reduction recorded yet</p>
+              )}
 
               {source === "api" && (
                 <p className="mt-2 text-xs text-muted-foreground max-w-[220px]">
@@ -139,26 +176,33 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                 </p>
               )}
 
-              {/* Target summary */}
               <div className="mt-3 text-xs text-muted-foreground space-y-0.5">
-                <p>{baselineDisplay}</p>
-                <p>{targetDisplay}</p>
+                <p className="flex flex-wrap items-center gap-1">
+                  <span>{baselineDisplay}</span>
+                  <DataLineageChip lineage={lineage} />
+                </p>
+                <p className="flex flex-wrap items-center gap-1">
+                  <span>{targetDisplay}</span>
+                  <DataLineageChip lineage={lineage} />
+                </p>
                 {latestDisplay && (
-                  <p className="font-medium text-foreground">
-                    Latest: {latestDisplay}
-                    {source === "api" && pr?.latest_year != null && (
-                      <span className="text-muted-foreground font-normal"> ({pr.latest_year})</span>
-                    )}
-                    {source === "catalog" && latestRow != null && (
-                      <span className="text-muted-foreground font-normal"> ({latestRow.year})</span>
-                    )}
+                  <p className="font-medium text-foreground flex flex-wrap items-center gap-1">
+                    <span>
+                      Latest: {latestDisplay}
+                      {source === "api" && pr?.latest_year != null && (
+                        <span className="text-muted-foreground font-normal"> ({pr.latest_year})</span>
+                      )}
+                      {source === "catalog" && latestRow != null && (
+                        <span className="text-muted-foreground font-normal"> ({latestRow.year})</span>
+                      )}
+                    </span>
+                    <DataLineageChip lineage={lineage} />
                   </p>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Methodology tooltip */}
           <Card>
             <CardContent className="p-3">
               <div className="flex items-center gap-1.5">
@@ -182,7 +226,7 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                         </p>
                       )}
                       {pr?.scope_note && <p className="italic">{pr.scope_note}</p>}
-                      <p className="text-muted-foreground italic">QA/QC warnings degrade status. Insufficient data yields "Unknown."</p>
+                      <p className="text-muted-foreground italic">QA/QC warnings degrade status. Insufficient data yields &quot;Unknown.&quot;</p>
                     </div>
                   </TooltipContent>
                 </Tooltip>
@@ -190,7 +234,6 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
             </CardContent>
           </Card>
 
-          {/* Data quality note */}
           {observedForData && observedForData.provenance.qaqcStatus !== "ok" && (
             <Card className="border-at-risk/30">
               <CardContent className="p-3">
@@ -202,19 +245,6 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
           )}
         </div>
       </ScrollArea>
-    </div>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col h-full">
-      <div className="px-3 py-2 border-b border-border bg-muted/50">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Progress</h3>
-      </div>
-      <div className="flex-1 flex items-center justify-center p-4">
-        <p className="text-xs text-muted-foreground text-center">Select a target to view progress</p>
-      </div>
     </div>
   );
 }

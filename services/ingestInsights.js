@@ -944,6 +944,27 @@ function detectColumn(headers, candidates) {
   return null;
 }
 
+function countDuplicateRows(rows, keys) {
+  const usableKeys = keys.filter(Boolean);
+  if (usableKeys.length < 2) return 0;
+  const seen = new Map();
+  let dupes = 0;
+  for (const row of rows) {
+    const parts = usableKeys.map((k) => {
+      const v = row[k];
+      return v == null ? "" : String(v).trim().toLowerCase();
+    });
+    if (parts.some((p) => p === "")) continue;
+    const key = parts.join("|");
+    const prev = seen.get(key) ?? 0;
+    seen.set(key, prev + 1);
+  }
+  for (const count of seen.values()) {
+    if (count > 1) dupes += count;
+  }
+  return dupes;
+}
+
 export function buildTabularSections(rows, columns, filename) {
   const headers = columns.map((c) => c.name);
 
@@ -1063,6 +1084,16 @@ export function buildTabularSections(rows, columns, filename) {
   if (nationalNote) validationNotes.push(nationalNote);
   if (sectorBarNote) validationNotes.push(sectorBarNote);
 
+  const valueCoercionFailures =
+    valueCol == null
+      ? 0
+      : rows.filter((r) => {
+          const raw = r[valueCol];
+          if (raw == null || String(raw).trim() === "") return false;
+          return safeNumber(raw) == null;
+        }).length;
+  const duplicateKeyRows = countDuplicateRows(rows, [yearCol, sectorCol, districtCol]);
+
   const recommendations = [];
   if (incompleteCols.length)
     recommendations.push(
@@ -1116,6 +1147,13 @@ export function buildTabularSections(rows, columns, filename) {
   }
 
   return {
+    qc: {
+      rows_input: rows.length,
+      rows_used_for_charts: chartRows.length,
+      rows_dropped_non_national: Math.max(0, rows.length - chartRows.length),
+      duplicate_key_rows: duplicateKeyRows,
+      value_coercion_failures: valueCoercionFailures,
+    },
     validation:
       validationNotes.length > 0
         ? { notes: validationNotes, aggregation_engine: "javascript_fallback" }

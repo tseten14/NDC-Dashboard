@@ -3,7 +3,6 @@ import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAppContext } from "@/hooks/use-app-state";
 import { TargetStatusSummary } from "@/components/TargetStatusSummary";
-import { LiveEmissionsBanner } from "@/components/LiveEmissionsBanner";
 import { DataCoveragePanel } from "@/components/DataCoveragePanel";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { NDCTargetsColumn } from "@/components/columns/NDCTargets";
@@ -15,6 +14,7 @@ import { ndcTargets, sectorDefinitions, getDataCompleteness, getLastRefreshTimes
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw, Download, FileSpreadsheet, FileText, Database, Clock } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -47,6 +47,14 @@ export default function NDCLayer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.geographyLevel]);
 
+  const handleSelectTarget = useCallback((targetId: string) => {
+    state.setSelectedTargetId(targetId);
+    const target = ndcTargets.find((t) => t.id === targetId);
+    if (target) {
+      setSearchParams({ target: targetId, sector: target.sectorId });
+    }
+  }, [state, setSearchParams]);
+
   const handleSummarySelect = useCallback((targetId: string, sectorId: string) => {
     state.setSelectedSector(sectorId);
     state.setSelectedTargetId(targetId);
@@ -62,6 +70,7 @@ export default function NDCLayer() {
     toast.info("Refreshing Climate TRACE dashboard...");
     try {
       await queryClient.invalidateQueries({ queryKey: ["emissions"] });
+      await queryClient.invalidateQueries({ queryKey: ["cockpit"] });
       toast.success("Dashboard data refreshed");
     } catch {
       toast.error("Refresh failed — check API health");
@@ -142,39 +151,93 @@ export default function NDCLayer() {
               <Button variant="outline" size="sm" className="gap-1 h-7 text-xs"><Download className="h-3 w-3" />Export</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => { exportToExcel(); toast.success("Excel exported"); }}><FileSpreadsheet className="h-4 w-4 mr-2" />Excel</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { exportToPDF(); toast.success("PDF exported"); }}><FileText className="h-4 w-4 mr-2" />Key Stats PDF</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  toast.warning("Export currently uses legacy demo data. Live-source export is being wired.");
+                  exportToExcel();
+                  toast.success("Excel exported");
+                }}
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  toast.warning("Export currently uses legacy demo data. Live-source export is being wired.");
+                  exportToPDF();
+                  toast.success("PDF exported");
+                }}
+              >
+                <FileText className="h-4 w-4 mr-2" />Key Stats PDF
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => toast.info("CRT/BTR CSV export coming soon")}><FileText className="h-4 w-4 mr-2" />CRT/BTR CSV</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      {/* Live Climate TRACE data (Express API → Climate TRACE v7) */}
-      <LiveEmissionsBanner />
       <DataCoveragePanel />
 
       {/* Target Status Summary — 'all targets first' anchor */}
       <TargetStatusSummary onSelectTarget={handleSummarySelect} />
 
-      {/* Five-column layout */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-border overflow-hidden">
+      {/* Three-column layout */}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border overflow-hidden">
         <div className="overflow-hidden">
-          <NDCTargetsColumn selectedSector={state.selectedSector as SectorId} selectedTargetId={state.selectedTargetId} onSelectTarget={state.setSelectedTargetId} />
-        </div>
-        <div className="overflow-hidden">
-          <NDCActivitiesColumn selectedTargetId={state.selectedTargetId} geographyLevel={state.geographyLevel as GeographyLevel} selectedDistrictId={state.selectedDistrictId} />
+          <NDCTargetsColumn selectedSector={state.selectedSector as SectorId} selectedTargetId={state.selectedTargetId} onSelectTarget={handleSelectTarget} />
         </div>
         <div className="overflow-hidden">
           <ObservedDataColumn selectedTarget={selectedTarget} timeMode={state.timeMode as TimeMode} selectedMitigationOptions={state.selectedMitigationOptions} />
         </div>
-        <div className="overflow-hidden">
-          <ProgressTowardTargetColumn selectedTarget={selectedTarget} />
-        </div>
-        <div className="overflow-hidden">
-          <MitigationOptionsColumn selectedTarget={selectedTarget} selectedSector={state.selectedSector as SectorId} timeMode={state.timeMode as TimeMode}
-            selectedMitigationOptions={state.selectedMitigationOptions} onToggleMitigationOption={state.toggleMitigationOption}
-            decisionLog={state.decisionLog} onAddToDecisionLog={state.addToDecisionLog} onUpdateDecisionStatus={state.updateDecisionStatus} />
+        <div className="overflow-hidden flex flex-col">
+          <div className="overflow-hidden">
+            <ProgressTowardTargetColumn selectedTarget={selectedTarget} />
+          </div>
+          <div className="shrink-0 px-3 py-2 border-t border-border bg-muted/20 space-y-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                  📋 Activities / Measures
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden flex flex-col">
+                <DialogHeader className="px-4 py-3 border-b border-border">
+                  <DialogTitle className="text-sm">Activities / Measures</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 min-h-0">
+                  <NDCActivitiesColumn
+                    selectedTargetId={state.selectedTargetId}
+                    geographyLevel={state.geographyLevel as GeographyLevel}
+                    selectedDistrictId={state.selectedDistrictId}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                  💡 Mitigation Options
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden flex flex-col">
+                <DialogHeader className="px-4 py-3 border-b border-border">
+                  <DialogTitle className="text-sm">Mitigation Options</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 min-h-0">
+                  <MitigationOptionsColumn
+                    selectedTarget={selectedTarget}
+                    selectedSector={state.selectedSector as SectorId}
+                    timeMode={state.timeMode as TimeMode}
+                    selectedMitigationOptions={state.selectedMitigationOptions}
+                    onToggleMitigationOption={state.toggleMitigationOption}
+                    decisionLog={state.decisionLog}
+                    onAddToDecisionLog={state.addToDecisionLog}
+                    onUpdateDecisionStatus={state.updateDecisionStatus}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
     </div>

@@ -299,6 +299,19 @@ def check_duplicates(
     return warnings
 
 
+def count_duplicate_rows(
+    df: pd.DataFrame,
+    year_col: str | None,
+    sector_col: str | None,
+    district_col: str | None,
+) -> int:
+    keys = [c for c in [year_col, sector_col, district_col] if c and c in df.columns]
+    if len(keys) < 2:
+        return 0
+    dup_mask = df.duplicated(subset=keys, keep=False)
+    return int(dup_mask.sum())
+
+
 def build_insights(
     df: pd.DataFrame,
     columns: list[dict],
@@ -426,9 +439,16 @@ def analyze_dataframe(df: pd.DataFrame, filename: str) -> dict[str, Any]:
         validation_notes.append(national_note)
 
     warnings = check_duplicates(chart_df, year_col, sector_col, district_col)
+    duplicate_key_rows = count_duplicate_rows(chart_df, year_col, sector_col, district_col)
 
     columns = profile_columns(df)
     unit = infer_value_unit(value_col)
+    value_coercion_failures = 0
+    if value_col and value_col in df.columns:
+        src = df[value_col]
+        coerced = coerce_numeric(src)
+        src_non_empty = src.notna() & (src.astype(str).str.strip() != "")
+        value_coercion_failures = int((src_non_empty & coerced.isna()).sum())
 
     sector_bar, sector_note = (
         build_sector_bar(chart_df, sector_col, value_col, year_col)
@@ -512,6 +532,13 @@ def analyze_dataframe(df: pd.DataFrame, filename: str) -> dict[str, Any]:
         "columns": columns,
         "sample": sample,
         "warnings": warnings,
+        "qc": {
+            "rows_input": int(len(df)),
+            "rows_used_for_charts": int(len(chart_df)),
+            "rows_dropped_non_national": int(max(0, len(df) - len(chart_df))),
+            "duplicate_key_rows": int(duplicate_key_rows),
+            "value_coercion_failures": int(value_coercion_failures),
+        },
         "validation": {
             "notes": validation_notes,
             "year_column": year_col,

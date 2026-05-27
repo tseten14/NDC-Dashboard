@@ -70,7 +70,7 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
           <Stat icon={<Database className="h-3 w-3 text-muted-foreground" />} label="MRV gaps" value={mrvGaps} hint="Targets missing observed data" />
         </div>
 
-        <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0 touch-scroll-x">
           <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">Top gaps</span>
           {topGaps.length === 0 && (
             <span className="text-[10px] text-muted-foreground">No gaps detected</span>

@@ -50,7 +50,7 @@ export interface EmissionsDataContextValue {
   isApiReachable: boolean;
   dashboardCompleteness: number;
   dashboardLastRefreshIso: string;
-  getProgressForTarget: (target: NDCTarget) => { percent: number; status: ProgressStatus; source: "api" | "catalog" | "mock" };
+  getProgressForTarget: (target: NDCTarget) => { percent: number | null; status: ProgressStatus; source: "api" | "catalog" | "mock" };
   getObservedMode: (target: NDCTarget) => "live" | "mock";
   indicatorTargets: Record<string, IndicatorPanelEntry> | undefined;
   indicatorPanelLoading: boolean;
@@ -235,13 +235,20 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
   }, [isApiReachable, dashboardQuery.dataUpdatedAt]);
 
   const getProgressForTarget = useCallback(
-    (target: NDCTarget): { percent: number; status: ProgressStatus; source: "api" | "catalog" | "mock" } => {
+    (target: NDCTarget): { percent: number | null; status: ProgressStatus; source: "api" | "catalog" | "mock" } => {
       const sector = getClimateTraceSectorForTarget(target);
       const pr = sector ? progressBySector[sector] : undefined;
       const err = sector ? sectorError[sector] : null;
       if (sector && pr && !err) {
+        if (pr.progress_pct == null) {
+          return {
+            percent: null,
+            status: "unknown",
+            source: "api",
+          };
+        }
         return {
-          percent: pr.progress_pct ?? 0,
+          percent: pr.progress_pct,
           status: apiStatusToProgressStatus(pr.status),
           source: "api",
         };
@@ -264,7 +271,8 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
       const sector = getClimateTraceSectorForTarget(target);
       if (sector && !sectorError[sector]) {
         const ts = timeseriesBySector[sector]?.timeseries;
-        if (ts && ts.length > 0) return "live";
+        const pr = progressBySector[sector];
+        if (ts && ts.length > 0 && pr) return "live";
       }
 
       const ind = isIndicatorPanelTarget(target) ? indicatorPanelQuery.data?.targets?.[target.id] : undefined;
@@ -272,7 +280,7 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
 
       return "mock";
     },
-    [timeseriesBySector, sectorError, indicatorPanelQuery.data, indicatorPanelQuery.error],
+    [timeseriesBySector, progressBySector, sectorError, indicatorPanelQuery.data, indicatorPanelQuery.error],
   );
 
   const value = useMemo(
