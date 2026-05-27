@@ -3,6 +3,8 @@
 // Updated NDC (September 2022) to 2030.
 // Design rule: no fabricated values. TBD/unknown → validation_status: "Missing".
 
+import { calculateProgressPercent, calculateProgressStatus } from "@/lib/progress";
+
 export type Strategy = "NDPIV" | "TENFOLD" | "NDC";
 export type ValidationStatus = "Verified" | "Provisional" | "Modelled" | "Missing";
 export type AlignmentStrength = "Strong" | "Medium" | "Weak";
@@ -128,20 +130,51 @@ export function deliveryConfidence(scope: Indicator[]): { pct: number; trackable
   return { pct: Math.round((trackable / scope.length) * 100), trackable, total: scope.length };
 }
 
-export function progressPct(ind: Indicator): number | null {
-  if (ind.baseline_value === null || ind.current_value === undefined || ind.current_value === null) return null;
-  const target = ind.target_value_2030 ?? ind.target_value_2025 ?? ind.target_value_2040;
-  if (target === null || target === undefined) return null;
-  const span = target - ind.baseline_value;
-  if (span === 0) return 100;
-  return Math.round(((ind.current_value - ind.baseline_value) / span) * 100);
+function yearFromLabel(label: string | null | undefined, fallback: number): number {
+  const match = String(label ?? "").match(/\d{4}/);
+  return match ? parseInt(match[0], 10) : fallback;
 }
 
-export function statusColor(p: number | null): "on-track" | "at-risk" | "off-track" | "unknown" {
+function indicatorProgressTarget(ind: Indicator) {
+  const targetVal = ind.target_value_2030 ?? ind.target_value_2025 ?? ind.target_value_2040;
+  return {
+    baselineYear: yearFromLabel(ind.baseline_year, 2015),
+    baselineValue: ind.baseline_value ?? 0,
+    targetYear: yearFromLabel(ind.target_year_primary, 2030),
+    targetValue: targetVal ?? 0,
+    metricType: "activity-share",
+  };
+}
+
+function indicatorLatestYear(ind: Indicator): number {
+  return yearFromLabel(ind.current_value_year ?? ind.last_update_date, new Date().getFullYear());
+}
+
+export function progressPct(ind: Indicator): number | null {
+  if (ind.baseline_value === null || ind.current_value === undefined || ind.current_value === null) return null;
+  const targetVal = ind.target_value_2030 ?? ind.target_value_2025 ?? ind.target_value_2040;
+  if (targetVal === null || targetVal === undefined) return null;
+  return calculateProgressPercent(indicatorProgressTarget(ind), {
+    latestValue: ind.current_value,
+    latestYear: indicatorLatestYear(ind),
+  });
+}
+
+export function statusColor(
+  p: number | null,
+  ind?: Indicator,
+): "on-track" | "at-risk" | "off-track" | "unknown" {
   if (p === null) return "unknown";
-  if (p >= 70) return "on-track";
-  if (p >= 35) return "at-risk";
-  return "off-track";
+  if (ind) {
+    return calculateProgressStatus(p, indicatorProgressTarget(ind), {
+      latestYear: indicatorLatestYear(ind),
+    });
+  }
+  return calculateProgressStatus(
+    p,
+    { baselineYear: 2015, targetYear: 2030 },
+    { latestYear: new Date().getFullYear() },
+  );
 }
 
 // ---------- SHARED DEFAULTS ----------

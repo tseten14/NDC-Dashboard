@@ -2,6 +2,7 @@ import {
   Trees, Flame, Droplets, Factory, Trash2, Bus, CloudRain, Wheat,
   type LucideIcon,
 } from "lucide-react";
+import { calculateProgress as calculateProgressUnified } from "@/lib/progress";
 
 /* ── Enums & types ── */
 
@@ -11,7 +12,8 @@ export type SectorId =
 
 export type Conditionality = "Unconditional" | "Conditional" | "Mixed";
 export type MetricType = "emissions-reduction" | "forest-cover" | "renewable-energy"
-  | "waste-diversion" | "energy-efficiency" | "transport-modal-shift" | "climate-resilience";
+  | "waste-diversion" | "energy-efficiency" | "transport-modal-shift" | "climate-resilience"
+  | "activity-share";
 export type TimeMode = "historical" | "projection";
 export type GeographyLevel = "national" | "district";
 export type ImplementationLevel = "national" | "district" | "both";
@@ -225,7 +227,7 @@ export const ndcTargets: NDCTarget[] = [
     targetValue: 50,
     unit: "% CSA adoption",
     conditionality: "Mixed",
-    metricType: "emissions-reduction",
+    metricType: "activity-share",
   },
 ];
 
@@ -515,52 +517,40 @@ function latestObservedValue(historicalData: ObservedDataPoint[]): number | null
   return null;
 }
 
+function latestObservedYear(historicalData: ObservedDataPoint[]): number | null {
+  for (let i = historicalData.length - 1; i >= 0; i--) {
+    if (historicalData[i].value != null) return historicalData[i].year;
+  }
+  return null;
+}
+
 export function calculateProgress(target: NDCTarget, observedData?: ObservedDataSet): {
-  percent: number;
+  percent: number | null;
   status: ProgressStatus;
 } {
   if (!observedData || observedData.historicalData.length === 0) {
-    return { percent: 0, status: "unknown" };
+    return { percent: null, status: "unknown" };
   }
 
   const latestValue = latestObservedValue(observedData.historicalData);
   if (latestValue == null) {
-    return { percent: 0, status: "unknown" };
+    return { percent: null, status: "unknown" };
   }
 
-  const { baselineValue, targetValue } = target;
-  let percent: number;
-  if (target.metricType === "emissions-reduction") {
-    const denom = baselineValue - targetValue;
-    if (!Number.isFinite(denom) || denom === 0) {
-      return { percent: 0, status: "unknown" };
-    }
-    percent = Math.min(100, Math.max(0, Math.round(((baselineValue - latestValue) / denom) * 100)));
-  } else {
-    const totalChange = Math.abs(targetValue - baselineValue);
-    const currentChange = Math.abs(latestValue - baselineValue);
-    percent = totalChange === 0 ? 0 : Math.min(100, Math.round((currentChange / totalChange) * 100));
-  }
-
-  // QA/QC override
-  const qaqc = observedData.provenance.qaqcStatus;
-  if (qaqc === "missing") return { percent, status: "unknown" };
-
-  const yearsElapsed = 2024 - target.baselineYear;
-  const totalYears = target.targetYear - target.baselineYear;
-  const expectedProgress = (yearsElapsed / totalYears) * 100;
-
-  let status: ProgressStatus;
-  if (percent >= expectedProgress * 0.9) status = "on-track";
-  else if (percent >= expectedProgress * 0.6) status = "at-risk";
-  else status = "off-track";
-
-  // QA/QC warnings degrade status
-  if ((qaqc === "warning" || qaqc === "inconsistent") && status === "on-track") {
-    status = "at-risk";
-  }
-
-  return { percent, status };
+  return calculateProgressUnified(
+    {
+      baselineYear: target.baselineYear,
+      baselineValue: target.baselineValue,
+      targetYear: target.targetYear,
+      targetValue: target.targetValue,
+      metricType: target.metricType,
+    },
+    {
+      latestValue,
+      latestYear: latestObservedYear(observedData.historicalData),
+      qaqcStatus: observedData.provenance.qaqcStatus,
+    },
+  );
 }
 
 export function getDataCompleteness(): number {

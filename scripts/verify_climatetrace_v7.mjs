@@ -2,7 +2,7 @@
  * Cross-check Climate TRACE v7 API responses vs our dashboard aggregation.
  * Run: node scripts/verify_climatetrace_v7.mjs
  */
-import { SECTOR_MAP, ALL_SECTOR_SLUGS } from "../config/ndcTargets.js";
+import { SECTOR_MAP, ALL_TRACE_SLUGS } from "../config/ndcTargets.js";
 import {
   fetchSectorEmissionsForYear,
   fetchUgandaCountryRanking,
@@ -11,8 +11,9 @@ import {
 } from "../config/climateTrace.js";
 import { getUiSectorTimeseries } from "../services/climateTraceTimeseries.js";
 
-const YEAR = 2023;
+const YEAR = parseInt(process.env.VERIFY_YEAR || "2023", 10);
 const GADM = "UGA";
+const DELTA_TOLERANCE_MT = parseFloat(process.env.VERIFY_DELTA_TOLERANCE || "0.1");
 
 async function fetchJson(url) {
   const res = await fetch(url);
@@ -35,14 +36,14 @@ async function main() {
   console.log("2) Per-sector slug (/v7/sources/emissions, one slug per request)");
   const slugMt = {};
   let slugSum = 0;
-  for (const slug of ALL_SECTOR_SLUGS) {
+  for (const slug of ALL_TRACE_SLUGS) {
     const row = await fetchSectorEmissionsForYear(YEAR, slug);
     slugMt[slug] = row?.mtco2e ?? null;
     if (row?.mtco2e != null) slugSum += row.mtco2e;
     console.log(`   ${slug.padEnd(28)} ${row?.mtco2e ?? "null"} Mt`);
   }
   slugSum = +slugSum.toFixed(2);
-  console.log(`   Sum of ${ALL_SECTOR_SLUGS.length} slugs: ${slugSum} Mt\n`);
+  console.log(`   Sum of ${ALL_TRACE_SLUGS.length} slugs: ${slugSum} Mt\n`);
 
   // 3) API pitfall: repeated sectors= param (only first sector returned)
   const multiUrl = climateTraceUrl("/sources/emissions", {
@@ -114,7 +115,18 @@ async function main() {
     }
   }
 
+  let failed = false;
+  if (Math.abs(gapRankVsSlugs) > DELTA_TOLERANCE_MT) {
+    console.error(
+      `\nFAIL: |ranking − slug sum| = ${Math.abs(gapRankVsSlugs)} Mt exceeds tolerance ${DELTA_TOLERANCE_MT} Mt`,
+    );
+    failed = true;
+  } else {
+    console.log(`\nOK: ranking vs slug sum within ${DELTA_TOLERANCE_MT} Mt tolerance`);
+  }
+
   console.log("\n=== Done ===");
+  if (failed) process.exit(1);
 }
 
 main().catch((e) => {

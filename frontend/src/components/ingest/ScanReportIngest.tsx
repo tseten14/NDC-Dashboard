@@ -2,7 +2,7 @@
  * Auto-scan ingest: drag/drop multiple files (csv/json/txt/pdf), upload to
  * /api/v1/ingest/scan with live progress, render structured report from the backend.
  */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -36,7 +36,8 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-import { resolveApiHost } from "@/lib/api";
+import { ingestApi, resolveApiHost, applyIngestWriteHeaders } from "@/lib/api";
+import { safeParseOrLog, ingestScanReportSchema } from "@/lib/schemas";
 
 const BASE = resolveApiHost();
 const ACCEPTED = ".csv,.json,.txt,.pdf";
@@ -153,6 +154,13 @@ interface FileReport {
   about?: AboutSection;
   analysis?: AnalysisSection;
   recommendations?: string[];
+  qc?: {
+    rows_input?: number;
+    rows_used_for_charts?: number;
+    rows_dropped_non_national?: number;
+    duplicate_key_rows?: number;
+    value_coercion_failures?: number;
+  };
   error?: string;
 }
 
@@ -166,6 +174,15 @@ interface ScanReport {
     files_failed: number;
     total_warnings: number;
     keyword_buckets: Record<string, string[]>;
+    json_mode?: "strict" | "repair";
+    qc?: {
+      rows_input: number;
+      rows_used_for_charts: number;
+      rows_dropped_non_national: number;
+      duplicate_key_rows: number;
+      value_coercion_failures: number;
+      files_repaired_non_strict: number;
+    };
   };
   files: FileReport[];
 }
@@ -178,7 +195,16 @@ export function ScanReportIngest() {
   const [progress, setProgress] = useState(0);
   const [report, setReport] = useState<ScanReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tabularEngine, setTabularEngine] = useState<"pandas" | "javascript_fallback" | null>(null);
+  const [allowJsonRepair, setAllowJsonRepair] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    ingestApi
+      .health()
+      .then((h) => setTabularEngine(h.analysis.tabular_engine))
+      .catch(() => setTabularEngine(null));
+  }, []);
 
   const addFiles = useCallback(
     async (list: FileList | null) => {
@@ -219,10 +245,16 @@ export function ScanReportIngest() {
               toast.error(`"${f.name}" does not look like JSON (must start with { or [).`);
               continue;
             }
-            toast.warning(
-              `"${f.name}" is not strict JSON — the server will try to repair it (quotes, trailing commas, JSONL).`,
-              { duration: 5000 },
-            );
+            if (!allowJsonRepair) {
+              toast.error(
+                `"${f.name}" is not strict JSON. Enable "JSON repair mode" before scanning, or fix the file syntax.`,
+                { duration: 6000 },
+              );
+              continue;
+            }
+            toast.warning(`"${f.name}" is not strict JSON — repair mode will try to fix common syntax issues.`, {
+              duration: 5000,
+            });
           }
         }
         accepted.push(f);
@@ -237,7 +269,7 @@ export function ScanReportIngest() {
       }
       setFiles(merged);
     },
-    [files],
+    [files, allowJsonRepair],
   );
 
   const removeFile = (idx: number) => setFiles((prev) => prev.filter((_, i) => i !== idx));
@@ -266,7 +298,10 @@ export function ScanReportIngest() {
     for (const f of files) form.append("files", f);
 
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${BASE}/api/v1/ingest/scan`);
+    const scanUrl = new URL(`${BASE || window.location.origin}/api/v1/ingest/scan`);
+    if (allowJsonRepair) scanUrl.searchParams.set("json_mode", "repair");
+    xhr.open("POST", scanUrl.toString());
+    applyIngestWriteHeaders(xhr);
 
     xhr.upload.onprogress = (ev) => {
       if (!ev.lengthComputable) return;
@@ -279,7 +314,14 @@ export function ScanReportIngest() {
       try {
         const body = JSON.parse(xhr.responseText) as ScanReport | { error: string };
         if (xhr.status >= 200 && xhr.status < 300 && "files" in body) {
-          setReport(body);
+          const validated = safeParseOrLog(ingestScanReportSchema, body, "ingest.scan");
+          if (!validated.ok) {
+            setError("Scan response failed schema validation");
+            setPhase("error");
+            toast.error("Scan response failed schema validation");
+            return;
+          }
+          setReport(validated.data);
           setPhase("done");
           toast.success(
             `Scanned ${body.summary.files_ok}/${body.summary.files_received} file(s) in ${body.duration_ms} ms`,
@@ -312,6 +354,28 @@ export function ScanReportIngest() {
 
   return (
     <div className="space-y-3">
+      {tabularEngine && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-muted-foreground">Tabular scan engine:</span>
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-xs h-5",
+              tabularEngine === "pandas"
+                ? "border-[hsl(var(--on-track))]/40 text-[hsl(var(--on-track))]"
+                : "border-at-risk/40 text-at-risk",
+            )}
+          >
+            {tabularEngine === "pandas" ? "pandas (high accuracy)" : "JavaScript fallback (lower accuracy)"}
+          </Badge>
+          {tabularEngine === "javascript_fallback" && (
+            <span className="text-xs text-muted-foreground">
+              Run <code className="font-mono text-[10px]">npm run setup:ingest-python</code> locally for pandas parity.
+            </span>
+          )}
+        </div>
+      )}
+
       {phase !== "done" && (
         <div
           onDrop={onDrop}
@@ -330,6 +394,9 @@ export function ScanReportIngest() {
             For .json: save as <strong className="font-medium">plain UTF-8</strong> (not TextEdit Rich Text). Example:{" "}
             <code className="text-[9px]">docs/samples/ingest-example.json</code>
           </p>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            JSON mode: <strong className="font-medium">{allowJsonRepair ? "Repair enabled" : "Strict (default)"}</strong>
+          </p>
           <input
             ref={inputRef}
             type="file"
@@ -346,6 +413,19 @@ export function ScanReportIngest() {
 
       {files.length > 0 && phase === "idle" && (
         <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={allowJsonRepair ? "default" : "outline"}
+              className="h-7 text-xs"
+              onClick={() => setAllowJsonRepair((v) => !v)}
+            >
+              {allowJsonRepair ? "JSON repair mode: ON" : "JSON repair mode: OFF (strict)"}
+            </Button>
+            <span className="text-[10px] text-muted-foreground">
+              Keep OFF for strict validation; turn ON only for messy legacy JSON.
+            </span>
+          </div>
           <div className="space-y-1">
             {files.map((f, i) => (
               <div
@@ -463,6 +543,26 @@ function ReportView({ report, onReset }: { report: ScanReport; onReset: () => vo
           tone={summary.total_warnings ? "warn" : "muted"}
         />
       </div>
+      {(summary.json_mode || summary.qc) && (
+        <div className="space-y-2">
+          {summary.json_mode && (
+            <p className="text-[10px] text-muted-foreground">
+              JSON parse mode used for this scan:{" "}
+              <span className={cn("font-semibold", summary.json_mode === "repair" ? "text-at-risk" : "text-on-track")}>
+                {summary.json_mode}
+              </span>
+            </p>
+          )}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+          <Stat label="Rows input" value={summary.qc?.rows_input ?? 0} />
+          <Stat label="Rows charted" value={summary.qc?.rows_used_for_charts ?? 0} tone="ok" />
+          <Stat label="Rows dropped" value={summary.qc?.rows_dropped_non_national ?? 0} tone={summary.qc?.rows_dropped_non_national ? "warn" : "muted"} />
+          <Stat label="Duplicate rows" value={summary.qc?.duplicate_key_rows ?? 0} tone={summary.qc?.duplicate_key_rows ? "warn" : "muted"} />
+          <Stat label="Coercion fails" value={summary.qc?.value_coercion_failures ?? 0} tone={summary.qc?.value_coercion_failures ? "bad" : "muted"} />
+          <Stat label="Repaired JSON files" value={summary.qc?.files_repaired_non_strict ?? 0} tone={summary.qc?.files_repaired_non_strict ? "warn" : "muted"} />
+          </div>
+        </div>
+      )}
 
       {Object.keys(summary.keyword_buckets).length > 0 && (
         <div className="space-y-1 p-3 rounded border border-border bg-card">
@@ -556,6 +656,21 @@ function FileCard({ file }: { file: FileReport }) {
             {file.words} words
           </Badge>
         )}
+        {file.qc?.rows_dropped_non_national ? (
+          <Badge variant="outline" className="text-[9px] bg-at-risk/10 text-at-risk border-at-risk/30">
+            dropped {file.qc.rows_dropped_non_national}
+          </Badge>
+        ) : null}
+        {file.qc?.duplicate_key_rows ? (
+          <Badge variant="outline" className="text-[9px] bg-at-risk/10 text-at-risk border-at-risk/30">
+            duplicates {file.qc.duplicate_key_rows}
+          </Badge>
+        ) : null}
+        {file.qc?.value_coercion_failures ? (
+          <Badge variant="outline" className="text-[9px] bg-destructive/10 text-destructive border-destructive/30">
+            coercion fails {file.qc.value_coercion_failures}
+          </Badge>
+        ) : null}
       </div>
 
       {file.warnings && file.warnings.length > 0 && (
@@ -615,7 +730,7 @@ function SectionHeader({ icon, title, accent }: { icon: React.ReactNode; title: 
   );
 }
 
-function AboutCard({ about }: { about: AboutSection }) {
+export function AboutCard({ about }: { about: AboutSection }) {
   const topics = about.topics_plain?.length ? about.topics_plain : about.topics;
   const docLabel = about.doc_type_plain ?? about.doc_type;
   const paragraphMode = about.presentation === "paragraph" && (about.paragraphs?.length ?? 0) > 0;
@@ -749,7 +864,7 @@ const CHART_COLORS = [
   "hsl(var(--primary))",
 ];
 
-function AnalysisCard({
+export function AnalysisCard({
   analysis,
   columns,
   preview,
@@ -860,11 +975,11 @@ function AnalysisCard({
         </div>
       )}
 
-      {!paragraphMode && hasCharts && (
+      {hasCharts && (
         <p className="text-[9px] uppercase text-muted-foreground font-semibold mb-2">Charts</p>
       )}
 
-      {!paragraphMode && (
+      {hasCharts && (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {sectorData.length > 0 && (
           <Chart
@@ -1031,7 +1146,7 @@ function AnalysisCard({
   );
 }
 
-function RecommendationsCard({ items }: { items: string[] }) {
+export function RecommendationsCard({ items }: { items: string[] }) {
   const paragraphStyle = items.length <= 2 && items.some((r) => r.length > 120);
 
   return (

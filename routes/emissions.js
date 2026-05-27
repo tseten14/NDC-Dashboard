@@ -4,6 +4,7 @@ import {
   getSectorSummary,
   getEmissionsDashboard,
   progressFromTimeseries,
+  getProvenancePayload,
 } from "../services/emissionsData.js";
 import { defaultInventoryRange } from "../config/climateTrace.js";
 import { checkApiHealth } from "../services/climatetrace.js";
@@ -25,7 +26,7 @@ router.get("/emissions/dashboard", async (req, res) => {
     const dashboard = await getEmissionsDashboard(since, to);
     return res.json(dashboard);
   } catch (err) {
-    console.error(err);
+    req.log?.error({ err }, "emissions_dashboard_failed");
     return res.status(500).json({ error: err.message });
   }
 });
@@ -55,7 +56,7 @@ router.get("/emissions/timeseries", async (req, res) => {
 
     return res.json(body);
   } catch (err) {
-    console.error(err);
+    req.log?.error({ err }, "emissions_dashboard_failed");
     return res.status(500).json({ error: err.message });
   }
 });
@@ -90,7 +91,7 @@ router.get("/emissions/progress", async (req, res) => {
       data_source: "Climate TRACE v7",
     });
   } catch (err) {
-    console.error(err);
+    req.log?.error({ err }, "emissions_dashboard_failed");
     return res.status(500).json({ error: err.message });
   }
 });
@@ -100,26 +101,19 @@ router.get("/emissions/summary", async (_req, res) => {
     const summary = await getSectorSummary();
     return res.json(summary);
   } catch (err) {
-    console.error(err);
+    req.log?.error({ err }, "emissions_dashboard_failed");
     return res.status(500).json({ error: err.message });
   }
 });
 
-router.get("/provenance", (_req, res) => {
-  return res.json({
-    source_type: "Observed (Earth Observation + Remote Sensing)",
-    data_source_name: "Climate TRACE",
-    api_version: "v7",
-    source_url: "https://climatetrace.org",
-    api_docs_url: "https://api.climatetrace.org/v7/docs/index.html",
-    data_license: "Creative Commons 4.0",
-    methodology: "Satellite + remote sensing, peer-reviewed models",
-    coverage_years: "2015–current (national via /v7/sources/emissions; district via /v7/sources + GADM2)",
-    mrv_owner: "Ministry of Water and Environment",
-    qa_qc_status: "OK",
-    validated: true,
-    last_updated: new Date().toISOString().split("T")[0],
-  });
+router.get("/provenance", async (_req, res) => {
+  try {
+    const payload = await getProvenancePayload();
+    return res.json(payload);
+  } catch (err) {
+    req.log?.error({ err }, "emissions_dashboard_failed");
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 router.get("/health/climatetrace", async (_req, res) => {

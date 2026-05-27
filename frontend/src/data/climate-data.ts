@@ -2,6 +2,7 @@ import {
   Trees, Flame, Droplets, Factory, Trash2, Bus, CloudRain,
   type LucideIcon,
 } from "lucide-react";
+import { calculateProgressPercent, calculateProgressStatus } from "@/lib/progress";
 
 export type Status = "on-track" | "at-risk" | "off-track";
 
@@ -194,16 +195,23 @@ export const sectors: Sector[] = [
 
 export function getSectorStatus(sector: Sector): Status {
   const targetEmissions = sector.baselineEmissions * (1 - sector.targetReduction / 100);
-  const totalReductionNeeded = sector.baselineEmissions - targetEmissions;
-  const currentReduction = sector.baselineEmissions - sector.currentEmissions;
-  const yearsElapsed = 2024 - sector.baselineYear;
-  const totalYears = sector.targetYear - sector.baselineYear;
-  const expectedProgress = (yearsElapsed / totalYears) * 100;
-  const actualProgress = (currentReduction / totalReductionNeeded) * 100;
-
-  if (actualProgress >= expectedProgress * 0.9) return "on-track";
-  if (actualProgress >= expectedProgress * 0.6) return "at-risk";
-  return "off-track";
+  const latestYear =
+    sector.historicalData[sector.historicalData.length - 1]?.year ?? new Date().getFullYear();
+  const percent = calculateProgressPercent(
+    {
+      baselineYear: sector.baselineYear,
+      baselineValue: sector.baselineEmissions,
+      targetYear: sector.targetYear,
+      targetValue: targetEmissions,
+      metricType: "emissions-reduction",
+    },
+    { latestValue: sector.currentEmissions, latestYear },
+  );
+  return calculateProgressStatus(
+    percent,
+    { baselineYear: sector.baselineYear, targetYear: sector.targetYear },
+    { latestYear },
+  );
 }
 
 export function getProgressPercent(sector: Sector): number {

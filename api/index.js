@@ -1,7 +1,12 @@
 /**
- * Vercel mounts this app at /api — routes in createApp() use /v1/* (→ /api/v1/*).
- * Do NOT add another /api prefix here (would become /api/api/v1).
+ * Vercel serverless entry. Rewrites send /api/* here with full paths preserved.
  */
+import { register } from "tsx/esm/api";
+register();
+
+import express from "express";
 import { createApp } from "../server/createApp.js";
 
-export default createApp();
+const app = express();
+app.use("/api", createApp());
+export default app;

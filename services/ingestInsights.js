@@ -25,6 +25,42 @@ const SECTOR_CANONICAL = {
   forestry: "afolu",
 };
 
+const NATIONAL_TOKENS = new Set([
+  "national",
+  "country",
+  "uganda",
+  "all",
+  "total",
+  "nationwide",
+  "n/a",
+  "na",
+  "",
+]);
+
+function isNationalDistrictValue(val) {
+  if (val == null) return true;
+  const s = String(val).trim().toLowerCase();
+  return NATIONAL_TOKENS.has(s);
+}
+
+/** Exclude district rows when national rows are also present (pandas parity). */
+function filterNationalRows(rows, districtCol) {
+  if (!districtCol) return { rows, note: null };
+  const hasNational = rows.some((r) => isNationalDistrictValue(r[districtCol]));
+  const hasSub = rows.some((r) => !isNationalDistrictValue(r[districtCol]));
+  if (hasNational && hasSub) {
+    const filtered = rows.filter((r) => isNationalDistrictValue(r[districtCol]));
+    if (filtered.length > 0) {
+      return {
+        rows: filtered,
+        note:
+          "Charts use national-level rows only; district-level rows were excluded to avoid double-counting.",
+      };
+    }
+  }
+  return { rows, note: null };
+}
+
 const MINISTRY_HINTS = [
   "ministry of water and environment",
   "ministry of energy",
@@ -836,6 +872,9 @@ export function buildPdfTextSections(text, filename) {
   const doc_type = inferDocType(text, mentions.sectors);
   const summary = buildSummary(text);
   const useParagraphs = preferParagraphMode(text, mentions);
+  const visuals = buildPdfVisuals(mentions);
+  const chartGuides = buildChartGuides(mentions, "narrative");
+  const highlights = buildTextHighlights(mentions);
 
   if (useParagraphs) {
     return {
@@ -851,17 +890,14 @@ export function buildPdfTextSections(text, filename) {
         numbers: mentions.numbers.slice(0, 50),
         sectors: mentions.sectors,
         years: mentions.years,
-        visuals: {},
+        highlights,
+        chart_guides: chartGuides,
+        visuals,
       },
       recommendations: buildRecommendationParagraphs(structured, mentions),
     };
   }
 
-  const sectorBar = mentions.sectors.slice(0, 8).map((s) => ({
-    name: s.name,
-    label: sectorLabel(s.name),
-    count: s.count,
-  }));
   const insights = buildTextInsights(mentions);
 
   return {
@@ -875,15 +911,24 @@ export function buildPdfTextSections(text, filename) {
       sectors: mentions.sectors,
       years: mentions.years,
       insights,
-      highlights: buildTextHighlights(mentions),
-      chart_guides: buildChartGuides(mentions, "narrative"),
-      visuals: {
-        sector_bar: sectorBar,
-        year_timeline: mentions.years,
-        unit_histogram: histogramByUnit(mentions.numbers),
-      },
+      highlights,
+      chart_guides: chartGuides,
+      visuals,
     },
     recommendations: buildTextRecommendations(mentions, "pdf"),
+  };
+}
+
+function buildPdfVisuals(mentions) {
+  const sectorBar = mentions.sectors.slice(0, 8).map((s) => ({
+    name: s.name,
+    label: sectorLabel(s.name),
+    count: s.count,
+  }));
+  return {
+    sector_bar: sectorBar,
+    year_timeline: mentions.years,
+    unit_histogram: histogramByUnit(mentions.numbers),
   };
 }
 
@@ -906,6 +951,27 @@ function detectColumn(headers, candidates) {
     if (i !== -1) return headers[i];
   }
   return null;
+}
+
+function countDuplicateRows(rows, keys) {
+  const usableKeys = keys.filter(Boolean);
+  if (usableKeys.length < 2) return 0;
+  const seen = new Map();
+  let dupes = 0;
+  for (const row of rows) {
+    const parts = usableKeys.map((k) => {
+      const v = row[k];
+      return v == null ? "" : String(v).trim().toLowerCase();
+    });
+    if (parts.some((p) => p === "")) continue;
+    const key = parts.join("|");
+    const prev = seen.get(key) ?? 0;
+    seen.set(key, prev + 1);
+  }
+  for (const count of seen.values()) {
+    if (count > 1) dupes += count;
+  }
+  return dupes;
 }
 
 export function buildTabularSections(rows, columns, filename) {
@@ -943,14 +1009,37 @@ export function buildTabularSections(rows, columns, filename) {
   if (districtCol)
     insights.push(`The "${districtCol}" column allows breakdowns by district or region within Uganda.`);
 
+  let chartRows = rows;
+  let nationalNote = null;
+  if (districtCol) {
+    const filtered = filterNationalRows(rows, districtCol);
+    chartRows = filtered.rows;
+    nationalNote = filtered.note;
+  }
+
   const sectorBar = [];
+  let sectorBarNote = null;
   if (sectorCol && valueCol) {
     const agg = new Map();
-    for (const r of rows) {
+    let latestYear = null;
+    if (yearCol) {
+      for (const r of chartRows) {
+        const y = safeNumber(r[yearCol]);
+        if (y != null) latestYear = latestYear == null ? y : Math.max(latestYear, y);
+      }
+    }
+    for (const r of chartRows) {
+      if (yearCol && latestYear != null) {
+        const y = safeNumber(r[yearCol]);
+        if (y == null || y !== latestYear) continue;
+      }
       const s = r[sectorCol] == null ? null : String(r[sectorCol]).trim().toLowerCase();
       const v = safeNumber(r[valueCol]);
       if (!s || v == null) continue;
       agg.set(s, (agg.get(s) || 0) + v);
+    }
+    if (yearCol && latestYear != null) {
+      sectorBarNote = `Sector chart shows the latest year in the file (${latestYear}) only, so sectors are not summed across multiple years.`;
     }
     for (const [name, total] of agg.entries()) {
       sectorBar.push({ name, total: +total.toFixed(2) });
@@ -961,7 +1050,7 @@ export function buildTabularSections(rows, columns, filename) {
   const timeSeries = [];
   if (yearCol && valueCol) {
     const agg = new Map();
-    for (const r of rows) {
+    for (const r of chartRows) {
       const y = safeNumber(r[yearCol]);
       const v = safeNumber(r[valueCol]);
       if (y == null || v == null) continue;
@@ -999,6 +1088,20 @@ export function buildTabularSections(rows, columns, filename) {
   if (valueCol) colBits.push(`value (“${valueCol}”)`);
   if (sectorCol) colBits.push(`sector (“${sectorCol}”)`);
   if (districtCol) colBits.push(`location (“${districtCol}”)`);
+
+  const validationNotes = [];
+  if (nationalNote) validationNotes.push(nationalNote);
+  if (sectorBarNote) validationNotes.push(sectorBarNote);
+
+  const valueCoercionFailures =
+    valueCol == null
+      ? 0
+      : rows.filter((r) => {
+          const raw = r[valueCol];
+          if (raw == null || String(raw).trim() === "") return false;
+          return safeNumber(raw) == null;
+        }).length;
+  const duplicateKeyRows = countDuplicateRows(rows, [yearCol, sectorCol, districtCol]);
 
   const recommendations = [];
   if (incompleteCols.length)
@@ -1053,6 +1156,17 @@ export function buildTabularSections(rows, columns, filename) {
   }
 
   return {
+    qc: {
+      rows_input: rows.length,
+      rows_used_for_charts: chartRows.length,
+      rows_dropped_non_national: Math.max(0, rows.length - chartRows.length),
+      duplicate_key_rows: duplicateKeyRows,
+      value_coercion_failures: valueCoercionFailures,
+    },
+    validation:
+      validationNotes.length > 0
+        ? { notes: validationNotes, aggregation_engine: "javascript_fallback" }
+        : { aggregation_engine: "javascript_fallback" },
     about: {
       title: filename.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "),
       doc_type,
@@ -1073,6 +1187,7 @@ export function buildTabularSections(rows, columns, filename) {
       presentation: "bullets",
       overview:
         "These charts summarise your spreadsheet — sector totals, trends by year, and any columns with many blank cells.",
+      validation_notes: validationNotes.length ? validationNotes : undefined,
       insights,
       highlights: tabularHighlights,
       chart_guides: buildChartGuides(

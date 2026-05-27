@@ -16,6 +16,7 @@ const primary = [
   { title: "Strategy Library", url: "/library", icon: Library },
   { title: "My Work", url: "/my-work", icon: Briefcase },
   { title: "Climate Risk", url: "/risk", icon: ShieldAlert },
+  { title: "Data Ingestion", url: "/ingest", icon: Upload },
 ];
 
 const advanced = [
@@ -23,7 +24,6 @@ const advanced = [
   { title: "Delivery & Accountability", url: "/delivery", icon: Network },
   { title: "Evidence & MRV", url: "/evidence", icon: ShieldCheck },
   { title: "Finance & Investment", url: "/finance", icon: Wallet },
-  { title: "Data Ingestion", url: "/ingest", icon: Upload },
   { title: "Indicators", url: "/indicators", icon: Database },
   { title: "Interlinkages", url: "/interlinkages", icon: GitBranch },
   { title: "Causal Chains", url: "/causal-chains", icon: Workflow },
@@ -56,13 +56,12 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="min-w-0 flex-1 pt-0.5">
               <p className="text-[9px] uppercase tracking-wide text-sidebar-foreground/55 font-semibold leading-snug">NDC DATA EXPLORER</p>
-              <p className="text-[8px] text-sidebar-foreground/40 mt-0.5 leading-tight">Decision-support cockpit</p>
             </div>
           )}
         </div>
 
         <SidebarGroup className="p-1.5">
-          <SidebarGroupLabel className="h-7 px-1.5 text-[10px]">Cockpit</SidebarGroupLabel>
+          <SidebarGroupLabel className="h-7 px-1.5 text-[10px]">Basic</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-0.5">
               {primary.map(item => (

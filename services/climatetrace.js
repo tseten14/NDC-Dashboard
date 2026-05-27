@@ -9,16 +9,37 @@ import {
   latestInventoryYear,
   toMtco2e,
 } from "../config/climateTrace.js";
+import { recordCacheAccess, setRegisteredCacheSize } from "./cacheMetrics.js";
+import { logCacheAccess, logger } from "../server/logger.js";
 
 const cache = new NodeCache({ stdTTL: 86400 }); // 24h
+const LIVE_CACHE_KEY = "ct:live:UGA:v7";
+const LIVE_CACHE_TTL_SEC = 86400;
+
+function liveCacheAgeSeconds() {
+  const ttlMs = cache.getTtl(LIVE_CACHE_KEY);
+  if (ttlMs == null || ttlMs <= 0) return null;
+  return Math.max(0, LIVE_CACHE_TTL_SEC - Math.round(ttlMs / 1000));
+}
+
+function refreshLiveCacheSize() {
+  setRegisteredCacheSize(cache.keys().length);
+}
 
 /**
  * Latest-year Uganda snapshot from Climate TRACE v7 rankings + national aggregate.
  */
 export async function fetchLiveUgandaSnapshot() {
-  const cacheKey = "ct:live:UGA:v7";
-  const cached = cache.get(cacheKey);
-  if (cached) return { ...cached, from_cache: true };
+  const cached = cache.get(LIVE_CACHE_KEY);
+  if (cached) {
+    recordCacheAccess({ hit: true });
+    logCacheAccess({ key: LIVE_CACHE_KEY, hit: true, age_seconds: liveCacheAgeSeconds() });
+    refreshLiveCacheSize();
+    return { ...cached, from_cache: true };
+  }
+
+  recordCacheAccess({ hit: false });
+  logCacheAccess({ key: LIVE_CACHE_KEY, hit: false, age_seconds: null });
 
   try {
     const year = latestInventoryYear();
@@ -49,11 +70,12 @@ export async function fetchLiveUgandaSnapshot() {
       fetched_at: new Date().toISOString(),
     };
 
-    cache.set(cacheKey, result);
+    cache.set(LIVE_CACHE_KEY, result);
+    refreshLiveCacheSize();
     return result;
   } catch (err) {
-    console.error("[ClimateTrace v7] Live API failed:", err.message);
-    const stale = cache.get(cacheKey);
+    logger.error({ err, event: "climatetrace_live_failed" }, err.message);
+    const stale = cache.get(LIVE_CACHE_KEY);
     if (stale) return { ...stale, stale: true, error: err.message };
     return {
       api_version: "v7",

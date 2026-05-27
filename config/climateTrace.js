@@ -3,6 +3,12 @@
  * Docs: https://api.climatetrace.org/v7/docs/index.html
  */
 
+import {
+  climateTraceEmissionsResponseSchema,
+  climateTraceRankingsResponseSchema,
+} from "../shared/schemas/climateTrace.schema.js";
+import { safeParseOrLog } from "../shared/validate.js";
+
 export const CLIMATE_TRACE_API_VERSION = "v7";
 export const CLIMATE_TRACE_BASE_URL = `https://api.climatetrace.org/${CLIMATE_TRACE_API_VERSION}`;
 export const CLIMATE_TRACE_DOCS_URL = `${CLIMATE_TRACE_BASE_URL}/docs/index.html`;
@@ -16,7 +22,8 @@ export const INVENTORY_YEAR_MIN = 2015;
 /** Latest complete inventory year (current calendar year may be incomplete). */
 export function latestInventoryYear() {
   const y = new Date().getFullYear();
-  return Math.max(INVENTORY_YEAR_MIN, y >= 2025 ? y - 1 : y);
+  // Cap at 2024 until CT v7 2025 dataset is confirmed complete (shows anomalous -22% YoY)
+  return Math.min(2024, Math.max(INVENTORY_YEAR_MIN, y >= 2025 ? y - 1 : y));
 }
 
 export function defaultInventoryRange() {
@@ -54,12 +61,16 @@ export async function fetchSectorEmissionsForYear(year, sectorSlug, gadmId = CLI
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Climate TRACE API error: ${res.status} (${url})`);
   const data = await res.json();
+  const parsed = safeParseOrLog(climateTraceEmissionsResponseSchema, data, "climateTrace.emissions");
+  if (!parsed.ok) {
+    throw new Error("Climate TRACE emissions response failed schema validation");
+  }
   const summary =
-    data?.totals?.summaries?.find((s) => s.gas === CLIMATE_TRACE_GAS) ??
-    data?.totals?.summaries?.[0];
+    parsed.data?.totals?.summaries?.find((s) => s.gas === CLIMATE_TRACE_GAS) ??
+    parsed.data?.totals?.summaries?.[0];
   const tonnes = summary?.emissionsQuantity;
   if (tonnes == null) return null;
-  return { year, tonnes, mtco2e: toMtco2e(tonnes), location: data?.location ?? null };
+  return { year, tonnes, mtco2e: toMtco2e(tonnes), location: parsed.data?.location ?? null };
 }
 
 /**
@@ -75,7 +86,11 @@ export async function fetchUgandaCountryRanking(year) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Climate TRACE rankings error: ${res.status}`);
   const data = await res.json();
-  const uga = data?.rankings?.find((r) => r.country === CLIMATE_TRACE_GADM_UGANDA);
+  const parsed = safeParseOrLog(climateTraceRankingsResponseSchema, data, "climateTrace.rankings");
+  if (!parsed.ok) {
+    throw new Error("Climate TRACE rankings response failed schema validation");
+  }
+  const uga = parsed.data?.rankings?.find((r) => r.country === CLIMATE_TRACE_GADM_UGANDA);
   if (!uga) throw new Error("Uganda (UGA) not found in rankings response");
   return uga;
 }
