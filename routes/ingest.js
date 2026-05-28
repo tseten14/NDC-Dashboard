@@ -62,7 +62,9 @@ const DATASET_REQUIRED_COLS = {
 const VALIDATION_STATUS_SET = new Set(["draft", "provisional", "verified"]);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const INGEST_STORE_DIR = path.resolve(__dirname, "..", "data", "ingest-imports");
+const INGEST_STORE_DIR = process.env.VERCEL
+  ? path.join("/tmp", "ingest-imports")
+  : path.resolve(__dirname, "..", "data", "ingest-imports");
 
 function normalizeString(value) {
   if (value == null) return "";
