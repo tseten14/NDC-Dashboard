@@ -6,18 +6,14 @@ export function resolveFrontendOrigin() {
 
 export function createCorsMiddleware() {
   const allowed = resolveFrontendOrigin();
+  // On Vercel the frontend and API are co-deployed — no cross-origin risk.
   const onVercel = Boolean(process.env.VERCEL);
 
   return cors({
     origin(origin, callback) {
-      // Same-origin / server-to-server / curl (no Origin header)
       if (!origin) return callback(null, true);
       if (origin === allowed) return callback(null, true);
-      // On Vercel the frontend and API share the same host — allow any *.vercel.app
-      // origin and any deployment-specific preview URL automatically.
-      if (onVercel && /^https:\/\/[^/]+\.vercel\.app$/.test(origin)) {
-        return callback(null, true);
-      }
+      if (onVercel) return callback(null, true);
       callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
