@@ -15,6 +15,7 @@ import {
   getDistrictName,
   listDistricts,
 } from "../config/ugandaDistrictGadm.js";
+import { COUNTRY_NDC_TARGETS, MEASURABLE_VARIABLES } from "../config/measurableVariables.js";
 
 const router = express.Router();
 
@@ -53,6 +54,34 @@ router.get("/emissions/districts", (_req, res) => {
     districts: listDistricts(),
     data_source: "Climate TRACE",
     note: "District (GADM level-1) emissions are available from 2021; national from 2015.",
+  });
+});
+
+router.get("/emissions/trackability", (req, res) => {
+  const country = String(req.query.country ?? "UGA").toUpperCase();
+  const entry = COUNTRY_NDC_TARGETS[country];
+  if (!entry) {
+    return res.status(404).json({
+      error: `No NDC targets registered for country: "${country}". Available: ${Object.keys(COUNTRY_NDC_TARGETS).join(", ")}.`,
+    });
+  }
+  const variables = Object.values(MEASURABLE_VARIABLES).map((v) => ({
+    id: v.id,
+    label: v.label,
+    description: v.description,
+    measurement_type: v.measurement_type,
+    unit: v.unit,
+    trackable: Boolean(v.climate_trace?.trackable),
+    sector_slugs: v.climate_trace?.sector_slugs ?? [],
+    note: v.climate_trace?.note ?? null,
+  }));
+  return res.json({
+    ...entry,
+    targets: Object.values(entry.targets),
+    variables,
+    available_countries: Object.keys(COUNTRY_NDC_TARGETS),
+    data_source: "Climate TRACE",
+    note: "Targets are tracked from Climate TRACE where 'trackable' is true; other variables need national / EO statistics.",
   });
 });
 

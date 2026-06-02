@@ -140,6 +140,43 @@ export interface EmissionsSourcesResponse {
   from_cache?: boolean;
 }
 
+export interface TrackabilityVariable {
+  id: string;
+  label: string;
+  description: string;
+  measurement_type: string;
+  unit: string;
+  trackable: boolean;
+  sector_slugs: string[];
+  note: string | null;
+}
+
+export interface CountryTargetEntry {
+  sector: string;
+  variable_id: string | null;
+  label: string;
+  baseline_year: number;
+  baseline: number;
+  target_year: number;
+  target: number;
+  unit: string;
+  condition: string;
+  reduction_pct: number | null;
+  climate_trace_trackable: boolean;
+  climate_trace_slugs: string[];
+}
+
+export interface TrackabilityResponse {
+  country: string;
+  country_name: string;
+  gadm_id: string;
+  targets: CountryTargetEntry[];
+  variables: TrackabilityVariable[];
+  available_countries: string[];
+  data_source: string;
+  note: string;
+}
+
 /** Geography selector for emissions queries. Omit for national (UGA). */
 export interface GeographyOpts {
   /** Climate TRACE GADM id, e.g. "UGA.16_1". */
@@ -258,6 +295,10 @@ export const emissionsApi = {
     );
   },
   districts: () => getJSON<DistrictsResponse>("/api/v1/emissions/districts"),
+  trackability: (country?: string) =>
+    getJSON<TrackabilityResponse>(
+      `/api/v1/emissions/trackability${country ? `?country=${encodeURIComponent(country)}` : ""}`,
+    ),
   sources: (opts?: GeographyOpts, params?: { year?: number; limit?: number; offset?: number }) => {
     const q = new URLSearchParams();
     applyGeography(q, opts);

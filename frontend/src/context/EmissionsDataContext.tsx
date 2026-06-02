@@ -211,7 +211,7 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
   const getActivitiesFromCatalog = useCallback(
     (targetId: string): NDCActivity[] => {
       const rows = catalogActivitiesQuery.data?.activities ?? [];
-      return rows.filter((r) => r.target_id === targetId).map((r) => r.body as NDCActivity);
+      return rows.filter((r) => r.target_id === targetId).map((r) => r.body as unknown as NDCActivity);
     },
     [catalogActivitiesQuery.data],
   );
@@ -221,7 +221,7 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
       const rows = catalogMitigationQuery.data?.options ?? [];
       return rows
         .filter((r) => r.target_id === targetId && r.sector_id === sectorId)
-        .map((r) => r.body as MitigationOption);
+        .map((r) => r.body as unknown as MitigationOption);
     },
     [catalogMitigationQuery.data],
   );

@@ -207,11 +207,14 @@ export function getSectorStatus(sector: Sector): Status {
     },
     { latestValue: sector.currentEmissions, latestYear },
   );
-  return calculateProgressStatus(
+  const status = calculateProgressStatus(
     percent,
     { baselineYear: sector.baselineYear, targetYear: sector.targetYear },
     { latestYear },
   );
+  // climate-data sectors always have observations; map the "unknown" case
+  // (no Status equivalent) to the conservative "at-risk".
+  return status === "unknown" ? "at-risk" : status;
 }
 
 export function getProgressPercent(sector: Sector): number {

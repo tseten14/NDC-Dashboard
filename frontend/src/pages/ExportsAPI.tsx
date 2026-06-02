@@ -86,6 +86,7 @@ export default function ExportsAPI() {
     "/api/v1/emissions/progress": { "get": { "summary": "Sector progress vs NDC (params: sector, gadm_id|district)" } },
     "/api/v1/emissions/districts": { "get": { "summary": "List mapped Uganda districts (GADM)" } },
     "/api/v1/emissions/sources": { "get": { "summary": "Asset/source-level emitters (params: gadm_id|district, year, limit, offset)" } },
+    "/api/v1/emissions/trackability": { "get": { "summary": "NDC measurable-variable trackability (params: country)" } },
     "/api/v1/emissions/summary": { "get": { "summary": "On/off-track sector counts" } },
     "/api/v1/health": { "get": { "summary": "Climate TRACE API health + cache stats" } }
   }

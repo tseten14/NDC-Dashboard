@@ -10,6 +10,7 @@ import { ObservedDataColumn } from "@/components/columns/ObservedData";
 import { ProgressTowardTargetColumn } from "@/components/columns/ProgressTowardTarget";
 import { MitigationOptionsColumn } from "@/components/columns/MitigationOptions";
 import { TopEmittingSources } from "@/components/TopEmittingSources";
+import { DataTrackabilityPanel } from "@/components/DataTrackabilityPanel";
 import { ndcTargets, sectorDefinitions, getDataCompleteness, getLastRefreshTimestamp } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { Badge } from "@/components/ui/badge";
@@ -268,6 +269,22 @@ export default function NDCLayer() {
                 </DialogHeader>
                 <div className="flex-1 min-h-0">
                   <TopEmittingSources />
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                  📡 What Climate TRACE Can Track
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl h-[80vh] p-0 overflow-hidden flex flex-col">
+                <DialogHeader className="px-4 py-3 border-b border-border">
+                  <DialogTitle className="text-sm">NDC Trackability (Climate TRACE)</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 min-h-0">
+                  <DataTrackabilityPanel />
                 </div>
               </DialogContent>
             </Dialog>

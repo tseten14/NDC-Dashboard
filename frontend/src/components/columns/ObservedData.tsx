@@ -256,7 +256,6 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
                       name={observedSeriesLabel}
                       fill="hsl(var(--chart-4))"
                       radius={[2, 2, 0, 0]}
-                      connectNulls={false}
                     />
                     <Line
                       dataKey="target"
@@ -289,7 +288,6 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
                       name={observedSeriesLabel}
                       fill="hsl(var(--chart-4))"
                       radius={[2, 2, 0, 0]}
-                      connectNulls={false}
                     />
                     <Area
                       dataKey="projectedValue"
