@@ -25,3 +25,27 @@ export const climateTraceRankingRowSchema = z.object({
 export const climateTraceRankingsResponseSchema = z.object({
   rankings: z.array(climateTraceRankingRowSchema).optional(),
 });
+
+export const climateTraceSourceSchema = z.object({
+  id: z.union([z.number(), z.string()]).nullable().optional(),
+  name: z.string().nullable().optional(),
+  sector: z.string().nullable().optional(),
+  subsector: z.string().nullable().optional(),
+  country: z.string().nullable().optional(),
+  assetType: z.string().nullable().optional(),
+  sourceType: z.string().nullable().optional(),
+  centroid: z
+    .object({
+      longitude: z.number().nullable().optional(),
+      latitude: z.number().nullable().optional(),
+      srid: z.number().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
+  gas: z.string().nullable().optional(),
+  emissionsQuantity: z.number().nullable().optional(),
+  year: z.union([z.number(), z.string()]).nullable().optional(),
+});
+
+/** GET /v7/sources returns a flat array of source rows (asset-level + gadm-aggregation). */
+export const climateTraceSourcesResponseSchema = z.array(climateTraceSourceSchema);

@@ -62,6 +62,12 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
   }
 
   const { percent, status, source } = emissions.getProgressForTarget(selectedTarget);
+  const districtNote = emissions.isDistrictView ? (
+    <div className="p-2 rounded-md bg-muted/60 border border-border text-[11px] text-muted-foreground">
+      Showing <span className="font-medium text-foreground">{emissions.districtName}</span> observed emissions.
+      NDC targets are national, so progress is not scored at district level — values are for local context only.
+    </div>
+  ) : null;
   const hasProgressData = percent != null;
   const displayPercent = hasProgressData ? percent : 0;
   const cfg = statusConfig[status];
@@ -86,7 +92,7 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
 
   const dataUsedLabel =
     source === "api"
-      ? "Climate TRACE v7 (live API) + NDC baseline/target"
+      ? "Climate TRACE (live API) + NDC baseline/target"
       : source === "catalog"
         ? "Indicators API + NDC baseline/target"
         : "Latest observed value from MRV data sources";
@@ -104,7 +110,14 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
         </div>
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-3">
-            <NoDataPlaceholder hint="Progress requires observed values for the selected reporting period." />
+            {districtNote}
+            <NoDataPlaceholder
+              hint={
+                emissions.isDistrictView
+                  ? "District progress is not scored against national NDC targets. See the Observed Data column for district emissions."
+                  : "Progress requires observed values for the selected reporting period."
+              }
+            />
             <div className="text-xs text-muted-foreground space-y-0.5">
               <p>{baselineDisplay}</p>
               <p>{targetDisplay}</p>
@@ -122,6 +135,7 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
       </div>
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-3">
+          {districtNote}
           {baselineMismatch && pr && (
             <div className="p-2 rounded-md bg-at-risk/10 border border-at-risk/30 text-xs">
               <p className="font-medium text-at-risk">NDC baseline differs from TRACE observed</p>

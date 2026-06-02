@@ -114,7 +114,7 @@ export function buildLiveObservedDataSet(
 
   return {
     targetId: target.id,
-    dataProviders: ["Climate TRACE v7", "Uganda NDC API"],
+    dataProviders: ["Climate TRACE", "Uganda NDC API"],
     historicalData,
     projectionBaseline,
     provenance,

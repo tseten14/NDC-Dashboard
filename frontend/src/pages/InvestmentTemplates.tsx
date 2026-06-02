@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { exportInvestmentMemoFromActivity } from "@/lib/finance-exports";
 
 export default function InvestmentTemplates() {
   const [selectedActivity, setSelectedActivity] = useState(activities[0]?.id ?? "");
@@ -119,8 +120,15 @@ export default function InvestmentTemplates() {
                 </div>
               </div>
 
-              <Button size="sm" className="w-full text-xs mt-3" onClick={() => toast.info("PDF/Word export coming soon — currently UI only")}>
-                Export Investment Memo (PDF/Word)
+              <Button
+                size="sm"
+                className="w-full text-xs mt-3"
+                onClick={() => {
+                  exportInvestmentMemoFromActivity(activity);
+                  toast.success("Investment memo PDF exported");
+                }}
+              >
+                Export Investment Memo (PDF)
               </Button>
             </CardContent>
           </Card>

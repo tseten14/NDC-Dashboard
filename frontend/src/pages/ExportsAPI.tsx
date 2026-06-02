@@ -1,5 +1,6 @@
-import { exportRecords, kpis, strategies, getActor } from "@/data/uganda-strategy-data";
-import { exportToExcel, exportToPDF } from "@/lib/export";
+import { exportRecords, getActor } from "@/data/uganda-strategy-data";
+import { exportCrtBtrCsv, exportNdcDashboardPdf } from "@/lib/ndc-export";
+import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 
 export default function ExportsAPI() {
+  const emissions = useEmissionsData();
+  const geoLabel =
+    emissions.geography === "district" && emissions.districtName
+      ? emissions.districtName
+      : "national";
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4 max-w-4xl">
@@ -18,17 +24,18 @@ export default function ExportsAPI() {
           <CardContent className="p-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">CRT/BTR Export</h3>
             <p className="text-[10px] text-muted-foreground mb-2">
-              Export NDC activity data, activity-level emissions, progress, and provenance into ETF-compliant Common Reporting Table rows.
-              BTR bundles CRTs + narrative summary + metadata for biennial submission.
+              Export NDC targets, observed emissions, progress, and provenance for the current geography
+              (<span className="font-medium text-foreground">{geoLabel}</span>) as a CRT/BTR-style CSV for biennial
+              reporting prep. This is an illustrative layout, not a UNFCCC ETF-validated Common Reporting Table.
             </p>
             <div className="flex gap-2">
               <Button size="sm" className="text-xs" onClick={() => {
-                exportToExcel();
-                toast.success("CRT data exported as Excel (CRT format pending full ETF schema)");
-              }}>Export CRT CSV</Button>
+                exportCrtBtrCsv(emissions);
+                toast.success(`CRT/BTR CSV exported (${geoLabel})`);
+              }}>Export CRT/BTR CSV</Button>
               <Button size="sm" variant="outline" className="text-xs" onClick={() => {
-                exportToPDF();
-                toast.success("BTR summary PDF exported");
+                exportNdcDashboardPdf(emissions);
+                toast.success(`BTR summary PDF exported (${geoLabel})`);
               }}>Export BTR Summary PDF</Button>
             </div>
           </CardContent>
@@ -68,20 +75,19 @@ export default function ExportsAPI() {
         <Card>
           <CardContent className="p-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">OpenAPI JSON Stub</h3>
-            <p className="text-[10px] text-muted-foreground mb-2">Auto-generated from data model. Collections: strategies, programmes, activities, kpis, progress, actors, data_sources, projections, exports.</p>
+            <p className="text-[10px] text-muted-foreground mb-2">Live emissions endpoints served by the Express API (Climate TRACE backed). National (<code>gadm_id=UGA</code>) and district (<code>gadm_id=UGA.&lt;n&gt;_1</code> or <code>district=&lt;name&gt;</code>) geographies are supported.</p>
             <pre className="text-[9px] font-mono bg-muted p-2 rounded overflow-x-auto max-h-[200px]">
 {`{
   "openapi": "3.0.3",
-  "info": { "title": "Uganda NDC & Strategy API", "version": "1.0.0" },
+  "info": { "title": "Uganda NDC Emissions API", "version": "1.0.0" },
   "paths": {
-    "/api/strategies": { "get": { "summary": "List strategies" } },
-    "/api/programmes": { "get": { "summary": "List NDP IV programmes" } },
-    "/api/activities": { "get": { "summary": "List activities" } },
-    "/api/kpis": { "get": { "summary": "List KPIs & proxies" } },
-    "/api/progress": { "get": { "summary": "List progress records" } },
-    "/api/actors": { "get": { "summary": "List actors & focal points" } },
-    "/api/projections": { "get": { "summary": "List projection scenarios" } },
-    "/api/exports": { "post": { "summary": "Generate CRT/BTR export" } }
+    "/api/v1/emissions/dashboard": { "get": { "summary": "Dashboard (params: since, to, gadm_id|district)" } },
+    "/api/v1/emissions/timeseries": { "get": { "summary": "Sector timeseries (params: sector, gadm_id|district)" } },
+    "/api/v1/emissions/progress": { "get": { "summary": "Sector progress vs NDC (params: sector, gadm_id|district)" } },
+    "/api/v1/emissions/districts": { "get": { "summary": "List mapped Uganda districts (GADM)" } },
+    "/api/v1/emissions/sources": { "get": { "summary": "Asset/source-level emitters (params: gadm_id|district, year, limit, offset)" } },
+    "/api/v1/emissions/summary": { "get": { "summary": "On/off-track sector counts" } },
+    "/api/v1/health": { "get": { "summary": "Climate TRACE API health + cache stats" } }
   }
 }`}
             </pre>

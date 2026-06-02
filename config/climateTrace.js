@@ -6,6 +6,7 @@
 import {
   climateTraceEmissionsResponseSchema,
   climateTraceRankingsResponseSchema,
+  climateTraceSourcesResponseSchema,
 } from "../shared/schemas/climateTrace.schema.js";
 import { safeParseOrLog } from "../shared/validate.js";
 
@@ -71,6 +72,57 @@ export async function fetchSectorEmissionsForYear(year, sectorSlug, gadmId = CLI
   const tonnes = summary?.emissionsQuantity;
   if (tonnes == null) return null;
   return { year, tonnes, mtco2e: toMtco2e(tonnes), location: parsed.data?.location ?? null };
+}
+
+/** Maximum sources requested per page from the Climate TRACE sources endpoint. */
+export const SOURCES_MAX_LIMIT = 200;
+
+/**
+ * Asset / source-level emissions rows for a location and year.
+ * GET /v7/sources (returns a flat array sorted by emissionsQuantity desc).
+ * Mixes individual assets (e.g. power stations) and GADM aggregations
+ * (forestry, buildings, agriculture, roads). Supports limit/offset pagination.
+ */
+export async function fetchSources({
+  year = latestInventoryYear(),
+  gadmId = CLIMATE_TRACE_GADM_UGANDA,
+  subsectors = "",
+  limit = 50,
+  offset = 0,
+} = {}) {
+  const safeLimit = Math.min(Math.max(1, Number(limit) || 50), SOURCES_MAX_LIMIT);
+  const safeOffset = Math.max(0, Number(offset) || 0);
+  const url = climateTraceUrl("/sources", {
+    year,
+    gas: CLIMATE_TRACE_GAS,
+    gadmId,
+    subsectors,
+    limit: safeLimit,
+    offset: safeOffset,
+  });
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Climate TRACE sources error: ${res.status} (${url})`);
+  const data = await res.json();
+  const parsed = safeParseOrLog(climateTraceSourcesResponseSchema, data, "climateTrace.sources");
+  if (!parsed.ok) {
+    throw new Error("Climate TRACE sources response failed schema validation");
+  }
+  const sources = parsed.data.map((s) => ({
+    id: s.id ?? null,
+    name: s.name ?? null,
+    sector: s.sector ?? null,
+    subsector: s.subsector ?? null,
+    source_type: s.sourceType ?? null,
+    asset_type: s.assetType || null,
+    is_asset: s.sourceType != null && s.sourceType !== "gadm-aggregation",
+    centroid: s.centroid
+      ? { lat: s.centroid.latitude ?? null, lng: s.centroid.longitude ?? null }
+      : null,
+    emissions_tco2e: s.emissionsQuantity ?? null,
+    emissions_mtco2e: toMtco2e(s.emissionsQuantity),
+    year: s.year ?? year,
+  }));
+  return { year, gadm_id: gadmId, limit: safeLimit, offset: safeOffset, count: sources.length, sources };
 }
 
 /**

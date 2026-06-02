@@ -27,7 +27,7 @@ export function buildTargetLineage(
     });
     const year = pr.latest_year;
     return {
-      source: pr.data_source || "Climate TRACE v7",
+      source: pr.data_source || "Climate TRACE",
       asOf: year != null ? `${year}-12-31` : emissions.dashboardLastRefreshIso,
       isEstimated: derived.isEstimated,
       isValidated: derived.isValidated,

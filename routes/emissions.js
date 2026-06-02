@@ -6,9 +6,15 @@ import {
   progressFromTimeseries,
   getProvenancePayload,
 } from "../services/emissionsData.js";
-import { defaultInventoryRange } from "../config/climateTrace.js";
-import { checkApiHealth } from "../services/climatetrace.js";
+import { defaultInventoryRange, latestInventoryYear } from "../config/climateTrace.js";
+import { checkApiHealth, getSources } from "../services/climatetrace.js";
 import { NDC_TARGETS } from "../config/ndcTargets.js";
+import {
+  UGANDA_NATIONAL_GADM,
+  resolveDistrictGadm,
+  getDistrictName,
+  listDistricts,
+} from "../config/ugandaDistrictGadm.js";
 
 const router = express.Router();
 
@@ -20,10 +26,72 @@ function parseRange(query) {
   };
 }
 
+/**
+ * Resolve the requested geography from query params.
+ * Accepts `gadm_id` (e.g. UGA.16_1) or `district` (display name).
+ * Returns { gadmId, districtName } for national or a mapped district,
+ * or { error, status } when an explicit district cannot be resolved.
+ */
+function resolveGeography(query) {
+  const raw = query.gadm_id ?? query.district ?? query.geography;
+  if (raw == null || raw === "" || raw === "national" || raw === UGANDA_NATIONAL_GADM) {
+    return { gadmId: UGANDA_NATIONAL_GADM, districtName: null };
+  }
+  const gadmId = resolveDistrictGadm(raw);
+  if (!gadmId) {
+    return {
+      error: `Unknown or unmapped district: "${raw}". See GET /api/v1/emissions/districts.`,
+      status: 404,
+    };
+  }
+  return { gadmId, districtName: getDistrictName(gadmId) };
+}
+
+router.get("/emissions/districts", (_req, res) => {
+  return res.json({
+    national: { gadm_id: UGANDA_NATIONAL_GADM, name: "Uganda (national)" },
+    districts: listDistricts(),
+    data_source: "Climate TRACE",
+    note: "District (GADM level-1) emissions are available from 2021; national from 2015.",
+  });
+});
+
+router.get("/emissions/sources", async (req, res) => {
+  try {
+    const geo = resolveGeography(req.query);
+    if (geo.error) return res.status(geo.status).json({ error: geo.error });
+
+    const year = req.query.year != null ? parseInt(req.query.year, 10) : latestInventoryYear();
+    const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : 25;
+    const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : 0;
+    const subsectors = typeof req.query.subsectors === "string" ? req.query.subsectors : "";
+
+    const result = await getSources({ gadmId: geo.gadmId, year, subsectors, limit, offset });
+    const isDistrict = geo.gadmId !== UGANDA_NATIONAL_GADM;
+
+    return res.json({
+      ...result,
+      geography: isDistrict ? "district" : "national",
+      district_name: geo.districtName,
+      data_source: "Climate TRACE",
+      data_license: "Creative Commons 4.0",
+      note: "Source-level rows mix individual assets and GADM aggregations (forestry, buildings, agriculture, roads), sorted by emissions.",
+    });
+  } catch (err) {
+    req.log?.error({ err }, "emissions_sources_failed");
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 router.get("/emissions/dashboard", async (req, res) => {
   try {
     const { since, to } = parseRange(req.query);
-    const dashboard = await getEmissionsDashboard(since, to);
+    const geo = resolveGeography(req.query);
+    if (geo.error) return res.status(geo.status).json({ error: geo.error });
+    const dashboard = await getEmissionsDashboard(since, to, {
+      gadmId: geo.gadmId,
+      districtName: geo.districtName,
+    });
     return res.json(dashboard);
   } catch (err) {
     req.log?.error({ err }, "emissions_dashboard_failed");
@@ -34,27 +102,26 @@ router.get("/emissions/dashboard", async (req, res) => {
 router.get("/emissions/timeseries", async (req, res) => {
   try {
     const { since, to } = parseRange(req.query);
-    const { sector, geography = "national" } = req.query;
+    const { sector } = req.query;
     if (!sector) return res.status(400).json({ error: "sector is required" });
     if (!NDC_TARGETS[sector]) return res.status(400).json({ error: `Unknown sector: ${sector}` });
 
-    const timeseries = await getTimeseries(sector, since, to);
+    const geo = resolveGeography(req.query);
+    if (geo.error) return res.status(geo.status).json({ error: geo.error });
 
-    const body = {
+    const timeseries = await getTimeseries(sector, since, to, geo.gadmId);
+    const isDistrict = geo.gadmId !== UGANDA_NATIONAL_GADM;
+
+    return res.json({
       sector,
       unit: "MtCO2e",
-      data_source: "Climate TRACE v7",
+      data_source: "Climate TRACE",
       data_license: "Creative Commons 4.0",
-      geography: geography === "district" ? "national" : geography,
+      geography: isDistrict ? "district" : "national",
+      gadm_id: geo.gadmId,
+      district_name: geo.districtName,
       timeseries,
-    };
-    if (geography === "district") {
-      body.district_unavailable = true;
-      body.district_note =
-        "District Climate TRACE data: GET /v7/sources?gadmId=<district> — not wired in this API yet.";
-    }
-
-    return res.json(body);
+    });
   } catch (err) {
     req.log?.error({ err }, "emissions_dashboard_failed");
     return res.status(500).json({ error: err.message });
@@ -68,7 +135,11 @@ router.get("/emissions/progress", async (req, res) => {
     if (!sector) return res.status(400).json({ error: "sector is required" });
     if (!NDC_TARGETS[sector]) return res.status(400).json({ error: `Unknown sector: ${sector}` });
 
-    const series = await getTimeseries(sector, since, to);
+    const geo = resolveGeography(req.query);
+    if (geo.error) return res.status(geo.status).json({ error: geo.error });
+    const isDistrict = geo.gadmId !== UGANDA_NATIONAL_GADM;
+
+    const series = await getTimeseries(sector, since, to, geo.gadmId);
     const progress = progressFromTimeseries(series, sector);
     const latest = series.length
       ? [...series].reverse().find((p) => p.value != null) ?? null
@@ -86,9 +157,13 @@ router.get("/emissions/progress", async (req, res) => {
       target_value: target.target,
       latest_year: latest?.year ?? null,
       latest_value: latest?.value != null ? +latest.value : null,
-      progress_pct: progress?.progress_pct ?? null,
-      status: progress?.status ?? "unknown",
-      data_source: "Climate TRACE v7",
+      progress_pct: isDistrict ? null : progress?.progress_pct ?? null,
+      status: isDistrict ? "unknown" : progress?.status ?? "unknown",
+      data_source: "Climate TRACE",
+      geography: isDistrict ? "district" : "national",
+      gadm_id: geo.gadmId,
+      district_name: geo.districtName,
+      target_scope: "national",
     });
   } catch (err) {
     req.log?.error({ err }, "emissions_dashboard_failed");

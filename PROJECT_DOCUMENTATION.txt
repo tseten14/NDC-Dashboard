@@ -11,14 +11,78 @@ A1. WHAT THIS PROJECT IS
   progress indicators, and climate risk in one workspace.
 
 A2. DATA SOURCES
-  • Observed emissions: Climate TRACE API v7 (live via Express)
+  • Observed emissions: Climate TRACE (live via Express, using API v7)
   • NDC targets & strategies: bundled in the application
   • Climate risk (demo): illustrative district layers in the repo
   • Delivery activities: saved in the user’s browser (localStorage)
 
+  Note on versions: the application uses Climate TRACE API v7. "v7" is the API
+  version (which endpoints exist), NOT the data version. Climate TRACE updates the
+  underlying data monthly (latest release v5.8.0) and the API always serves the
+  latest data. To avoid confusing users, on-screen tags simply read "Climate TRACE"
+  (no version number).
+
 A3. USERS
   Ministry staff, MRV focal points, programme managers, and executive briefings
   (role switcher in the UI — demo mode, no remote sign-in).
+
+A4. NATIONAL VS DISTRICT VIEW  (plain-language guide)
+  On the main NDC dashboard there is a "Geography" switch with two choices:
+
+    • National  — emissions for the whole of Uganda (data from 2015 onward).
+    • District  — emissions for one selected district (data from 2021 onward).
+
+  How to use it:
+    1. Click "District".
+    2. Pick a district from the drop-down (e.g. Kampala, Wakiso, Gulu).
+       Kampala is selected for you by default.
+    3. The charts update to show that district's observed emissions.
+    4. Click "National" at any time to return to the whole-country view.
+
+  56 Uganda districts are available. They come straight from Climate TRACE,
+  which publishes district-level data using "GADM" map areas.
+
+  IMPORTANT — what district numbers do and do NOT mean:
+    • The numbers show OBSERVED emissions in that district (what satellites and
+      models estimate is actually happening).
+    • Uganda's NDC TARGETS are national. There is no official target for each
+      district. So in District view the app shows emissions "for context" only
+      and does NOT give a district a pass/fail "on-track / off-track" score.
+      A short note on screen explains this.
+    • Some places you might expect (e.g. Fort Portal, Entebbe, newer districts
+      like Mityana) are part of a larger parent district in the map data, so
+      they appear under that parent (e.g. Fort Portal → Kabarole).
+
+A5. HOW ACCURATE ARE THE NUMBERS?
+  The dashboard does not invent or guess figures. Every emissions value is the
+  live figure from Climate TRACE, converted only from tonnes into million
+  tonnes (MtCO2e). We checked this carefully:
+    • The five sectors shown (AFOLU, Energy, IPPU, Agriculture, Waste) plus a
+      small "mineral extraction" amount add up EXACTLY to Uganda's national
+      total reported by Climate TRACE.
+    • Each district's total matches Climate TRACE's own district total exactly.
+  Note: the app compares these observed numbers to Uganda's NDC policy targets.
+  Targets and satellite-observed emissions are measured differently, so they
+  will not match perfectly — where they differ a lot, the app shows a clear
+  warning rather than hiding it. This is a planning tool, not official MRV.
+
+A5b. TOP EMITTING SOURCES (asset-level drill-down)
+  The NDC dashboard has a "Top Emitting Sources" panel. It lists the biggest
+  individual emitters for whatever geography you are viewing (national or a
+  district) — for example a named power station, or a county's forestry/road/
+  building emissions. This comes from Climate TRACE's source-level data.
+  IMPORTANT: these listed sources do NOT add up to the dashboard total. Climate
+  TRACE also includes "spatially-uncertain" emissions (it knows the amount but not
+  the exact location), which are in the total but not tied to a single listed
+  source. The panel says this on screen so the headline total is never misread.
+
+A6. EXPORTING DATA
+  The "Export" button on the dashboard produces:
+    • Excel  — targets, observed sector totals, and saved activities.
+    • PDF    — a one-page summary.
+    • CRT/BTR CSV — a reporting-style layout to help prepare biennial reports.
+  Each export is labelled with the geography you are viewing (national or the
+  chosen district), so files are never mixed up.
 
 
 PART B — TECHNICAL OVERVIEW
@@ -30,13 +94,17 @@ B1. ARCHITECTURE
   server.js     Express API on port 8787 (default)
   routes/       emissions, cockpit catalog, risk, mock
   services/     Climate TRACE client, emissions aggregation, catalog
-  config/       NDC targets, Climate TRACE helpers, cockpit catalog
+  config/       NDC targets, Climate TRACE helpers, district GADM map, catalog
   data/         Illustrative risk seed data
 
 B2. EXPRESS API
 
-  GET  /api/v1/emissions/timeseries
-  GET  /api/v1/emissions/progress
+  GET  /api/v1/emissions/dashboard      (params: since, to, gadm_id | district)
+  GET  /api/v1/emissions/timeseries     (params: sector, gadm_id | district)
+  GET  /api/v1/emissions/progress       (params: sector, gadm_id | district)
+  GET  /api/v1/emissions/districts      (list of 56 mapped Uganda districts)
+  GET  /api/v1/emissions/sources        (asset/source-level emitters; params:
+                                         gadm_id | district, year, limit, offset)
   GET  /api/v1/emissions/summary
   GET  /api/v1/provenance
   GET  /api/v1/health/climatetrace
@@ -45,9 +113,80 @@ B2. EXPRESS API
   GET  /api/v1/catalog/mitigation-options
   GET  /api/v1/risk/*
 
-  Climate TRACE v7: https://api.climatetrace.org/v7/
-  National sector totals: GET /v7/sources/emissions?gadmId=UGA&sectors=...
-  Live rank: GET /v7/rankings/countries
+  Geography parameters (national is the default):
+    • gadm_id=UGA            → national (whole country)
+    • gadm_id=UGA.16_1       → a district by Climate TRACE GADM id
+    • district=Kampala       → a district by display name (resolved server-side)
+  Unknown/unmapped district names return HTTP 404.
+
+  Climate TRACE API v7: https://api.climatetrace.org/v7/  ("v7" = API version, not
+    data version; data updates monthly, latest v5.8.0).
+  National/district sector totals (Aggregate Emissions, incl. spatially-uncertain):
+    GET /v7/sources/emissions?gadmId=<id>&sectors=...   (accepts GADM level 0/1/2)
+  Asset/source-level rows (located emitters): GET /v7/sources?gadmId=<id>&limit=&offset=
+  District list source: GET /v7/admins/UGA/subdivisions
+  Live rank (national only): GET /v7/rankings/countries
+
+B2a. DISTRICT MAPPING + DATA ACCURACY
+  • config/ugandaDistrictGadm.js — maps 56 Uganda districts to Climate TRACE
+    GADM level-1 ids (+ aliases for spellings/towns). Refresh/verify with
+    `node scripts/discover_uganda_gadm.mjs`.
+  • Sector → Climate TRACE slug mapping lives in config/ndcTargets.js. All 10
+    Climate TRACE sectors are accounted for:
+        AFOLU       = forestry-and-land-use
+        Energy      = power + transportation + buildings + fossil-fuel-operations
+        IPPU        = manufacturing + fluorinated-gases
+        Agriculture = agriculture
+        Waste       = waste
+        (mineral-extraction is reconciliation-only, not a UI card)
+  • National reconciliation: sum of all slugs == Climate TRACE country total
+    (delta 0). District totals use Climate TRACE's exact all-sector total.
+  • Subnational data starts 2021; national starts 2015. Latest year is capped
+    at 2024 (config/climateTrace.js) until the 2025 dataset is confirmed.
+
+B2b. ASSET/SOURCE-LEVEL DATA + GADM LEVELS
+  • GET /api/v1/emissions/sources wraps Climate TRACE GET /v7/sources for the
+    active geography (national or district), paginated by limit/offset. Backed by
+    fetchSources() (config/climateTrace.js) + cached getSources()
+    (services/climatetrace.js). Verify shape with `node scripts/verify_sources.mjs`.
+  • Rows mix individual assets (e.g. power stations) and GADM aggregations
+    (forestry, buildings, agriculture, roads). The "Top Emitting Sources" panel
+    surfaces them, sorted by emissions.
+  • GADM levels for Uganda: level-0 = country (UGA); level-1 = districts (our
+    geography selector); level-2 = counties / city councils (appear as named rows
+    in the sources panel, e.g. "Kampala City council", "Bokora County").
+  • /v7/sources/emissions is the "Aggregate Emissions" endpoint and accepts all
+    three GADM levels; its totals INCLUDE spatially-uncertain emissions. Located
+    /v7/sources rows do NOT (verified Kampala 2024: aggregate 1.59 Mt vs sum of
+    located rows 0.88 Mt; ~45% is spatially-uncertain). Therefore dashboard/district
+    totals always come from /sources/emissions, and the sources panel is never summed.
+
+B5. MULTI-COUNTRY NDC TRACKING (FOUNDATION + DESIGN PROPOSAL)
+  Background: Climate TRACE suggested that, because NDC targets are often
+  structurally similar across countries ("reduce sector X by N% below BAU by year
+  Y"), the tool could track many countries from one parameterized system.
+
+  Implemented foundation:
+  • config/measurableVariables.js — a country-agnostic catalog of MEASURABLE
+    VARIABLES (e.g. "Forestry & land-use emissions", "Renewable energy share").
+    Each variable records whether Climate TRACE can measure it directly and from
+    which sector slugs (climate_trace.trackable + sector_slugs). Five emissions
+    variables are trackable; share-style variables (renewable share, forest cover,
+    transport modal shift, CSA adoption) are flagged not directly trackable.
+  • config/ndcTargets.js — each Uganda target now carries a `variable_id` linking
+    it to the catalog (additive; NDC_TARGETS stays backward-compatible).
+  • COUNTRY_NDC_TARGETS / buildCountryTargets() express Uganda on the new schema
+    and compute reduction_pct + Climate TRACE trackability per sector.
+
+  Proposed follow-up (not yet built):
+  1. Add a country registry (COUNTRY_NDC_TARGETS) entry per country with its own
+     per-sector NDC parameters (baseline year/value, target year/value, condition).
+  2. Parameterize the API/UI by country (gadmId), defaulting to Uganda, so the same
+     dashboard serves Kenya, India, etc. once their parameters are entered.
+  3. Drive a "what we can / cannot track" view directly from the trackability map,
+     making coverage explicit per country.
+  Effort note: this requires per-country NDC parameters and Climate TRACE baselines;
+  it is a phased product expansion, not a one-line config change.
 
 B3. ENVIRONMENT
 

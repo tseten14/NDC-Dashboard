@@ -103,7 +103,7 @@ export function LiveEmissionsBanner() {
                   key={key}
                   variant="outline"
                   className={cn("gap-1 text-[10px] h-5", STATUS_CLS[s.status] ?? STATUS_CLS.unknown)}
-                  title={`Latest year: ${s.latest_year ?? "n/a"} • Climate TRACE v7`}
+                  title={`Latest year: ${s.latest_year ?? "n/a"} • Climate TRACE`}
                 >
                   <Activity className="h-2.5 w-2.5" />
                   {SECTOR_LABEL[key] ?? key.toUpperCase()}{" "}

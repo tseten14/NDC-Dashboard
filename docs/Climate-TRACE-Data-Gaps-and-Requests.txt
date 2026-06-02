@@ -2,7 +2,11 @@ Uganda NDC Data Explorer — Application Data Gaps & Climate TRACE Requests
 ================================================================================
 Document date: 22 May 2026
 Project: Uganda NDC Data Explorer (national MRV cockpit prototype)
-API in use: Climate TRACE v7 (https://api.climatetrace.org/v7)
+API in use: Climate TRACE API v7 (https://api.climatetrace.org/v7)
+            NOTE: "v7" is the API version (endpoints/features), NOT the data version.
+            The API always serves the latest data release (monthly; latest v5.8.0,
+            May 2026). User-facing "Climate TRACE v7" tags were removed (June 2026) so
+            users are not shown an API version where they expect a data version.
 Contact context: UN / University of Melbourne collaboration; demo 17 June 2026
 
 This file lists (A) known limitations in our application when using Climate TRACE,
@@ -147,6 +151,22 @@ REQ-08  Include mineral-extraction and other minor sectors in sector enumeration
 
 C. GEOGRAPHY (DISTRICT / SUBNATIONAL)
 --------------------------------------
+RESOLVED (2026): District drill-down is now wired in this explorer.
+        Uganda districts map to Climate TRACE GADM level-1 areas (e.g.
+        "Kampala District" = UGA.16_1), discovered via
+        GET /v7/admins/UGA/subdivisions. 56 districts are mapped in
+        config/ugandaDistrictGadm.js (the 2 non-district level-1 areas,
+        Lake Albert and Lake Victoria, are excluded). Refresh/verify with
+        scripts/discover_uganda_gadm.mjs.
+        Caveats observed:
+          - Subnational (level 1/2) emissions are only available from 2021
+            onward; country level (UGA) goes back to 2015.
+          - Several post-2010 districts (e.g. Mityana, Bududa, Manafwa) and
+            towns (Fort Portal, Entebbe) have no distinct GADM level-1 area;
+            they alias to their GADM parent district in the config.
+          - NDC targets are national; district observed emissions are shown
+            for context only, not as district-level NDC compliance.
+
 REQ-09  Standardized GADM2 (district) annual totals for Uganda
         Document supported gadmId formats for Uganda districts and provide
         bulk annual emissions by district + sector for dashboard drill-down.
@@ -210,12 +230,80 @@ PART C — WHAT WE HAVE VERIFIED (INTEGRATION IS CORRECT)
 
 PART D — RECOMMENDED DEMO TALKING POINTS
 ========================================
-1. "Observed layer = Climate TRACE v7 (satellite + models, co2e_100yr)."
+1. "Observed layer = Climate TRACE (satellite + models, co2e_100yr); data updates monthly."
 2. "Targets / baselines = Uganda NDC policy text — not recalibrated to TRACE."
 3. "Four targets use ministry-style indicators until national feeds are connected."
 4. "District emissions and official inventory reconciliation are planned extensions."
 
 
+PART E — JUNE 2026 CLIMATE TRACE FEEDBACK: CHANGES MADE
+=======================================================
+The Climate TRACE team reviewed the prototype and sent feedback. Actions taken:
+
+E1. API VERSION vs DATA VERSION (RESOLVED)
+    Clarification from CT: the "v7" in the API URL is the API version (which
+    endpoints/features exist), not the data version. The API always serves the
+    latest data release (monthly cadence; latest is v5.8.0). There is not yet an
+    endpoint that returns the data version number.
+    Action: removed user-facing "Climate TRACE v7" tags across the UI, exports,
+    lineage, and API data_source strings; these now read "Climate TRACE". The
+    internal API version constant (CLIMATE_TRACE_API_VERSION = "v7") and the
+    api_version field on health/snapshot responses are kept, since they correctly
+    describe the API.
+
+E2. RATE LIMITS (RESOLVED / INFORMATIONAL)
+    CT confirmed the API is NOT rate-limited. Our per-slug fetch fan-out and
+    node-cache layer remain for latency/cost, not to dodge quotas. (Our own
+    express-rate-limit middleware protects OUR endpoints; it is unrelated to CT.)
+
+E3. ASSET / SOURCE-LEVEL DATA (IMPLEMENTED)
+    CT pointed to GET /v7/sources?...&gadmId=...&limit=&offset= for source-level
+    data. Implemented:
+      - config/climateTrace.js fetchSources() + zod schema (climateTrace.schema.js)
+      - cached service getSources() in services/climatetrace.js
+      - GET /api/v1/emissions/sources route (national + district, via resolveGeography)
+      - frontend emissionsApi.sources() + "Top Emitting Sources" panel in the NDC Layer
+      - scripts/verify_sources.mjs (live-shape check)
+    Each row mixes individual assets (e.g. "Mutundwe power station") and GADM
+    aggregations (forestry, buildings, agriculture, roads), sorted by emissions.
+
+E4. DISTRICT-LEVEL / GADM2 / AGGREGATE EMISSIONS (INVESTIGATED — NO CHANGE NEEDED)
+    The v7 endpoint set (from /v7/docs/openapi.json) is: /admins[/:id[/subdivisions]],
+    /cities, /definitions/*, /owners, /rankings/countries, /sources, /sources/:id,
+    /sources/emissions. The "Aggregate Emissions" endpoint the team referred to is
+    /v7/sources/emissions, which accepts GADM level 0, 1, AND 2 and which we already
+    use for national and district totals/timeseries.
+    Key finding (Kampala, 2024):
+      - Aggregate /sources/emissions total:        1,594,784 tCO2e (1.59 Mt)
+      - Sum of located /sources rows:                880,986 tCO2e (0.88 Mt)
+      - Spatially-uncertain (in aggregate, not in located rows): 713,798 tCO2e (44.8%)
+    Implication: district totals MUST come from /sources/emissions (which include
+    spatially-uncertain emissions) — they do (getLocationTotalMt). The Top Emitting
+    Sources panel lists located sources only and is explicitly labelled as NOT
+    summing to the dashboard total.
+    GADM levels for Uganda: level-1 = districts (our selector); level-2 = counties /
+    city councils (surfaced as named rows in the sources panel). For Kampala, level-1
+    total == level-2 total (single subdivision UGA.16.1_1), confirming exact
+    reconciliation. No change to the district data path is required.
+
+E5. MULTI-COUNTRY NDC TEMPLATING (FOUNDATION + PROPOSAL)
+    Gavin's idea: a catalog of measurable variables (e.g. "Reduction in
+    forestry-and-land-use emissions below BAU") that any country parameterizes
+    (Uganda 22%, Kenya 30%, etc.) so one tool tracks many countries.
+    Action: added config/measurableVariables.js (variable catalog + Climate TRACE
+    trackability map) and expressed Uganda's existing targets on it
+    (backward-compatible with NDC_TARGETS). Full multi-country onboarding (per-country
+    NDC params + CT baselines for other nations) is proposed as a follow-up; see the
+    "Multi-country NDC tracking" design notes in PROJECT_DOCUMENTATION.txt.
+
+E6. DATA INGESTION (PRODUCT DECISION — NOTED)
+    CT noted automatic insights on unformatted data are hard, and that we must choose
+    rapid-automatic (user formats data to a strict schema) vs slow-manual feedback.
+    Our ingestion already uses a strict column-mapping/validation step (rapid-automatic
+    path). No code change; captured here as a documented product decision.
+
 ---
-Internal verification script: node scripts/verify_climatetrace_v7.mjs
+Internal verification scripts:
+  node scripts/verify_climatetrace_v7.mjs   (sector reconciliation)
+  node scripts/verify_sources.mjs           (asset/source-level shape)
 Application repo: ndc-data-explorer-e051f914

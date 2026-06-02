@@ -4,12 +4,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAppContext } from "@/hooks/use-app-state";
 import { TargetStatusSummary } from "@/components/TargetStatusSummary";
 import { DataCoveragePanel } from "@/components/DataCoveragePanel";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { NDCTargetsColumn } from "@/components/columns/NDCTargets";
 import { NDCActivitiesColumn } from "@/components/columns/NDCActivities";
 import { ObservedDataColumn } from "@/components/columns/ObservedData";
 import { ProgressTowardTargetColumn } from "@/components/columns/ProgressTowardTarget";
 import { MitigationOptionsColumn } from "@/components/columns/MitigationOptions";
+import { TopEmittingSources } from "@/components/TopEmittingSources";
 import { ndcTargets, sectorDefinitions, getDataCompleteness, getLastRefreshTimestamp } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw, Download, FileSpreadsheet, FileText, Database, Clock } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { exportToExcel, exportToPDF } from "@/lib/export";
+import { exportNdcDashboardExcel, exportNdcDashboardPdf, exportCrtBtrCsv } from "@/lib/ndc-export";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { SectorId, TimeMode, GeographyLevel } from "@/data/uganda-ndc-data";
@@ -39,13 +39,21 @@ export default function NDCLayer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  // Auto-select a default district once the district list is available
+  // (handles the case where District mode was toggled before the list loaded).
   useEffect(() => {
-    if (state.geographyLevel === "district") {
-      state.setGeographyLevel("national");
-      state.setSelectedDistrictId(null);
+    if (
+      state.geographyLevel === "district" &&
+      !state.selectedDistrictId &&
+      emissions.availableDistricts.length > 0
+    ) {
+      const preferred =
+        emissions.availableDistricts.find((d) => d.name === "Kampala") ??
+        emissions.availableDistricts[0];
+      if (preferred) state.setSelectedDistrictId(preferred.name);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.geographyLevel]);
+  }, [state.geographyLevel, state.selectedDistrictId, emissions.availableDistricts]);
 
   const handleSelectTarget = useCallback((targetId: string) => {
     state.setSelectedTargetId(targetId);
@@ -85,6 +93,10 @@ export default function NDCLayer() {
   const lastRefresh = emissions.isApiReachable
     ? emissions.dashboardLastRefreshIso
     : getLastRefreshTimestamp();
+  const exportGeographyLabel =
+    emissions.geography === "district" && emissions.districtName
+      ? emissions.districtName
+      : "national";
 
   return (
     <div className="flex flex-col h-full">
@@ -102,30 +114,56 @@ export default function NDCLayer() {
 
         <div className="flex items-center gap-1.5">
           <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Geography</span>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex rounded-md border border-input overflow-hidden opacity-90">
-                <button
-                  type="button"
-                  className={cn(
-                    "px-2 py-0.5 text-xs font-medium bg-primary text-primary-foreground",
-                  )}
-                >
-                  National
-                </button>
-                <button
-                  type="button"
-                  disabled
-                  className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground cursor-not-allowed border-l border-input"
-                >
-                  District
-                </button>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-[240px] text-xs">
-              District-level Climate TRACE (GADM2) is not wired yet. Emissions charts use national (GADM0) data only.
-            </TooltipContent>
-          </Tooltip>
+          <div className="flex rounded-md border border-input overflow-hidden">
+            <button
+              type="button"
+              onClick={() => state.setGeographyLevel("national")}
+              className={cn(
+                "px-2 py-0.5 text-xs font-medium transition-colors",
+                state.geographyLevel === "national"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background text-muted-foreground hover:bg-muted",
+              )}
+            >
+              National
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                state.setGeographyLevel("district");
+                if (!state.selectedDistrictId) {
+                  const list = emissions.availableDistricts;
+                  const preferred = list.find((d) => d.name === "Kampala") ?? list[0];
+                  if (preferred) state.setSelectedDistrictId(preferred.name);
+                }
+              }}
+              className={cn(
+                "px-2 py-0.5 text-xs font-medium transition-colors border-l border-input",
+                state.geographyLevel === "district"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background text-muted-foreground hover:bg-muted",
+              )}
+            >
+              District
+            </button>
+          </div>
+          {state.geographyLevel === "district" && (
+            <Select
+              value={state.selectedDistrictId ?? ""}
+              onValueChange={(v) => state.setSelectedDistrictId(v || null)}
+            >
+              <SelectTrigger className="w-[150px] h-7 text-xs">
+                <SelectValue placeholder="Select district" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {emissions.availableDistricts.map((d) => (
+                  <SelectItem key={d.gadm_id} value={d.name}>
+                    <span className="text-xs">{d.name}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -153,23 +191,28 @@ export default function NDCLayer() {
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 onClick={() => {
-                  toast.warning("Export currently uses legacy demo data. Live-source export is being wired.");
-                  exportToExcel();
-                  toast.success("Excel exported");
+                  exportNdcDashboardExcel(emissions);
+                  toast.success(`Excel exported (${exportGeographyLabel})`);
                 }}
               >
                 <FileSpreadsheet className="h-4 w-4 mr-2" />Excel
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
-                  toast.warning("Export currently uses legacy demo data. Live-source export is being wired.");
-                  exportToPDF();
-                  toast.success("PDF exported");
+                  exportNdcDashboardPdf(emissions);
+                  toast.success(`PDF exported (${exportGeographyLabel})`);
                 }}
               >
-                <FileText className="h-4 w-4 mr-2" />Key Stats PDF
+                <FileText className="h-4 w-4 mr-2" />Summary PDF
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast.info("CRT/BTR CSV export coming soon")}><FileText className="h-4 w-4 mr-2" />CRT/BTR CSV</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  exportCrtBtrCsv(emissions);
+                  toast.success(`CRT/BTR CSV exported (${exportGeographyLabel})`);
+                }}
+              >
+                <FileText className="h-4 w-4 mr-2" />CRT/BTR CSV
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -209,6 +252,22 @@ export default function NDCLayer() {
                     geographyLevel={state.geographyLevel as GeographyLevel}
                     selectedDistrictId={state.selectedDistrictId}
                   />
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                  🏭 Top Emitting Sources
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl h-[80vh] p-0 overflow-hidden flex flex-col">
+                <DialogHeader className="px-4 py-3 border-b border-border">
+                  <DialogTitle className="text-sm">Top Emitting Sources (Climate TRACE)</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 min-h-0">
+                  <TopEmittingSources />
                 </div>
               </DialogContent>
             </Dialog>

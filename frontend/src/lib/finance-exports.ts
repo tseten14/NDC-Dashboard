@@ -2,6 +2,13 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { type Indicator, confidenceScore, deliveryConfidence, getById, indicatorRegistry, whatMustChangeNow } from "@/data/indicator-registry";
+import {
+  type Activity,
+  strategies,
+  kpis,
+  getActor,
+  computeKPIProgress,
+} from "@/data/uganda-strategy-data";
 
 function heading(doc: jsPDF, y: number, text: string, margin: number, contentWidth: number): number {
   doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(30, 60, 50);
@@ -80,6 +87,90 @@ export async function exportInvestmentNoteFromIndicator(ind: Indicator) {
 
   const safe = ind.indicator_name.replace(/[^a-z0-9]+/gi, "_").slice(0, 60);
   doc.save(`Investment_Note_${safe}.pdf`);
+}
+
+/** Minimum-viable investment memo PDF for a captured delivery activity. */
+export function exportInvestmentMemoFromActivity(activity: Activity) {
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const margin = 48;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const contentWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.setTextColor(30, 60, 50);
+  doc.text("Investment Memo", margin, y); y += 18;
+  doc.setFontSize(12); doc.setTextColor(50, 50, 50);
+  const t = doc.splitTextToSize(activity.title, contentWidth);
+  doc.text(t, margin, y); y += t.length * 14 + 4;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(110, 110, 110);
+  doc.text(`Generated ${new Date().toLocaleDateString()} · Sector ${activity.sector} · ${activity.id}`, margin, y); y += 16;
+  doc.setTextColor(0, 0, 0);
+
+  y = heading(doc, y, "1. Activity Overview", margin, contentWidth);
+  y = body(doc, y, activity.description, margin, contentWidth);
+
+  y = heading(doc, y, "2. Strategy Alignment", margin, contentWidth);
+  autoTable(doc, {
+    startY: y,
+    head: [["Strategy", "Anchor / Programme Code"]],
+    body: activity.strategy_links.map((l) => [
+      strategies.find((s) => s.id === l.strategy_id)?.name ?? l.strategy_id,
+      l.anchor_or_program_code,
+    ]),
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [30, 60, 50], textColor: 255 },
+    margin: { left: margin, right: margin },
+  });
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 14;
+
+  y = heading(doc, y, "3. KPIs & Progress", margin, contentWidth);
+  autoTable(doc, {
+    startY: y,
+    head: [["KPI", "Latest", "Target", "Unit", "Progress", "Status"]],
+    body: activity.kpi_links
+      .map((id) => kpis.find((k) => k.id === id))
+      .filter((k): k is NonNullable<typeof k> => !!k)
+      .map((k) => {
+        const p = computeKPIProgress(k);
+        return [
+          k.kpi_name + (k.is_proxy ? " (proxy)" : ""),
+          p.value.toLocaleString(),
+          p.target.toLocaleString(),
+          k.unit,
+          `${p.pct}%`,
+          p.status,
+        ];
+      }),
+    styles: { fontSize: 8, cellPadding: 3 },
+    headStyles: { fillColor: [30, 60, 50], textColor: 255 },
+    margin: { left: margin, right: margin },
+  });
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 14;
+
+  y = heading(doc, y, "4. Budget & Readiness", margin, contentWidth);
+  y = body(doc, y, `Budget code alignment: ${activity.budget_code_alignment}. Investment readiness level: ${activity.investment_readiness_level}. Ministries: ${activity.ministry_badges.join(", ")}. Districts: ${activity.district_tags.join(", ")}.`, margin, contentWidth);
+
+  y = heading(doc, y, "5. Ownership & Validation", margin, contentWidth);
+  const owners = [
+    ["Data Owner", activity.data_owner_id],
+    ["Validator", activity.validator_id],
+    ["Decision Owner", activity.decision_owner_id],
+  ].map(([role, id]) => {
+    const actor = getActor(id);
+    return `${role}: ${actor?.display_name ?? id}${actor?.org_unit ? ` (${actor.org_unit})` : ""}`;
+  });
+  owners.forEach((line) => {
+    y = body(doc, y, line, margin, contentWidth);
+  });
+
+  const pages = doc.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p); doc.setFont("helvetica", "italic"); doc.setFontSize(7); doc.setTextColor(140, 140, 140);
+    doc.text(`Uganda NDC Data Explorer · Investment Memo · ${activity.id} · p. ${p}/${pages}`, margin, doc.internal.pageSize.getHeight() - 18);
+  }
+
+  const safe = activity.title.replace(/[^a-z0-9]+/gi, "_").slice(0, 60);
+  doc.save(`Investment_Memo_${safe}.pdf`);
 }
 
 export async function exportMinisterBrief(scope: Indicator[]) {

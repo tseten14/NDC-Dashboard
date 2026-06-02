@@ -107,6 +107,10 @@ export function listActivitiesByCreator(userId: string) {
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
 }
 
+export function listAllActivities(): StoredActivity[] {
+  return load().activities.sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+}
+
 export function listActivitiesByWorkflow(state: WorkflowState) {
   return load()
     .activities.filter((a) => a.workflow_state === state)

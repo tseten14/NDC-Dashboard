@@ -15,7 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, CheckCircle2, HelpCircle, XCircle, Database, Satellite } from "lucide-react";
+import { AlertTriangle, CheckCircle2, HelpCircle, XCircle, Database, Satellite, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -129,11 +129,14 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
   const latestObserved = [...observedData.historicalData].reverse().find((p) => p.value != null);
   const yUnit = chartYAxisUnit(selectedTarget.unit);
 
+  const isDistrictView = emissions.isDistrictView;
+
   const historicalChartData = observedData.historicalData.map((p) => ({
     year: p.year,
     observedValue: p.value,
     projectedValue: null as number | null,
-    target: p.target,
+    // National NDC target paths are not meaningful at district level.
+    target: isDistrictView ? null : p.target,
   }));
 
   const projectionChartData = buildObservedProjectedRows(
@@ -141,12 +144,19 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
     observedData.projectionBaseline,
   );
 
-  const chartData = timeMode === "historical" ? historicalChartData : projectionChartData;
+  const chartData =
+    timeMode === "historical" || isDistrictView ? historicalChartData : projectionChartData;
 
   return (
     <div className="flex flex-col h-full">
       <div className="px-3 py-2 border-b border-border bg-muted/50 flex items-center justify-between gap-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Observed Data</h3>
+        {emissions.isDistrictView && emissions.districtName && (
+          <Badge variant="outline" className="text-[8px] h-4 gap-0.5 shrink-0">
+            <MapPin className="h-2.5 w-2.5" />
+            {emissions.districtName}
+          </Badge>
+        )}
         {apiSector && observedMode === "live" && (
           <Badge variant="outline" className="text-[8px] h-4 gap-0.5 shrink-0">
             <Satellite className="h-2.5 w-2.5" />
@@ -177,7 +187,19 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
             )}
           </div>
 
-          {apiSector && observedMode === "live" && liveProgress && (
+          {apiSector && observedMode === "live" && isDistrictView && (
+            <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs leading-snug">
+              <p className="text-foreground font-medium">
+                {emissions.districtName} district emissions (Climate TRACE)
+              </p>
+              <p className="text-muted-foreground mt-0.5">
+                District-level satellite-model totals from 2021 onward. National NDC target paths are omitted
+                because NDC targets are set nationally, not per district.
+              </p>
+            </div>
+          )}
+
+          {apiSector && observedMode === "live" && !isDistrictView && liveProgress && (
             <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs leading-snug">
               <p className="text-foreground font-medium">NDC policy lines vs Climate TRACE observed</p>
               <p className="text-muted-foreground mt-0.5">

@@ -18,7 +18,9 @@ import {
   type TimeseriesResponse,
   type CatalogActivityRow,
   type CatalogMitigationRow,
+  type DistrictListEntry,
 } from "@/lib/api";
+import { useAppContext } from "@/hooks/use-app-state";
 import {
   CLIMATE_TRACE_API_SECTORS,
   type ClimatetraceApiSector,
@@ -48,6 +50,10 @@ export interface EmissionsDataContextValue {
   sectorLoading: Partial<Record<ClimatetraceApiSector, boolean>>;
   sectorError: Partial<Record<ClimatetraceApiSector, Error | null>>;
   isApiReachable: boolean;
+  geography: "national" | "district";
+  districtName: string | null;
+  isDistrictView: boolean;
+  availableDistricts: DistrictListEntry[];
   dashboardCompleteness: number;
   dashboardLastRefreshIso: string;
   getProgressForTarget: (target: NDCTarget) => { percent: number | null; status: ProgressStatus; source: "api" | "catalog" | "mock" };
@@ -66,9 +72,26 @@ export interface EmissionsDataContextValue {
 const EmissionsDataContext = createContext<EmissionsDataContextValue | null>(null);
 
 export function EmissionsDataProvider({ children }: { children: ReactNode }) {
+  const { geographyLevel, selectedDistrictId } = useAppContext();
+  const districtName =
+    geographyLevel === "district" && selectedDistrictId ? selectedDistrictId : null;
+  const geographyKey = districtName ?? "national";
+
+  const districtsQuery = useQuery({
+    queryKey: ["emissions", "districts"],
+    queryFn: () => emissionsApi.districts(),
+    staleTime: Infinity,
+    retry: 1,
+  });
+
   const dashboardQuery = useQuery({
-    queryKey: ["emissions", "dashboard"],
-    queryFn: () => emissionsApi.dashboard(),
+    queryKey: ["emissions", "dashboard", geographyKey],
+    queryFn: () =>
+      emissionsApi.dashboard(
+        undefined,
+        undefined,
+        districtName ? { district: districtName } : undefined,
+      ),
     staleTime: STALE_MS,
     retry: 1,
   });
@@ -142,7 +165,9 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
           unit: "MtCO2e",
           data_source: d.data_source,
           data_license: "Creative Commons 4.0",
-          geography: "national",
+          geography: d.geography ?? "national",
+          gadm_id: d.gadm_id,
+          district_name: d.district_name,
           timeseries: series,
         };
       }
@@ -170,6 +195,9 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
   }, [dashboardErr]);
 
   const isApiReachable = !dashboardQuery.isError && dashboardQuery.data != null;
+  const geography = dashboard?.geography ?? (districtName ? "district" : "national");
+  const isDistrictView = geography === "district";
+  const availableDistricts = districtsQuery.data?.districts ?? [];
 
   const indicatorTargets = indicatorPanelQuery.data?.targets;
   const indicatorPanelLoading = indicatorPanelQuery.isLoading;
@@ -299,6 +327,10 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
       sectorLoading,
       sectorError,
       isApiReachable,
+      geography,
+      districtName,
+      isDistrictView,
+      availableDistricts,
       dashboardCompleteness,
       dashboardLastRefreshIso,
       getProgressForTarget,
@@ -328,6 +360,10 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
       sectorLoading,
       sectorError,
       isApiReachable,
+      geography,
+      districtName,
+      isDistrictView,
+      availableDistricts,
       dashboardCompleteness,
       dashboardLastRefreshIso,
       getProgressForTarget,

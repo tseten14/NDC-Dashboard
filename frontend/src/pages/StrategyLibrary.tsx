@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ArrowRight, Plus, Sparkles, Search, AlertCircle, CheckCircle2, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import type { Indicator, Strategy } from "@/data/indicator-registry";
 import type { NDCTarget } from "@/data/uganda-ndc-data";
 
@@ -222,6 +223,7 @@ export default function StrategyLibrary() {
 }
 
 function IndicatorRow({ row, onOpen }: { row: RegistryRow; onOpen: () => void }) {
+  const navigate = useNavigate();
   return (
     <div className="grid grid-cols-12 gap-2 items-center text-[10px] py-1 px-2 rounded hover:bg-muted/40 border border-transparent hover:border-border">
       <div className="col-span-4 min-w-0">
@@ -248,12 +250,37 @@ function IndicatorRow({ row, onOpen }: { row: RegistryRow; onOpen: () => void })
           Open <ArrowRight className="h-2.5 w-2.5" />
         </Button>
         {row.activities === 0 && (
-          <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[9px] gap-1" title="Add / map activity (coming soon)">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-5 px-1.5 text-[9px] gap-1"
+            title="Add / map an activity to this target"
+            onClick={() => {
+              if (row.ndcTargetId) {
+                navigate(`/activities/new?targetId=${row.ndcTargetId}`);
+              } else {
+                navigate("/activities/new");
+                toast.info("No linked NDC target — pick one on the activity form.");
+              }
+            }}
+          >
             <Plus className="h-2.5 w-2.5" />
           </Button>
         )}
         {(row.activities === 0 || row.status === "off-track" || row.status === "at-risk") && (
-          <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[9px] gap-1" title="Generate options (templated)">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-5 px-1.5 text-[9px] gap-1"
+            title="Explore mitigation options in the NDC Layer"
+            onClick={() => {
+              if (row.ndcTargetId) {
+                navigate(`/?target=${row.ndcTargetId}&sector=${row.sectorId}`);
+              } else {
+                toast.info('Open this indicator in the NDC Layer first ("Open" button).');
+              }
+            }}
+          >
             <Sparkles className="h-2.5 w-2.5" />
           </Button>
         )}

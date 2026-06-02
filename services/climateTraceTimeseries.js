@@ -5,6 +5,10 @@ import {
   latestInventoryYear,
   INVENTORY_YEAR_MIN,
 } from "../config/climateTrace.js";
+import {
+  UGANDA_NATIONAL_GADM,
+  SUBNATIONAL_INVENTORY_YEAR_MIN,
+} from "../config/ugandaDistrictGadm.js";
 import { recordCacheAccess, setRegisteredCacheSize } from "./cacheMetrics.js";
 import { logCacheAccess, logSlugFetch } from "../server/logger.js";
 
@@ -12,10 +16,18 @@ const SLUG_FETCH_RETRIES = 2;
 const SLUG_NULL_CACHE_SEC = 300;
 const SLUG_CACHE_TTL_SEC = 3600;
 
-/** Per year+slug (1h). Sector series derived from slug cache. */
+/** Per gadm+year+slug (1h). Sector series derived from slug cache. */
 const slugCache = new NodeCache({ stdTTL: SLUG_CACHE_TTL_SEC });
 const sectorSeriesCache = new NodeCache({ stdTTL: SLUG_CACHE_TTL_SEC });
-let warmPromise = null;
+/** In-flight warm promises keyed by `${gadmId}:${since}:${to}` to dedupe concurrent warms. */
+const warmPromises = new Map();
+
+/** Earliest year with data for a location: 2015 nationally, 2021 for districts. */
+function effectiveMinYear(gadmId) {
+  return gadmId === UGANDA_NATIONAL_GADM
+    ? INVENTORY_YEAR_MIN
+    : SUBNATIONAL_INVENTORY_YEAR_MIN;
+}
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -32,13 +44,13 @@ function cacheAgeSeconds(key, stdTtlSec) {
   return Math.max(0, stdTtlSec - remainingSec);
 }
 
-async function fetchYearSlugMtOnce(year, slug) {
-  const row = await fetchSectorEmissionsForYear(year, slug);
+async function fetchYearSlugMtOnce(year, slug, gadmId) {
+  const row = await fetchSectorEmissionsForYear(year, slug, gadmId);
   return row?.mtco2e ?? null;
 }
 
-async function fetchYearSlugMt(year, slug) {
-  const key = `slug:${year}:${slug}`;
+async function fetchYearSlugMt(year, slug, gadmId = UGANDA_NATIONAL_GADM) {
+  const key = `slug:${gadmId}:${year}:${slug}`;
   const hit = slugCache.get(key);
   if (hit !== undefined) {
     const age_seconds = cacheAgeSeconds(key, SLUG_CACHE_TTL_SEC);
@@ -55,10 +67,10 @@ async function fetchYearSlugMt(year, slug) {
   const started = Date.now();
   for (let attempt = 0; attempt <= SLUG_FETCH_RETRIES; attempt++) {
     try {
-      const value = await fetchYearSlugMtOnce(year, slug);
+      const value = await fetchYearSlugMtOnce(year, slug, gadmId);
       slugCache.set(key, value);
       refreshCacheSize();
-      logSlugFetch({ slug, year, status: "success", duration_ms: Date.now() - started });
+      logSlugFetch({ slug, year, gadm_id: gadmId, status: "success", duration_ms: Date.now() - started });
       return value;
     } catch (err) {
       lastErr = err;
@@ -71,6 +83,7 @@ async function fetchYearSlugMt(year, slug) {
   logSlugFetch({
     slug,
     year,
+    gadm_id: gadmId,
     status: "failure",
     duration_ms: Date.now() - started,
     error: lastErr?.message ?? "failed",
@@ -80,11 +93,15 @@ async function fetchYearSlugMt(year, slug) {
   return null;
 }
 
-/** Pre-fetch all slug×year pairs needed for dashboard sectors (deduped). */
-export async function warmSlugYears(since, to) {
-  const cacheKey = `warm:${since}:${to}`;
-  if (warmPromise?.key === cacheKey) {
-    await warmPromise.promise;
+/**
+ * Pre-fetch all slug×year pairs for one location (deduped, concurrency-safe).
+ * Only warms the requested gadmId — never every district at once.
+ */
+export async function warmSlugYears(since, to, gadmId = UGANDA_NATIONAL_GADM) {
+  const cacheKey = `warm:${gadmId}:${since}:${to}`;
+  const inflight = warmPromises.get(cacheKey);
+  if (inflight) {
+    await inflight;
     return;
   }
 
@@ -92,42 +109,46 @@ export async function warmSlugYears(since, to) {
   for (let y = since; y <= to; y++) {
     const slugsNeeded = new Set(ALL_TRACE_SLUGS);
     for (const slug of slugsNeeded) {
-      const k = `slug:${y}:${slug}`;
+      const k = `slug:${gadmId}:${y}:${slug}`;
       if (slugCache.get(k) === undefined) {
-        tasks.push(fetchYearSlugMt(y, slug));
+        tasks.push(fetchYearSlugMt(y, slug, gadmId));
       }
     }
   }
 
-  warmPromise = {
-    key: cacheKey,
-    promise: Promise.all(tasks).then(() => {
-      warmPromise = null;
-    }),
-  };
-  await warmPromise.promise;
+  const promise = Promise.all(tasks).finally(() => {
+    warmPromises.delete(cacheKey);
+  });
+  warmPromises.set(cacheKey, promise);
+  await promise;
 }
 
 /**
  * Sum slugs for a UI sector — returns null unless every slug has data for that year
  * (avoids under-counting when an upstream call fails).
  */
-async function sumSectorYear(sector, year) {
+async function sumSectorYear(sector, year, gadmId = UGANDA_NATIONAL_GADM) {
   const slugs = SECTOR_MAP[sector];
   if (!slugs?.length) return null;
 
-  const values = await Promise.all(slugs.map((slug) => fetchYearSlugMt(year, slug)));
+  const values = await Promise.all(slugs.map((slug) => fetchYearSlugMt(year, slug, gadmId)));
   if (values.some((v) => v == null)) return null;
   return +(values.reduce((a, b) => a + b, 0).toFixed(2));
 }
 
 /**
  * Timeseries for a dashboard sector; null years when upstream has no value (no interpolation).
+ * Pass a district gadmId for subnational series (data available from 2021).
  */
-export async function getUiSectorTimeseries(sector, since = INVENTORY_YEAR_MIN, to = latestInventoryYear()) {
-  const sinceY = Math.max(INVENTORY_YEAR_MIN, since);
+export async function getUiSectorTimeseries(
+  sector,
+  since = INVENTORY_YEAR_MIN,
+  to = latestInventoryYear(),
+  gadmId = UGANDA_NATIONAL_GADM,
+) {
+  const sinceY = Math.max(effectiveMinYear(gadmId), since);
   const toY = Math.min(to, latestInventoryYear());
-  const cacheKey = `sector:${sector}:${sinceY}:${toY}`;
+  const cacheKey = `sector:${gadmId}:${sector}:${sinceY}:${toY}`;
   const cached = sectorSeriesCache.get(cacheKey);
   if (cached) {
     const ttlMs = sectorSeriesCache.getTtl(cacheKey);
@@ -150,11 +171,11 @@ export async function getUiSectorTimeseries(sector, since = INVENTORY_YEAR_MIN, 
     return empty;
   }
 
-  await warmSlugYears(sinceY, toY);
+  await warmSlugYears(sinceY, toY, gadmId);
 
   const series = [];
   for (let y = sinceY; y <= toY; y++) {
-    const value = await sumSectorYear(sector, y);
+    const value = await sumSectorYear(sector, y, gadmId);
     series.push({ year: y, value });
   }
   sectorSeriesCache.set(cacheKey, series);
@@ -162,13 +183,47 @@ export async function getUiSectorTimeseries(sector, since = INVENTORY_YEAR_MIN, 
   return series;
 }
 
+/**
+ * Exact all-sector total (MtCO2e) for a location/year, straight from Climate
+ * TRACE (no sectors filter). Used for the district total card so it matches CT
+ * exactly rather than summing per-sector rounded values.
+ */
+export async function getLocationTotalMt(year, gadmId = UGANDA_NATIONAL_GADM) {
+  const key = `slug:${gadmId}:${year}:__ALL__`;
+  const hit = slugCache.get(key);
+  if (hit !== undefined) {
+    recordCacheAccess({ hit: true });
+    return hit;
+  }
+  recordCacheAccess({ hit: false });
+  const started = Date.now();
+  for (let attempt = 0; attempt <= SLUG_FETCH_RETRIES; attempt++) {
+    try {
+      const row = await fetchSectorEmissionsForYear(year, undefined, gadmId);
+      const mt = row?.mtco2e ?? null;
+      slugCache.set(key, mt);
+      refreshCacheSize();
+      logSlugFetch({ slug: "__ALL__", year, gadm_id: gadmId, status: "success", duration_ms: Date.now() - started });
+      return mt;
+    } catch (err) {
+      if (attempt < SLUG_FETCH_RETRIES) {
+        await sleep(400 * (attempt + 1));
+      } else {
+        logSlugFetch({ slug: "__ALL__", year, gadm_id: gadmId, status: "failure", duration_ms: Date.now() - started, error: err?.message });
+      }
+    }
+  }
+  slugCache.set(key, null, SLUG_NULL_CACHE_SEC);
+  return null;
+}
+
 /** Per-slug MtCO2e for one year (all TRACE slugs including mineral-extraction). */
-export async function getSlugBreakdownForYear(year) {
-  await warmSlugYears(year, year);
+export async function getSlugBreakdownForYear(year, gadmId = UGANDA_NATIONAL_GADM) {
+  await warmSlugYears(year, year, gadmId);
   const breakdown = {};
   const missing = [];
   for (const slug of ALL_TRACE_SLUGS) {
-    const mt = await fetchYearSlugMt(year, slug);
+    const mt = await fetchYearSlugMt(year, slug, gadmId);
     breakdown[slug] = mt;
     if (mt == null) missing.push(slug);
   }
@@ -176,12 +231,12 @@ export async function getSlugBreakdownForYear(year) {
 }
 
 /** Which slugs failed for a UI sector in a given year (strict aggregation). */
-export async function getMissingSlugsForSectorYear(sector, year) {
+export async function getMissingSlugsForSectorYear(sector, year, gadmId = UGANDA_NATIONAL_GADM) {
   const slugs = SECTOR_MAP[sector];
   if (!slugs?.length) return [];
   const missing = [];
   for (const slug of slugs) {
-    const v = await fetchYearSlugMt(year, slug);
+    const v = await fetchYearSlugMt(year, slug, gadmId);
     if (v == null) missing.push(slug);
   }
   return missing;
@@ -190,6 +245,6 @@ export async function getMissingSlugsForSectorYear(sector, year) {
 export function clearClimateTraceCache() {
   slugCache.flushAll();
   sectorSeriesCache.flushAll();
-  warmPromise = null;
+  warmPromises.clear();
   refreshCacheSize();
 }

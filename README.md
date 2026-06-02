@@ -2,10 +2,17 @@
 
 Web application for exploring Uganda’s Nationally Determined Contribution (NDC) data: decision-support cockpit, strategy library, climate risk views, and role-based delivery tools.
 
+## What you can do (in plain terms)
+
+- **See Uganda’s emissions by sector** (AFOLU, Energy, IPPU, Agriculture, Waste), pulled live from Climate TRACE and compared to NDC targets.
+- **Switch between National and District views.** On the NDC dashboard, use the **Geography** toggle: *National* shows the whole country (from 2015); *District* lets you pick one of **56 districts** (from 2021) — e.g. Kampala, Wakiso, Gulu. District numbers are observed emissions shown *for context*; NDC targets are national, so districts are not given a pass/fail score.
+- **Export** the current view to Excel, PDF, or a CRT/BTR-style CSV — each file is labelled with the geography you’re viewing.
+- **Accuracy:** every figure is the live Climate TRACE value (only converted to MtCO₂e). Sector totals reconcile exactly to Uganda’s national total, and each district total matches Climate TRACE’s district total exactly.
+
 ## Stack
 
 - **Frontend:** Vite + React + TypeScript + Tailwind / shadcn
-- **API:** Express (`server.js`) — Climate TRACE v7 live + bundled catalog/risk data
+- **API:** Express (`server.js`) — Climate TRACE live (API v7) + bundled catalog/risk data
 - **Activities:** Browser `localStorage` (no remote database)
 
 ## Quick start
@@ -27,10 +34,23 @@ Pick a country, choose a demo role from the top bar, and explore.
 
 | Feature | Source |
 | ------- | ------ |
-| Observed emissions / progress | Express → [Climate TRACE v7](https://api.climatetrace.org/v7/docs/index.html) |
+| Observed emissions / progress (national **and** district) | Express → [Climate TRACE](https://api.climatetrace.org/v7/docs/index.html) (API v7) |
+| District list (56 Uganda districts) | Express → `config/ugandaDistrictGadm.js` (from Climate TRACE GADM) |
+| Top emitting sources (asset/source-level) | Express → Climate TRACE `GET /v7/sources` |
 | Activities & mitigation catalog | Express → `config/ndcCockpitCatalog.js` |
 | Climate risk map | Express → `data/riskSeed.js` |
 | My Work / activities | `localStorage` in this browser |
+
+### Emissions API geography
+
+National is the default. To request a district, add one of:
+
+- `?gadm_id=UGA.16_1` — Climate TRACE GADM id, or
+- `?district=Kampala` — display name (resolved on the server).
+
+Endpoints: `GET /api/v1/emissions/dashboard`, `/timeseries`, `/progress` (all accept the geography params above), `GET /api/v1/emissions/districts` (the district list), and `GET /api/v1/emissions/sources` (asset/source-level emitters; accepts the geography params plus `year`, `limit`, `offset`). To refresh the district→GADM map from Climate TRACE: `node scripts/discover_uganda_gadm.mjs`. To verify the source-level shape: `node scripts/verify_sources.mjs`.
+
+> Note: "v7" is the Climate TRACE **API** version (which endpoints exist), not the data version. The data is released monthly (latest v5.8.0) and the API always serves the latest. User-facing labels read "Climate TRACE" (no version).
 
 Set `USE_MOCK_DATA=true` in `.env` for offline fixture mode (no Climate TRACE calls). The API logs a startup banner and exposes `mock_mode` on `/api/health` and `/api/v1/health`.
 

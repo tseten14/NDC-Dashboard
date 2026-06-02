@@ -127,7 +127,7 @@ export function DataCoveragePanel() {
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-primary hover:underline"
               >
-                Climate TRACE v7 docs <ExternalLink className="h-3 w-3" />
+                Climate TRACE API docs <ExternalLink className="h-3 w-3" />
               </a>
             )}
           </div>

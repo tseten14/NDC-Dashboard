@@ -10,12 +10,18 @@ import {
   defaultInventoryRange,
   latestInventoryYear,
 } from "../config/climateTrace.js";
+import {
+  UGANDA_NATIONAL_GADM,
+  SUBNATIONAL_INVENTORY_YEAR_MIN,
+  getDistrictName,
+} from "../config/ugandaDistrictGadm.js";
 import { fetchLiveUgandaSnapshot } from "./climatetrace.js";
 import {
   getUiSectorTimeseries,
   warmSlugYears,
   getSlugBreakdownForYear,
   getMissingSlugsForSectorYear,
+  getLocationTotalMt,
 } from "./climateTraceTimeseries.js";
 import { computeSectorProgress } from "../shared/progress.js";
 import { safeParseOrLog } from "../shared/validate.js";
@@ -58,14 +64,14 @@ function traceYoYPct(series, latestYear, latestValue) {
 /**
  * Timeseries from Climate TRACE v7 (cached); null for missing years — no interpolation.
  */
-export async function getTimeseries(sector, since, to) {
+export async function getTimeseries(sector, since, to, gadmId = UGANDA_NATIONAL_GADM) {
   if (!NDC_TARGETS[sector]) {
     throw new Error(`Unknown sector: ${sector}. Valid: ${SECTOR_KEYS.join(", ")}`);
   }
   const range = defaultInventoryRange();
   const sinceY = since ?? range.since;
   const toY = to ?? range.to;
-  return getUiSectorTimeseries(sector, sinceY, toY);
+  return getUiSectorTimeseries(sector, sinceY, toY, gadmId);
 }
 
 export function computeProgress(latestValue, sector, latestYear = null) {
@@ -131,14 +137,22 @@ async function buildReconciliation(refYear, countryTotalMt) {
 
 /**
  * Full dashboard payload — one round-trip warms cache for all sectors.
+ * Pass options.gadmId for a district view (defaults to national UGA).
  */
-export async function getEmissionsDashboard(since, to) {
+export async function getEmissionsDashboard(since, to, options = {}) {
+  const gadmId = options.gadmId ?? UGANDA_NATIONAL_GADM;
+  const isDistrict = gadmId !== UGANDA_NATIONAL_GADM;
+  const districtName = isDistrict
+    ? options.districtName ?? getDistrictName(gadmId)
+    : null;
+
   const range = defaultInventoryRange();
-  const sinceY = since ?? range.since;
+  const minYear = isDistrict ? SUBNATIONAL_INVENTORY_YEAR_MIN : range.since;
+  const sinceY = Math.max(since ?? range.since, minYear);
   const toY = to ?? range.to;
   const refYear = Math.min(toY, latestInventoryYear());
 
-  await warmSlugYears(sinceY, toY);
+  await warmSlugYears(sinceY, toY, gadmId);
 
   const timeseries = {};
   const progress = {};
@@ -147,17 +161,17 @@ export async function getEmissionsDashboard(since, to) {
 
   await Promise.all(
     SECTOR_KEYS.map(async (sector) => {
-      const series = await getUiSectorTimeseries(sector, sinceY, toY);
+      const series = await getUiSectorTimeseries(sector, sinceY, toY, gadmId);
       const t = NDC_TARGETS[sector];
       timeseries[sector] = series;
       const latest = latestFromSeries(series);
       const prog = computeProgress(latest?.value ?? null, sector, latest?.year ?? null);
       const missingSlugs =
-        latest?.year != null ? await getMissingSlugsForSectorYear(sector, latest.year) : [];
+        latest?.year != null ? await getMissingSlugsForSectorYear(sector, latest.year, gadmId) : [];
 
       const slugParts = {};
       if (latest?.year != null && SECTOR_MAP[sector]) {
-        const { breakdown } = await getSlugBreakdownForYear(latest.year);
+        const { breakdown } = await getSlugBreakdownForYear(latest.year, gadmId);
         for (const slug of SECTOR_MAP[sector]) {
           slugParts[slug] = breakdown[slug] ?? null;
         }
@@ -172,6 +186,11 @@ export async function getEmissionsDashboard(since, to) {
 
       const trace_yoy_pct = traceYoYPct(series, latest?.year ?? null, latest?.value ?? null);
 
+      // District observed emissions cannot be scored against national NDC
+      // baselines/targets, so progress is reported as unknown in district view.
+      const progressPct = isDistrict ? null : prog?.progress_pct ?? null;
+      const progressStatus = isDistrict ? "unknown" : prog?.status ?? "unknown";
+
       progress[sector] = {
         sector,
         unit: "MtCO2e",
@@ -183,21 +202,21 @@ export async function getEmissionsDashboard(since, to) {
         target_value: t.target,
         latest_year: latest?.year ?? null,
         latest_value: latest?.value ?? null,
-        progress_pct: prog?.progress_pct ?? null,
-        status: prog?.status ?? "unknown",
-        data_source: "Climate TRACE v7",
+        progress_pct: progressPct,
+        status: progressStatus,
+        data_source: "Climate TRACE",
         methodology: "ndc_baseline_vs_trace_observed",
         scope_note: SECTOR_SCOPE_NOTES[sector] ?? null,
         trace_yoy_pct,
         baseline_vs_trace_delta_mt:
-          latest?.value != null ? +(latest.value - t.baseline).toFixed(2) : null,
+          !isDistrict && latest?.value != null ? +(latest.value - t.baseline).toFixed(2) : null,
         missing_slugs: missingSlugs,
       };
       sectors[sector] = {
         latest_year: latest?.year ?? null,
         latest_value: latest?.value ?? null,
-        status: prog?.status ?? "unknown",
-        progress_pct: prog?.progress_pct ?? null,
+        status: progressStatus,
+        progress_pct: progressPct,
       };
     }),
   );
@@ -212,30 +231,65 @@ export async function getEmissionsDashboard(since, to) {
     else if (st === "mixed") mixed++;
   }
 
-  let live;
-  try {
-    live = await fetchLiveUgandaSnapshot();
-  } catch (e) {
-    live = { co2e_mtco2e: null, rank: null, yoy_change_mtco2e: null, stale: true, error: e.message };
-  }
+  // National-only context (country ranking + sector reconciliation). For a
+  // district view this is not applicable, so we derive a district total from
+  // the observed UI-sector values instead.
+  let live = null;
+  let reconciliation;
+  let total_co2e_mtco2e;
+  let yoy_change_mtco2e = null;
+  let global_rank = null;
+  let data_stale = false;
+  let from_cache = false;
 
-  const reconciliation = await buildReconciliation(refYear, live.co2e_mtco2e);
+  if (isDistrict) {
+    // Use Climate TRACE's exact all-sector district total (matches CT exactly
+    // and includes sectors like mineral-extraction not shown as UI cards).
+    total_co2e_mtco2e = await getLocationTotalMt(refYear, gadmId);
+    if (total_co2e_mtco2e == null) {
+      const districtTotals = SECTOR_KEYS
+        .map((s) => sectors[s].latest_value)
+        .filter((v) => v != null);
+      total_co2e_mtco2e = districtTotals.length
+        ? +districtTotals.reduce((a, b) => a + b, 0).toFixed(2)
+        : null;
+    }
+    reconciliation = undefined;
+  } else {
+    try {
+      live = await fetchLiveUgandaSnapshot();
+    } catch (e) {
+      live = { co2e_mtco2e: null, rank: null, yoy_change_mtco2e: null, stale: true, error: e.message };
+    }
+    reconciliation = await buildReconciliation(refYear, live.co2e_mtco2e);
+    total_co2e_mtco2e = live.co2e_mtco2e;
+    yoy_change_mtco2e = live.yoy_change_mtco2e;
+    global_rank = live.rank;
+    data_stale = !!live.stale;
+    from_cache = !!live.from_cache;
+  }
 
   const payload = {
     since: sinceY,
     to: toY,
     inventory_year: latestInventoryYear(),
+    geography: isDistrict ? "district" : "national",
+    gadm_id: gadmId,
+    district_name: districtName,
+    target_scope: "national",
     on_track,
     off_track,
     mixed,
     impl_gaps: 0,
     mrv_gaps: 1,
-    global_rank: live.rank,
-    total_co2e_mtco2e: live.co2e_mtco2e,
-    yoy_change_mtco2e: live.yoy_change_mtco2e,
-    data_stale: !!live.stale,
-    from_cache: !!live.from_cache,
-    data_source: "Climate TRACE v7 (live API)",
+    global_rank,
+    total_co2e_mtco2e,
+    yoy_change_mtco2e,
+    data_stale,
+    from_cache,
+    data_source: isDistrict
+      ? `Climate TRACE (live API) — ${districtName ?? gadmId}`
+      : "Climate TRACE (live API)",
     api_docs_url: CLIMATE_TRACE_DOCS_URL,
     timeseries,
     progress,
@@ -243,8 +297,9 @@ export async function getEmissionsDashboard(since, to) {
     slug_breakdown_by_sector,
     reconciliation,
     coverage: {
-      methodology:
-        "Observed emissions from Climate TRACE v7 (co2e_100yr) compared to Uganda NDC policy baselines — not official MRV.",
+      methodology: isDistrict
+        ? "Observed district emissions from Climate TRACE (co2e_100yr). NDC targets are national; district values are shown for context, not as district-level NDC compliance."
+        : "Observed emissions from Climate TRACE (co2e_100yr) compared to Uganda NDC policy baselines — not official MRV.",
       sector_scope_notes: SECTOR_SCOPE_NOTES,
       unmapped_slugs: UNMAPPED_SECTOR_SLUGS,
     },

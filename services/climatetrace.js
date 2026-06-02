@@ -5,6 +5,7 @@ import {
   CLIMATE_TRACE_GADM_UGANDA,
   CLIMATE_TRACE_GAS,
   climateTraceUrl,
+  fetchSources,
   fetchUgandaCountryRanking,
   latestInventoryYear,
   toMtco2e,
@@ -87,6 +88,30 @@ export async function fetchLiveUgandaSnapshot() {
       error: err.message,
     };
   }
+}
+
+/**
+ * Cached asset/source-level emissions for a location (1h TTL).
+ * Defaults to the latest inventory year when year is not provided.
+ */
+export async function getSources({ gadmId = CLIMATE_TRACE_GADM_UGANDA, year, subsectors = "", limit = 50, offset = 0 } = {}) {
+  const effectiveYear = year ?? latestInventoryYear();
+  const key = `ct:sources:${gadmId}:${effectiveYear}:${subsectors}:${limit}:${offset}`;
+  const cached = cache.get(key);
+  if (cached) {
+    recordCacheAccess({ hit: true });
+    logCacheAccess({ key, hit: true, age_seconds: null });
+    refreshLiveCacheSize();
+    return { ...cached, from_cache: true };
+  }
+
+  recordCacheAccess({ hit: false });
+  logCacheAccess({ key, hit: false, age_seconds: null });
+
+  const result = await fetchSources({ gadmId, year: effectiveYear, subsectors, limit, offset });
+  cache.set(key, result, 3600);
+  refreshLiveCacheSize();
+  return { ...result, from_cache: false };
 }
 
 export async function checkApiHealth() {

@@ -93,8 +93,59 @@ export interface TimeseriesResponse {
   data_source: string;
   data_license: string;
   geography: "national" | "district";
+  gadm_id?: string;
+  district_name?: string | null;
   district_unavailable?: boolean;
   timeseries: TimeseriesPoint[];
+}
+
+export interface DistrictListEntry {
+  name: string;
+  gadm_id: string;
+}
+
+export interface DistrictsResponse {
+  national: { gadm_id: string; name: string };
+  districts: DistrictListEntry[];
+  data_source: string;
+  note: string;
+}
+
+export interface EmissionsSource {
+  id: number | string | null;
+  name: string | null;
+  sector: string | null;
+  subsector: string | null;
+  source_type: string | null;
+  asset_type: string | null;
+  is_asset: boolean;
+  centroid: { lat: number | null; lng: number | null } | null;
+  emissions_tco2e: number | null;
+  emissions_mtco2e: number | null;
+  year: number | string | null;
+}
+
+export interface EmissionsSourcesResponse {
+  year: number;
+  gadm_id: string;
+  limit: number;
+  offset: number;
+  count: number;
+  sources: EmissionsSource[];
+  geography: "national" | "district";
+  district_name: string | null;
+  data_source: string;
+  data_license: string;
+  note: string;
+  from_cache?: boolean;
+}
+
+/** Geography selector for emissions queries. Omit for national (UGA). */
+export interface GeographyOpts {
+  /** Climate TRACE GADM id, e.g. "UGA.16_1". */
+  gadmId?: string;
+  /** District display name, e.g. "Kampala" (resolved server-side). */
+  district?: string;
 }
 
 export interface ProgressResponse {
@@ -159,6 +210,10 @@ export interface EmissionsDashboard {
   from_cache: boolean;
   data_source: string;
   api_docs_url: string;
+  geography?: "national" | "district";
+  gadm_id?: string;
+  district_name?: string | null;
+  target_scope?: "national" | "district";
   timeseries: Partial<Record<NdcSectorKey, TimeseriesPoint[]>>;
   progress: Partial<Record<NdcSectorKey, ProgressResponse>>;
   sectors: Partial<Record<NdcSectorKey, SectorSummaryEntry>>;
@@ -184,11 +239,17 @@ export interface EmissionsSummary {
   reconciliation?: EmissionsReconciliation;
 }
 
+function applyGeography(q: URLSearchParams, opts?: GeographyOpts) {
+  if (opts?.gadmId) q.set("gadm_id", opts.gadmId);
+  else if (opts?.district) q.set("district", opts.district);
+}
+
 export const emissionsApi = {
-  dashboard: (since?: number, to?: number) => {
+  dashboard: (since?: number, to?: number, opts?: GeographyOpts) => {
     const q = new URLSearchParams();
     if (since != null) q.set("since", String(since));
     if (to != null) q.set("to", String(to));
+    applyGeography(q, opts);
     const qs = q.toString();
     return getJSONValidated<EmissionsDashboard>(
       `/api/v1/emissions/dashboard${qs ? `?${qs}` : ""}`,
@@ -196,17 +257,29 @@ export const emissionsApi = {
       "emissions.dashboard",
     );
   },
+  districts: () => getJSON<DistrictsResponse>("/api/v1/emissions/districts"),
+  sources: (opts?: GeographyOpts, params?: { year?: number; limit?: number; offset?: number }) => {
+    const q = new URLSearchParams();
+    applyGeography(q, opts);
+    if (params?.year != null) q.set("year", String(params.year));
+    if (params?.limit != null) q.set("limit", String(params.limit));
+    if (params?.offset != null) q.set("offset", String(params.offset));
+    const qs = q.toString();
+    return getJSON<EmissionsSourcesResponse>(`/api/v1/emissions/sources${qs ? `?${qs}` : ""}`);
+  },
   summary: () => getJSON<EmissionsSummary>("/api/v1/emissions/summary"),
-  timeseries: (sector: NdcSectorKey, since?: number, to?: number) => {
+  timeseries: (sector: NdcSectorKey, since?: number, to?: number, opts?: GeographyOpts) => {
     const q = new URLSearchParams({ sector });
     if (since != null) q.set("since", String(since));
     if (to != null) q.set("to", String(to));
+    applyGeography(q, opts);
     return getJSON<TimeseriesResponse>(`/api/v1/emissions/timeseries?${q}`);
   },
-  progress: (sector: NdcSectorKey, since?: number, to?: number) => {
+  progress: (sector: NdcSectorKey, since?: number, to?: number, opts?: GeographyOpts) => {
     const q = new URLSearchParams({ sector });
     if (since != null) q.set("since", String(since));
     if (to != null) q.set("to", String(to));
+    applyGeography(q, opts);
     return getJSON<ProgressResponse>(`/api/v1/emissions/progress?${q}`);
   },
   provenance: () => getJSON<Record<string, unknown>>("/api/v1/provenance"),

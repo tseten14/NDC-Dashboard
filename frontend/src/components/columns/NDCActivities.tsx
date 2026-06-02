@@ -162,7 +162,12 @@ function ActivityCard({ activity, geographyLevel, selectedDistrictId }: {
               <div>
                 <p className="text-xs font-medium text-foreground">{activity.focalPoint.name}</p>
                 <p className="text-xs text-muted-foreground">{activity.focalPoint.role}</p>
-                <p className="text-xs text-muted-foreground">{activity.focalPoint.email}</p>
+                <a
+                  href={`mailto:${activity.focalPoint.email}`}
+                  className="text-xs text-primary underline underline-offset-2"
+                >
+                  {activity.focalPoint.email}
+                </a>
               </div>
               <div>
                 <p className="text-xs font-medium text-foreground">{activity.responsibleMinistry}</p>
@@ -173,10 +178,21 @@ function ActivityCard({ activity, geographyLevel, selectedDistrictId }: {
               <div>
                 <p className="text-xs font-medium">Re: {activity.name}</p>
                 <p className="text-[10px] text-muted-foreground mt-1 italic">
-                  This action would send a notification to the focal point. (UI only — no backend connected)
+                  Opens a pre-filled email to the focal point in your mail client.
                 </p>
               </div>
-              <Button size="sm" className="w-full text-xs">Send Notification</Button>
+              <Button
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => {
+                  const subject = `NDC activity follow-up: ${activity.name}`;
+                  const body = `Dear ${activity.focalPoint.name},\n\nThis message concerns the NDC activity "${activity.name}" under ${activity.responsibleMinistry}.\n\n[Add your message here]\n\nSent via the Uganda NDC Data Explorer.`;
+                  window.location.href = `mailto:${activity.focalPoint.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                }}
+              >
+                <Send className="h-3 w-3 mr-1" />
+                Compose email
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

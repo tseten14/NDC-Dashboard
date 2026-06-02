@@ -92,8 +92,8 @@ function ShellHeader() {
 function ProtectedShell() {
   const state = useAppState();
   return (
-    <EmissionsDataProvider>
-      <AppStateContext.Provider value={state}>
+    <AppStateContext.Provider value={state}>
+      <EmissionsDataProvider>
       <CockpitProvider>
         <SidebarProvider>
           <div className="min-h-screen flex w-full">
@@ -149,8 +149,8 @@ function ProtectedShell() {
           </div>
         </SidebarProvider>
       </CockpitProvider>
+      </EmissionsDataProvider>
     </AppStateContext.Provider>
-    </EmissionsDataProvider>
   );
 }
 

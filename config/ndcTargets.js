@@ -3,9 +3,15 @@
  * AFOLU uses forestry + land-use only; agriculture slug maps to agriculture sector (separate from AFOLU).
  */
 
+/**
+ * Uganda's sector targets. `variable_id` links each target to a country-agnostic
+ * measurable variable in config/measurableVariables.js (see multi-country design
+ * notes in PROJECT_DOCUMENTATION.txt). The extra field is additive/backward-compatible.
+ */
 export const NDC_TARGETS = {
   afolu: {
     label: "AFOLU",
+    variable_id: "forestry_landuse_emissions",
     baseline_year: 2015,
     baseline: 42.5,
     target_year: 2030,
@@ -16,6 +22,7 @@ export const NDC_TARGETS = {
   },
   energy: {
     label: "ENERGY",
+    variable_id: "energy_emissions",
     baseline_year: 2015,
     baseline: 6.2,
     target_year: 2030,
@@ -26,6 +33,7 @@ export const NDC_TARGETS = {
   },
   ippu: {
     label: "IPPU",
+    variable_id: "ippu_emissions",
     baseline_year: 2015,
     baseline: 1.8,
     target_year: 2030,
@@ -36,6 +44,7 @@ export const NDC_TARGETS = {
   },
   agriculture: {
     label: "AGRICULTURE",
+    variable_id: "agriculture_emissions",
     baseline_year: 2015,
     baseline: 28.4,
     target_year: 2030,
@@ -46,6 +55,7 @@ export const NDC_TARGETS = {
   },
   waste: {
     label: "WASTE",
+    variable_id: "waste_emissions",
     baseline_year: 2015,
     baseline: 3.8,
     target_year: 2030,
@@ -65,6 +75,7 @@ export const SLUG_TO_UI_SECTOR = {
   buildings: "energy",
   "fossil-fuel-operations": "energy",
   manufacturing: "ippu",
+  "fluorinated-gases": "ippu",
   waste: "waste",
 };
 
@@ -72,7 +83,7 @@ export const SLUG_TO_UI_SECTOR = {
 export const SECTOR_MAP = {
   afolu: ["forestry-and-land-use"],
   energy: ["power", "transportation", "buildings", "fossil-fuel-operations"],
-  ippu: ["manufacturing"],
+  ippu: ["manufacturing", "fluorinated-gases"],
   agriculture: ["agriculture"],
   waste: ["waste"],
 };
@@ -86,6 +97,7 @@ export const ALL_SECTOR_SLUGS = [
   "buildings",
   "fossil-fuel-operations",
   "manufacturing",
+  "fluorinated-gases",
   "waste",
 ];
 
@@ -100,7 +112,7 @@ export const SECTOR_SCOPE_NOTES = {
   afolu:
     "Climate TRACE forestry-and-land-use only (not agriculture slug; separate Agriculture NDC target).",
   energy: "Sums power + transportation + buildings + fossil-fuel-operations (broader than narrow inventory energy line).",
-  ippu: "Manufacturing slug only; excludes other IPPU / F-gas categories in TRACE.",
+  ippu: "Climate TRACE manufacturing + fluorinated-gases slugs (IPPU per IPCC). F-gases are currently 0 for Uganda in TRACE.",
   agriculture: "Climate TRACE agriculture slug only.",
   waste: "Climate TRACE waste slug.",
 };
