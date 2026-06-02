@@ -8,7 +8,7 @@ import { useState } from "react";
 import {
   LayoutDashboard, Network, ShieldCheck, Wallet, Upload, ChevronDown, ChevronRight,
   Target, TrendingUp, Building2, Eye, Trees, BarChart3, Users, LineChart, FileText, Download, Settings,
-  Database, GitBranch, Workflow, Search, Library, Briefcase, ShieldAlert,
+  Database, GitBranch, Workflow, Search, Library, Briefcase, ShieldAlert, Sparkles, Coins,
 } from "lucide-react";
 
 const primary = [
@@ -17,6 +17,8 @@ const primary = [
   { title: "My Work", url: "/my-work", icon: Briefcase },
   { title: "Climate Risk", url: "/risk", icon: ShieldAlert },
   { title: "Data Ingestion", url: "/ingest", icon: Upload },
+  { title: "AI 2030 Prediction", url: "/ai-2030", icon: Sparkles },
+  { title: "Climate Finance", url: "/climate-finance", icon: Coins },
 ];
 
 const advanced = [

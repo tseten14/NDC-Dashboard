@@ -1,0 +1,5 @@
+# Deep-learning 2030 forecaster (scripts/predict_emissions.py)
+# install: pip install -r requirements-predict.txt
+# torch enables the global GRU model; without it the script falls back to numpy OLS.
+numpy>=1.24.0
+torch>=2.2.0

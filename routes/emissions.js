@@ -8,6 +8,7 @@ import {
 } from "../services/emissionsData.js";
 import { defaultInventoryRange, latestInventoryYear } from "../config/climateTrace.js";
 import { checkApiHealth, getSources } from "../services/climatetrace.js";
+import { getSectorPredictions } from "../services/predictionEngine.js";
 import { NDC_TARGETS } from "../config/ndcTargets.js";
 import {
   UGANDA_NATIONAL_GADM,
@@ -109,6 +110,21 @@ router.get("/emissions/sources", async (req, res) => {
   } catch (err) {
     req.log?.error({ err }, "emissions_sources_failed");
     return res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/emissions/predictions", async (req, res) => {
+  const geo = resolveGeography(req.query);
+  if (geo.error) return res.status(geo.status).json({ error: geo.error });
+  try {
+    const result = await getSectorPredictions({
+      gadmId: geo.gadmId,
+      districtName: geo.districtName,
+    });
+    return res.json(result);
+  } catch (err) {
+    req.log?.error({ err }, "emissions_predictions_failed");
+    return res.status(502).json({ error: "prediction_failed" });
   }
 });
 

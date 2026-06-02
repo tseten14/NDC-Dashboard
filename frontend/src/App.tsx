@@ -47,6 +47,8 @@ import AFOLUmrv from "./pages/AFOLUmrv.tsx";
 import KPIsProxies from "./pages/KPIsProxies.tsx";
 import OwnershipFocals from "./pages/OwnershipFocals.tsx";
 import Projections from "./pages/Projections.tsx";
+import Ai2030Prediction from "./pages/Ai2030Prediction.tsx";
+import ClimateFinance from "./pages/ClimateFinance.tsx";
 import InvestmentTemplates from "./pages/InvestmentTemplates.tsx";
 import ExportsAPI from "./pages/ExportsAPI.tsx";
 import Admin from "./pages/Admin.tsx";
@@ -116,6 +118,8 @@ function ProtectedShell() {
                   <Route path="/evidence" element={<EvidenceMRV />} />
                   <Route path="/finance" element={<FinanceInvestment />} />
                   <Route path="/ingest" element={<DataIngestion />} />
+                  <Route path="/ai-2030" element={<Ai2030Prediction />} />
+                  <Route path="/climate-finance" element={<ClimateFinance />} />
 
                   {/* Climate Risk & Vulnerability */}
                   <Route path="/risk" element={<RiskLayout />}>

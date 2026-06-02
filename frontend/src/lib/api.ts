@@ -276,6 +276,68 @@ export interface EmissionsSummary {
   reconciliation?: EmissionsReconciliation;
 }
 
+export type PredictionStatus =
+  | "on_track"
+  | "at_risk"
+  | "off_track"
+  | "unknown"
+  | "insufficient_data";
+
+export interface PredictionForecastPoint {
+  year: number;
+  yhat: number | null;
+  lower: number | null;
+  upper: number | null;
+}
+
+export interface SectorPrediction {
+  label: string;
+  unit: string;
+  history: { year: number; value: number | null }[];
+  forecast: PredictionForecastPoint[];
+  predicted_value: number | null;
+  predicted_lower?: number | null;
+  predicted_upper?: number | null;
+  target_value: number | null;
+  baseline_value: number | null;
+  bau_2030?: number | null;
+  condition?: string | null;
+  reduction_below_bau_pct?: number | null;
+  gap: number | null;
+  gap_pct: number | null;
+  status: PredictionStatus;
+  model: string | null;
+  r2: number | null;
+  n_points: number;
+  note: string | null;
+}
+
+export interface PredictionsResponse {
+  ok: boolean;
+  engine: string;
+  target_year: number;
+  predictions: Partial<Record<NdcSectorKey, SectorPrediction>>;
+  summary: {
+    on_track: number;
+    at_risk: number;
+    off_track: number;
+    unknown: number;
+    insufficient_data: number;
+    total_predicted: number | null;
+    total_target: number | null;
+    total_gap: number | null;
+  };
+  geography: "national" | "district";
+  gadm_id: string;
+  district_name: string | null;
+  observed_from: number;
+  observed_to: number;
+  data_source: string;
+  methodology: string;
+  target_scope: string;
+  from_cache: boolean;
+}
+
 function applyGeography(q: URLSearchParams, opts?: GeographyOpts) {
   if (opts?.gadmId) q.set("gadm_id", opts.gadmId);
   else if (opts?.district) q.set("district", opts.district);
@@ -307,6 +369,12 @@ export const emissionsApi = {
     if (params?.offset != null) q.set("offset", String(params.offset));
     const qs = q.toString();
     return getJSON<EmissionsSourcesResponse>(`/api/v1/emissions/sources${qs ? `?${qs}` : ""}`);
+  },
+  predictions: (opts?: GeographyOpts) => {
+    const q = new URLSearchParams();
+    applyGeography(q, opts);
+    const qs = q.toString();
+    return getJSON<PredictionsResponse>(`/api/v1/emissions/predictions${qs ? `?${qs}` : ""}`);
   },
   summary: () => getJSON<EmissionsSummary>("/api/v1/emissions/summary"),
   timeseries: (sector: NdcSectorKey, since?: number, to?: number, opts?: GeographyOpts) => {
