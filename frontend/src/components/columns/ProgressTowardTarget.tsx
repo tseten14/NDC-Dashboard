@@ -62,11 +62,20 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
   }
 
   const { percent, status, source } = emissions.getProgressForTarget(selectedTarget);
+  const isNationalOnlyTarget =
+    isIndicatorPanelTarget(selectedTarget) || selectedTarget.sectorId === "economy-wide";
   const districtNote = emissions.isDistrictView ? (
-    <div className="p-2 rounded-md bg-muted/60 border border-border text-[11px] text-muted-foreground">
-      Showing <span className="font-medium text-foreground">{emissions.districtName}</span> observed emissions.
-      NDC targets are national, so progress is not scored at district level — values are for local context only.
-    </div>
+    isNationalOnlyTarget ? (
+      <div className="p-2 rounded-md bg-muted/60 border border-border text-[11px] text-muted-foreground">
+        National-level indicator — district selection has no effect.
+        No sub-national breakdown is available for this target.
+      </div>
+    ) : (
+      <div className="p-2 rounded-md bg-muted/60 border border-border text-[11px] text-muted-foreground">
+        Showing <span className="font-medium text-foreground">{emissions.districtName}</span> observed emissions.
+        NDC targets are national, so progress is not scored at district level — values are for local context only.
+      </div>
+    )
   ) : null;
   const hasProgressData = percent != null;
   const displayPercent = hasProgressData ? percent : 0;

@@ -5,7 +5,8 @@ import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { getClimateTraceSectorForTarget } from "@/lib/emissions-integration";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Library, AlertTriangle, CheckCircle2, Database } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronRight, Library, AlertTriangle, CheckCircle2, Database, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TargetStatusSummaryProps {
@@ -24,6 +25,8 @@ interface TargetSnapshot {
 
 export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps) {
   const emissions = useEmissionsData();
+  const isLoading = emissions.summaryIsLoading;
+  const hasError = !!emissions.summaryError && !emissions.isApiReachable;
 
   const snapshots = useMemo((): TargetSnapshot[] => {
     return ndcTargets.map(t => {
@@ -34,8 +37,8 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
       const apiSector = getClimateTraceSectorForTarget(t);
       const hasApiData =
         !!apiSector &&
-        emissions.getObservedMode(t) === "live" &&
-        !emissions.sectorError[apiSector];
+        !emissions.sectorError[apiSector] &&
+        (emissions.timeseriesBySector[apiSector]?.timeseries.some((p) => p.value != null) ?? false);
 
       const hasData =
         hasApiData ||
@@ -59,6 +62,34 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
     .filter(s => s.gap !== "ok")
     .sort((a, b) => priority[b.gap] - priority[a.gap])
     .slice(0, 3);
+
+  if (isLoading) {
+    return (
+      <div className="px-3 py-2 border-b border-border bg-muted/20" aria-busy="true" aria-label="Loading status summary">
+        <div className="flex items-center gap-3 flex-wrap">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-5 w-20 rounded" />)}
+          <Skeleton className="h-5 w-40 rounded ml-2" />
+        </div>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="px-3 py-2 border-b border-border bg-destructive/5" role="alert">
+        <div className="flex items-center gap-2 text-xs text-destructive">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          Climate TRACE API unavailable — status summary cannot be calculated.
+          <button
+            className="ml-1 underline underline-offset-2 hover:no-underline"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-3 py-2 border-b border-border bg-muted/20">

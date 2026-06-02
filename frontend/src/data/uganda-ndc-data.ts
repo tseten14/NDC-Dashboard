@@ -13,7 +13,7 @@ export type SectorId =
 export type Conditionality = "Unconditional" | "Conditional" | "Mixed";
 export type MetricType = "emissions-reduction" | "forest-cover" | "renewable-energy"
   | "waste-diversion" | "energy-efficiency" | "transport-modal-shift" | "climate-resilience"
-  | "activity-share";
+  | "activity-share" | "electricity-access" | "wetlands-coverage" | "electricity-capacity";
 export type TimeMode = "historical" | "projection";
 export type GeographyLevel = "national" | "district";
 export type ImplementationLevel = "national" | "district" | "both";
@@ -121,26 +121,41 @@ export interface SectorInfo {
 /* ── Sector definitions ── */
 
 export const sectorDefinitions: SectorInfo[] = [
-  { id: "economy-wide", name: "Economy-wide", icon: CloudRain, description: "All sectors combined" },
+  { id: "economy-wide", name: "Economy-wide", icon: CloudRain, description: "All sectors combined — 24.7% below BAU by 2030" },
   { id: "afolu", name: "AFOLU", icon: Trees, description: "Agriculture, Forestry & Other Land Use" },
-  { id: "energy", name: "Energy", icon: Flame, description: "Energy Production & Renewable Energy" },
-  { id: "transport", name: "Transport", icon: Bus, description: "Transportation & Mobility" },
-  { id: "waste", name: "Waste", icon: Trash2, description: "Waste Management & Circular Economy" },
+  { id: "energy", name: "Energy", icon: Flame, description: "Energy Production (Stationary, excl. Transport)" },
+  { id: "transport", name: "Transport", icon: Bus, description: "Road, Rail, and Other Transport Modes" },
+  { id: "waste", name: "Waste", icon: Trash2, description: "Solid Waste & Wastewater Management" },
   { id: "ippu", name: "IPPU", icon: Factory, description: "Industrial Processes & Product Use" },
-  { id: "agriculture", name: "Agriculture", icon: Wheat, description: "Agricultural Production & Land Management" },
+  { id: "agriculture", name: "Agriculture", icon: Wheat, description: "Agricultural Production (part of AFOLU NDC target)" },
 ];
 
-/* ── Mock NDC Targets (Uganda NDC verbatim-style) ── */
+/* ── NDC Targets — Uganda Updated NDC, September 2022 ── */
 
 export const ndcTargets: NDCTarget[] = [
+  // ── Economy-wide ──────────────────────────────────────────────────────────
+  {
+    id: "t0",
+    sectorId: "economy-wide",
+    targetText: "Reduce economy-wide GHG emissions by 24.7% below Business-As-Usual (BAU) by 2030 (full conditional target: 112.1 MtCO₂e). Unconditional contribution: 5.9% below BAU → 140.1 MtCO₂e, funded by domestic resources. Conditional contribution: additional 18.8% reduction subject to international finance, capacity-building and technology transfer. BAU 2030 reference: 148.8 MtCO₂e. Base year: 2015 (90.1 MtCO₂e).",
+    targetYear: 2030,
+    baselineYear: 2015,
+    baselineValue: 90.1,
+    targetValue: 112.1, // full conditional (still growing vs 2015, but 24.7% below 2030 BAU)
+    unit: "MtCO₂e",
+    conditionality: "Mixed",
+    metricType: "emissions-reduction",
+  },
+
+  // ── AFOLU ─────────────────────────────────────────────────────────────────
   {
     id: "t1",
     sectorId: "afolu",
-    targetText: "Reduce emissions from the forestry and land-use sector by 22% below BAU levels by 2030 through afforestation, reforestation, and reduced deforestation.",
+    targetText: "Reduce AFOLU sector GHG emissions by 24.9% below BAU levels to 91.8 MtCO₂e by 2030 (BAU 2030: 122.2 MtCO₂e; absolute reduction from BAU: 30.4 MtCO₂e). Measures: REDD+, sustainable land use & agroforestry, commercial plantations, energy-efficient stoves, livestock management, wetlands & peatland restoration. AFOLU contributes 82.7% of Uganda's total mitigation effort.",
     targetYear: 2030,
     baselineYear: 2015,
-    baselineValue: 42.5,
-    targetValue: 33.15,
+    baselineValue: 77.6,  // 2015 AFOLU national inventory estimate (forestry+land+agriculture+wetlands)
+    targetValue: 91.8,    // NDC 2030 conditional target
     unit: "MtCO₂e",
     conditionality: "Mixed",
     metricType: "emissions-reduction",
@@ -148,86 +163,122 @@ export const ndcTargets: NDCTarget[] = [
   {
     id: "t2",
     sectorId: "afolu",
-    targetText: "Increase national forest cover from 12.4% to 21% of total land area by 2030.",
+    targetText: "Increase national forest cover from 12.5% in 2020 to 15% by 2025 and 21% of total land area by 2030 through afforestation, reforestation, REDD+, and landscape restoration (Bonn Challenge: 2.5 million ha landscape restored by 2030).",
     targetYear: 2030,
-    baselineYear: 2015,
-    baselineValue: 12.4,
+    baselineYear: 2020,
+    baselineValue: 12.5,
     targetValue: 21,
     unit: "% land area",
     conditionality: "Conditional",
     metricType: "forest-cover",
   },
   {
-    id: "t3",
-    sectorId: "energy",
-    targetText: "Achieve 80% renewable energy in the national energy mix by 2030, up from 62% in 2015.",
+    id: "t9",
+    sectorId: "afolu",
+    targetText: "Increase wetlands coverage from 8.9% in 2020 to 9.57% by 2025 and 12% of land area by 2030 through demarcation, gazettement, and restoration of degraded wetlands. Mitigation co-benefit: 0.4 MtCO₂e reduction by 2030.",
     targetYear: 2030,
-    baselineYear: 2015,
-    baselineValue: 62,
-    targetValue: 80,
-    unit: "% renewable",
-    conditionality: "Unconditional",
-    metricType: "renewable-energy",
+    baselineYear: 2020,
+    baselineValue: 8.9,
+    targetValue: 12,
+    unit: "% land area",
+    conditionality: "Conditional",
+    metricType: "wetlands-coverage",
   },
+
+  // ── Energy (stationary, excl. transport) ──────────────────────────────────
   {
     id: "t4",
     sectorId: "energy",
-    targetText: "Reduce GHG emissions from the energy sector by 27% below BAU by 2030 through improved energy efficiency and renewable energy deployment.",
+    targetText: "Limit energy sector (stationary) GHG emissions to 10.10 MtCO₂e by 2030 — a 18.8% reduction below BAU of 12.44 MtCO₂e (-2.34 MtCO₂e). Measures: renewable energy generation (756.8 MW hydro + solar + wind), improved charcoal kiln efficiency (12%→75%), industrial energy efficiency and fuel switching, improved cookstoves (65,000/yr), increased electricity access (100% by 2030), 75% reduction in lighting energy use.",
     targetYear: 2030,
     baselineYear: 2015,
-    baselineValue: 6.2,
-    targetValue: 3.1,
+    baselineValue: 5.66,
+    targetValue: 10.10,
     unit: "MtCO₂e",
     conditionality: "Mixed",
     metricType: "emissions-reduction",
   },
+  {
+    id: "t3",
+    sectorId: "energy",
+    targetText: "Increase electricity generation capacity from 1,276.2 MW in 2020 to 3,500 MW by 2025 and 4,200 MW by 2030. Increase the share of population with access to electricity from 24% in 2020 to 60% by 2025 and 75% by 2030. Increase clean energy share for cooking from 15% (2020) to 50% (2025) to 65% (2030).",
+    targetYear: 2030,
+    baselineYear: 2020,
+    baselineValue: 1276.2,
+    targetValue: 4200,
+    unit: "MW",
+    conditionality: "Mixed",
+    metricType: "electricity-capacity",
+  },
+
+  // ── Transport (new NDC 2022 sector) ────────────────────────────────────────
   {
     id: "t5",
     sectorId: "transport",
-    targetText: "Shift 30% of freight transport to rail and water by 2030 and promote low-emission public transport in Kampala Metropolitan Area.",
+    targetText: "Limit transport sector GHG emissions to 6.8 MtCO₂e by 2030 — a 29% reduction below BAU of 9.6 MtCO₂e (-2.78 MtCO₂e). Measures: road fuel efficiency improvement (20% by 2030, GFEI 50by50), 1% per year alternative fuel switch, 200 e-buses in GKMA, 100 km NMT corridors in Kampala, 61 km passenger rail rehabilitation, BRT (101 km in GKMA by 2030). Transport is a new sector added in Uganda's Updated NDC 2022.",
     targetYear: 2030,
     baselineYear: 2015,
-    baselineValue: 5,
-    targetValue: 30,
-    unit: "% modal shift",
+    baselineValue: 4.2,
+    targetValue: 6.8,
+    unit: "MtCO₂e",
     conditionality: "Conditional",
-    metricType: "transport-modal-shift",
+    metricType: "emissions-reduction",
   },
+
+  // ── Waste ─────────────────────────────────────────────────────────────────
   {
     id: "t6",
     sectorId: "waste",
-    targetText: "Reduce methane emissions from solid waste disposal by 40% through landfill gas capture, composting, and waste-to-energy by 2030.",
+    targetText: "Limit waste sector GHG emissions to 2.09 MtCO₂e by 2030 — a 34.8% reduction below BAU of 3.19 MtCO₂e (-1.10 MtCO₂e). Measures: Green Cities Waste Management (5 cities + 15 municipalities: solid waste reduction, recycling, reuse, wastewater treatment in Kampala, Gulu, Mbarara, Hoima, Mbale) and Schools Bio-Latrines NAMA. Waste is a new sector added in Uganda's Updated NDC 2022.",
     targetYear: 2030,
     baselineYear: 2015,
-    baselineValue: 3.8,
-    targetValue: 2.28,
-    unit: "MtCO₂e",
-    conditionality: "Unconditional",
-    metricType: "emissions-reduction",
-  },
-  {
-    id: "t7",
-    sectorId: "ippu",
-    targetText: "Reduce industrial process emissions by 20% through cleaner production standards and HFC phase-down by 2030.",
-    targetYear: 2030,
-    baselineYear: 2015,
-    baselineValue: 1.8,
-    targetValue: 1.2,
+    baselineValue: 2.08,
+    targetValue: 2.09,
     unit: "MtCO₂e",
     conditionality: "Conditional",
     metricType: "emissions-reduction",
   },
+
+  // ── IPPU ──────────────────────────────────────────────────────────────────
+  {
+    id: "t7",
+    sectorId: "ippu",
+    targetText: "Limit IPPU sector GHG emissions to 0.86 MtCO₂e by 2030 — a 14% reduction below BAU of 1.0 MtCO₂e (-0.14 MtCO₂e). Main measure: clinker substitution in cement production with pozzolana, fly-ash, or slag. Additional measure: circular economy management of refrigerants (Kigali Amendment). IPPU is a new sector added in Uganda's Updated NDC 2022.",
+    targetYear: 2030,
+    baselineYear: 2015,
+    baselineValue: 0.57,
+    targetValue: 0.86,
+    unit: "MtCO₂e",
+    conditionality: "Conditional",
+    metricType: "emissions-reduction",
+  },
+
+  // ── Agriculture ───────────────────────────────────────────────────────────
   {
     id: "t8",
     sectorId: "agriculture",
-    targetText: "Promote climate-smart agriculture across 50% of agricultural land by 2030 to reduce emissions intensity per unit of output.",
+    targetText: "Increase the proportion of farmers practicing sustainable land management (including climate-smart agriculture, agroforestry) from 31.7% to 51.2% by 2025 and an estimated 70.7% by 2030. Area under irrigation to grow from 19,776 ha to 28,934 ha by 2025 and an estimated 152,622 ha by 2030. Agriculture measures contribute to the AFOLU NDC target (no standalone agriculture emissions target in NDC 2022).",
     targetYear: 2030,
-    baselineYear: 2015,
-    baselineValue: 10,
-    targetValue: 50,
+    baselineYear: 2020,
+    baselineValue: 31.7,
+    targetValue: 70.7,
     unit: "% CSA adoption",
     conditionality: "Mixed",
     metricType: "activity-share",
+  },
+
+  // ── Electricity access (adaptation sub-target) ────────────────────────────
+  {
+    id: "t10",
+    sectorId: "energy",
+    targetText: "Increase the proportion of the population with access to electricity from 24% (2020) to 60% by 2025 and 75% by 2030. Increase the share of clean energy for cooking from 15% to 65% by 2030, reducing biomass share from 88% to 40%. Adaptation target under the Energy sector with mitigation co-benefits.",
+    targetYear: 2030,
+    baselineYear: 2020,
+    baselineValue: 24,
+    targetValue: 75,
+    unit: "% electricity access",
+    conditionality: "Mixed",
+    metricType: "electricity-access",
   },
 ];
 
@@ -236,7 +287,7 @@ export const ndcTargets: NDCTarget[] = [
 export const ndcActivities: NDCActivity[] = [
   {
     id: "a1", targetId: "t1", name: "National Reforestation Programme",
-    description: "Plant 3 billion trees by 2030 across degraded landscapes",
+    description: "Plant 40 million trees (launched March 2021) across degraded landscapes with focus on indigenous species; scale to 3 billion trees by 2030",
     responsibleMinistry: "Ministry of Water and Environment",
     responsibleDepartment: "Forestry Sector Support Department",
     focalPoint: { name: "Dr. Sarah Namirembe", role: "Director, Forestry", email: "s.namirembe@mwe.go.ug" },
@@ -245,47 +296,63 @@ export const ndcActivities: NDCActivity[] = [
   },
   {
     id: "a2", targetId: "t1", name: "REDD+ Strategy Implementation",
-    description: "Reduce emissions from deforestation and forest degradation",
+    description: "Implement Uganda's National REDD+ Strategy and Action Plan (MWE 2017) — reduce deforestation via collaborative forest management, payments for ecosystem services, and commercial woodlots",
     responsibleMinistry: "Ministry of Water and Environment",
     responsibleDepartment: "Climate Change Department",
     focalPoint: { name: "Mr. Bob Natifu", role: "Commissioner, Climate Change", email: "b.natifu@mwe.go.ug" },
     implementationLevel: "national",
   },
   {
+    id: "a11", targetId: "t1", name: "Commercial Plantation Scale-Up",
+    description: "Commercial transmission-pole/timber plantations (5 MtCO₂e abatement potential) and bioenergy woodlots (2.9 MtCO₂e) to reduce demand on natural forests",
+    responsibleMinistry: "Ministry of Water and Environment",
+    responsibleDepartment: "Forestry Sector Support Department",
+    focalPoint: { name: "Dr. Sarah Namirembe", role: "Director, Forestry", email: "s.namirembe@mwe.go.ug" },
+    implementationLevel: "national",
+  },
+  {
     id: "a3", targetId: "t2", name: "Community Forest Restoration",
-    description: "Community-led forest restoration targeting 500,000 hectares",
+    description: "Community-led forest restoration targeting 500,000 ha; 100,000 ha of natural forest regeneration and 100,000 ha enrichment planting in degraded reserves",
     responsibleMinistry: "Ministry of Water and Environment",
     focalPoint: { name: "Ms. Grace Akello", role: "Senior Forest Officer", email: "g.akello@mwe.go.ug" },
     implementationLevel: "district",
     districts: ["Hoima", "Masindi", "Kibaale", "Kyenjojo", "Bundibugyo"],
   },
   {
-    id: "a4", targetId: "t3", name: "Solar Energy Scale-Up",
-    description: "Deploy 500 MW additional solar PV capacity by 2030",
+    id: "a12", targetId: "t9", name: "Wetland Demarcation and Restoration Programme",
+    description: "Demarcate, gazette, and restore degraded wetlands; increase coverage from 8.9% to 12% of land area by 2030 (GCF Wetlands Project); peatland restoration in Nile Basin",
+    responsibleMinistry: "Ministry of Water and Environment",
+    responsibleDepartment: "Wetlands Management Department",
+    focalPoint: { name: "Dr. Alice Nabwire", role: "Commissioner, Wetlands", email: "a.nabwire@mwe.go.ug" },
+    implementationLevel: "national",
+  },
+  {
+    id: "a4", targetId: "t4", name: "Renewable Energy Generation Scale-Up",
+    description: "756.8 MW additional hydro, 25 MW bagasse, 20 MW solar, 20 MW wind capacity to come online 2015–2030; reduce transmission and distribution losses",
     responsibleMinistry: "Ministry of Energy and Mineral Development",
     responsibleDepartment: "Renewable Energy Department",
     focalPoint: { name: "Eng. Peter Okwoko", role: "Director, Renewable Energy", email: "p.okwoko@memd.go.ug" },
     implementationLevel: "national",
   },
   {
-    id: "a5", targetId: "t3", name: "Rural Electrification Programme",
-    description: "Extend clean energy access to 80% of rural households",
-    responsibleMinistry: "Ministry of Energy and Mineral Development",
-    focalPoint: { name: "Ms. Irene Muloni", role: "Commissioner, Energy", email: "i.muloni@memd.go.ug" },
-    implementationLevel: "both",
-    districts: ["Soroti", "Arua", "Gulu", "Lira", "Moroto", "Kotido"],
-  },
-  {
-    id: "a6", targetId: "t4", name: "Energy Efficiency Standards",
-    description: "Implement mandatory energy efficiency standards for buildings and industry",
+    id: "a6", targetId: "t4", name: "Energy Efficiency & Fuel Switch Programme",
+    description: "Improved charcoal kiln efficiency (12%→75%); industrial energy efficiency and fuel switching; commercial/institutional cookstove upgrades (50% of schools in improved charcoal stoves by 2030)",
     responsibleMinistry: "Ministry of Energy and Mineral Development",
     responsibleDepartment: "Energy Efficiency Unit",
     focalPoint: { name: "Dr. James Opio", role: "Head of Standards", email: "j.opio@memd.go.ug" },
     implementationLevel: "national",
   },
   {
-    id: "a7", targetId: "t5", name: "Kampala BRT System",
-    description: "Construct and operationalize Bus Rapid Transit in Greater Kampala",
+    id: "a5", targetId: "t3", name: "Rural Electrification Programme",
+    description: "Extend electricity access to 75% of population by 2030; deploy solar/wind-powered water supply systems; 65,000 improved cookstoves/year in residential sector",
+    responsibleMinistry: "Ministry of Energy and Mineral Development",
+    focalPoint: { name: "Ms. Irene Muloni", role: "Commissioner, Energy", email: "i.muloni@memd.go.ug" },
+    implementationLevel: "both",
+    districts: ["Soroti", "Arua", "Gulu", "Lira", "Moroto", "Kotido"],
+  },
+  {
+    id: "a7", targetId: "t5", name: "GKMA Bus Rapid Transit (BRT)",
+    description: "Implement 101 km of BRT in Greater Kampala Metropolitan Area by 2030; introduce 200+ e-buses; parking management to reduce private vehicle use",
     responsibleMinistry: "Ministry of Works and Transport",
     responsibleDepartment: "Transport Planning",
     focalPoint: { name: "Eng. David Luyimbazi", role: "Director, Transport", email: "d.luyimbazi@mowt.go.ug" },
@@ -293,24 +360,38 @@ export const ndcActivities: NDCActivity[] = [
     districts: ["Kampala", "Wakiso", "Mukono"],
   },
   {
-    id: "a8", targetId: "t6", name: "Landfill Gas Capture Programme",
-    description: "Install methane capture at 10 major landfill sites nationwide",
+    id: "a13", targetId: "t5", name: "Road Fuel Efficiency & NMT Infrastructure",
+    description: "Achieve 20% road fuel economy improvement by 2030 (GFEI 50by50 with 10-year time-lag); 100 km NMT corridors in Kampala + 100 km in secondary cities; 61 km MGR passenger rail rehabilitation",
+    responsibleMinistry: "Ministry of Works and Transport",
+    focalPoint: { name: "Eng. David Luyimbazi", role: "Director, Transport", email: "d.luyimbazi@mowt.go.ug" },
+    implementationLevel: "national",
+  },
+  {
+    id: "a8", targetId: "t6", name: "Green Cities Waste Management Programme",
+    description: "Comprehensive waste management (solid waste + wastewater) for 5 cities (Kampala, Gulu, Mbarara, Hoima, Mbale) and 15 municipalities; reduce, recycle, reuse; acquire land for sanitation/drainage infrastructure",
     responsibleMinistry: "Ministry of Water and Environment",
     responsibleDepartment: "Environmental Management",
     focalPoint: { name: "Dr. Mary Goretti", role: "Environmental Inspector", email: "m.goretti@mwe.go.ug" },
     implementationLevel: "both",
-    districts: ["Kampala", "Jinja", "Mbale", "Mbarara", "Gulu"],
+    districts: ["Kampala", "Gulu", "Mbarara", "Hoima", "Mbale"],
   },
   {
-    id: "a9", targetId: "t7", name: "HFC Phase-Down Programme",
-    description: "Implement Kigali Amendment to phase down HFC consumption",
+    id: "a9", targetId: "t7", name: "Clinker Substitution in Cement (IPPU)",
+    description: "Substitute clinker with pozzolana, fly-ash, or slag in cement production to reduce process emissions; lower clinker fraction across Portland and Pozzolana Portland Cement",
+    responsibleMinistry: "Ministry of Trade, Industry and Co-operatives",
+    focalPoint: { name: "Mr. Arnold Waiswa", role: "Industrial Standards Officer", email: "a.waiswa@mtic.go.ug" },
+    implementationLevel: "national",
+  },
+  {
+    id: "a14", targetId: "t7", name: "HFC Phase-Down / Kigali Amendment",
+    description: "Implement Kigali Amendment to phase down HFC consumption; circular economy management of refrigerants in cooling equipment",
     responsibleMinistry: "Ministry of Water and Environment",
     focalPoint: { name: "Mr. Arnold Waiswa", role: "Ozone Officer", email: "a.waiswa@mwe.go.ug" },
     implementationLevel: "national",
   },
   {
     id: "a10", targetId: "t8", name: "Climate-Smart Agriculture Rollout",
-    description: "Train 2 million farmers in climate-smart agricultural practices",
+    description: "Scale climate-smart agriculture (CSA) from 31.7% to 70.7% of farmers by 2030; expand irrigation from 19,776 to 152,622 ha; 40 million-tree agroforestry campaign; livestock management in cattle corridor (2.9 MtCO₂e reduction potential)",
     responsibleMinistry: "Ministry of Agriculture, Animal Industry and Fisheries",
     responsibleDepartment: "Crop Production Department",
     focalPoint: { name: "Dr. Joseph Bazaale", role: "Director, Crop Resources", email: "j.bazaale@maaif.go.ug" },
@@ -349,61 +430,93 @@ function makeProjection(lastValue: number, target: number, start: number, end: n
 }
 
 export const observedDataSets: ObservedDataSet[] = [
+  // t0: Economy-wide (90.1 MtCO2e in 2015, growing toward 112.1 NDC target)
+  {
+    targetId: "t0",
+    dataProviders: ["Uganda GHG National Inventory", "Climate TRACE"],
+    historicalData: makeHistorical(90.1, 2015, 2024, 2.2),
+    projectionBaseline: makeProjection(109.9, 112.1, 2025, 2030),
+    provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "warning", lastUpdated: "2024-11-01T00:00:00Z", isValidated: false },
+  },
+  // t1: AFOLU emissions (NDC 2022 scale: 77.6 MtCO2e 2015, growing toward 91.8 NDC target)
   {
     targetId: "t1",
     dataProviders: ["Earth Observation (Global Forest Watch)", "National Forestry Authority MRV"],
-    historicalData: makeHistorical(42.5, 2015, 2024, -0.85),
-    projectionBaseline: makeProjection(34.85, 33.15, 2025, 2030),
-    provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2024-11-15T08:30:00Z", isValidated: true },
+    historicalData: makeHistorical(77.6, 2015, 2024, 1.2),
+    projectionBaseline: makeProjection(89.2, 91.8, 2025, 2030),
+    provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "warning", lastUpdated: "2024-11-15T08:30:00Z", isValidated: false },
   },
+  // t2: Forest cover (12.5% in 2020, target 21% by 2030)
   {
     targetId: "t2",
     dataProviders: ["Earth Observation (Copernicus)", "National Forestry Authority"],
-    historicalData: makeHistorical(12.4, 2015, 2024, 0.6),
-    projectionBaseline: makeProjection(17.8, 21, 2025, 2030),
+    historicalData: makeHistorical(12.5, 2020, 2024, 0.6),
+    projectionBaseline: makeProjection(14.9, 21, 2025, 2030),
     provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2024-10-20T14:00:00Z", isValidated: true },
   },
+  // t9: Wetlands coverage (8.9% in 2020, target 12% by 2030)
   {
-    targetId: "t3",
-    dataProviders: ["Ministry MRV", "Uganda Electricity Regulatory Authority"],
-    historicalData: makeHistorical(62, 2015, 2024, 1.5),
-    projectionBaseline: makeProjection(75.5, 80, 2025, 2030),
-    provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "ok", lastUpdated: "2024-09-01T10:00:00Z", isValidated: true },
+    targetId: "t9",
+    dataProviders: ["National Wetlands Atlas", "Ministry of Water and Environment"],
+    historicalData: makeHistorical(8.9, 2020, 2024, 0.12),
+    projectionBaseline: makeProjection(9.38, 12, 2025, 2030),
+    provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "missing", lastUpdated: "2023-12-01T00:00:00Z", isValidated: false },
   },
+  // t4: Energy stationary (5.66 MtCO2e 2015, growing toward 10.10 NDC target)
   {
     targetId: "t4",
     dataProviders: ["Emissions Tracing (Climate TRACE)", "Ministry MRV"],
-    historicalData: makeHistorical(6.2, 2015, 2024, -0.15),
-    projectionBaseline: makeProjection(5.0, 3.1, 2025, 2030),
+    historicalData: makeHistorical(5.66, 2015, 2024, 0.42),
+    projectionBaseline: makeProjection(9.44, 10.10, 2025, 2030),
     provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "warning", lastUpdated: "2024-08-15T12:00:00Z", isValidated: false },
   },
+  // t3: Electricity generation capacity (1,276 MW in 2020, target 4,200 MW)
+  {
+    targetId: "t3",
+    dataProviders: ["Uganda Electricity Regulatory Authority", "Ministry MRV"],
+    historicalData: makeHistorical(1276.2, 2020, 2024, 180),
+    projectionBaseline: makeProjection(1996.2, 4200, 2025, 2030),
+    provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "ok", lastUpdated: "2024-09-01T10:00:00Z", isValidated: true },
+  },
+  // t5: Transport emissions (4.2 MtCO2e 2015, growing toward 6.8 NDC target)
   {
     targetId: "t5",
-    dataProviders: ["Ministry MRV"],
-    historicalData: makeHistorical(5, 2015, 2024, 0.8),
-    projectionBaseline: makeProjection(12.2, 30, 2025, 2030),
-    provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Works and Transport", qaqcStatus: "missing", lastUpdated: "2023-12-01T09:00:00Z", isValidated: false },
+    dataProviders: ["Emissions Tracing (Climate TRACE)", "Ministry of Works and Transport MRV"],
+    historicalData: makeHistorical(4.2, 2015, 2024, 0.35),
+    projectionBaseline: makeProjection(7.35, 6.8, 2025, 2030),
+    provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Works and Transport", qaqcStatus: "missing", lastUpdated: "2023-12-01T09:00:00Z", isValidated: false },
   },
+  // t6: Waste emissions (2.08 MtCO2e 2015, target 2.09 MtCO2e — constrain at BAU)
   {
     targetId: "t6",
     dataProviders: ["Emissions Tracing", "NEMA"],
-    historicalData: makeHistorical(3.8, 2015, 2024, -0.12),
-    projectionBaseline: makeProjection(2.72, 2.28, 2025, 2030),
+    historicalData: makeHistorical(2.08, 2015, 2024, 0.07),
+    projectionBaseline: makeProjection(2.71, 2.09, 2025, 2030),
     provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2024-07-01T11:00:00Z", isValidated: true },
   },
+  // t7: IPPU (0.57 MtCO2e 2015, target 0.86 MtCO2e — constrain at BAU)
   {
     targetId: "t7",
-    dataProviders: ["Ministry MRV"],
-    historicalData: makeHistorical(1.8, 2015, 2024, -0.03),
-    projectionBaseline: makeProjection(1.55, 1.2, 2025, 2030),
+    dataProviders: ["Ministry MRV", "Uganda Bureau of Statistics"],
+    historicalData: makeHistorical(0.57, 2015, 2024, 0.024),
+    projectionBaseline: makeProjection(0.786, 0.86, 2025, 2030),
     provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "inconsistent", lastUpdated: "2024-03-15T10:00:00Z", isValidated: false },
   },
+  // t8: CSA adoption (31.7% 2020 → 70.7% 2030 estimate)
   {
     targetId: "t8",
     dataProviders: ["Ministry MRV", "FAO"],
-    historicalData: makeHistorical(10, 2015, 2024, 2.5),
-    projectionBaseline: makeProjection(32.5, 50, 2025, 2030),
+    historicalData: makeHistorical(31.7, 2020, 2024, 2.0),
+    projectionBaseline: makeProjection(39.7, 70.7, 2025, 2030),
     provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Agriculture, Animal Industry and Fisheries", qaqcStatus: "warning", lastUpdated: "2024-06-01T08:00:00Z", isValidated: false },
+  },
+  // t10: Electricity access (24% 2020, target 75% by 2030)
+  {
+    targetId: "t10",
+    dataProviders: ["Uganda Bureau of Statistics", "ERA"],
+    historicalData: makeHistorical(24, 2020, 2024, 4.0),
+    projectionBaseline: makeProjection(40, 75, 2025, 2030),
+    provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "ok", lastUpdated: "2024-09-01T10:00:00Z", isValidated: true },
   },
 ];
 
@@ -413,7 +526,7 @@ export const mitigationOptions: MitigationOption[] = [
   {
     id: "m1", targetId: "t1", sectorId: "afolu",
     title: "Payment for Ecosystem Services (PES)",
-    description: "Establish PES schemes to incentivize forest conservation by local communities",
+    description: "Establish PES schemes to incentivize forest conservation by local communities; target 500,000 ha",
     emissionsReductionPotential: 2.5, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 15, costCurrency: "USD", costMagnitude: "million/yr",
     confidence: "medium",
@@ -424,8 +537,8 @@ export const mitigationOptions: MitigationOption[] = [
   },
   {
     id: "m2", targetId: "t1", sectorId: "afolu",
-    title: "Commercial Tree Plantation Expansion",
-    description: "Scale up commercial forestry plantations on degraded lands",
+    title: "Commercial Plantation Expansion",
+    description: "Scale up commercial timber/pole/bioenergy woodlot plantations on degraded lands (~10 MtCO₂e combined abatement potential)",
     emissionsReductionPotential: 3.8, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 45, costCurrency: "USD", costMagnitude: "million",
     confidence: "high",
@@ -434,9 +547,20 @@ export const mitigationOptions: MitigationOption[] = [
     ],
   },
   {
-    id: "m3", targetId: "t3", sectorId: "energy",
+    id: "m8", targetId: "t1", sectorId: "afolu",
+    title: "Improved Charcoal Kilns (AFOLU Energy Efficiency)",
+    description: "Scale up efficient charcoal production technology from 12% (2020) to 75% kiln efficiency by 2030; ~3.37 MtCO₂e reduction potential",
+    emissionsReductionPotential: 3.37, emissionsReductionUnit: "MtCO₂e/yr",
+    costEstimate: 20, costCurrency: "USD", costMagnitude: "million",
+    confidence: "medium",
+    bestPractices: [
+      { country: "Kenya", title: "Kenya Charcoal Programme", description: "Promotion of retort and pyrolysis kilns", outcome: "45% improvement in charcoal conversion efficiency" },
+    ],
+  },
+  {
+    id: "m3", targetId: "t4", sectorId: "energy",
     title: "Mini-Grid Solar Deployment",
-    description: "Deploy 200 solar mini-grids in off-grid rural areas",
+    description: "Deploy 200 solar mini-grids in off-grid rural areas; part of total 4,200 MW generation target",
     emissionsReductionPotential: 0.8, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 120, costCurrency: "USD", costMagnitude: "million",
     confidence: "high",
@@ -447,8 +571,8 @@ export const mitigationOptions: MitigationOption[] = [
   {
     id: "m4", targetId: "t4", sectorId: "energy",
     title: "Improved Cookstove Distribution",
-    description: "Distribute 5 million improved cookstoves to reduce biomass fuel consumption",
-    emissionsReductionPotential: 1.2, emissionsReductionUnit: "MtCO₂e/yr",
+    description: "Distribute 65,000 improved cookstoves/year and promote cooking fuel switch to electricity (50% of cooking by 2025)",
+    emissionsReductionPotential: 1.09, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 25, costCurrency: "USD", costMagnitude: "million",
     confidence: "medium",
     bestPractices: [
@@ -457,9 +581,9 @@ export const mitigationOptions: MitigationOption[] = [
   },
   {
     id: "m5", targetId: "t5", sectorId: "transport",
-    title: "Electric Bus Fleet for Kampala",
-    description: "Introduce 500 electric buses for Kampala public transit system",
-    emissionsReductionPotential: 0.4, emissionsReductionUnit: "MtCO₂e/yr",
+    title: "E-Buses & BRT for Greater Kampala",
+    description: "Introduce 200+ e-buses in GKMA; implement 101 km BRT corridors; target 29% below BAU transport emissions by 2030",
+    emissionsReductionPotential: 0.54, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 200, costCurrency: "USD", costMagnitude: "million",
     confidence: "low",
     bestPractices: [
@@ -467,10 +591,21 @@ export const mitigationOptions: MitigationOption[] = [
     ],
   },
   {
+    id: "m9", targetId: "t5", sectorId: "transport",
+    title: "Road Fuel Efficiency Standards",
+    description: "Implement GFEI 50by50 fuel economy improvement (20% by 2030); regulate imported vehicle fleet; ~1.86 MtCO₂e reduction potential",
+    emissionsReductionPotential: 1.86, emissionsReductionUnit: "MtCO₂e/yr",
+    costEstimate: 10, costCurrency: "USD", costMagnitude: "million",
+    confidence: "medium",
+    bestPractices: [
+      { country: "Morocco", title: "Vehicle Standards Regulation", description: "Mandatory fuel economy standards for imported vehicles", outcome: "15% fleet efficiency improvement in 5 years" },
+    ],
+  },
+  {
     id: "m6", targetId: "t6", sectorId: "waste",
-    title: "Waste-to-Energy Facility",
-    description: "Build waste-to-energy plant processing 1,000 tonnes/day in Kampala",
-    emissionsReductionPotential: 0.6, emissionsReductionUnit: "MtCO₂e/yr",
+    title: "Green Cities Waste Management",
+    description: "Comprehensive solid waste + wastewater management in 5 cities and 15 municipalities; ~1.1 MtCO₂e reduction potential by 2030",
+    emissionsReductionPotential: 1.1, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 80, costCurrency: "USD", costMagnitude: "million",
     confidence: "medium",
     bestPractices: [
@@ -480,7 +615,7 @@ export const mitigationOptions: MitigationOption[] = [
   {
     id: "m7", targetId: "t8", sectorId: "agriculture",
     title: "Agroforestry Integration Programme",
-    description: "Promote agroforestry systems across 1 million hectares of farmland",
+    description: "Promote agroforestry across 1.3 million ha of farmland by 2030 (Aichi Biodiversity Target 15); part of CSA adoption target",
     emissionsReductionPotential: 1.5, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 35, costCurrency: "USD", costMagnitude: "million",
     confidence: "high",

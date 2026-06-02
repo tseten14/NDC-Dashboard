@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   type ReactNode,
 } from "react";
@@ -32,6 +33,7 @@ import {
 } from "@/lib/emissions-integration";
 import { ndcTargets, getObservedDataForTarget, calculateProgress, type NDCTarget, type NDCActivity, type MitigationOption } from "@/data/uganda-ndc-data";
 import type { ProgressStatus } from "@/data/uganda-ndc-data";
+import { validateDashboardTimeseries, reportIssues } from "@/lib/data-validation";
 
 const STALE_MS = 15 * 60 * 1000;
 
@@ -56,6 +58,7 @@ export interface EmissionsDataContextValue {
   availableDistricts: DistrictListEntry[];
   dashboardCompleteness: number;
   dashboardLastRefreshIso: string;
+  economyWideTimeseries: { year: number; value: number | null }[];
   getProgressForTarget: (target: NDCTarget) => { percent: number | null; status: ProgressStatus; source: "api" | "catalog" | "mock" };
   getObservedMode: (target: NDCTarget) => "live" | "mock";
   indicatorTargets: Record<string, IndicatorPanelEntry> | undefined;
@@ -173,6 +176,42 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
       }
     }
     return out;
+  }, [dashboardQuery.data]);
+
+  // Validate incoming dashboard data — fires whenever a new dashboard response arrives
+  useEffect(() => {
+    const d = dashboardQuery.data;
+    if (!d?.timeseries) return;
+    const rawTs: Record<string, { year: number; value: number | null }[]> = {};
+    for (const s of CLIMATE_TRACE_API_SECTORS) {
+      const series = d.timeseries[s as keyof typeof d.timeseries];
+      if (series) rawTs[s] = series as { year: number; value: number | null }[];
+    }
+    const geo = d.geography === "district" ? "district" : "national";
+    const issues = validateDashboardTimeseries(rawTs, geo);
+    if (issues.length > 0) reportIssues(issues);
+  }, [dashboardQuery.data]);
+
+  // Economy-wide observed series = sum of all CT sectors per year (replaces fabricated t0 mock data)
+  const economyWideTimeseries = useMemo(() => {
+    const d = dashboardQuery.data;
+    if (!d?.timeseries) return [];
+    const years = new Set<number>();
+    for (const s of CLIMATE_TRACE_API_SECTORS) {
+      for (const p of d.timeseries[s as keyof typeof d.timeseries] ?? []) years.add(p.year);
+    }
+    return Array.from(years)
+      .sort((a, b) => a - b)
+      .map((year) => {
+        let total = 0;
+        let hasAny = false;
+        for (const s of CLIMATE_TRACE_API_SECTORS) {
+          const pts = d.timeseries[s as keyof typeof d.timeseries] ?? [];
+          const pt = (pts as { year: number; value: number | null }[]).find((x) => x.year === year);
+          if (pt?.value != null) { total += pt.value; hasAny = true; }
+        }
+        return { year, value: hasAny ? Math.round(total * 100) / 100 : null };
+      });
   }, [dashboardQuery.data]);
 
   const progressBySector = useMemo(() => {
@@ -300,7 +339,7 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
       if (sector && !sectorError[sector]) {
         const ts = timeseriesBySector[sector]?.timeseries;
         const pr = progressBySector[sector];
-        if (ts && ts.length > 0 && pr) return "live";
+        if (ts && ts.some((p) => p.value != null) && pr) return "live";
       }
 
       const ind = isIndicatorPanelTarget(target) ? indicatorPanelQuery.data?.targets?.[target.id] : undefined;
@@ -322,6 +361,7 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
       summaryIsLoading: dashboardQuery.isLoading,
       health: healthQuery.data,
       healthError: healthQuery.error as Error | null,
+      economyWideTimeseries,
       timeseriesBySector,
       progressBySector,
       sectorLoading,
@@ -359,6 +399,7 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
       progressBySector,
       sectorLoading,
       sectorError,
+      economyWideTimeseries,
       isApiReachable,
       geography,
       districtName,

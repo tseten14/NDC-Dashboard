@@ -12,7 +12,10 @@ A1. WHAT THIS PROJECT IS
 
 A2. DATA SOURCES
   • Observed emissions: Climate TRACE (live via Express, using API v7)
-  • NDC targets & strategies: bundled in the application
+  • NDC targets: Uganda Updated NDC, September 2022 (bundled in frontend/src/data/uganda-ndc-data.ts
+    and config/ndcTargets.js). All sector numbers, conditionality, and BAU references are from
+    the official MWE submission to UNFCCC.
+  • NDC strategies: bundled in the application
   • Climate risk (demo): illustrative district layers in the repo
   • Delivery activities: saved in the user’s browser (localStorage)
 
@@ -57,14 +60,21 @@ A5. HOW ACCURATE ARE THE NUMBERS?
   The dashboard does not invent or guess figures. Every emissions value is the
   live figure from Climate TRACE, converted only from tonnes into million
   tonnes (MtCO2e). We checked this carefully:
-    • The five sectors shown (AFOLU, Energy, IPPU, Agriculture, Waste) plus a
-      small "mineral extraction" amount add up EXACTLY to Uganda's national
+    • The SIX sectors shown (AFOLU, Energy, Transport, IPPU, Agriculture, Waste)
+      plus a small "mineral extraction" amount add up EXACTLY to Uganda's national
       total reported by Climate TRACE.
     • Each district's total matches Climate TRACE's own district total exactly.
-  Note: the app compares these observed numbers to Uganda's NDC policy targets.
-  Targets and satellite-observed emissions are measured differently, so they
-  will not match perfectly — where they differ a lot, the app shows a clear
-  warning rather than hiding it. This is a planning tool, not official MRV.
+  Note: the app compares these observed numbers to Uganda's NDC 2022 policy targets.
+  NDC targets use national GHG inventory scale; Climate TRACE uses satellite/model
+  data. These will differ — where they diverge significantly the app shows a clear
+  warning. This is a planning tool, not official MRV.
+
+  Important framing: Uganda's NDC 2022 uses BAU-relative targets ("X% below 2030
+  Business-As-Usual"). Because Uganda's economy and emissions grow, the NDC 2030
+  target for growing sectors is HIGHER than the 2015 actual baseline. The progress
+  % on the dashboard therefore measures "how close observed emissions are to the
+  NDC ceiling" rather than "how far emissions have been reduced from 2015". This is
+  by design and is explained in the sector scope notes on screen.
 
 A5b. TOP EMITTING SOURCES (asset-level drill-down)
   The NDC dashboard has a "Top Emitting Sources" panel. It lists the biggest
@@ -132,9 +142,11 @@ B2a. DISTRICT MAPPING + DATA ACCURACY
     GADM level-1 ids (+ aliases for spellings/towns). Refresh/verify with
     `node scripts/discover_uganda_gadm.mjs`.
   • Sector → Climate TRACE slug mapping lives in config/ndcTargets.js. All 10
-    Climate TRACE sectors are accounted for:
+    Climate TRACE sectors are accounted for (updated per NDC 2022 — Transport
+    is now a separate dashboard sector):
         AFOLU       = forestry-and-land-use
-        Energy      = power + transportation + buildings + fossil-fuel-operations
+        Energy      = power + buildings + fossil-fuel-operations   ← excl. transport
+        Transport   = transportation                               ← new sector (NDC 2022)
         IPPU        = manufacturing + fluorinated-gases
         Agriculture = agriculture
         Waste       = waste
@@ -143,6 +155,37 @@ B2a. DISTRICT MAPPING + DATA ACCURACY
     (delta 0). District totals use Climate TRACE's exact all-sector total.
   • Subnational data starts 2021; national starts 2015. Latest year is capped
     at 2024 (config/climateTrace.js) until the 2025 dataset is confirmed.
+
+B2b-NDC. NDC TARGET CONFIGURATION (Uganda Updated NDC, September 2022)
+  Source file: config/ndcTargets.js (backend) + frontend/src/data/uganda-ndc-data.ts
+  Reference document: "Updated Nationally Determined Contribution (NDC), Uganda,
+    Ministry of Water and Environment, September 2022."
+
+  All sector targets are expressed relative to 2030 BAU projections (as in the NDC):
+    Sector        | 2015 actual | NDC 2030 target | BAU 2030  | % below BAU
+    ------------- | ----------- | --------------- | --------- | -----------
+    AFOLU         | 77.6 MtCO2e | 91.8 MtCO2e     | 122.2     | -24.9%
+    Energy (stat.)| 5.66 MtCO2e | 10.10 MtCO2e    | 12.44     | -18.8%
+    Transport     | 4.2 MtCO2e  | 6.8 MtCO2e      | 9.6       | -29%
+    Waste         | 2.08 MtCO2e | 2.09 MtCO2e     | 3.19      | -34.8%
+    IPPU          | 0.57 MtCO2e | 0.86 MtCO2e     | 1.0       | -14%
+    TOTAL         | 90.1 MtCO2e | 112.1 MtCO2e    | 148.8     | -24.7%
+
+  Economy-wide headline:
+    Full (conditional + unconditional): 24.7% below BAU → 112.1 MtCO2e in 2030
+    Unconditional: 5.9% → 140.1 MtCO2e (domestic resources)
+    Conditional: additional 18.8% (international finance + technology transfer required)
+
+  Non-CT indicator targets (served via /api/v1/indicators/panel):
+    t2:  Forest cover 12.5% (2020) → 21% by 2030
+    t3:  Electricity generation capacity 1,276 MW (2020) → 4,200 MW by 2030
+    t8:  CSA adoption 31.7% (2020) → 70.7% est. by 2030
+    t9:  Wetlands coverage 8.9% (2020) → 12% by 2030  [new]
+    t10: Electricity access 24% (2020) → 75% by 2030  [new]
+
+  Agriculture is retained as a CT-observed card but has no standalone NDC 2022
+  mitigation target; agricultural measures (agroforestry, livestock, irrigation)
+  are sub-components of the AFOLU sector target.
 
 B2b. ASSET/SOURCE-LEVEL DATA + GADM LEVELS
   • GET /api/v1/emissions/sources wraps Climate TRACE GET /v7/sources for the
@@ -168,13 +211,16 @@ B5. MULTI-COUNTRY NDC TRACKING (FOUNDATION + DESIGN PROPOSAL)
 
   Implemented foundation:
   • config/measurableVariables.js — a country-agnostic catalog of MEASURABLE
-    VARIABLES (e.g. "Forestry & land-use emissions", "Renewable energy share").
-    Each variable records whether Climate TRACE can measure it directly and from
-    which sector slugs (climate_trace.trackable + sector_slugs). Five emissions
-    variables are trackable; share-style variables (renewable share, forest cover,
-    transport modal shift, CSA adoption) are flagged not directly trackable.
+    VARIABLES (e.g. "Forestry & land-use emissions", "Transport emissions",
+    "Renewable energy share"). Each variable records whether Climate TRACE can
+    measure it directly and from which sector slugs (climate_trace.trackable +
+    sector_slugs). Six emissions variables are now trackable (AFOLU, Energy,
+    Transport, IPPU, Agriculture, Waste); share/capacity variables (forest cover,
+    electricity capacity, CSA adoption, wetlands, electricity access) are flagged
+    not directly trackable.
   • config/ndcTargets.js — each Uganda target now carries a `variable_id` linking
     it to the catalog (additive; NDC_TARGETS stays backward-compatible).
+    Transport is a new sector entry (split from Energy per NDC 2022).
   • COUNTRY_NDC_TARGETS / buildCountryTargets() express Uganda on the new schema
     and compute reduction_pct + Climate TRACE trackability per sector.
 

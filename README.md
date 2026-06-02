@@ -4,7 +4,7 @@ Web application for exploring Uganda’s Nationally Determined Contribution (NDC
 
 ## What you can do (in plain terms)
 
-- **See Uganda’s emissions by sector** (AFOLU, Energy, IPPU, Agriculture, Waste), pulled live from Climate TRACE and compared to NDC targets.
+- **See Uganda’s emissions by sector** (AFOLU, Energy, Transport, IPPU, Agriculture, Waste), pulled live from Climate TRACE and compared to Uganda’s Updated NDC targets (September 2022).
 - **Switch between National and District views.** On the NDC dashboard, use the **Geography** toggle: *National* shows the whole country (from 2015); *District* lets you pick one of **56 districts** (from 2021) — e.g. Kampala, Wakiso, Gulu. District numbers are observed emissions shown *for context*; NDC targets are national, so districts are not given a pass/fail score.
 - **Export** the current view to Excel, PDF, or a CRT/BTR-style CSV — each file is labelled with the geography you’re viewing.
 - **Accuracy:** every figure is the live Climate TRACE value (only converted to MtCO₂e). Sector totals reconcile exactly to Uganda’s national total, and each district total matches Climate TRACE’s district total exactly.
@@ -29,6 +29,26 @@ npm run dev:all
 - **API:** http://localhost:8787  
 
 Pick a country, choose a demo role from the top bar, and explore.
+
+## NDC targets — Uganda Updated NDC (September 2022)
+
+The dashboard covers all mitigation and key adaptation targets from Uganda's Updated NDC. Targets are aligned to the **BAU-relative** framing used in the NDC: Uganda's emissions grow with the economy, so sector targets are expressed as "% below 2030 BAU", not as absolute reductions from 2015.
+
+| ID | Sector | NDC 2022 target | CT-tracked? |
+|----|--------|-----------------|-------------|
+| t0 | Economy-wide | −24.7% below BAU → 112.1 MtCO₂e by 2030 (5.9% unconditional / 18.8% conditional) | — |
+| t1 | AFOLU | −24.9% below BAU → 91.8 MtCO₂e (BAU: 122.2) | Yes |
+| t2 | AFOLU | Forest cover 12.5% (2020) → 21% by 2030 | Indicator panel |
+| t9 | AFOLU | Wetlands coverage 8.9% → 12% by 2030 | Indicator panel |
+| t4 | Energy (stationary) | −18.8% below BAU → 10.10 MtCO₂e (BAU: 12.44) | Yes |
+| t3 | Energy | Electricity capacity 1,276 MW → 4,200 MW by 2030 | Indicator panel |
+| t10 | Energy | Electricity access 24% → 75% by 2030 | Indicator panel |
+| t5 | Transport *(new in NDC 2022)* | −29% below BAU → 6.8 MtCO₂e (BAU: 9.6) | Yes |
+| t6 | Waste *(new in NDC 2022)* | −34.8% below BAU → 2.09 MtCO₂e (BAU: 3.19) | Yes |
+| t7 | IPPU *(new in NDC 2022)* | −14% below BAU → 0.86 MtCO₂e (BAU: 1.0) | Yes |
+| t8 | Agriculture | CSA adoption 31.7% → 70.7% by 2030 (part of AFOLU NDC) | Indicator panel |
+
+**Note on progress %:** For growing-emission sectors the progress bar measures "how close to the NDC ceiling" rather than absolute reduction from 2015 — this is a consequence of Uganda's BAU-relative NDC framing and is explained in the sector scope notes.
 
 ## Data flow
 

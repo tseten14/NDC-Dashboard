@@ -69,7 +69,6 @@ export function TopEmittingSources() {
       ),
     staleTime: STALE_MS,
     retry: 1,
-    placeholderData: (prev) => prev,
   });
 
   const geoLabel = isDistrict && districtName ? districtName : "Uganda (national)";

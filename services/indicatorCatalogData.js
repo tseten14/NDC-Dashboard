@@ -12,7 +12,8 @@ function num(v) {
 }
 
 /**
- * Panel payload for non-MtCO₂e targets (t2, t3, t5, t8) keyed by target_id.
+ * Panel payload for non-CT-tracked NDC targets (t2, t3, t8, t9, t10) keyed by target_id.
+ * t5 was removed from this panel — transport is now a CT-tracked sector per NDC 2022.
  */
 export async function getIndicatorPanel(since = 2015, to = 2024) {
   const byTarget = {};

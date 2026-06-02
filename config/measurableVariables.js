@@ -50,15 +50,23 @@ export const MEASURABLE_VARIABLES = {
   },
   energy_emissions: {
     id: "energy_emissions",
-    label: "Energy emissions",
-    description: "Combined power, transportation, buildings, and fossil-fuel-operations emissions.",
+    label: "Energy emissions (stationary)",
+    description: "Power, buildings, and fossil-fuel-operations emissions (transport split out per NDC 2022).",
     measurement_type: MEASUREMENT_TYPES.EMISSIONS_REDUCTION_BELOW_BAU,
     unit: "MtCO2e",
     climate_trace: {
       trackable: true,
-      sector_slugs: ["power", "transportation", "buildings", "fossil-fuel-operations"],
+      sector_slugs: ["power", "buildings", "fossil-fuel-operations"],
       gas: "co2e_100yr",
     },
+  },
+  transport_emissions: {
+    id: "transport_emissions",
+    label: "Transport emissions",
+    description: "Road, rail, aviation, and waterway transport emissions (split from Energy per NDC 2022).",
+    measurement_type: MEASUREMENT_TYPES.EMISSIONS_REDUCTION_BELOW_BAU,
+    unit: "MtCO2e",
+    climate_trace: { trackable: true, sector_slugs: ["transportation"], gas: "co2e_100yr" },
   },
   ippu_emissions: {
     id: "ippu_emissions",
@@ -125,6 +133,7 @@ export const SECTOR_TO_VARIABLE = {
   afolu: "forestry_landuse_emissions",
   agriculture: "agriculture_emissions",
   energy: "energy_emissions",
+  transport: "transport_emissions",
   ippu: "ippu_emissions",
   waste: "waste_emissions",
 };

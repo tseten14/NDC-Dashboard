@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  NDC_TARGETS,
   SECTOR_MAP,
   SLUG_TO_UI_SECTOR,
   ALL_SECTOR_SLUGS,
@@ -59,10 +60,22 @@ describe("Unit conversion (tonnes -> MtCO2e)", () => {
 });
 
 describe("Multi-country target foundation (measurableVariables)", () => {
-  it("Uganda AFOLU reduction is 22% below baseline (matches NDC)", () => {
-    const afolu = COUNTRY_NDC_TARGETS.UGA.targets.afolu;
-    expect(afolu.reduction_pct).toBe(22);
-    expect(afolu.climate_trace_trackable).toBe(true);
+  it("Uganda AFOLU NDC 2022: target is 91.8 MtCO2e below sector BAU (not absolute reduction from 2015)", () => {
+    // NDC_TARGETS holds the raw config (including bau_2030 / reduction_below_bau_pct).
+    // COUNTRY_NDC_TARGETS copies only the fields forwarded by buildCountryTargets().
+    const afoluRaw = NDC_TARGETS.afolu;
+    const afoluBuilt = COUNTRY_NDC_TARGETS.UGA.targets.afolu;
+
+    // Raw config: NDC 2022 BAU-relative numbers
+    expect(afoluRaw.baseline).toBe(77.6);
+    expect(afoluRaw.target).toBe(91.8);
+    expect(afoluRaw.bau_2030).toBe(122.2);
+    expect(afoluRaw.reduction_below_bau_pct).toBe(24.9);
+
+    // Built target: CT-trackable, correct sector
+    expect(afoluBuilt.climate_trace_trackable).toBe(true);
+    expect(afoluBuilt.baseline).toBe(77.6);
+    expect(afoluBuilt.target).toBe(91.8);
   });
 
   it("every trackable variable references at least one Climate TRACE slug", () => {

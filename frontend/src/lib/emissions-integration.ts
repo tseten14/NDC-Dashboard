@@ -7,7 +7,7 @@ import type {
 } from "@/data/uganda-ndc-data";
 import { deriveTraceDataQuality, reconciliationDeltaPercent, uiStatusFromApiStatus } from "@/lib/progress";
 
-export const CLIMATE_TRACE_API_SECTORS = ["afolu", "energy", "ippu", "agriculture", "waste"] as const;
+export const CLIMATE_TRACE_API_SECTORS = ["afolu", "energy", "transport", "ippu", "agriculture", "waste"] as const;
 export type ClimatetraceApiSector = (typeof CLIMATE_TRACE_API_SECTORS)[number];
 
 /** True when the target is a national MtCO₂e trajectory we can back with Climate TRACE + NDC API. */
@@ -23,11 +23,48 @@ export function getClimateTraceSectorForTarget(target: NDCTarget): ClimatetraceA
   const map: Partial<Record<NDCTarget["sectorId"], ClimatetraceApiSector>> = {
     afolu: "afolu",
     energy: "energy",
+    transport: "transport",
     waste: "waste",
     ippu: "ippu",
     agriculture: "agriculture",
   };
   return map[target.sectorId] ?? null;
+}
+
+/**
+ * For indicator-panel targets (non-MtCO2e) the parent sectorId still maps to a
+ * CT-tracked sector. In district view we use that sector's timeseries as the
+ * best available district-specific proxy (zero extra API calls — data is already
+ * in the dashboard query response).
+ *
+ * e.g. Forest-cover (afolu) and Wetlands (afolu) → "afolu" district timeseries.
+ *      Electricity capacity/access (energy)      → "energy" district timeseries.
+ *      CSA adoption (agriculture)                → "agriculture" district timeseries.
+ */
+export function getProxySectorForTarget(target: NDCTarget): ClimatetraceApiSector | null {
+  if (isMtco2eEmissionsTarget(target)) return null; // already has a direct CT sector
+  const map: Partial<Record<NDCTarget["sectorId"], ClimatetraceApiSector>> = {
+    afolu: "afolu",
+    energy: "energy",
+    transport: "transport",
+    waste: "waste",
+    ippu: "ippu",
+    agriculture: "agriculture",
+  };
+  return map[target.sectorId] ?? null;
+}
+
+/** Human-readable label for the proxy chart when showing CT district data for a non-emissions target. */
+export function getProxySectorLabel(target: NDCTarget): string {
+  const labels: Partial<Record<NDCTarget["sectorId"], string>> = {
+    afolu: "AFOLU (forestry & land use)",
+    energy: "Energy sector",
+    agriculture: "Agriculture sector",
+    transport: "Transport sector",
+    waste: "Waste sector",
+    ippu: "IPPU sector",
+  };
+  return labels[target.sectorId] ?? target.sectorId;
 }
 
 export function apiStatusToProgressStatus(s: string): ProgressStatus {
@@ -121,7 +158,9 @@ export function buildLiveObservedDataSet(
   };
 }
 
-export const INDICATOR_PANEL_TARGET_IDS = new Set(["t2", "t3", "t5", "t8"]);
+// t2=forest cover, t3=electricity access, t8=CSA adoption, t9=wetlands coverage, t10=electricity capacity
+// t5 was transport modal shift; now replaced by CT-tracked transport emissions (sectorId "transport")
+export const INDICATOR_PANEL_TARGET_IDS = new Set(["t2", "t3", "t8", "t9", "t10"]);
 
 export function isIndicatorPanelTarget(target: NDCTarget): boolean {
   return INDICATOR_PANEL_TARGET_IDS.has(target.id);

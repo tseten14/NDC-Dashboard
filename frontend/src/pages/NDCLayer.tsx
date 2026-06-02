@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAppContext } from "@/hooks/use-app-state";
+import { AlertCircle } from "lucide-react";
 import { TargetStatusSummary } from "@/components/TargetStatusSummary";
 import { DataCoveragePanel } from "@/components/DataCoveragePanel";
 import { NDCTargetsColumn } from "@/components/columns/NDCTargets";
@@ -99,8 +100,28 @@ export default function NDCLayer() {
       ? emissions.districtName
       : "national";
 
+  const apiError = emissions.summaryError && !emissions.isApiReachable;
+
   return (
     <div className="flex flex-col h-full">
+      {/* API error banner — visible, never swallowed */}
+      {apiError && (
+        <div
+          className="px-3 py-2 bg-destructive/10 border-b border-destructive/30 flex items-center gap-2 text-xs text-destructive"
+          role="alert"
+        >
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          <span>
+            Climate TRACE API unavailable. Displayed data may be stale or incomplete.
+          </span>
+          <button
+            className="ml-auto underline underline-offset-2 hover:no-underline shrink-0"
+            onClick={handleRefresh}
+          >
+            Retry
+          </button>
+        </div>
+      )}
       {/* NDC sub-controls */}
       <div className="px-3 py-1.5 border-b border-border bg-muted/30 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1.5">

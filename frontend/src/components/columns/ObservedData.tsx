@@ -1,6 +1,6 @@
 import { type NDCTarget, type TimeMode, type ObservedDataSet, type QAQCStatus, getObservedDataForTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
-import { buildLiveObservedDataSet, getClimateTraceSectorForTarget, buildIndicatorPanelObservedDataSet, isIndicatorPanelTarget } from "@/lib/emissions-integration";
+import { buildLiveObservedDataSet, getClimateTraceSectorForTarget, buildIndicatorPanelObservedDataSet, isIndicatorPanelTarget, getProxySectorForTarget, getProxySectorLabel } from "@/lib/emissions-integration";
 import { reconciliationDeltaPercent } from "@/lib/progress";
 import { DataLineageChip } from "@/components/DataLineageChip";
 import { buildTargetLineage } from "@/lib/lineage";
@@ -42,8 +42,21 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
   const pr = apiSector ? emissions.progressBySector[apiSector] : undefined;
   const observedMode = emissions.getObservedMode(selectedTarget);
 
+  // For indicator-panel targets in district view, resolve the parent CT sector so we
+  // can show real district-specific timeseries (zero extra API calls — already fetched).
+  const proxySector = getProxySectorForTarget(selectedTarget);
+  const proxyTs = proxySector ? emissions.timeseriesBySector[proxySector] : undefined;
+  const proxyPr = proxySector ? emissions.progressBySector[proxySector] : undefined;
+  const usingProxyData =
+    emissions.isDistrictView &&
+    isIndicatorPanelTarget(selectedTarget) &&
+    !!proxySector &&
+    !!proxyTs?.timeseries?.some((p) => p.value != null);
+
   const indEntry =
-    isIndicatorPanelTarget(selectedTarget) ? emissions.indicatorTargets?.[selectedTarget.id] : undefined;
+    !usingProxyData && isIndicatorPanelTarget(selectedTarget)
+      ? emissions.indicatorTargets?.[selectedTarget.id]
+      : undefined;
 
   const fetchingLive =
     !!apiSector &&
@@ -51,13 +64,20 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
     !!emissions.sectorLoading[apiSector] &&
     !ts;
 
+  const fetchingProxy =
+    usingProxyData &&
+    !!proxySector &&
+    !!emissions.sectorLoading[proxySector] &&
+    !proxyTs;
+
   const fetchingIndicator =
+    !usingProxyData &&
     isIndicatorPanelTarget(selectedTarget) &&
     !emissions.indicatorPanelError &&
     emissions.indicatorPanelLoading &&
     !indEntry;
 
-  if (fetchingLive || fetchingIndicator) {
+  if (fetchingLive || fetchingProxy || fetchingIndicator) {
     return <ColumnLoadingState title="Observed Data" />;
   }
 
@@ -80,10 +100,45 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
       },
     );
   } else if (
-    indEntry?.timeseries?.length &&
-    observedMode === "live"
+    selectedTarget.sectorId === "economy-wide" &&
+    emissions.economyWideTimeseries.length > 0 &&
+    emissions.isApiReachable
   ) {
+    // Economy-wide: use CT-derived aggregate (sum of all sector timeseries) — real data, not mock
+    observedData = buildLiveObservedDataSet(
+      selectedTarget,
+      emissions.economyWideTimeseries,
+      selectedTarget.baselineYear,
+      selectedTarget.baselineValue,
+      selectedTarget.targetYear,
+      selectedTarget.targetValue,
+      { dataStale: emissions.dashboard?.data_stale },
+    );
+  } else if (usingProxyData && proxyTs && proxyPr) {
+    // District view + indicator-panel target: use the parent sector's CT district
+    // timeseries as a real per-district proxy (already in memory, no new API calls).
+    observedData = buildLiveObservedDataSet(
+      selectedTarget,
+      proxyTs.timeseries,
+      proxyPr.baseline_year,
+      proxyPr.baseline_value,
+      proxyPr.target_year,
+      proxyPr.target_value,
+      { dataStale: emissions.dashboard?.data_stale },
+    );
+  } else if (indEntry?.timeseries?.length && observedMode === "live") {
     observedData = buildIndicatorPanelObservedDataSet(selectedTarget, indEntry);
+  } else if (
+    emissions.isDistrictView &&
+    apiSector &&
+    ts &&
+    !emissions.sectorLoading[apiSector] &&
+    !emissions.sectorError[apiSector]
+  ) {
+    // District mode: live data was fetched but has no non-null values for this sector.
+    // Don't fall back to national mock data — leave observedData undefined so the
+    // NoDataPlaceholder below is shown with a district-specific hint.
+    observedData = undefined;
   } else {
     observedData = getObservedDataForTarget(selectedTarget.id);
   }
@@ -98,6 +153,11 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
 
   const hasObservedValues = observedData?.historicalData.some((p) => p.value != null) ?? false;
 
+  const noDataHint =
+    emissions.isDistrictView && apiSector && ts && !emissions.sectorLoading[apiSector]
+      ? `No Climate TRACE data available for ${emissions.districtName ?? "this district"} in this sector.`
+      : "Try another target or refresh the dashboard when new MRV data is available.";
+
   if (!observedData || !hasObservedValues) {
     return (
       <div className="flex flex-col h-full">
@@ -105,7 +165,7 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
           <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Observed Data</h3>
         </div>
         <div className="flex-1 p-4">
-          <NoDataPlaceholder hint="Try another target or refresh the dashboard when new MRV data is available." />
+          <NoDataPlaceholder hint={noDataHint} />
         </div>
       </div>
     );
@@ -114,11 +174,11 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
   const slugBreakdown = apiSector ? emissions.slugBreakdownBySector[apiSector] : undefined;
   const liveProgress = apiSector ? emissions.progressBySector[apiSector] : undefined;
   const hasNullGaps =
-    apiSector &&
-    observedMode === "live" &&
+    (apiSector || usingProxyData) &&
     observedData.historicalData.some((p) => p.value == null);
-  const observedSeriesLabel =
-    apiSector && observedMode === "live"
+  const observedSeriesLabel = usingProxyData
+    ? `${getProxySectorLabel(selectedTarget)} observed`
+    : apiSector && observedMode === "live"
       ? "Climate TRACE observed"
       : isIndicatorPanelTarget(selectedTarget) && observedMode === "live"
         ? "Indicators API observed"
@@ -127,7 +187,8 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
   const { source: progressSource } = emissions.getProgressForTarget(selectedTarget);
   const lineage = buildTargetLineage(selectedTarget, emissions, progressSource);
   const latestObserved = [...observedData.historicalData].reverse().find((p) => p.value != null);
-  const yUnit = chartYAxisUnit(selectedTarget.unit);
+  // Proxy data is always in MtCO2e regardless of the indicator's native unit
+  const yUnit = usingProxyData ? "MtCO₂e" : chartYAxisUnit(selectedTarget.unit);
 
   const isDistrictView = emissions.isDistrictView;
 
@@ -135,7 +196,8 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
     year: p.year,
     observedValue: p.value,
     projectedValue: null as number | null,
-    // National NDC target paths are not meaningful at district level.
+    // Omit target line in district view (district data vs national NDC target is not comparable)
+    // Also omit for non-CT targets in district view (national indicator data, target already national)
     target: isDistrictView ? null : p.target,
   }));
 
@@ -151,19 +213,26 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
     <div className="flex flex-col h-full">
       <div className="px-3 py-2 border-b border-border bg-muted/50 flex items-center justify-between gap-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Observed Data</h3>
-        {emissions.isDistrictView && emissions.districtName && (
+        {/* District badge — direct CT or proxy CT (both are real per-district data) */}
+        {emissions.isDistrictView && emissions.districtName && (!!apiSector || usingProxyData) && (
           <Badge variant="outline" className="text-[8px] h-4 gap-0.5 shrink-0">
             <MapPin className="h-2.5 w-2.5" />
             {emissions.districtName}
           </Badge>
         )}
-        {apiSector && observedMode === "live" && (
+        {/* National badge only when in district view with no district data at all */}
+        {emissions.isDistrictView && !apiSector && !usingProxyData && (
+          <Badge variant="outline" className="text-[8px] h-4 gap-0.5 shrink-0 text-muted-foreground">
+            National
+          </Badge>
+        )}
+        {(apiSector || usingProxyData) && (
           <Badge variant="outline" className="text-[8px] h-4 gap-0.5 shrink-0">
             <Satellite className="h-2.5 w-2.5" />
             Climate TRACE
           </Badge>
         )}
-        {isIndicatorPanelTarget(selectedTarget) && observedMode === "live" && !apiSector && (
+        {isIndicatorPanelTarget(selectedTarget) && !usingProxyData && observedMode === "live" && !apiSector && (
           <Badge variant="outline" className="text-[8px] h-4 gap-0.5 shrink-0">
             <Database className="h-2.5 w-2.5" />
             Indicators API
@@ -195,6 +264,29 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
               <p className="text-muted-foreground mt-0.5">
                 District-level satellite-model totals from 2021 onward. National NDC target paths are omitted
                 because NDC targets are set nationally, not per district.
+              </p>
+            </div>
+          )}
+
+          {usingProxyData && proxySector && (
+            <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs leading-snug">
+              <p className="text-foreground font-medium">
+                {emissions.districtName} — {getProxySectorLabel(selectedTarget)} emissions (Climate TRACE)
+              </p>
+              <p className="text-muted-foreground mt-0.5">
+                The target metric ({selectedTarget.unit}) is tracked at national level only. Showing this
+                district's {getProxySectorLabel(selectedTarget).toLowerCase()} emissions (MtCO₂e) from
+                Climate TRACE as the best available district-specific data. Values differ per district.
+              </p>
+            </div>
+          )}
+
+          {!apiSector && !usingProxyData && isDistrictView && (
+            <div className="p-2 rounded-md bg-muted/60 border border-border text-xs leading-snug">
+              <p className="text-foreground font-medium">National-level indicator</p>
+              <p className="text-muted-foreground mt-0.5">
+                No district-level data is available for this indicator from any source.
+                Showing national data for context.
               </p>
             </div>
           )}
