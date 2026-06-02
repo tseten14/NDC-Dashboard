@@ -30,3 +30,7 @@ public
 
 # Local ingest staging (created by API confirm flow)
 data/ingest-imports/
+
+# Python bytecode cache (ingest analysis scripts)
+__pycache__/
+*.pyc
