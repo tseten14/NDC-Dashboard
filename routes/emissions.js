@@ -7,7 +7,7 @@ import {
   getProvenancePayload,
 } from "../services/emissionsData.js";
 import { defaultInventoryRange, latestInventoryYear } from "../config/climateTrace.js";
-import { checkApiHealth, getSources } from "../services/climatetrace.js";
+import { checkApiHealth, getSources, getSpatialConfidence, getEmissionSourcesForMap } from "../services/climatetrace.js";
 import { getSectorPredictions } from "../services/predictionEngine.js";
 import { NDC_TARGETS } from "../config/ndcTargets.js";
 import {
@@ -16,7 +16,7 @@ import {
   getDistrictName,
   listDistricts,
 } from "../config/ugandaDistrictGadm.js";
-import { COUNTRY_NDC_TARGETS, MEASURABLE_VARIABLES } from "../config/measurableVariables.js";
+import { COUNTRY_NDC_TARGETS, MEASURABLE_VARIABLES, listMeasurementTypes } from "../config/measurableVariables.js";
 
 const router = express.Router();
 
@@ -80,6 +80,7 @@ router.get("/emissions/trackability", (req, res) => {
     ...entry,
     targets: Object.values(entry.targets),
     variables,
+    measurement_types: listMeasurementTypes(),
     available_countries: Object.keys(COUNTRY_NDC_TARGETS),
     data_source: "Climate TRACE",
     note: "Targets are tracked from Climate TRACE where 'trackable' is true; other variables need national / EO statistics.",
@@ -109,6 +110,53 @@ router.get("/emissions/sources", async (req, res) => {
     });
   } catch (err) {
     req.log?.error({ err }, "emissions_sources_failed");
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/emissions/spatial-confidence", async (req, res) => {
+  try {
+    const geo = resolveGeography(req.query);
+    if (geo.error) return res.status(geo.status).json({ error: geo.error });
+    const year = req.query.year != null ? parseInt(req.query.year, 10) : latestInventoryYear();
+    const result = await getSpatialConfidence({ gadmId: geo.gadmId, year });
+    const isDistrict = geo.gadmId !== UGANDA_NATIONAL_GADM;
+    return res.json({
+      ...result,
+      geography: isDistrict ? "district" : "national",
+      district_name: geo.districtName,
+      data_source: "Climate TRACE",
+      data_license: "Creative Commons 4.0",
+      methodology:
+        "Located = emissions attributed to known sources (assets + mapped forestry, buildings, agriculture, roads). " +
+        "Distributed = the country's spatially-uncertain emissions (SUEs) allocated to this area using statistical proxies " +
+        "(population, nightlights, land use). Higher located share = higher spatial certainty.",
+      methodology_url:
+        "https://github.com/climatetracecoalition/methodology-documents",
+    });
+  } catch (err) {
+    req.log?.error({ err }, "emissions_spatial_confidence_failed");
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/emissions/map", async (req, res) => {
+  try {
+    const geo = resolveGeography(req.query);
+    if (geo.error) return res.status(geo.status).json({ error: geo.error });
+    const year = req.query.year != null ? parseInt(req.query.year, 10) : latestInventoryYear();
+    const result = await getEmissionSourcesForMap({ gadmId: geo.gadmId, year });
+    const isDistrict = geo.gadmId !== UGANDA_NATIONAL_GADM;
+    return res.json({
+      ...result,
+      geography: isDistrict ? "district" : "national",
+      district_name: geo.districtName,
+      data_source: "Climate TRACE",
+      data_license: "Creative Commons 4.0",
+      note: "Each point is a geolocated emission source (asset-level facility or GADM sub-area aggregation) with its Climate TRACE centroid.",
+    });
+  } catch (err) {
+    req.log?.error({ err }, "emissions_map_failed");
     return res.status(500).json({ error: err.message });
   }
 });

@@ -12,6 +12,7 @@ import { ProgressTowardTargetColumn } from "@/components/columns/ProgressTowardT
 import { MitigationOptionsColumn } from "@/components/columns/MitigationOptions";
 import { TopEmittingSources } from "@/components/TopEmittingSources";
 import { DataTrackabilityPanel } from "@/components/DataTrackabilityPanel";
+import { SpatialConfidencePanel } from "@/components/SpatialConfidencePanel";
 import { ndcTargets, sectorDefinitions, getDataCompleteness, getLastRefreshTimestamp } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +33,7 @@ export default function NDCLayer() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Deep-link support: /?target=...&sector=...
+  // Deep-link support: /dashboard?target=...&sector=...
   useEffect(() => {
     const t = searchParams.get("target");
     const s = searchParams.get("sector");
@@ -290,6 +291,22 @@ export default function NDCLayer() {
                 </DialogHeader>
                 <div className="flex-1 min-h-0">
                   <TopEmittingSources />
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                  🛰️ Spatial Certainty
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl h-[80vh] p-0 overflow-hidden flex flex-col">
+                <DialogHeader className="px-4 py-3 border-b border-border">
+                  <DialogTitle className="text-sm">Spatial Certainty (Climate TRACE)</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 min-h-0">
+                  <SpatialConfidencePanel />
                 </div>
               </DialogContent>
             </Dialog>

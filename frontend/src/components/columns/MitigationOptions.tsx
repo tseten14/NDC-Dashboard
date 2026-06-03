@@ -8,9 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, FlaskConical, Plus, DollarSign, BarChart3 } from "lucide-react";
+import { FlaskConical, Plus, BarChart3, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
@@ -26,10 +25,14 @@ interface MitigationOptionsProps {
   onUpdateDecisionStatus: (entryId: string, status: DecisionStatus) => void;
 }
 
-const confidenceColors: Record<string, string> = {
-  low: "bg-off-track/10 text-off-track border-off-track/30",
-  medium: "bg-at-risk/10 text-at-risk border-at-risk/30",
-  high: "bg-on-track/10 text-on-track border-on-track/30",
+const sectorLabels: Record<string, string> = {
+  "economy-wide": "Economy-wide",
+  afolu: "AFOLU",
+  energy: "Energy",
+  transport: "Transport",
+  waste: "Waste",
+  ippu: "IPPU",
+  agriculture: "Agriculture",
 };
 
 export function MitigationOptionsColumn({
@@ -91,6 +94,12 @@ export function MitigationOptionsColumn({
           )}
         </div>
       </ScrollArea>
+      <div className="px-3 py-1.5 border-t border-border bg-muted/30">
+        <p className="text-[9px] text-muted-foreground leading-tight">
+          Source: Uganda Updated NDC (Sept 2022) mitigation analysis, via catalog API. Abatement
+          potentials are indicative sector-level estimates, not measured values.
+        </p>
+      </div>
     </div>
   );
 }
@@ -98,6 +107,9 @@ export function MitigationOptionsColumn({
 function OptionCard({ option, timeMode, isSelected, onToggle, onAddToLog }: {
   option: MitigationOption; timeMode: TimeMode; isSelected: boolean; onToggle: () => void; onAddToLog: () => void;
 }) {
+  const abatement = Number(option.emissionsReductionPotential);
+  const hasAbatement = Number.isFinite(abatement) && abatement > 0;
+
   return (
     <Card className={cn("transition-all", isSelected && "ring-2 ring-accent")}>
       <CardContent className="p-3">
@@ -105,46 +117,25 @@ function OptionCard({ option, timeMode, isSelected, onToggle, onAddToLog }: {
         <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">{option.description}</p>
 
         <div className="flex flex-wrap gap-1 mt-2">
+          {/* Sector linkage (from NDC) */}
           <Badge variant="outline" className="text-[9px] h-4 gap-0.5">
-            <BarChart3 className="h-2.5 w-2.5" />
-            {option.emissionsReductionPotential} {option.emissionsReductionUnit}
+            <Layers className="h-2.5 w-2.5" />
+            {sectorLabels[option.sectorId] ?? option.sectorId}
           </Badge>
-          <Badge variant="outline" className="text-[9px] h-4 gap-0.5">
-            <DollarSign className="h-2.5 w-2.5" />
-            {option.costCurrency} {option.costEstimate} {option.costMagnitude}
-          </Badge>
-          <Badge variant="outline" className={cn("text-[9px] h-4", confidenceColors[option.confidence])}>
-            {option.confidence.charAt(0).toUpperCase() + option.confidence.slice(1)} confidence
-          </Badge>
+          {/* Indicative abatement — labelled, not presented as measured data */}
+          {hasAbatement ? (
+            <Badge variant="outline" className="text-[9px] h-4 gap-0.5" title="Indicative estimate from NDC mitigation analysis — not a measured figure">
+              <BarChart3 className="h-2.5 w-2.5" />
+              ~{abatement} {option.emissionsReductionUnit} (indicative)
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-[9px] h-4 text-muted-foreground">
+              Abatement: data not available
+            </Badge>
+          )}
         </div>
 
         <div className="flex gap-1 mt-2">
-          {/* Best practice modal */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="h-6 text-[9px] gap-0.5 flex-1">
-                <BookOpen className="h-2.5 w-2.5" />Best practice
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[450px]">
-              <DialogHeader>
-                <DialogTitle className="text-sm">Best Practices: {option.title}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3 pt-2">
-                {option.bestPractices.map((bp, i) => (
-                  <div key={i} className="p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="outline" className="text-[9px] h-4">{bp.country}</Badge>
-                      <span className="text-xs font-medium">{bp.title}</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">{bp.description}</p>
-                    <p className="text-[10px] text-on-track font-medium mt-1">Outcome: {bp.outcome}</p>
-                  </div>
-                ))}
-              </div>
-            </DialogContent>
-          </Dialog>
-
           {/* Apply to scenario */}
           <Button
             variant={isSelected ? "default" : "outline"}

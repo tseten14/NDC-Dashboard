@@ -90,9 +90,12 @@
   * {
     @apply border-border;
   }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply bg-background text-foreground font-sans;
   }
 }
 
@@ -145,5 +148,133 @@
   }
   100% {
     background-position: -200% 0;
+  }
+}
+
+/* Country select landing — subtle motion (respects prefers-reduced-motion below) */
+@keyframes landing-gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(12px, -18px) scale(1.04);
+  }
+  66% {
+    transform: translate(-8px, 10px) scale(0.98);
+  }
+}
+
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--sidebar-primary) / 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 8px hsl(var(--sidebar-primary) / 0);
+  }
+}
+
+@keyframes landing-shimmer-line {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@layer utilities {
+  .landing-gradient-bg {
+    background: linear-gradient(
+      125deg,
+      hsl(150 25% 96%) 0%,
+      hsl(152 35% 92%) 25%,
+      hsl(150 12% 97%) 50%,
+      hsl(152 28% 94%) 75%,
+      hsl(150 20% 96%) 100%
+    );
+    background-size: 200% 200%;
+    animation: landing-gradient-shift 18s ease infinite;
+  }
+
+  .landing-orb {
+    animation: landing-float 14s ease-in-out infinite;
+  }
+
+  .landing-orb-delay-1 {
+    animation-delay: -4s;
+  }
+
+  .landing-orb-delay-2 {
+    animation-delay: -9s;
+  }
+
+  .landing-fade-up {
+    animation: landing-fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  .landing-stagger-1 {
+    animation-delay: 0.05s;
+  }
+  .landing-stagger-2 {
+    animation-delay: 0.12s;
+  }
+  .landing-stagger-3 {
+    animation-delay: 0.2s;
+  }
+  .landing-stagger-4 {
+    animation-delay: 0.28s;
+  }
+  .landing-stagger-5 {
+    animation-delay: 0.36s;
+  }
+
+  .landing-card-glow {
+    animation: landing-pulse-glow 3s ease-in-out infinite;
+  }
+
+  .landing-grid-pattern {
+    background-image: radial-gradient(hsl(var(--foreground) / 0.06) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .landing-shimmer-bar {
+    animation: landing-shimmer-line 2.8s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-gradient-bg,
+  .landing-orb,
+  .landing-card-glow,
+  .landing-shimmer-bar {
+    animation: none;
+  }
+  .landing-fade-up {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }

@@ -1,12 +1,19 @@
 import { z } from "zod";
 
 export const climateTraceSummarySchema = z.object({
+  sector: z.string().optional(),
   gas: z.string().optional(),
   emissionsQuantity: z.number().nullable().optional(),
+  percentage: z.number().nullable().optional(),
 });
 
 export const climateTraceEmissionsResponseSchema = z.object({
   totals: z
+    .object({
+      summaries: z.array(climateTraceSummarySchema).optional(),
+    })
+    .optional(),
+  sectors: z
     .object({
       summaries: z.array(climateTraceSummarySchema).optional(),
     })

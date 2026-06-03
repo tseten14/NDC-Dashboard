@@ -8,20 +8,23 @@ import { useState } from "react";
 import {
   LayoutDashboard, Network, ShieldCheck, Wallet, Upload, ChevronDown, ChevronRight,
   Target, TrendingUp, Building2, Eye, Trees, BarChart3, Users, LineChart, FileText, Download, Settings,
-  Database, GitBranch, Workflow, Search, Library, Briefcase, ShieldAlert, Sparkles, Coins,
+  Database, GitBranch, Workflow, Search, Library, Briefcase, ShieldAlert, Sparkles, Coins, BookOpen, Map, Home,
 } from "lucide-react";
 
 const primary = [
-  { title: "NDC Layer (Home)", url: "/", icon: Target },
-  { title: "Strategy Library", url: "/library", icon: Library },
-  { title: "My Work", url: "/my-work", icon: Briefcase },
-  { title: "Climate Risk", url: "/risk", icon: ShieldAlert },
+  { title: "Home", url: "/", icon: Home },
+  { title: "Dashboard", url: "/dashboard", icon: Target },
   { title: "Data Ingestion", url: "/ingest", icon: Upload },
   { title: "AI 2030 Prediction", url: "/ai-2030", icon: Sparkles },
   { title: "Climate Finance", url: "/climate-finance", icon: Coins },
+  { title: "Emissions Map", url: "/map", icon: Map },
+  { title: "Documentation", url: "/docs", icon: BookOpen },
 ];
 
 const advanced = [
+  { title: "Strategy Library", url: "/library", icon: Library },
+  { title: "My Work", url: "/my-work", icon: Briefcase },
+  { title: "Climate Risk", url: "/risk", icon: ShieldAlert },
   { title: "Executive Overview", url: "/executive", icon: LayoutDashboard },
   { title: "Delivery & Accountability", url: "/delivery", icon: Network },
   { title: "Evidence & MRV", url: "/evidence", icon: ShieldCheck },
@@ -51,13 +54,16 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
-        <div className={`border-b border-sidebar-border ${collapsed ? "flex justify-center py-2" : "px-2 py-2 flex gap-2 items-start"}`}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary/15 ring-1 ring-sidebar-primary/25">
+        <div className={`border-b border-sidebar-border ${collapsed ? "flex justify-center py-2.5" : "px-2.5 py-2.5 flex gap-2.5 items-center"}`}>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary/15 ring-1 ring-sidebar-primary/30">
             <img src="/app-icon.svg" alt="" className="h-6 w-6" width={24} height={24} />
           </div>
           {!collapsed && (
-            <div className="min-w-0 flex-1 pt-0.5">
-              <p className="text-[9px] uppercase tracking-wide text-sidebar-foreground/55 font-semibold leading-snug">NDC DATA EXPLORER</p>
+            <div className="min-w-0 flex-1 font-brand">
+              <p className="text-base font-bold tracking-tight text-sidebar-primary leading-none">NDC</p>
+              <p className="text-xs font-semibold tracking-[0.03em] text-sidebar-foreground/90 leading-snug mt-0.5">
+                Data Explorer
+              </p>
             </div>
           )}
         </div>

@@ -13,6 +13,13 @@ import {
   computeProjectEconomics, buildMaccCurve, investmentToCloseGap,
   formatUSD, formatPerT, formatMt, type ProjectEconomics,
 } from "@/lib/climate-finance";
+import {
+  UGANDA_FINANCE_CONTEXT,
+  buildProjectRecommendation,
+  getUgandaSequencingGuidance,
+  assessPortfolioDataQuality,
+  type FundFit,
+} from "@/lib/climate-finance-pathways";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +28,7 @@ import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import {
   Coins, Download, TrendingUp, MapPin, Leaf, Banknote, CheckCircle2, Info,
+  Route, AlertTriangle, Landmark,
 } from "lucide-react";
 
 const READINESS_ORDER: InvestmentReadiness[] = ["NotReady", "Emerging", "Pipeline", "Bankable"];
@@ -43,6 +51,7 @@ export default function ClimateFinance() {
   const geoKey = districtName ?? "national";
 
   const [assumptions, setAssumptions] = useState<FinanceAssumptions>(DEFAULT_ASSUMPTIONS);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const setA = (patch: Partial<FinanceAssumptions>) => setAssumptions((a) => ({ ...a, ...patch }));
 
   const predQuery = useQuery({
@@ -96,6 +105,23 @@ export default function ClimateFinance() {
 
   const dealCards = useMemo(() => [...macc].sort((a, b) => b.netAnnualUSD - a.netAnnualUSD), [macc]);
 
+  const dataWarnings = useMemo(
+    () => assessPortfolioDataQuality(summary.totalGapMt, macc),
+    [summary.totalGapMt, macc],
+  );
+
+  const selectedEcon = useMemo(
+    () => macc.find((e) => e.id === selectedProjectId) ?? dealCards[0] ?? null,
+    [macc, dealCards, selectedProjectId],
+  );
+
+  const selectedRec = useMemo(
+    () => (selectedEcon ? buildProjectRecommendation(selectedEcon, assumptions.carbonPrice) : null),
+    [selectedEcon, assumptions.carbonPrice],
+  );
+
+  const sequencing = useMemo(() => getUgandaSequencingGuidance(), []);
+
   function handleCsv() {
     const header = ["Project", "Sector", "Abatement_MtCO2e_yr", "CostToAbate_USD_per_t", "Investment_USD", "AnnualCarbonRevenue_USD", "NetAnnualValue_USD", "CarbonCoversCost"];
     const rows = macc.map((e) => [
@@ -128,8 +154,9 @@ export default function ClimateFinance() {
               Climate Finance
             </h2>
             <p className="text-xs text-muted-foreground max-w-2xl">
-              Which climate projects make business sense? This turns Uganda's 2030 emissions gap into the cost of
-              cutting carbon and the revenue that carbon credits could bring.
+              Screen NDC mitigation measures against the 2030 emissions gap, cost to abate, and carbon revenue — then
+              match each measure to realistic funding windows (GCF, GEF, MDB, carbon markets), following NAPX-style
+              “design for the fund from the start” logic.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -152,11 +179,32 @@ export default function ClimateFinance() {
               <span className="font-semibold">cost to abate</span> — the dollars needed to cut one tonne of CO₂.
               Carbon credits pay a price per tonne (you set it below). When a project's cost to abate is{" "}
               <span className="font-semibold text-on-track">below the carbon price</span>, selling credits covers the
-              cost — it can pay for itself. These are <span className="font-semibold">indicative estimates</span> for
-              spotting opportunities, not investment advice.
+              cost — it can pay for itself.               These are <span className="font-semibold">indicative NDC screening estimates</span> — not audited costs,
+              tender prices, or investment advice. Use matched funding pathways below to prepare real proposals.
             </div>
           </CardContent>
         </Card>
+
+        {/* Data accuracy warnings */}
+        <div className="space-y-2">
+          {dataWarnings.map((w) => (
+            <Card
+              key={w.id}
+              className={cn(w.severity === "warn" ? "border-amber-500/40 bg-amber-500/5" : "border-border/60")}
+            >
+              <CardContent className="p-2.5 flex gap-2 text-[11px] leading-relaxed">
+                {w.severity === "warn" ? (
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
+                ) : (
+                  <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                )}
+                <span className={w.severity === "warn" ? "text-amber-900 dark:text-amber-100" : "text-muted-foreground"}>
+                  {w.message}
+                </span>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
         {/* Assumptions */}
         <Card>
@@ -263,16 +311,95 @@ export default function ClimateFinance() {
           </CardContent>
         </Card>
 
+        {/* Financing pathways (NAPX-inspired) */}
+        <Card className="border-primary/15">
+          <CardContent className="p-3 space-y-3">
+            <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <Route className="h-3.5 w-3.5 text-primary" />
+              Financing pathways — {UGANDA_FINANCE_CONTEXT.classification}
+            </h3>
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              {UGANDA_FINANCE_CONTEXT.sequencingPrinciple} Anchor: {UGANDA_FINANCE_CONTEXT.ndcAnchor}.
+            </p>
+            <ul className="text-[10px] text-foreground/90 space-y-1 list-disc pl-4">
+              {sequencing.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
         {/* Investor opportunity cards */}
         <div>
           <h3 className="text-xs font-bold text-foreground mb-0.5">Top opportunities</h3>
-          <p className="text-[10px] text-muted-foreground mb-2">Ranked by yearly value after costs, at the carbon price you set.</p>
+          <p className="text-[10px] text-muted-foreground mb-2">
+            Ranked by yearly value after costs at your carbon price. Click a card for fund matching and next steps.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {dealCards.slice(0, 6).map((e) => (
-              <DealCard key={e.id} e={e} carbonPrice={assumptions.carbonPrice} />
+              <DealCard
+                key={e.id}
+                e={e}
+                carbonPrice={assumptions.carbonPrice}
+                selected={selectedEcon?.id === e.id}
+                onSelect={() => setSelectedProjectId(e.id)}
+              />
             ))}
           </div>
         </div>
+
+        {/* Matched funding + recommendations for selected project */}
+        {selectedRec && selectedEcon && (
+          <Card className="border-primary/25 shadow-sm">
+            <CardContent className="p-3 space-y-3">
+              <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <Landmark className="h-3.5 w-3.5 text-primary" />
+                Matched funding — {selectedEcon.title}
+              </h3>
+              <p className="text-[10px] text-muted-foreground">{selectedRec.dataCaveat}</p>
+              {selectedRec.primaryWindow && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 px-2.5 py-2 text-[11px]">
+                  <span className="font-semibold text-primary">Primary window: </span>
+                  {selectedRec.primaryWindow.window.name}
+                  <span className="text-muted-foreground"> — {selectedRec.primaryWindow.rationale}</span>
+                </div>
+              )}
+              <div className="overflow-x-auto rounded-md border border-border/60">
+                <table className="w-full text-[10px]">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/30 text-muted-foreground">
+                      <th className="text-left py-1.5 px-2 font-semibold">Fund / window</th>
+                      <th className="text-left py-1.5 px-2 font-semibold">Fit</th>
+                      <th className="text-left py-1.5 px-2 font-semibold">Rationale</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedRec.matches.map((m) => (
+                      <tr key={m.window.id} className="border-b border-border/20">
+                        <td className="py-1.5 px-2 font-medium text-foreground">{m.window.name}</td>
+                        <td className="py-1.5 px-2"><FitBadge fit={m.fit} /></td>
+                        <td className="py-1.5 px-2 text-muted-foreground leading-snug">{m.rationale}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-foreground mb-1">Recommended next steps</p>
+                <ol className="text-[10px] text-muted-foreground space-y-1 list-decimal pl-4">
+                  {selectedRec.nextSteps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                <span className="font-medium text-foreground">Co-finance: </span>
+                {selectedRec.coFinanceNote}
+              </p>
+              <p className="text-[10px] text-muted-foreground">{UGANDA_FINANCE_CONTEXT.gcfNote}</p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Project readiness */}
         <Card>
@@ -303,9 +430,11 @@ export default function ClimateFinance() {
         </Card>
 
         <p className="text-[10px] text-muted-foreground">
-          Indicative screening only — not investment advice. The 2030 gap comes from Climate TRACE observed emissions
-          versus Uganda's NDC targets. Project abatement and cost are public estimates from the NDC mitigation
-          catalogue; carbon revenue assumes credits can be certified and sold at ${assumptions.carbonPrice}/tonne.
+          Methodology inspired by UNFCCC NAPX / NAP Finance Navigator (investment concepts → fund matching →
+          implementation support). This page applies that logic to Uganda's <span className="font-medium">mitigation</span>{" "}
+          catalogue, not the Sierra Leone NAP adaptation portfolio. The 2030 gap uses Climate TRACE vs NDC targets;
+          abatement and costs are indicative NDC figures; carbon revenue assumes certifiable reductions at $
+          {assumptions.carbonPrice}/tCO₂e.
         </p>
       </div>
     </ScrollArea>
@@ -345,17 +474,59 @@ function Tile({ label, value, sub, icon: Icon, tone }: { label: string; value: s
   );
 }
 
-function DealCard({ e, carbonPrice }: { e: ProjectEconomics; carbonPrice: number }) {
-  const gapPerT = e.costToAbateUSDPerT != null ? e.costToAbateUSDPerT - carbonPrice : null;
+function FitBadge({ fit }: { fit: FundFit }) {
+  const style: Record<FundFit, string> = {
+    high: "bg-on-track/10 text-on-track border-on-track/30",
+    medium: "bg-amber-500/10 text-amber-700 border-amber-500/30",
+    low: "bg-muted text-muted-foreground border-border",
+    ineligible: "bg-muted text-muted-foreground border-border",
+  };
+  const label: Record<FundFit, string> = {
+    high: "Strong fit",
+    medium: "Possible",
+    low: "Weak fit",
+    ineligible: "N/A",
+  };
   return (
-    <div className="rounded-lg border bg-card p-3">
+    <Badge variant="outline" className={cn("text-[8px] h-4", style[fit])}>
+      {label[fit]}
+    </Badge>
+  );
+}
+
+function DealCard({
+  e, carbonPrice, selected, onSelect,
+}: {
+  e: ProjectEconomics;
+  carbonPrice: number;
+  selected?: boolean;
+  onSelect?: () => void;
+}) {
+  const gapPerT = e.costToAbateUSDPerT != null ? e.costToAbateUSDPerT - carbonPrice : null;
+  const hasBand = e.costToAbateLowUSDPerT != null && e.costToAbateHighUSDPerT != null && e.confidence !== "high";
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "rounded-lg border bg-card p-3 text-left w-full transition-colors hover:border-primary/40",
+        selected && "ring-2 ring-primary/40 border-primary/50",
+      )}
+    >
       <p className="text-xs font-bold text-foreground leading-tight mb-1">{e.title}</p>
       <p className="text-[10px] text-muted-foreground mb-2 line-clamp-2">{e.description}</p>
       <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] mb-2">
         <Metric label="Investment" value={formatUSD(e.fundingNeedUSD)} />
         <Metric label="Carbon revenue / yr" value={formatUSD(e.annualRevenueUSD)} tone="text-on-track" />
         <Metric label="Cuts" value={`${formatMt(e.abatementMtPerYr)}/yr`} />
-        <Metric label="Cost to abate" value={formatPerT(e.costToAbateUSDPerT)} />
+        <Metric
+          label="Cost to abate"
+          value={
+            hasBand
+              ? `${formatPerT(e.costToAbateLowUSDPerT)} – ${formatPerT(e.costToAbateHighUSDPerT)}`
+              : formatPerT(e.costToAbateUSDPerT)
+          }
+        />
       </div>
       {e.carbonCoversCost ? (
         <div className="flex items-center gap-1.5 rounded-md bg-on-track/10 px-2 py-1 text-[10px] text-on-track">
@@ -368,10 +539,12 @@ function DealCard({ e, carbonPrice }: { e: ProjectEconomics; carbonPrice: number
         </div>
       )}
       <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-        <Badge variant="outline" className="text-[8px] h-4 capitalize">{e.confidence} confidence</Badge>
-        {e.bestPractice && <Badge variant="outline" className="text-[8px] h-4">proven in {e.bestPractice.country}</Badge>}
+        <Badge variant="outline" className="text-[8px] h-4 capitalize">
+          {e.confidence} NDC data confidence
+        </Badge>
+        <Badge variant="outline" className="text-[8px] h-4">Indicative abatement</Badge>
       </div>
-    </div>
+    </button>
   );
 }
 

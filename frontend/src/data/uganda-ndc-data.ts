@@ -38,12 +38,6 @@ export interface NDCTarget {
   metricType: MetricType;
 }
 
-export interface FocalPoint {
-  name: string;
-  role: string;
-  email: string;
-}
-
 export interface NDCActivity {
   id: string;
   targetId: string;
@@ -51,9 +45,9 @@ export interface NDCActivity {
   description: string;
   responsibleMinistry: string;
   responsibleDepartment?: string;
-  focalPoint: FocalPoint;
   implementationLevel: ImplementationLevel;
-  districts?: string[]; // if district-level
+  /** Only populated where the NDC explicitly names locations (e.g. Green Cities, GKMA BRT). */
+  districts?: string[];
   subActivities?: NDCActivity[];
 }
 
@@ -86,20 +80,14 @@ export interface MitigationOption {
   sectorId: SectorId;
   title: string;
   description: string;
+  /** Indicative abatement estimate from NDC mitigation analysis (sector-level, not measured). */
   emissionsReductionPotential: number;
   emissionsReductionUnit: string;
+  /** Indicative cost inputs — used only by the Climate Finance screening tool, not shown as data. */
   costEstimate: number;
   costCurrency: string;
   costMagnitude: string;
   confidence: ConfidenceLevel;
-  bestPractices: BestPractice[];
-}
-
-export interface BestPractice {
-  country: string;
-  title: string;
-  description: string;
-  outcome: string;
 }
 
 export interface DecisionLogEntry {
@@ -282,7 +270,10 @@ export const ndcTargets: NDCTarget[] = [
   },
 ];
 
-/* ── Mock Activities ── */
+/* ── NDC Activities (fallback for the bundled catalog API) ──
+ * Source: Uganda Updated NDC (Sept 2022). Only NDC-traceable fields are kept.
+ * Named focal points/emails and assumed per-activity district lists were removed
+ * in the June 2026 data audit; districts remain only where the NDC names locations. */
 
 export const ndcActivities: NDCActivity[] = [
   {
@@ -290,16 +281,13 @@ export const ndcActivities: NDCActivity[] = [
     description: "Plant 40 million trees (launched March 2021) across degraded landscapes with focus on indigenous species; scale to 3 billion trees by 2030",
     responsibleMinistry: "Ministry of Water and Environment",
     responsibleDepartment: "Forestry Sector Support Department",
-    focalPoint: { name: "Dr. Sarah Namirembe", role: "Director, Forestry", email: "s.namirembe@mwe.go.ug" },
-    implementationLevel: "both",
-    districts: ["Kampala", "Wakiso", "Mukono", "Mbarara", "Gulu", "Lira"],
+    implementationLevel: "national",
   },
   {
     id: "a2", targetId: "t1", name: "REDD+ Strategy Implementation",
     description: "Implement Uganda's National REDD+ Strategy and Action Plan (MWE 2017) — reduce deforestation via collaborative forest management, payments for ecosystem services, and commercial woodlots",
     responsibleMinistry: "Ministry of Water and Environment",
     responsibleDepartment: "Climate Change Department",
-    focalPoint: { name: "Mr. Bob Natifu", role: "Commissioner, Climate Change", email: "b.natifu@mwe.go.ug" },
     implementationLevel: "national",
   },
   {
@@ -307,23 +295,19 @@ export const ndcActivities: NDCActivity[] = [
     description: "Commercial transmission-pole/timber plantations (5 MtCO₂e abatement potential) and bioenergy woodlots (2.9 MtCO₂e) to reduce demand on natural forests",
     responsibleMinistry: "Ministry of Water and Environment",
     responsibleDepartment: "Forestry Sector Support Department",
-    focalPoint: { name: "Dr. Sarah Namirembe", role: "Director, Forestry", email: "s.namirembe@mwe.go.ug" },
     implementationLevel: "national",
   },
   {
     id: "a3", targetId: "t2", name: "Community Forest Restoration",
     description: "Community-led forest restoration targeting 500,000 ha; 100,000 ha of natural forest regeneration and 100,000 ha enrichment planting in degraded reserves",
     responsibleMinistry: "Ministry of Water and Environment",
-    focalPoint: { name: "Ms. Grace Akello", role: "Senior Forest Officer", email: "g.akello@mwe.go.ug" },
-    implementationLevel: "district",
-    districts: ["Hoima", "Masindi", "Kibaale", "Kyenjojo", "Bundibugyo"],
+    implementationLevel: "national",
   },
   {
     id: "a12", targetId: "t9", name: "Wetland Demarcation and Restoration Programme",
     description: "Demarcate, gazette, and restore degraded wetlands; increase coverage from 8.9% to 12% of land area by 2030 (GCF Wetlands Project); peatland restoration in Nile Basin",
     responsibleMinistry: "Ministry of Water and Environment",
     responsibleDepartment: "Wetlands Management Department",
-    focalPoint: { name: "Dr. Alice Nabwire", role: "Commissioner, Wetlands", email: "a.nabwire@mwe.go.ug" },
     implementationLevel: "national",
   },
   {
@@ -331,7 +315,6 @@ export const ndcActivities: NDCActivity[] = [
     description: "756.8 MW additional hydro, 25 MW bagasse, 20 MW solar, 20 MW wind capacity to come online 2015–2030; reduce transmission and distribution losses",
     responsibleMinistry: "Ministry of Energy and Mineral Development",
     responsibleDepartment: "Renewable Energy Department",
-    focalPoint: { name: "Eng. Peter Okwoko", role: "Director, Renewable Energy", email: "p.okwoko@memd.go.ug" },
     implementationLevel: "national",
   },
   {
@@ -339,23 +322,19 @@ export const ndcActivities: NDCActivity[] = [
     description: "Improved charcoal kiln efficiency (12%→75%); industrial energy efficiency and fuel switching; commercial/institutional cookstove upgrades (50% of schools in improved charcoal stoves by 2030)",
     responsibleMinistry: "Ministry of Energy and Mineral Development",
     responsibleDepartment: "Energy Efficiency Unit",
-    focalPoint: { name: "Dr. James Opio", role: "Head of Standards", email: "j.opio@memd.go.ug" },
     implementationLevel: "national",
   },
   {
     id: "a5", targetId: "t3", name: "Rural Electrification Programme",
     description: "Extend electricity access to 75% of population by 2030; deploy solar/wind-powered water supply systems; 65,000 improved cookstoves/year in residential sector",
     responsibleMinistry: "Ministry of Energy and Mineral Development",
-    focalPoint: { name: "Ms. Irene Muloni", role: "Commissioner, Energy", email: "i.muloni@memd.go.ug" },
-    implementationLevel: "both",
-    districts: ["Soroti", "Arua", "Gulu", "Lira", "Moroto", "Kotido"],
+    implementationLevel: "national",
   },
   {
     id: "a7", targetId: "t5", name: "GKMA Bus Rapid Transit (BRT)",
     description: "Implement 101 km of BRT in Greater Kampala Metropolitan Area by 2030; introduce 200+ e-buses; parking management to reduce private vehicle use",
     responsibleMinistry: "Ministry of Works and Transport",
     responsibleDepartment: "Transport Planning",
-    focalPoint: { name: "Eng. David Luyimbazi", role: "Director, Transport", email: "d.luyimbazi@mowt.go.ug" },
     implementationLevel: "district",
     districts: ["Kampala", "Wakiso", "Mukono"],
   },
@@ -363,7 +342,6 @@ export const ndcActivities: NDCActivity[] = [
     id: "a13", targetId: "t5", name: "Road Fuel Efficiency & NMT Infrastructure",
     description: "Achieve 20% road fuel economy improvement by 2030 (GFEI 50by50 with 10-year time-lag); 100 km NMT corridors in Kampala + 100 km in secondary cities; 61 km MGR passenger rail rehabilitation",
     responsibleMinistry: "Ministry of Works and Transport",
-    focalPoint: { name: "Eng. David Luyimbazi", role: "Director, Transport", email: "d.luyimbazi@mowt.go.ug" },
     implementationLevel: "national",
   },
   {
@@ -371,7 +349,6 @@ export const ndcActivities: NDCActivity[] = [
     description: "Comprehensive waste management (solid waste + wastewater) for 5 cities (Kampala, Gulu, Mbarara, Hoima, Mbale) and 15 municipalities; reduce, recycle, reuse; acquire land for sanitation/drainage infrastructure",
     responsibleMinistry: "Ministry of Water and Environment",
     responsibleDepartment: "Environmental Management",
-    focalPoint: { name: "Dr. Mary Goretti", role: "Environmental Inspector", email: "m.goretti@mwe.go.ug" },
     implementationLevel: "both",
     districts: ["Kampala", "Gulu", "Mbarara", "Hoima", "Mbale"],
   },
@@ -379,14 +356,12 @@ export const ndcActivities: NDCActivity[] = [
     id: "a9", targetId: "t7", name: "Clinker Substitution in Cement (IPPU)",
     description: "Substitute clinker with pozzolana, fly-ash, or slag in cement production to reduce process emissions; lower clinker fraction across Portland and Pozzolana Portland Cement",
     responsibleMinistry: "Ministry of Trade, Industry and Co-operatives",
-    focalPoint: { name: "Mr. Arnold Waiswa", role: "Industrial Standards Officer", email: "a.waiswa@mtic.go.ug" },
     implementationLevel: "national",
   },
   {
     id: "a14", targetId: "t7", name: "HFC Phase-Down / Kigali Amendment",
     description: "Implement Kigali Amendment to phase down HFC consumption; circular economy management of refrigerants in cooling equipment",
     responsibleMinistry: "Ministry of Water and Environment",
-    focalPoint: { name: "Mr. Arnold Waiswa", role: "Ozone Officer", email: "a.waiswa@mwe.go.ug" },
     implementationLevel: "national",
   },
   {
@@ -394,9 +369,7 @@ export const ndcActivities: NDCActivity[] = [
     description: "Scale climate-smart agriculture (CSA) from 31.7% to 70.7% of farmers by 2030; expand irrigation from 19,776 to 152,622 ha; 40 million-tree agroforestry campaign; livestock management in cattle corridor (2.9 MtCO₂e reduction potential)",
     responsibleMinistry: "Ministry of Agriculture, Animal Industry and Fisheries",
     responsibleDepartment: "Crop Production Department",
-    focalPoint: { name: "Dr. Joseph Bazaale", role: "Director, Crop Resources", email: "j.bazaale@maaif.go.ug" },
-    implementationLevel: "both",
-    districts: ["Masaka", "Rakai", "Sembabule", "Pallisa", "Kumi", "Katakwi"],
+    implementationLevel: "national",
   },
 ];
 
@@ -520,7 +493,12 @@ export const observedDataSets: ObservedDataSet[] = [
   },
 ];
 
-/* ── Mock Mitigation Options ── */
+/* ── NDC Mitigation Options (fallback for the bundled catalog API) ──
+ * Source: Uganda Updated NDC (Sept 2022) mitigation analysis. Title/description and
+ * target/sector linkage are NDC-traceable; emissionsReductionPotential is an
+ * indicative sector-level estimate. cost/confidence are indicative inputs used only
+ * by the Climate Finance screening tool (not shown as data in the tab). Foreign
+ * "best practice" case studies were removed in the June 2026 data audit. */
 
 export const mitigationOptions: MitigationOption[] = [
   {
@@ -530,10 +508,6 @@ export const mitigationOptions: MitigationOption[] = [
     emissionsReductionPotential: 2.5, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 15, costCurrency: "USD", costMagnitude: "million/yr",
     confidence: "medium",
-    bestPractices: [
-      { country: "Costa Rica", title: "National PES Programme", description: "Payments to landowners for forest conservation since 1997", outcome: "Forest cover increased from 21% to 52%" },
-      { country: "Kenya", title: "Upper Tana Water Fund", description: "PES for watershed conservation upstream of Nairobi", outcome: "30% reduction in sedimentation" },
-    ],
   },
   {
     id: "m2", targetId: "t1", sectorId: "afolu",
@@ -542,9 +516,6 @@ export const mitigationOptions: MitigationOption[] = [
     emissionsReductionPotential: 3.8, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 45, costCurrency: "USD", costMagnitude: "million",
     confidence: "high",
-    bestPractices: [
-      { country: "Ethiopia", title: "Green Legacy Initiative", description: "Planted 5 billion trees in 2019-2020", outcome: "Significant reforestation of degraded highlands" },
-    ],
   },
   {
     id: "m8", targetId: "t1", sectorId: "afolu",
@@ -553,9 +524,6 @@ export const mitigationOptions: MitigationOption[] = [
     emissionsReductionPotential: 3.37, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 20, costCurrency: "USD", costMagnitude: "million",
     confidence: "medium",
-    bestPractices: [
-      { country: "Kenya", title: "Kenya Charcoal Programme", description: "Promotion of retort and pyrolysis kilns", outcome: "45% improvement in charcoal conversion efficiency" },
-    ],
   },
   {
     id: "m3", targetId: "t4", sectorId: "energy",
@@ -564,9 +532,6 @@ export const mitigationOptions: MitigationOption[] = [
     emissionsReductionPotential: 0.8, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 120, costCurrency: "USD", costMagnitude: "million",
     confidence: "high",
-    bestPractices: [
-      { country: "Tanzania", title: "Rural Energy Agency Mini-Grids", description: "Deployed 200+ mini-grids serving 300,000 customers", outcome: "60% reduction in kerosene usage" },
-    ],
   },
   {
     id: "m4", targetId: "t4", sectorId: "energy",
@@ -575,9 +540,6 @@ export const mitigationOptions: MitigationOption[] = [
     emissionsReductionPotential: 1.09, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 25, costCurrency: "USD", costMagnitude: "million",
     confidence: "medium",
-    bestPractices: [
-      { country: "Rwanda", title: "National Cookstove Programme", description: "Distributed 1.5M improved stoves to households", outcome: "40% reduction in firewood consumption" },
-    ],
   },
   {
     id: "m5", targetId: "t5", sectorId: "transport",
@@ -586,9 +548,6 @@ export const mitigationOptions: MitigationOption[] = [
     emissionsReductionPotential: 0.54, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 200, costCurrency: "USD", costMagnitude: "million",
     confidence: "low",
-    bestPractices: [
-      { country: "Kenya", title: "BasiGo Electric Buses", description: "Electric bus deployment in Nairobi", outcome: "70% operating cost reduction vs diesel" },
-    ],
   },
   {
     id: "m9", targetId: "t5", sectorId: "transport",
@@ -597,9 +556,6 @@ export const mitigationOptions: MitigationOption[] = [
     emissionsReductionPotential: 1.86, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 10, costCurrency: "USD", costMagnitude: "million",
     confidence: "medium",
-    bestPractices: [
-      { country: "Morocco", title: "Vehicle Standards Regulation", description: "Mandatory fuel economy standards for imported vehicles", outcome: "15% fleet efficiency improvement in 5 years" },
-    ],
   },
   {
     id: "m6", targetId: "t6", sectorId: "waste",
@@ -608,9 +564,6 @@ export const mitigationOptions: MitigationOption[] = [
     emissionsReductionPotential: 1.1, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 80, costCurrency: "USD", costMagnitude: "million",
     confidence: "medium",
-    bestPractices: [
-      { country: "South Africa", title: "Durban Landfill Gas-to-Energy", description: "Largest CDM landfill gas project in Africa", outcome: "Generates 7.5 MW and reduces 340ktCO₂e/yr" },
-    ],
   },
   {
     id: "m7", targetId: "t8", sectorId: "agriculture",
@@ -619,9 +572,6 @@ export const mitigationOptions: MitigationOption[] = [
     emissionsReductionPotential: 1.5, emissionsReductionUnit: "MtCO₂e/yr",
     costEstimate: 35, costCurrency: "USD", costMagnitude: "million",
     confidence: "high",
-    bestPractices: [
-      { country: "Malawi", title: "National Agroforestry Programme", description: "Integrated trees on 300,000 ha of farmland", outcome: "25% yield increase plus carbon sequestration" },
-    ],
   },
 ];
 

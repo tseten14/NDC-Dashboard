@@ -127,7 +127,7 @@ export default function MyWork() {
               <CardTitle className="text-xs uppercase tracking-wide">Briefing view</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button asChild variant="outline" size="sm" className="h-7 text-xs"><Link to="/">Open NDC Layer</Link></Button>
+              <Button asChild variant="outline" size="sm" className="h-7 text-xs"><Link to="/dashboard">Open Dashboard</Link></Button>
               <Button asChild variant="outline" size="sm" className="h-7 text-xs ml-2"><Link to="/library">Strategy Library</Link></Button>
             </CardContent>
           </Card>

@@ -132,9 +132,9 @@ export default function StrategyLibrary() {
 
   const openInNDC = (r: RegistryRow) => {
     if (r.ndcTargetId) {
-      navigate(`/?target=${r.ndcTargetId}&sector=${r.sectorId}`);
+      navigate(`/dashboard?target=${r.ndcTargetId}&sector=${r.sectorId}`);
     } else {
-      navigate(`/`);
+      navigate(`/dashboard`);
     }
   };
 
@@ -246,7 +246,7 @@ function IndicatorRow({ row, onOpen }: { row: RegistryRow; onOpen: () => void })
         <EvidenceBadge ev={row.evidence} />
       </div>
       <div className="col-span-2 flex items-center justify-end gap-1">
-        <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[9px] gap-1" onClick={onOpen} title="Open in NDC Layer">
+        <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[9px] gap-1" onClick={onOpen} title="Open in Dashboard">
           Open <ArrowRight className="h-2.5 w-2.5" />
         </Button>
         {row.activities === 0 && (
@@ -272,12 +272,12 @@ function IndicatorRow({ row, onOpen }: { row: RegistryRow; onOpen: () => void })
             size="sm"
             variant="ghost"
             className="h-5 px-1.5 text-[9px] gap-1"
-            title="Explore mitigation options in the NDC Layer"
+            title="Explore mitigation options in the Dashboard"
             onClick={() => {
               if (row.ndcTargetId) {
-                navigate(`/?target=${row.ndcTargetId}&sector=${row.sectorId}`);
+                navigate(`/dashboard?target=${row.ndcTargetId}&sector=${row.sectorId}`);
               } else {
-                toast.info('Open this indicator in the NDC Layer first ("Open" button).');
+                toast.info('Open this indicator in the Dashboard first ("Open" button).');
               }
             }}
           >

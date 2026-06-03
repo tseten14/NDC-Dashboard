@@ -154,7 +154,7 @@ export default function ActivityDetail() {
                   )}
                   {l.strategy === "NDC" && (
                     <Button size="sm" variant="ghost" asChild className="h-6 text-[10px]">
-                      <Link to={`/?target=${l.target_id}`}>Open in NDC Layer</Link>
+                      <Link to={`/dashboard?target=${l.target_id}`}>Open in Dashboard</Link>
                     </Button>
                   )}
                 </div>

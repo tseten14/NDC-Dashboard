@@ -12,11 +12,11 @@ import {
   ingestScanReportSchema,
 } from "./schemas";
 
-/** Host only in dev; production uses same-origin paths (/api/v1/...). */
+/** Same-origin in dev (Vite proxy) and production; override with VITE_API_BASE_URL. */
 export function resolveApiHost(): string {
   const env = import.meta.env.VITE_API_BASE_URL?.trim();
   if (import.meta.env.DEV) {
-    return env || "http://localhost:8787";
+    return env || "";
   }
   if (env && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/i.test(env)) {
     return env.replace(/\/$/, "");
@@ -175,6 +175,68 @@ export interface TrackabilityResponse {
   available_countries: string[];
   data_source: string;
   note: string;
+}
+
+export interface SpatialConfidenceSector {
+  sector: string;
+  total_mtco2e: number | null;
+  located_mtco2e: number | null;
+  distributed_mtco2e: number | null;
+  certain_pct: number | null;
+}
+
+export interface SpatialConfidenceResponse {
+  gadm_id: string;
+  year: number;
+  aggregate_mtco2e: number | null;
+  located_mtco2e: number | null;
+  distributed_mtco2e: number | null;
+  certain_pct: number | null;
+  uncertain_pct: number | null;
+  located_source_count: number;
+  located_aggregation_count: number;
+  truncated: boolean;
+  sectors: SpatialConfidenceSector[];
+  geography: "national" | "district";
+  district_name: string | null;
+  data_source: string;
+  data_license: string;
+  methodology: string;
+  methodology_url: string;
+  from_cache?: boolean;
+}
+
+export interface MapSourcePoint {
+  id: number | string | null;
+  name: string | null;
+  sector: string;
+  subsector: string | null;
+  is_asset: boolean;
+  lat: number;
+  lng: number;
+  mtco2e: number | null;
+}
+
+export interface MapSectorTotal {
+  sector: string;
+  mtco2e: number | null;
+}
+
+export interface EmissionsMapResponse {
+  gadm_id: string;
+  year: number;
+  point_count: number;
+  asset_count: number;
+  total_mtco2e: number;
+  truncated: boolean;
+  sectors: MapSectorTotal[];
+  points: MapSourcePoint[];
+  geography: "national" | "district";
+  district_name: string | null;
+  data_source: string;
+  data_license: string;
+  note: string;
+  from_cache?: boolean;
 }
 
 /** Geography selector for emissions queries. Omit for national (UGA). */
@@ -375,6 +437,20 @@ export const emissionsApi = {
     applyGeography(q, opts);
     const qs = q.toString();
     return getJSON<PredictionsResponse>(`/api/v1/emissions/predictions${qs ? `?${qs}` : ""}`);
+  },
+  spatialConfidence: (opts?: GeographyOpts, year?: number) => {
+    const q = new URLSearchParams();
+    applyGeography(q, opts);
+    if (year != null) q.set("year", String(year));
+    const qs = q.toString();
+    return getJSON<SpatialConfidenceResponse>(`/api/v1/emissions/spatial-confidence${qs ? `?${qs}` : ""}`);
+  },
+  map: (opts?: GeographyOpts, year?: number) => {
+    const q = new URLSearchParams();
+    applyGeography(q, opts);
+    if (year != null) q.set("year", String(year));
+    const qs = q.toString();
+    return getJSON<EmissionsMapResponse>(`/api/v1/emissions/map${qs ? `?${qs}` : ""}`);
   },
   summary: () => getJSON<EmissionsSummary>("/api/v1/emissions/summary"),
   timeseries: (sector: NdcSectorKey, since?: number, to?: number, opts?: GeographyOpts) => {

@@ -17,14 +17,76 @@
 
 import { NDC_TARGETS, SECTOR_MAP } from "./ndcTargets.js";
 
+/**
+ * NDC target archetypes. Real-world NDCs are not identical, but they cluster into
+ * a small set of structural forms. Capturing them explicitly lets one tool track
+ * many countries and, crucially, state HONESTLY which forms Climate TRACE can
+ * measure directly vs which need national / Earth-observation statistics.
+ */
 export const MEASUREMENT_TYPES = {
-  /** Reduce sector emissions below a business-as-usual reference (most common NDC form). */
+  /** Reduce sector/economy emissions below a business-as-usual reference by a target year. */
   EMISSIONS_REDUCTION_BELOW_BAU: "emissions_reduction_below_bau",
-  /** Absolute sector emissions cap in a target year. */
+  /** Reduce emissions by N% relative to a historical base year (common for developed economies). */
+  EMISSIONS_REDUCTION_VS_BASE_YEAR: "emissions_reduction_vs_base_year",
+  /** Absolute emissions cap / budget in a target year. */
   ABSOLUTE_EMISSIONS: "absolute_emissions",
-  /** A percentage share (e.g. renewable share of energy). */
+  /** Reduce emissions per unit GDP (emissions intensity), e.g. India's NDC. */
+  EMISSIONS_INTENSITY_GDP: "emissions_intensity_gdp",
+  /** Reach net-zero (or carbon-neutrality) by a target year. */
+  NET_ZERO_YEAR: "net_zero_year",
+  /** A percentage share (e.g. renewable share of energy, forest cover share). */
   SHARE_PCT: "share_pct",
 };
+
+/**
+ * Per-archetype metadata: a plain label and whether Climate TRACE can measure it
+ * directly. `climate_trace_trackable` is one of true | false | "partial".
+ * "partial" means CT supplies the emissions term but an external denominator/
+ * baseline (GDP, BAU projection, base-year inventory) is still required.
+ */
+export const MEASUREMENT_TYPE_META = {
+  [MEASUREMENT_TYPES.EMISSIONS_REDUCTION_BELOW_BAU]: {
+    label: "% reduction below business-as-usual",
+    description: "Emissions cut below a projected no-action baseline by a target year.",
+    climate_trace_trackable: "partial",
+    note: "CT measures the actual emissions; the BAU baseline is a country projection, not a CT output.",
+  },
+  [MEASUREMENT_TYPES.EMISSIONS_REDUCTION_VS_BASE_YEAR]: {
+    label: "% reduction vs a base year",
+    description: "Emissions cut by N% relative to a historical base-year level.",
+    climate_trace_trackable: true,
+    note: "CT provides both base-year and current emissions for the same sector and gas.",
+  },
+  [MEASUREMENT_TYPES.ABSOLUTE_EMISSIONS]: {
+    label: "Absolute emissions cap",
+    description: "A fixed emissions ceiling or budget in the target year.",
+    climate_trace_trackable: true,
+    note: "Compare CT emissions in the target year directly against the cap.",
+  },
+  [MEASUREMENT_TYPES.EMISSIONS_INTENSITY_GDP]: {
+    label: "Emissions intensity of GDP",
+    description: "Emissions per unit of economic output (e.g. tCO2e per $ GDP).",
+    climate_trace_trackable: "partial",
+    note: "CT supplies the emissions numerator; GDP comes from national/IMF statistics.",
+  },
+  [MEASUREMENT_TYPES.NET_ZERO_YEAR]: {
+    label: "Net-zero / carbon-neutrality year",
+    description: "Reach net-zero emissions by a stated year.",
+    climate_trace_trackable: "partial",
+    note: "CT tracks the gross emissions trajectory; removals/offsets accounting is set by the country.",
+  },
+  [MEASUREMENT_TYPES.SHARE_PCT]: {
+    label: "Activity share (%)",
+    description: "A non-emissions share such as renewable energy %, forest cover %, or EV share.",
+    climate_trace_trackable: false,
+    note: "CT measures emissions, not activity shares; requires national / EO statistics.",
+  },
+};
+
+/** List archetypes with their trackability metadata (for UI / API surfacing). */
+export function listMeasurementTypes() {
+  return Object.entries(MEASUREMENT_TYPE_META).map(([id, meta]) => ({ id, ...meta }));
+}
 
 /**
  * Country-agnostic catalog. `climate_trace.trackable` indicates whether the

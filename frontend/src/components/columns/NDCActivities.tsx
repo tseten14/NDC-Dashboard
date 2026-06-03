@@ -3,8 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Building2, MapPin, Send, User, Plus, ExternalLink } from "lucide-react";
+import { Building2, MapPin, Plus, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { useCapturedActivities } from "@/hooks/use-captured-activities";
@@ -103,6 +102,11 @@ export function NDCActivitiesColumn({ selectedTargetId, geographyLevel, selected
           )}
         </div>
       </ScrollArea>
+      <div className="px-3 py-1.5 border-t border-border bg-muted/30">
+        <p className="text-[9px] text-muted-foreground leading-tight">
+          Source: Uganda Updated NDC (Sept 2022), via catalog API. Captured activities are user/MRV records.
+        </p>
+      </div>
     </div>
   );
 }
@@ -127,7 +131,7 @@ function ActivityCard({ activity, geographyLevel, selectedDistrictId }: {
           <p className="text-[10px] text-muted-foreground italic mt-1">National-level activity</p>
         )}
 
-        {/* Ministry */}
+        {/* Responsible institution (from NDC) */}
         <div className="flex items-center gap-1 mt-2">
           <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
           <span className="text-[10px] text-muted-foreground truncate">{activity.responsibleMinistry}</span>
@@ -139,63 +143,10 @@ function ActivityCard({ activity, geographyLevel, selectedDistrictId }: {
           </div>
         )}
 
-        {/* Focal point */}
-        <div className="flex items-center gap-1 mt-1.5">
-          <User className="h-3 w-3 text-muted-foreground shrink-0" />
-          <span className="text-[10px] text-foreground font-medium">{activity.focalPoint.name}</span>
-          <span className="text-[9px] text-muted-foreground">({activity.focalPoint.role})</span>
-        </div>
-
-        {/* Notify button */}
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="mt-2 h-6 text-[10px] gap-1 w-full">
-              <Send className="h-3 w-3" />
-              Notify focal point
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[400px]">
-            <DialogHeader>
-              <DialogTitle className="text-sm">Notify Focal Point</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 pt-2">
-              <div>
-                <p className="text-xs font-medium text-foreground">{activity.focalPoint.name}</p>
-                <p className="text-xs text-muted-foreground">{activity.focalPoint.role}</p>
-                <a
-                  href={`mailto:${activity.focalPoint.email}`}
-                  className="text-xs text-primary underline underline-offset-2"
-                >
-                  {activity.focalPoint.email}
-                </a>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-foreground">{activity.responsibleMinistry}</p>
-                {activity.responsibleDepartment && (
-                  <p className="text-xs text-muted-foreground">{activity.responsibleDepartment}</p>
-                )}
-              </div>
-              <div>
-                <p className="text-xs font-medium">Re: {activity.name}</p>
-                <p className="text-[10px] text-muted-foreground mt-1 italic">
-                  Opens a pre-filled email to the focal point in your mail client.
-                </p>
-              </div>
-              <Button
-                size="sm"
-                className="w-full text-xs"
-                onClick={() => {
-                  const subject = `NDC activity follow-up: ${activity.name}`;
-                  const body = `Dear ${activity.focalPoint.name},\n\nThis message concerns the NDC activity "${activity.name}" under ${activity.responsibleMinistry}.\n\n[Add your message here]\n\nSent via the Uganda NDC Data Explorer.`;
-                  window.location.href = `mailto:${activity.focalPoint.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                }}
-              >
-                <Send className="h-3 w-3 mr-1" />
-                Compose email
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Focal point: not provided by the NDC / API — no named contact is invented. */}
+        <p className="text-[9px] text-muted-foreground/70 italic mt-1.5">
+          Named focal point not available in the NDC source.
+        </p>
       </CardContent>
     </Card>
   );

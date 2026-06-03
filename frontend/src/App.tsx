@@ -49,6 +49,9 @@ import OwnershipFocals from "./pages/OwnershipFocals.tsx";
 import Projections from "./pages/Projections.tsx";
 import Ai2030Prediction from "./pages/Ai2030Prediction.tsx";
 import ClimateFinance from "./pages/ClimateFinance.tsx";
+import Documentation from "./pages/Documentation.tsx";
+import MapExplorer from "./pages/MapExplorer.tsx";
+import Home from "./pages/Home.tsx";
 import InvestmentTemplates from "./pages/InvestmentTemplates.tsx";
 import ExportsAPI from "./pages/ExportsAPI.tsx";
 import Admin from "./pages/Admin.tsx";
@@ -105,7 +108,8 @@ function ProtectedShell() {
               <main className="flex-1 min-h-0 overflow-hidden">
                 <Routes>
                   {/* Main */}
-                  <Route path="/" element={<NDCLayer />} />
+                  <Route path="/" element={<Home />} />
+                  <Route path="/dashboard" element={<NDCLayer />} />
                   <Route path="/library" element={<StrategyLibrary />} />
                   <Route path="/my-work" element={<MyWork />} />
                   <Route path="/activities/new" element={<ActivityForm />} />
@@ -120,6 +124,8 @@ function ProtectedShell() {
                   <Route path="/ingest" element={<DataIngestion />} />
                   <Route path="/ai-2030" element={<Ai2030Prediction />} />
                   <Route path="/climate-finance" element={<ClimateFinance />} />
+                  <Route path="/map" element={<MapExplorer />} />
+                  <Route path="/docs" element={<Documentation />} />
 
                   {/* Climate Risk & Vulnerability */}
                   <Route path="/risk" element={<RiskLayout />}>

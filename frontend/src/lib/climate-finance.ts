@@ -35,12 +35,14 @@ export const ASSUMPTION_BOUNDS = {
   discountRate: { min: 0, max: 0.2, step: 0.005 },
 };
 
+export type DataConfidence = "high" | "medium" | "low";
+
 export interface ProjectEconomics {
   id: string;
   title: string;
   description: string;
   sectorId: string;
-  confidence: string;
+  confidence: DataConfidence;
   /** Abatement potential, MtCO2e per year. */
   abatementMtPerYr: number;
   /** Abatement potential, tonnes CO2e per year. */
@@ -54,13 +56,15 @@ export interface ProjectEconomics {
   annualizedCostUSD: number;
   /** Cost to abate one tonne of CO2e, USD/t (levelised). The headline metric. */
   costToAbateUSDPerT: number | null;
+  /** Screening range when confidence is not high (± fraction of cost to abate). */
+  costToAbateLowUSDPerT: number | null;
+  costToAbateHighUSDPerT: number | null;
   /** Carbon-credit revenue per year at the chosen price. */
   annualRevenueUSD: number;
   /** Net annual value = revenue - levelised cost = (price - costToAbate) * tonnes. */
   netAnnualUSD: number;
   /** True when the carbon price alone covers the cost to abate. */
   carbonCoversCost: boolean;
-  bestPractice?: { country: string; title: string; outcome: string };
 }
 
 function isAnnualCost(magnitude: string): boolean {
@@ -73,6 +77,24 @@ function crf(rate: number, years: number): number {
   if (rate <= 0) return 1 / years;
   const f = (1 + rate) ** years;
   return (rate * f) / (f - 1);
+}
+
+/** Uncertainty band on levelised cost to abate from NDC data confidence (screening only). */
+function confidenceBand(
+  costToAbate: number | null,
+  confidence: DataConfidence,
+): { low: number | null; high: number | null } {
+  if (costToAbate == null) return { low: null, high: null };
+  const spread = confidence === "high" ? 0.1 : confidence === "medium" ? 0.2 : 0.35;
+  return {
+    low: costToAbate * (1 - spread),
+    high: costToAbate * (1 + spread),
+  };
+}
+
+function normalizeConfidence(c: string): DataConfidence {
+  if (c === "high" || c === "medium" || c === "low") return c;
+  return "medium";
 }
 
 export function computeProjectEconomics(
@@ -92,14 +114,15 @@ export function computeProjectEconomics(
 
   const annualRevenueUSD = abatementT * a.carbonPrice;
   const netAnnualUSD = annualRevenueUSD - annualizedCostUSD;
+  const confidence = normalizeConfidence(option.confidence);
+  const band = confidenceBand(costToAbateUSDPerT, confidence);
 
-  const bp = option.bestPractices?.[0];
   return {
     id: option.id,
     title: option.title,
     description: option.description,
     sectorId: String(option.sectorId),
-    confidence: option.confidence,
+    confidence,
     abatementMtPerYr: abatementMt,
     abatementTPerYr: abatementT,
     costType: annual ? "annual" : "capex",
@@ -108,10 +131,11 @@ export function computeProjectEconomics(
     fundingNeedUSD: annual ? annualCostUSD * a.lifetimeYears : capexUSD,
     annualizedCostUSD,
     costToAbateUSDPerT,
+    costToAbateLowUSDPerT: band.low,
+    costToAbateHighUSDPerT: band.high,
     annualRevenueUSD,
     netAnnualUSD,
     carbonCoversCost: costToAbateUSDPerT != null && costToAbateUSDPerT <= a.carbonPrice,
-    bestPractice: bp ? { country: bp.country, title: bp.title, outcome: bp.outcome } : undefined,
   };
 }
 

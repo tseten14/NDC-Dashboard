@@ -74,6 +74,40 @@ export async function fetchSectorEmissionsForYear(year, sectorSlug, gadmId = CLI
   return { year, tonnes, mtco2e: toMtco2e(tonnes), location: parsed.data?.location ?? null };
 }
 
+/**
+ * Full aggregate emissions for a location and year, including the per-sector
+ * breakdown. GET /v7/sources/emissions returns the COMPLETE aggregate product:
+ * spatially-certain (located asset/area) emissions PLUS the country's
+ * spatially-uncertain emissions (SUEs) distributed to this admin area via
+ * proxies (population, nightlights, land use). At GADM0 this equals the "best"
+ * country estimate (matches /rankings); at GADM1/2 the SUEs are proxy-allocated.
+ * See Climate TRACE "Disaggregation of Spatially Uncertain Emissions".
+ */
+export async function fetchLocationEmissions(year, gadmId = CLIMATE_TRACE_GADM_UGANDA) {
+  const url = climateTraceUrl("/sources/emissions", { year, gas: CLIMATE_TRACE_GAS, gadmId });
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Climate TRACE API error: ${res.status} (${url})`);
+  const data = await res.json();
+  const parsed = safeParseOrLog(climateTraceEmissionsResponseSchema, data, "climateTrace.emissions");
+  if (!parsed.ok) throw new Error("Climate TRACE emissions response failed schema validation");
+
+  const totalSummary =
+    parsed.data?.totals?.summaries?.find((s) => s.gas === CLIMATE_TRACE_GAS) ??
+    parsed.data?.totals?.summaries?.[0];
+  const bySector = {};
+  for (const s of parsed.data?.sectors?.summaries ?? []) {
+    if (s.gas != null && s.gas !== CLIMATE_TRACE_GAS) continue;
+    if (s.sector == null) continue;
+    bySector[s.sector] = (bySector[s.sector] ?? 0) + (s.emissionsQuantity ?? 0);
+  }
+  return {
+    year,
+    gadm_id: gadmId,
+    total_tonnes: totalSummary?.emissionsQuantity ?? null,
+    by_sector: bySector,
+  };
+}
+
 /** Maximum sources requested per page from the Climate TRACE sources endpoint. */
 export const SOURCES_MAX_LIMIT = 200;
 

@@ -302,6 +302,47 @@ E6. DATA INGESTION (PRODUCT DECISION — NOTED)
     Our ingestion already uses a strict column-mapping/validation step (rapid-automatic
     path). No code change; captured here as a documented product decision.
 
+E7. ACTIVITIES & MITIGATION OPTIONS — DUMMY-DATA AUDIT (June 2026)
+    Audit of the "Activities / Measures" and "Mitigation Options" panels (NDC Layer).
+    These panels are served by the bundled catalog API (/api/v1/catalog/activities,
+    /api/v1/catalog/mitigation-options), backed by config/ndcCockpitCatalog.js, with
+    frontend/src/data/uganda-ndc-data.ts as the offline fallback. Climate TRACE does
+    NOT provide activities, mitigation measures, focal points, costs, or case studies,
+    so the catalog (derived from Uganda's Updated NDC, Sept 2022) is the only source.
+
+    Fields REMOVED (fabricated / unverifiable, not in the NDC or any API):
+    - Activities: named focal points + email addresses (e.g. "Dr. Sarah Namirembe /
+      s.namirembe@mwe.go.ug") and the "Notify focal point / Compose email" mailto flow.
+    - Activities: assumed per-activity district lists. Districts are now kept ONLY where
+      the NDC explicitly names locations — Greater Kampala BRT (a7: Kampala, Wakiso,
+      Mukono) and Green Cities (a8: Kampala, Gulu, Mbarara, Hoima, Mbale). Other
+      activities are shown as national-scope (no fabricated district pinning).
+    - Mitigation: foreign "best practice" case studies with specific outcome stats
+      (e.g. "Costa Rica forest cover 21%->52%", "Durban 7.5 MW / 340 ktCO2e/yr").
+    - Mitigation tab DISPLAY: cost badges ("USD 15 million") and confidence badges
+      ("Medium confidence") are no longer shown in the panel.
+
+    Fields KEPT (NDC-traceable) and how they are now sourced:
+    - Activity/measure name, description, responsible ministry/department, target &
+      sector linkage  -> catalog body (Uganda Updated NDC 2022). Shown as-is.
+    - Mitigation abatement potential -> shown explicitly labelled "(indicative)" with a
+      footnote stating it is a sector-level NDC estimate, not a measured value.
+    - "Captured" activities in the Activities panel come from real user/MRV DB records
+      (use-captured-activities) and are unchanged.
+
+    Graceful fallbacks added: activities show "Named focal point not available in the
+    NDC source"; mitigation shows "Abatement: data not available" when no estimate
+    exists; both panels carry a "Source: Uganda Updated NDC (Sept 2022), via catalog
+    API" footnote.
+
+    RESIDUAL / UNRESOLVED limitation: indicative costEstimate / costMagnitude /
+    confidence values still exist in the catalog body because the Climate Finance
+    screening tool consumes them (clearly labelled "indicative screening, not investment
+    advice" there). They are NOT shown in the Activities/Mitigation tabs. Recommended
+    follow-up: have Climate Finance derive cost-to-abate from a transparent $/tCO2e
+    assumption instead of per-measure capex, so these unsourced figures can be removed
+    entirely.
+
 ---
 Internal verification scripts:
   node scripts/verify_climatetrace_v7.mjs   (sector reconciliation)
