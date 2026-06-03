@@ -1,6 +1,13 @@
 /**
- * Tiny client for the Uganda NDC emissions API (Express server in `server.js`).
- * Base URL comes from `VITE_API_BASE_URL` and defaults to localhost:8787.
+ * HTTP client for the Uganda NDC Express API (`server.js`, `/api/v1/*`).
+ *
+ * Dev: leave `VITE_API_BASE_URL` unset — Vite proxies `/api` → `API_PORT` (8787).
+ * Prod: same-origin `/api/v1` unless `VITE_API_BASE_URL` points at a separate API host.
+ *
+ * Emissions: dashboard, timeseries, progress, districts, sources, map, predictions,
+ * spatial-confidence, trackability. Catalog + ingest helpers are also defined here.
+ *
+ * @see docs/ARCHITECTURE.md
  */
 
 import type { IndicatorPanelEntry } from "./emissions-integration";

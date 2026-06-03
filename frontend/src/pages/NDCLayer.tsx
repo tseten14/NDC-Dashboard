@@ -37,7 +37,9 @@ export default function NDCLayer() {
   useEffect(() => {
     const t = searchParams.get("target");
     const s = searchParams.get("sector");
-    if (s && s !== state.selectedSector) state.setSelectedSector(s);
+    if (s && s !== state.selectedSector) {
+      state.setSelectedSector(s, { preserveTarget: Boolean(t) });
+    }
     if (t && t !== state.selectedTargetId) state.setSelectedTargetId(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -59,15 +61,17 @@ export default function NDCLayer() {
   }, [state.geographyLevel, state.selectedDistrictId, emissions.availableDistricts]);
 
   const handleSelectTarget = useCallback((targetId: string) => {
-    state.setSelectedTargetId(targetId);
     const target = ndcTargets.find((t) => t.id === targetId);
-    if (target) {
-      setSearchParams({ target: targetId, sector: target.sectorId });
+    if (!target) return;
+    if (target.sectorId !== state.selectedSector) {
+      state.setSelectedSector(target.sectorId, { preserveTarget: true });
     }
+    state.setSelectedTargetId(targetId);
+    setSearchParams({ target: targetId, sector: target.sectorId });
   }, [state, setSearchParams]);
 
   const handleSummarySelect = useCallback((targetId: string, sectorId: string) => {
-    state.setSelectedSector(sectorId);
+    state.setSelectedSector(sectorId, { preserveTarget: true });
     state.setSelectedTargetId(targetId);
     setSearchParams({ target: targetId, sector: sectorId });
   }, [state, setSearchParams]);

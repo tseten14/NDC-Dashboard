@@ -86,6 +86,15 @@ A5b. TOP EMITTING SOURCES (asset-level drill-down)
   the exact location), which are in the total but not tied to a single listed
   source. The panel says this on screen so the headline total is never misread.
 
+A6a. OTHER MAIN SCREENS (2026)
+  • Home (/) — welcome and shortcuts; not the data workspace.
+  • Emissions Map (/map) — geolocated Climate TRACE sources on a Uganda map.
+  • AI 2030 Prediction (/ai-2030) — trend forecast with uncertainty bands (indicative).
+  • Climate Finance (/climate-finance) — screening using catalogue indicative costs;
+    not investment advice. Fund pathways reference NAP Navigator / NAPX-style windows.
+  • Documentation (/docs) — in-app user guide for non-technical users.
+  • Data Ingestion (/ingest) — Quick Scan is live; full mapped import is work in progress.
+
 A6. EXPORTING DATA
   The "Export" button on the dashboard produces:
     • Excel  — targets, observed sector totals, and saved activities.
@@ -116,6 +125,10 @@ B2. EXPRESS API
   GET  /api/v1/emissions/sources        (asset/source-level emitters; params:
                                          gadm_id | district, year, limit, offset)
   GET  /api/v1/emissions/summary
+  GET  /api/v1/emissions/map              (geolocated points for map UI; year, gadm_id|district)
+  GET  /api/v1/emissions/predictions      (2030 sector forecast bundle)
+  GET  /api/v1/emissions/spatial-confidence
+  GET  /api/v1/emissions/trackability
   GET  /api/v1/provenance
   GET  /api/v1/health/climatetrace
   GET  /api/v1/indicators/panel
@@ -245,6 +258,13 @@ B4. NPM SCRIPTS
   npm run dev:all       — frontend + API
   npm run start:api     — API only
   npm run build         — production frontend build
+
+B6. REPOSITORY DOCUMENTATION (2026)
+  docs/README.md           — index of all documentation files
+  docs/ARCHITECTURE.md     — routes, folders, state, dev proxy
+  docs/USER_GUIDE.md       — plain-language mirror of in-app /docs
+  docs/DATA_AND_CATALOG.md — live vs indicative vs localStorage
+  docs/DEPLOY-VERCEL.md    — production hosting
 
 ================================================================================
   See README.md for day-to-day developer commands.

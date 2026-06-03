@@ -31,9 +31,10 @@ export function useAppState() {
   const [selectedMitigationOptions, setSelectedMitigationOptions] = useState<string[]>([]);
   const [decisionLog, setDecisionLog] = useState<any[]>([]);
 
-  const setSelectedSector = useCallback((sector: string) => {
+  /** Changing sector clears the selected target unless `preserveTarget` is set (e.g. URL deep-link). */
+  const setSelectedSector = useCallback((sector: string, opts?: { preserveTarget?: boolean }) => {
     setSelectedSectorRaw(sector);
-    setSelectedTargetId(null);
+    if (!opts?.preserveTarget) setSelectedTargetId(null);
   }, []);
 
   const setGeographyLevel = useCallback((level: "national" | "district") => {

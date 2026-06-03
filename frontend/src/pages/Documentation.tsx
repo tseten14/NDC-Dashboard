@@ -1,322 +1,436 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
+import { ALL_ROLES } from "@/hooks/use-current-role";
 import {
-  BookOpen, Target, Library, Briefcase, ShieldAlert, Upload, Sparkles, Coins,
-  Satellite, Trees, Waves, Sprout, Mountain, Cpu, Ruler, Calculator, ArrowRight,
-  Camera, Database, LineChart, ExternalLink, Sparkle,
+  BookOpen, Target, Satellite, HelpCircle, Palette, LayoutGrid, Users, ArrowRight,
+  ExternalLink, CheckCircle2, AlertTriangle, XCircle, MinusCircle,
 } from "lucide-react";
 
-type IconType = typeof Target;
+/* ── Content blocks (user manual — not a duplicate of Home) ── */
 
-interface Feature {
-  icon: IconType;
+const GETTING_STARTED = [
+  {
+    step: "1",
+    title: "Pick your country",
+    text: "On first visit you choose Uganda (the only country with a full cockpit today). You can change country later from the globe icon in the top bar.",
+  },
+  {
+    step: "2",
+    title: "Open the Dashboard",
+    text: "This is where NDC pledges meet live emissions. Select a sector, click one target in the left column, and the charts in the middle and right update immediately.",
+  },
+  {
+    step: "3",
+    title: "Use other tabs when you need them",
+    text: "Emissions Map shows where pollution comes from on a map. Climate Finance screens projects for investors. Documentation (this page) explains words and colours you see elsewhere.",
+  },
+];
+
+interface NavItem {
   title: string;
   to: string;
-  blurb: string;
-  points: string[];
-  accent: string;
+  who: string;
+  plain: string;
+  youWillSee: string[];
 }
 
-const FEATURES: Feature[] = [
+const BASIC_NAV: NavItem[] = [
   {
-    icon: Target, title: "Dashboard", to: "/dashboard", accent: "from-emerald-500/15",
-    blurb: "The main workspace. Track climate pledges against real emissions.",
-    points: ["See each NDC target and its 2030 goal", "Compare pledges to live Climate TRACE data", "Drill into districts, sources & spatial certainty"],
+    title: "Home",
+    to: "/",
+    who: "Everyone — first stop after choosing a country",
+    plain: "A short welcome and links into the main tools. It does not show detailed data.",
+    youWillSee: ["Summary of what the app can do", "Quick links to Dashboard and Map"],
   },
   {
-    icon: Library, title: "Strategy Library", to: "/library", accent: "from-sky-500/15",
-    blurb: "A searchable shelf of national strategies, plans and policies.",
-    points: ["Browse NDP IV, Vision 2040 & sector plans", "Link strategies to NDC targets", "Find the policy behind each number"],
+    title: "Dashboard",
+    to: "/dashboard",
+    who: "Planners, MRV teams, ministry staff, partners",
+    plain: "The core workspace. Compare each NDC target to observed emissions and see whether delivery looks on track.",
+    youWillSee: [
+      "List of NDC targets (left)",
+      "Observed vs target chart (centre)",
+      "Progress % and related panels (right)",
+      "Sector, National/District, and Historical/Projection filters at the top",
+    ],
   },
   {
-    icon: Briefcase, title: "My Work", to: "/my-work", accent: "from-violet-500/15",
-    blurb: "Your personal workspace for activities and decisions.",
-    points: ["Draft and manage delivery activities", "Keep a decision log", "Pick up where you left off"],
+    title: "Data Ingestion",
+    to: "/ingest",
+    who: "Data officers uploading files",
+    plain: "Bring spreadsheets or reports into the system. Quick Scan profiles a file fast; full column mapping is coming later.",
+    youWillSee: ["Quick Scan for triage", "GIS upload and data-source connections"],
   },
   {
-    icon: ShieldAlert, title: "Climate Risk", to: "/risk", accent: "from-amber-500/15",
-    blurb: "Where climate hazards meet people and assets.",
-    points: ["View hazard and vulnerability layers", "Spot at-risk districts", "Prioritise adaptation"],
+    title: "AI 2030 Prediction",
+    to: "/ai-2030",
+    who: "Policy and planning teams",
+    plain: "A forecast of where emissions may be in 2030 if recent trends continue — with a shaded uncertainty band, not a guarantee.",
+    youWillSee: ["Per-sector trend lines toward 2030", "Gap vs NDC target where data allows"],
   },
   {
-    icon: Upload, title: "Data Ingestion", to: "/ingest", accent: "from-teal-500/15",
-    blurb: "Bring your own data in — PDFs, CSVs or JSON.",
-    points: ["Upload and auto-parse files", "Map columns to observations", "Publish into the dashboard"],
+    title: "Climate Finance",
+    to: "/climate-finance",
+    who: "Investment and climate-finance colleagues",
+    plain: "Indicative screening: cost to cut a tonne of CO₂, possible carbon-credit revenue, and which fund windows might fit. Not financial advice.",
+    youWillSee: ["Sliders for carbon price and assumptions", "Project cards and funding-pathway hints"],
   },
   {
-    icon: Sparkles, title: "AI 2030 Prediction", to: "/ai-2030", accent: "from-fuchsia-500/15",
-    blurb: "A model that forecasts where emissions are heading by 2030.",
-    points: ["Per-sector trajectories with uncertainty", "Trained on real Climate TRACE history", "Gap vs. the NDC target, at a glance"],
+    title: "Emissions Map",
+    to: "/map",
+    who: "Anyone who thinks geographically",
+    plain: "Uganda on a map with coloured bubbles for emission sources. Filter by year and sector; bubble size shows how much each source emits.",
+    youWillSee: ["National totals for the selected year", "Sector legend and source tooltips"],
   },
   {
-    icon: Coins, title: "Climate Finance", to: "/climate-finance", accent: "from-yellow-500/15",
-    blurb: "Turns the 2030 gap into the business case for investors.",
-    points: ["Cost to cut carbon, per project", "Carbon-credit revenue at a price you set", "Which projects pay for themselves"],
+    title: "Documentation",
+    to: "/docs",
+    who: "You — when something is unclear",
+    plain: "This user guide: what screens mean, what colours and abbreviations stand for, and where data comes from.",
+    youWillSee: ["Plain-English explanations", "Glossary and FAQ"],
   },
 ];
 
-const PIPELINE = [
-  { icon: Camera, title: "Capture", text: "Satellites photograph every corner of Earth — optical cameras (Sentinel-2, Landsat) and cloud-piercing radar (Sentinel-1)." },
-  { icon: Cpu, title: "See", text: "Computer-vision models scan the images pixel by pixel, classifying land cover and spotting change over time." },
-  { icon: Ruler, title: "Measure", text: "Models estimate living biomass (trees, mangroves, grasses) and convert it into stored carbon." },
-  { icon: Calculator, title: "Account", text: "Carbon lost becomes emissions; carbon gained becomes removals. Net change = removals − emissions." },
+const ADVANCED_NAV: NavItem[] = [
+  {
+    title: "Strategy Library",
+    to: "/library",
+    who: "Policy analysts",
+    plain: "National plans (NDP IV, Vision 2040, sector strategies) linked to NDC targets so you can see the policy behind a number.",
+    youWillSee: ["Searchable strategy documents and cross-links"],
+  },
+  {
+    title: "My Work",
+    to: "/my-work",
+    who: "Delivery teams",
+    plain: "Your draft activities and decision log — work in progress for tracking who did what.",
+    youWillSee: ["Personal activity list and notes"],
+  },
+  {
+    title: "Climate Risk",
+    to: "/risk",
+    who: "Adaptation and disaster-risk teams",
+    plain: "Hazard and vulnerability views to prioritise districts — separate from mitigation emissions on the Dashboard.",
+    youWillSee: ["Risk maps and screening tools"],
+  },
 ];
 
-interface Ecosystem {
-  id: string;
-  icon: IconType;
-  label: string;
-  what: string;
-  watches: string;
-  matters: string;
-}
+const DASHBOARD_PANELS = [
+  {
+    name: "NDC Targets (left column)",
+    text: "Every card is one pledge from Uganda’s Updated NDC (2022). Click a card once to select it — the big charts update. The small arrow expands extra detail and a mini trend line inside the card.",
+  },
+  {
+    name: "Observed Data (centre)",
+    text: "Shows measured or modelled values over time for the target you selected. Solid line = history; dashed = projection where available. Compares to the NDC baseline and 2030 goal.",
+  },
+  {
+    name: "Progress toward target (right)",
+    text: "A simple read on how far the latest data is from the 2030 goal: on track, at risk, or off track. Open the buttons below for activities, top emitters, spatial certainty, and mitigation options.",
+  },
+  {
+    name: "Strip above the columns",
+    text: "Coloured counts (ON-TRACK, OFF-TRACK, IMPL. GAPS, MRV GAPS) summarise all targets at a glance. Click a row to jump to that target.",
+  },
+];
 
-const ECOSYSTEMS: Ecosystem[] = [
-  {
-    id: "forest", icon: Trees, label: "Net Forest",
-    what: "Change in carbon stored in the living biomass of forests — the trunks, branches, leaves and roots.",
-    watches: "Deforestation and degradation (carbon out) versus regrowth, afforestation and reforestation (carbon in).",
-    matters: "Forestry & land use is Uganda's largest emissions sector and the focus of its headline NDC target.",
-  },
-  {
-    id: "mangrove", icon: Waves, label: "Mangrove",
-    what: "Carbon-stock change in coastal and wetland mangrove biomass — some of the most carbon-dense vegetation on Earth.",
-    watches: "Loss from clearing or die-back versus gains from restoration and natural expansion.",
-    matters: "Mangroves store outsized carbon per hectare and buffer communities against floods and storms.",
-  },
-  {
-    id: "grassland", icon: Sprout, label: "Net Grassland",
-    what: "Living-biomass carbon change across grasslands, shrublands and savanna.",
-    watches: "Conversion, overgrazing and fire versus recovery and improved rangeland management.",
-    matters: "Grasslands cover vast areas; small per-hectare changes add up to large national totals.",
-  },
-  {
-    id: "wetland", icon: Mountain, label: "Net Wetland",
-    what: "Carbon-stock change in the living biomass of wetlands and peat-adjacent vegetation.",
-    watches: "Drainage and conversion versus rewetting and restoration.",
-    matters: "Wetlands are dense carbon stores and vital for water regulation and biodiversity.",
-  },
+const FILTERS = [
+  { label: "Sector", meaning: "Which part of the economy — e.g. AFOLU (forests & land), Energy, Transport. Economy-wide shows all sectors grouped." },
+  { label: "Geography · National", meaning: "Country total from Climate TRACE for Uganda." },
+  { label: "Geography · District", meaning: "Same data split by district (county). Some national-only targets show a proxy sector instead." },
+  { label: "Time · Historical", meaning: "Past years only — what has already happened." },
+  { label: "Time · Projection", meaning: "Includes forward-looking lines where the app has projection data." },
+  { label: "Refresh", meaning: "Fetches the latest figures from the server (cached for speed)." },
+  { label: "Export", meaning: "Download Excel, PDF summary, or a CSV shaped for reporting (CRT/BTR style)." },
+];
+
+const STATUS_CODES = [
+  { code: "On track", color: "text-on-track", icon: CheckCircle2, meaning: "Latest data suggests the target is within reach at the current pace — still check assumptions." },
+  { code: "At risk", color: "text-at-risk", icon: AlertTriangle, meaning: "Trend is worrying or data quality is thin; needs attention before 2030." },
+  { code: "Off track", color: "text-off-track", icon: XCircle, meaning: "Current path is far from the goal; strong course correction or more finance may be needed." },
+  { code: "Unknown", color: "text-muted-foreground", icon: MinusCircle, meaning: "Not enough observed data to judge yet." },
+  { code: "IMPL. GAPS", color: "text-muted-foreground", icon: HelpCircle, meaning: "No delivery activity linked to this target in the catalogue yet." },
+  { code: "MRV GAPS", color: "text-muted-foreground", icon: HelpCircle, meaning: "Activities exist but measured data is missing or weak." },
+];
+
+const TARGET_BADGES = [
+  { badge: "Unconditional", meaning: "Uganda intends to meet this with domestic resources." },
+  { badge: "Conditional", meaning: "Depends on international finance, technology, or capacity support." },
+  { badge: "Mixed", meaning: "Contains both unconditional and conditional parts (read the target text)." },
+  { badge: "Emissions Reduction", meaning: "Measured in tonnes of CO₂ equivalent (MtCO₂e)." },
+  { badge: "Forest Cover / Renewable Energy / …", meaning: "Non-emissions metric (hectares, %, MW, etc.) — chart units change accordingly." },
+];
+
+const SECTORS = [
+  { abbr: "Economy-wide", full: "All sectors combined under the headline NDC pledge." },
+  { abbr: "AFOLU", full: "Agriculture, Forestry and Other Land Use — forests, land use, much of Uganda’s emissions story." },
+  { abbr: "Energy", full: "Power generation and stationary energy use (not transport)." },
+  { abbr: "Transport", full: "Road, rail, and other moving sources." },
+  { abbr: "Waste", full: "Solid waste and wastewater." },
+  { abbr: "IPPU", full: "Industrial Processes and Product Use (e.g. cement, refrigerants)." },
+  { abbr: "Agriculture", full: "Farming and livestock emissions within the NDC structure." },
 ];
 
 const GLOSSARY: { term: string; def: string }[] = [
-  { term: "MtCO₂e", def: "Million tonnes of carbon-dioxide equivalent — a common unit that puts all greenhouse gases on one scale." },
-  { term: "NDC", def: "Nationally Determined Contribution — a country's climate pledge under the Paris Agreement." },
-  { term: "BAU (Business-as-usual)", def: "Where emissions would head with no new climate action — the baseline a target is measured against." },
-  { term: "Living biomass", def: "The carbon held in living plants: above-ground (stems, leaves) and below-ground (roots)." },
-  { term: "Carbon stock change", def: "The difference in stored carbon between two points in time. A drop = emissions; a rise = removals." },
-  { term: "GADM", def: "A global map of administrative boundaries. GADM1 ≈ Uganda's districts; GADM2 ≈ counties." },
-  { term: "Spatially-uncertain emissions", def: "Emissions known at the national level but not pinned to an exact location, so they are spread out using statistical proxies." },
-  { term: "Cost to abate (MAC)", def: "The dollars needed to cut one tonne of CO₂ with a given project." },
+  { term: "NDC", def: "Nationally Determined Contribution — Uganda’s official climate pledge under the Paris Agreement (updated 2022 in this app)." },
+  { term: "MtCO₂e", def: "Million tonnes of carbon dioxide equivalent. One number that compares CO₂ and other greenhouse gases." },
+  { term: "tCO₂e", def: "Tonnes of CO₂ equivalent — used for smaller sources or per-tonne costs." },
+  { term: "BAU", def: "Business as usual — where emissions would go without extra climate action." },
+  { term: "MRV", def: "Measurement, Reporting and Verification — proving that data and progress are real." },
+  { term: "Climate TRACE", def: "Independent global emissions inventory built from satellites, sensors, and models. Source of live data in this app." },
+  { term: "GADM", def: "Global map of admin boundaries. Here, districts and counties inside Uganda." },
+  { term: "Spatial certainty", def: "How much of an area’s total is tied to known map locations vs spread using statistical guesses." },
+  { term: "Asset", def: "On the map: a specific facility or place with coordinates (power plant, landfill, etc.)." },
+  { term: "Cost to abate", def: "Rough dollars needed to avoid one tonne of CO₂ with a project — for screening only." },
+  { term: "Carbon credit", def: "A tradable certificate for one tonne of reduced or removed CO₂, if independently verified." },
+  { term: "Indicative", def: "Estimate for discussion — not audited, tendered, or guaranteed." },
+  { term: "BTR / CRT", def: "Biennial Transparency Report / Common Reporting Table — UNFCCC reporting formats; Export can produce CSV aligned to these." },
+  { term: "ATMS", def: "When enabled in advanced views: filter to indicators tagged as suitable for automated tracking." },
 ];
 
 const FAQ: { q: string; a: string }[] = [
-  { q: "Where does the emissions data come from?", a: "Live from the Climate TRACE v7 API, which combines satellite imagery, sensors and machine learning to estimate emissions for every country, sector and source." },
-  { q: "How current is it?", a: "Climate TRACE publishes monthly data; this app shows the latest complete inventory year and caches responses so pages load fast." },
-  { q: "Why can district numbers be less certain?", a: "Some emissions are measured at known sources; the rest are the national total distributed to districts using proxies. The Spatial Certainty panel shows the split for any area." },
-  { q: "Is the AI 2030 prediction a guarantee?", a: "No. It is a trend-based forecast with an uncertainty band — useful for direction and gap-spotting, not a promise of the future." },
-  { q: "Is the Climate Finance tab investment advice?", a: "No. Every figure is clearly labelled indicative — a screening tool to surface opportunities, built from public cost estimates and assumptions you control." },
+  { q: "Why do I need to click a target twice sometimes?", a: "You should only need one click. If charts stay empty, pick the target again or refresh — a recent fix ensures the first click always selects it." },
+  { q: "Why does district view differ from national?", a: "Some NDC targets are only defined nationally. The app may show a related emissions sector for your district as context, labelled clearly." },
+  { q: "Is AI 2030 a promise?", a: "No. It extrapolates recent trends and shows uncertainty. Use it for direction, not legal commitments." },
+  { q: "Can I trust Climate Finance numbers?", a: "They are indicative costs from the NDC catalogue plus sliders you control. Use them to start conversations, not to sign contracts." },
+  { q: "What does the role dropdown do?", a: "It changes what you are allowed to edit (e.g. create activities vs read-only briefing). It does not change the underlying national data." },
+  { q: "Where is the data from?", a: "Emissions: Climate TRACE (CC BY 4.0). Targets and activities: Uganda’s NDC and related catalogues maintained in this project." },
 ];
 
 export default function Documentation() {
   const [technical, setTechnical] = useState(false);
-  const [eco, setEco] = useState("forest");
 
   return (
     <ScrollArea className="h-full">
-      <div className="mx-auto max-w-5xl p-4 space-y-6">
-        {/* Hero */}
-        <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-6">
-          <div className="absolute -right-8 -top-8 opacity-10">
-            <BookOpen className="h-40 w-40 text-primary" />
+      <div className="mx-auto max-w-3xl p-4 pb-12 space-y-8">
+        {/* Hero — manual, not marketing */}
+        <header className="space-y-2 border-b border-border pb-6">
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-6 w-6 text-primary" />
+            <h1 className="font-brand text-2xl font-bold text-foreground">User guide</h1>
           </div>
-          <div className="relative">
-            <Badge variant="outline" className="mb-2 gap-1 text-[10px]"><Sparkle className="h-3 w-3" /> Documentation</Badge>
-            <h1 className="text-2xl font-bold text-foreground">How the NDC Data Explorer works</h1>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              A friendly tour of everything inside — from live satellite emissions to 2030 forecasts and the
-              business case for climate projects. No jargon required.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {["Live Climate TRACE data", "District-level detail", "AI forecasting", "Finance lens"].map((t) => (
-                <Badge key={t} variant="secondary" className="text-[10px]">{t}</Badge>
-              ))}
-            </div>
-          </div>
-        </div>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
+            Plain-language help for the NDC Data Explorer. This page explains what each screen does,
+            what the colours and abbreviations mean, and where numbers come from — written for
+            colleagues who are not climate-data specialists.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Looking for a quick tour? Visit{" "}
+            <Link to="/" className="text-primary font-medium hover:underline">Home</Link> first, then return here when you need definitions.
+          </p>
+        </header>
 
-        {/* What it does */}
-        <section>
-          <SectionHeading icon={Target} title="What you can do here" sub="Seven places to explore — click any card to jump in." />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {FEATURES.map((f) => (
-              <Link key={f.title} to={f.to} className="group">
-                <Card className={cn("h-full overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md")}>
-                  <CardContent className={cn("p-3 bg-gradient-to-br to-transparent", f.accent)}>
-                    <div className="mb-1.5 flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background/70 ring-1 ring-border">
-                        <f.icon className="h-4 w-4 text-primary" />
-                      </div>
-                      <span className="text-sm font-bold text-foreground">{f.title}</span>
-                      <ArrowRight className="ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed mb-2">{f.blurb}</p>
-                    <ul className="space-y-0.5">
-                      {f.points.map((p) => (
-                        <li key={p} className="flex gap-1.5 text-[10px] text-foreground/80">
-                          <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-primary" />
-                          {p}
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </Link>
+        {/* Getting started */}
+        <section className="space-y-3">
+          <SectionTitle>Getting started in three steps</SectionTitle>
+          <ol className="space-y-3">
+            {GETTING_STARTED.map((s) => (
+              <li key={s.step} className="flex gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+                  {s.step}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{s.title}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{s.text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* Roles */}
+        <section className="space-y-3">
+          <SectionTitle>Your role (top-right dropdown)</SectionTitle>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Roles control what you can change in the app. They do not change Uganda’s official numbers.
+          </p>
+          <div className="rounded-lg border divide-y">
+            {ALL_ROLES.map((r) => (
+              <div key={r.id} className="px-3 py-2.5 flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4">
+                <span className="text-xs font-semibold text-foreground shrink-0 sm:w-44">{r.label}</span>
+                <span className="text-xs text-muted-foreground">{r.description}</span>
+              </div>
             ))}
           </div>
         </section>
 
-        {/* Data flow */}
-        <section>
-          <SectionHeading icon={Database} title="How the data flows" sub="From a satellite in orbit to a number on your screen." />
+        {/* Navigation */}
+        <section className="space-y-4">
+          <SectionTitle icon={LayoutGrid}>Menu guide — Basic section</SectionTitle>
+          <NavTable items={BASIC_NAV} />
+
+          <SectionTitle icon={LayoutGrid}>Menu guide — Advanced section</SectionTitle>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Expand <strong className="text-foreground font-medium">Advanced</strong> in the left sidebar to open these tools.
+          </p>
+          <NavTable items={ADVANCED_NAV} />
+        </section>
+
+        {/* Dashboard deep dive */}
+        <section className="space-y-4">
+          <SectionTitle icon={Target}>Understanding the Dashboard</SectionTitle>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            The Dashboard is three columns plus filters. Think: <em>what we promised</em> (left) →{" "}
+            <em>what we measure</em> (centre) → <em>are we on course</em> (right).
+          </p>
+
+          <div className="space-y-2">
+            {DASHBOARD_PANELS.map((p) => (
+              <Card key={p.name}>
+                <CardContent className="p-3">
+                  <p className="text-xs font-bold text-foreground">{p.name}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-1">{p.text}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
           <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-                {[
-                  { icon: Satellite, label: "Climate TRACE", text: "Satellites + ML estimate emissions worldwide" },
-                  { icon: Database, label: "This app's backend", text: "Fetches, validates, aggregates & caches by sector and district" },
-                  { icon: Target, label: "Dashboard", text: "Targets, trends and progress you can read" },
-                  { icon: LineChart, label: "AI & Finance", text: "2030 forecast and the investor business case" },
-                ].map((s, i, arr) => (
-                  <div key={s.label} className="flex flex-1 items-center gap-3">
-                    <div className="flex-1 rounded-lg border bg-card p-3 text-center">
-                      <s.icon className="mx-auto mb-1 h-5 w-5 text-primary" />
-                      <p className="text-xs font-semibold text-foreground">{s.label}</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight">{s.text}</p>
-                    </div>
-                    {i < arr.length - 1 && <ArrowRight className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block" />}
-                  </div>
-                ))}
-              </div>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm">Top filters — what they mean</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 pt-0 space-y-2">
+              {FILTERS.map((f) => (
+                <div key={f.label} className="text-xs">
+                  <span className="font-semibold text-foreground">{f.label}</span>
+                  <span className="text-muted-foreground"> — {f.meaning}</span>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </section>
 
-        {/* Computer vision spotlight */}
-        <section>
-          <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
-            <SectionHeading icon={Satellite} title="How Climate TRACE sees emissions from space" sub="Computer vision turns satellite images into carbon numbers." inline />
+        {/* Status codes */}
+        <section className="space-y-3">
+          <SectionTitle icon={Palette}>Colours and status codes</SectionTitle>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {STATUS_CODES.map((s) => (
+              <div key={s.code} className="flex gap-2 rounded-lg border p-2.5 items-start">
+                <s.icon className={cn("h-4 w-4 shrink-0 mt-0.5", s.color)} />
+                <div>
+                  <p className={cn("text-xs font-bold", s.color)}>{s.code}</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{s.meaning}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm">Labels on target cards</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 pt-0 space-y-2">
+              {TARGET_BADGES.map((b) => (
+                <div key={b.badge} className="text-xs">
+                  <Badge variant="outline" className="text-[9px] h-5 mr-1.5">{b.badge}</Badge>
+                  <span className="text-muted-foreground">{b.meaning}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm">Sector names in the dropdown</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 pt-0">
+              <dl className="space-y-2">
+                {SECTORS.map((s) => (
+                  <div key={s.abbr} className="text-xs grid grid-cols-1 sm:grid-cols-[7rem_1fr] gap-0.5">
+                    <dt className="font-semibold text-foreground">{s.abbr}</dt>
+                    <dd className="text-muted-foreground">{s.full}</dd>
+                  </div>
+                ))}
+              </dl>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Data source */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <SectionTitle icon={Satellite}>Where the emissions numbers come from</SectionTitle>
             <label className="flex items-center gap-2 text-[11px] text-muted-foreground cursor-pointer">
-              Plain English
+              Simple
               <Switch checked={technical} onCheckedChange={setTechnical} aria-label="Toggle technical detail" />
               Technical
             </label>
           </div>
-
-          <Card className="overflow-hidden">
-            <CardContent className="p-4 space-y-4">
-              {/* Pipeline */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                {PIPELINE.map((step, i) => (
-                  <div key={step.title} className="relative rounded-lg border bg-gradient-to-br from-primary/5 to-transparent p-3">
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">{i + 1}</span>
-                      <step.icon className="h-4 w-4 text-primary" />
-                      <span className="text-xs font-bold text-foreground">{step.title}</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground leading-relaxed">{step.text}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* The carbon equation */}
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">The idea in one line</p>
-                {technical ? (
-                  <p className="font-mono text-xs text-foreground">
-                    Emissions = activity (tonnes C in living biomass) × emission&nbsp;factor (tCO₂ per hectare);
-                    area in hectares. Net&nbsp;sector = Σ removals − Σ emissions across all monitored land.
-                  </p>
-                ) : (
-                  <p className="text-xs text-foreground">
-                    When trees and plants <span className="font-semibold text-off-track">disappear</span>, stored carbon
-                    is released as emissions. When they <span className="font-semibold text-on-track">grow back</span>,
-                    carbon is pulled in. The model adds up both to get the net effect.
-                  </p>
-                )}
-              </div>
-
-              {/* Ecosystem tabs */}
-              <div>
-                <p className="text-[11px] font-semibold text-foreground mb-1.5">Four living-biomass ecosystems the models track</p>
-                <Tabs value={eco} onValueChange={setEco}>
-                  <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-                    {ECOSYSTEMS.map((e) => (
-                      <TabsTrigger key={e.id} value={e.id} className="gap-1.5 text-[11px]">
-                        <e.icon className="h-3.5 w-3.5" /> {e.label}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                  {ECOSYSTEMS.map((e) => (
-                    <TabsContent key={e.id} value={e.id} className="mt-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                        <Mini label="What it measures" text={e.what} />
-                        <Mini label="What the model watches" text={e.watches} />
-                        <Mini label="Why it matters" text={e.matters} />
-                      </div>
-                    </TabsContent>
-                  ))}
-                </Tabs>
-              </div>
-
-              <p className="text-[10px] text-muted-foreground">
-                Source: Climate TRACE LULUCF methodology — “Net Forest, Mangrove, Net Grassland and Net Wetland
-                Carbon Stock Change (Living Biomass)”. Figures shown in the dashboard are Climate TRACE’s published
-                estimates and are continually refined.{" "}
-                <a
-                  href="https://github.com/climatetracecoalition/methodology-documents"
-                  target="_blank" rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-primary hover:underline"
-                >
-                  Methodology documents <ExternalLink className="h-3 w-3" />
-                </a>
+          <Card>
+            <CardContent className="p-4 text-xs text-muted-foreground leading-relaxed space-y-3">
+              {technical ? (
+                <p>
+                  The app calls the Climate TRACE v7 API. Observed sector totals and geolocated sources
+                  are aggregated to national and GADM level-1 (district) boundaries. Spatial-confidence
+                  splits located emissions from spatially uncertain emissions (SUEs) allocated via proxies.
+                </p>
+              ) : (
+                <p>
+                  Independent scientists combine <strong className="text-foreground">satellite pictures</strong>,{" "}
+                  <strong className="text-foreground">sensors</strong>, and{" "}
+                  <strong className="text-foreground">computer models</strong> to estimate who is emitting
+                  greenhouse gases, year by year. This app pulls those published estimates for Uganda and
+                  lines them up next to your NDC targets.
+                </p>
+              )}
+              <p>
+                When trees are cut or land is cleared, stored carbon is released (emissions). When forests
+                grow back, carbon is stored again (removals). The net change feeds the forestry and land-use
+                figures you see on the Dashboard and Map.
               </p>
+              <a
+                href="https://climatetrace.org"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                Climate TRACE website <ExternalLink className="h-3 w-3" />
+              </a>
             </CardContent>
           </Card>
         </section>
 
         {/* Glossary + FAQ */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div>
-            <SectionHeading icon={BookOpen} title="Plain-English glossary" sub="Tap a term to reveal its meaning." />
+        <section className="grid grid-cols-1 gap-6">
+          <div className="space-y-3">
+            <SectionTitle icon={BookOpen}>Abbreviations & terms</SectionTitle>
             <Card>
-              <CardContent className="p-2">
-                <Accordion type="single" collapsible className="w-full">
+              <CardContent className="p-1">
+                <Accordion type="single" collapsible>
                   {GLOSSARY.map((g, i) => (
-                    <AccordionItem key={g.term} value={`g${i}`} className="border-b last:border-0">
-                      <AccordionTrigger className="py-2 text-xs font-semibold hover:no-underline">{g.term}</AccordionTrigger>
-                      <AccordionContent className="text-[11px] text-muted-foreground">{g.def}</AccordionContent>
+                    <AccordionItem key={g.term} value={`g${i}`} className="border-b last:border-0 px-2">
+                      <AccordionTrigger className="py-2.5 text-xs font-semibold hover:no-underline text-left">
+                        {g.term}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-xs text-muted-foreground leading-relaxed pb-2">
+                        {g.def}
+                      </AccordionContent>
                     </AccordionItem>
                   ))}
                 </Accordion>
               </CardContent>
             </Card>
           </div>
-          <div>
-            <SectionHeading icon={Sparkle} title="Questions, answered" sub="The things people ask most." />
+
+          <div className="space-y-3">
+            <SectionTitle icon={HelpCircle}>Common questions</SectionTitle>
             <Card>
-              <CardContent className="p-2">
-                <Accordion type="single" collapsible className="w-full">
+              <CardContent className="p-1">
+                <Accordion type="single" collapsible>
                   {FAQ.map((f, i) => (
-                    <AccordionItem key={i} value={`f${i}`} className="border-b last:border-0">
-                      <AccordionTrigger className="py-2 text-xs font-semibold text-left hover:no-underline">{f.q}</AccordionTrigger>
-                      <AccordionContent className="text-[11px] text-muted-foreground">{f.a}</AccordionContent>
+                    <AccordionItem key={i} value={`f${i}`} className="border-b last:border-0 px-2">
+                      <AccordionTrigger className="py-2.5 text-xs font-semibold text-left hover:no-underline">
+                        {f.q}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-xs text-muted-foreground leading-relaxed pb-2">
+                        {f.a}
+                      </AccordionContent>
                     </AccordionItem>
                   ))}
                 </Accordion>
@@ -325,31 +439,69 @@ export default function Documentation() {
           </div>
         </section>
 
-        <p className="pb-2 text-center text-[10px] text-muted-foreground">
-          Data: Climate TRACE (CC BY 4.0) · NDC targets from Uganda’s Nationally Determined Contribution · Built as a
-          decision-support cockpit. All AI and finance outputs are indicative.
-        </p>
+        <footer className="text-center text-[10px] text-muted-foreground border-t border-border pt-6">
+          Uganda NDC Data Explorer · Decision-support only · Not an official UN or government submission system
+        </footer>
       </div>
     </ScrollArea>
   );
 }
 
-function SectionHeading({ icon: Icon, title, sub, inline }: { icon: IconType; title: string; sub: string; inline?: boolean }) {
+function SectionTitle({
+  children,
+  icon: Icon,
+}: {
+  children: React.ReactNode;
+  icon?: typeof BookOpen;
+}) {
   return (
-    <div className={cn(!inline && "mb-2")}>
-      <h2 className="flex items-center gap-2 text-base font-bold text-foreground">
-        <Icon className="h-4 w-4 text-primary" /> {title}
-      </h2>
-      <p className="text-[11px] text-muted-foreground">{sub}</p>
-    </div>
+    <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+      {Icon && <Icon className="h-4 w-4 text-primary shrink-0" />}
+      {children}
+    </h2>
   );
 }
 
-function Mini({ label, text }: { label: string; text: string }) {
+function NavTable({ items }: { items: NavItem[] }) {
   return (
-    <div className="rounded-md border bg-card p-2.5">
-      <p className="text-[9px] uppercase tracking-wide text-muted-foreground mb-0.5">{label}</p>
-      <p className="text-[11px] text-foreground/90 leading-relaxed">{text}</p>
+    <div className="space-y-3">
+      {items.map((item) => (
+        <Card key={item.title} className="overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex items-start justify-between gap-2 border-b border-border/60 bg-muted/30 px-3 py-2">
+              <div>
+                <p className="text-sm font-bold text-foreground">{item.title}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  <Users className="h-3 w-3 inline mr-1 -mt-0.5" />
+                  {item.who}
+                </p>
+              </div>
+              <Link
+                to={item.to}
+                className="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+              >
+                Open <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <div className="px-3 py-2.5 space-y-2">
+              <p className="text-xs text-foreground/90 leading-relaxed">{item.plain}</p>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground mb-1">
+                  On screen you will see
+                </p>
+                <ul className="space-y-0.5">
+                  {item.youWillSee.map((line) => (
+                    <li key={line} className="flex gap-1.5 text-[11px] text-muted-foreground">
+                      <span className="text-primary mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

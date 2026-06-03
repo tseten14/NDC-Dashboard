@@ -1,6 +1,8 @@
 # Uganda NDC Data Explorer
 
-Web application for exploring Uganda’s Nationally Determined Contribution (NDC) data: decision-support cockpit, strategy library, climate risk views, and role-based delivery tools.
+Web application for exploring Uganda’s Nationally Determined Contribution (NDC) data: decision-support cockpit, emissions map, climate finance screening, strategy library, climate risk views, and role-based delivery tools.
+
+**Documentation:** [docs/README.md](docs/README.md) (architecture, data honesty, deploy). End users: in-app **Documentation** tab at `/docs`.
 
 ## What you can do (in plain terms)
 
@@ -26,9 +28,23 @@ npm run dev:all
 ```
 
 - **App:** http://localhost:8080  
-- **API:** http://localhost:8787  
+- **API:** http://localhost:8787 (proxied as `/api` from Vite in dev)
 
-Pick a country, choose a demo role from the top bar, and explore.
+Pick a country, choose a demo role from the top bar, and explore. **Home** (`/`) is the landing page; the main NDC workspace is **Dashboard** (`/dashboard`).
+
+## Navigation (primary)
+
+| Route | Screen |
+| ----- | ------ |
+| `/` | Home |
+| `/dashboard` | NDC cockpit (sectors, targets, observed, progress) |
+| `/ingest` | Data ingestion (quick scan; mapped import WIP) |
+| `/ai-2030` | 2030 sector predictions |
+| `/climate-finance` | Indicative finance / fund screening |
+| `/map` | Emissions map (geolocated sources) |
+| `/docs` | User guide (non-technical) |
+
+Advanced sidebar: Strategy Library, My Work, Climate Risk, and legacy cockpit pages.
 
 ## NDC targets — Uganda Updated NDC (September 2022)
 
@@ -68,7 +84,9 @@ National is the default. To request a district, add one of:
 - `?gadm_id=UGA.16_1` — Climate TRACE GADM id, or
 - `?district=Kampala` — display name (resolved on the server).
 
-Endpoints: `GET /api/v1/emissions/dashboard`, `/timeseries`, `/progress` (all accept the geography params above), `GET /api/v1/emissions/districts` (the district list), and `GET /api/v1/emissions/sources` (asset/source-level emitters; accepts the geography params plus `year`, `limit`, `offset`). To refresh the district→GADM map from Climate TRACE: `node scripts/discover_uganda_gadm.mjs`. To verify the source-level shape: `node scripts/verify_sources.mjs`.
+Endpoints: `GET /api/v1/emissions/dashboard`, `/timeseries`, `/progress` (all accept the geography params above), `GET /api/v1/emissions/districts` (the district list), `GET /api/v1/emissions/sources` (asset/source-level emitters; accepts the geography params plus `year`, `limit`, `offset`), `GET /api/v1/emissions/map` (map points; `year`, geography), `GET /api/v1/emissions/predictions`, `GET /api/v1/emissions/spatial-confidence`, `GET /api/v1/emissions/trackability`. To refresh the district→GADM map from Climate TRACE: `node scripts/discover_uganda_gadm.mjs`. To verify the source-level shape: `node scripts/verify_sources.mjs`.
+
+Catalog: `GET /api/v1/catalog/activities`, `GET /api/v1/catalog/mitigation-options` (indicative abatement/cost fields — see [docs/DATA_AND_CATALOG.md](docs/DATA_AND_CATALOG.md)).
 
 > Note: "v7" is the Climate TRACE **API** version (which endpoints exist), not the data version. The data is released monthly (latest v5.8.0) and the API always serves the latest. User-facing labels read "Climate TRACE" (no version).
 
@@ -110,4 +128,4 @@ Exceeded limits return `429` with `{ "error": "rate_limited", "retry_after_secon
 
 ## Deploy
 
-Build the frontend (`npm run build`), host `frontend/dist/`, and run `server.js` with `VITE_API_BASE_URL` pointing at your API host.
+See [docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md). In short: build the frontend (`npm run build`), host `frontend/dist/`, and run `server.js` with same-origin `/api` or set `VITE_API_BASE_URL` to your API host.

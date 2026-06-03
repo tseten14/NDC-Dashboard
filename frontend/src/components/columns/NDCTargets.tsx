@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { type NDCTarget, type SectorId, getTargetsForSector, sectorDefinitions, getObservedDataForTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { DataLineageChip } from "@/components/DataLineageChip";
@@ -36,8 +36,12 @@ const metricLabels: Record<string, string> = {
 };
 
 export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTarget }: NDCTargetsProps) {
-  const [expandedTargetId, setExpandedTargetId] = useState<string | null>(null);
+  const [expandedTargetId, setExpandedTargetId] = useState<string | null>(selectedTargetId);
   const targets = getTargetsForSector(selectedSector);
+
+  useEffect(() => {
+    if (selectedTargetId) setExpandedTargetId(selectedTargetId);
+  }, [selectedTargetId]);
 
   const grouped = selectedSector === "economy-wide"
     ? sectorDefinitions.filter(s => s.id !== "economy-wide").map(s => ({
@@ -57,6 +61,16 @@ export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTar
 
   const handleTargetClick = (targetId: string) => {
     onSelectTarget(targetId);
+    setExpandedTargetId(targetId);
+  };
+
+  const handleToggleExpand = (targetId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedTargetId !== targetId) {
+      onSelectTarget(targetId);
+      setExpandedTargetId(targetId);
+      return;
+    }
     setExpandedTargetId((prev) => (prev === targetId ? null : targetId));
   };
 
@@ -98,6 +112,7 @@ export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTar
                   isActive={selectedTargetId === target.id}
                   isExpanded={expandedTargetId === target.id}
                   onClick={() => handleTargetClick(target.id)}
+                  onToggleExpand={(e) => handleToggleExpand(target.id, e)}
                 />
               ))}
             </div>
@@ -113,11 +128,13 @@ function TargetCard({
   isActive,
   isExpanded,
   onClick,
+  onToggleExpand,
 }: {
   target: NDCTarget;
   isActive: boolean;
   isExpanded: boolean;
   onClick: () => void;
+  onToggleExpand: (e: React.MouseEvent) => void;
 }) {
   const emissions = useEmissionsData();
   const { source } = emissions.getProgressForTarget(target);
@@ -147,11 +164,18 @@ function TargetCard({
     >
       <CardContent className="p-3">
         <div className="flex items-start gap-1">
-          {isExpanded ? (
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-          ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-          )}
+          <button
+            type="button"
+            className="shrink-0 mt-0.5 rounded p-0.5 hover:bg-muted"
+            aria-label={isExpanded ? "Collapse target details" : "Expand target details"}
+            onClick={onToggleExpand}
+          >
+            {isExpanded ? (
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+          </button>
           <blockquote className="text-xs leading-relaxed text-foreground italic border-l-2 border-accent pl-2 mb-2 flex-1 line-clamp-2">
             &ldquo;{target.targetText}&rdquo;
           </blockquote>
