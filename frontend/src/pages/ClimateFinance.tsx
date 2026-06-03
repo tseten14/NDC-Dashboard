@@ -30,6 +30,8 @@ import {
   Coins, Download, TrendingUp, MapPin, Leaf, Banknote, CheckCircle2, Info,
   Route, AlertTriangle, Landmark,
 } from "lucide-react";
+import { McfDocumentsPanel } from "@/components/McfDocumentsPanel";
+import type { SectorId } from "@/data/uganda-ndc-data";
 
 const READINESS_ORDER: InvestmentReadiness[] = ["NotReady", "Emerging", "Pipeline", "Bankable"];
 const READINESS_LABEL: Record<InvestmentReadiness, string> = {
@@ -46,7 +48,7 @@ const READINESS_STYLE: Record<InvestmentReadiness, string> = {
 };
 
 export default function ClimateFinance() {
-  const { geographyLevel, selectedDistrictId } = useAppContext();
+  const { geographyLevel, selectedDistrictId, selectedSector } = useAppContext();
   const districtName = geographyLevel === "district" && selectedDistrictId ? selectedDistrictId : null;
   const geoKey = districtName ?? "national";
 
@@ -400,6 +402,8 @@ export default function ClimateFinance() {
             </CardContent>
           </Card>
         )}
+
+        <McfDocumentsPanel sectorId={selectedSector as SectorId} />
 
         {/* Project readiness */}
         <Card>

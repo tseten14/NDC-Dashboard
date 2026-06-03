@@ -1,27 +1,25 @@
 # Documentation index
 
-This folder and the files below describe the **Uganda NDC Data Explorer** for developers, deployers, and non-technical stakeholders.
-
 | Document | Audience | Purpose |
 | -------- | -------- | ------- |
-| [../README.md](../README.md) | Developers | Quick start, stack, NDC target table, API overview |
-| [../PROJECT_DOCUMENTATION.txt](../PROJECT_DOCUMENTATION.txt) | Everyone | Long-form non-technical + technical reference (plain English + API detail) |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Developers | Repo layout, routes, state, data flow |
-| [USER_GUIDE.md](./USER_GUIDE.md) | Non-technical users | What each screen means (mirrors in-app **Documentation** tab) |
-| [DATA_AND_CATALOG.md](./DATA_AND_CATALOG.md) | MRV / data teams | What is live vs indicative vs local-only |
+| [../PROJECT_DOCUMENTATION.txt](../PROJECT_DOCUMENTATION.txt) | **Everyone (primary)** | Full non-technical feature guide (Part A) + technical API/config reference (Part B) |
+| [../README.md](../README.md) | Developers | Quick start, stack, NDC targets, navigation |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Developers | Repo layout, routes, state, dev proxy |
+| [USER_GUIDE.md](./USER_GUIDE.md) | Non-technical users | Short index; points to PROJECT_DOCUMENTATION.txt for detail |
+| [DATA_AND_CATALOG.md](./DATA_AND_CATALOG.md) | MRV / data teams | Live vs indicative vs localStorage |
 | [DEPLOY-VERCEL.md](./DEPLOY-VERCEL.md) | DevOps | Vercel deployment |
-| [Climate-TRACE-Data-Gaps-and-Requests.txt](./Climate-TRACE-Data-Gaps-and-Requests.txt) | Product / CT liaison | Known gaps and upstream data requests |
+| [Climate-TRACE-Data-Gaps-and-Requests.txt](./Climate-TRACE-Data-Gaps-and-Requests.txt) | Product / CT liaison | Known gaps and upstream requests |
 
 ## In-app user guide
 
-End users should open **Documentation** in the sidebar (`/docs`) for the most up-to-date plain-English help (roles, colours, menu items, glossary).
+The `/docs` tab renders `frontend/src/data/user-guide-content.ts`. It should stay aligned with **PROJECT_DOCUMENTATION.txt** Part A (especially § A7).
 
 ## Keeping docs in sync
 
-When you add a **primary** sidebar route or API under `/api/v1/emissions/*`, update:
+When adding a **primary** sidebar route or API:
 
-1. `frontend/src/App.tsx` (route)
-2. `frontend/src/components/AppSidebar.tsx` (nav)
-3. `docs/ARCHITECTURE.md` (routes table)
-4. `README.md` (if user-facing or API)
-5. In-app `frontend/src/pages/Documentation.tsx` (menu guide section)
+1. `frontend/src/App.tsx`, `AppSidebar.tsx`
+2. `PROJECT_DOCUMENTATION.txt` (A6a routes, A7 feature entry, Part B API)
+3. `docs/ARCHITECTURE.md`, `README.md`
+4. `frontend/src/data/user-guide-content.ts` (in-app /docs)
+5. `docs/DATA_AND_CATALOG.md` if data honesty changes

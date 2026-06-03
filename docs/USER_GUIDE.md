@@ -1,60 +1,51 @@
 # User guide (repository copy)
 
-The canonical user-facing guide lives in the app: **Sidebar → Documentation** (`/docs`).
+The **canonical** long-form guide for non-technical readers is **[PROJECT_DOCUMENTATION.txt](../PROJECT_DOCUMENTATION.txt)** — Part A (sections A1–A9): features, how each screen works, what results to expect, data honesty, and status colours.
 
-This file is a lightweight mirror for stakeholders who read the repo without running the app.
+The in-app **Documentation** tab (`/docs`) renders the same content family from [`frontend/src/data/user-guide-content.ts`](../frontend/src/data/user-guide-content.ts). When updating help text, edit **both** that TypeScript file and **PROJECT_DOCUMENTATION.txt** § A7.
 
-## Who this app is for
+---
 
-Ministry staff, MRV officers, programme managers, and partners who need to see whether Uganda’s **NDC pledges** align with **observed emissions** (Climate TRACE) and related delivery data.
+## Quick reference — Basic menu
 
-## Main screens (Basic menu)
+| Screen | Route | What you get |
+| ------ | ----- | ------------ |
+| Home | `/` | Links only — no data tables |
+| Dashboard | `/dashboard` | NDC targets vs Climate TRACE emissions; export |
+| Data Ingestion | `/ingest` | Quick Scan file profile (mapped import WIP) |
+| AI 2030 | `/ai-2030` | Trend to 2030 with uncertainty (indicative) |
+| Climate Finance | `/climate-finance` | Cost/abatement screening + fund hints + MCF docs |
+| Policy documents | `/documents` | CPR corpus + intervention pathway diagram |
+| Emissions Map | `/map` | Geolocated sources on a map |
 
-| Screen | In one sentence |
-| ------ | ---------------- |
-| **Home** | Welcome and shortcuts — not the data workspace. |
-| **Dashboard** | Pick a sector and an NDC target; see charts and progress. |
-| **Data Ingestion** | Upload files — **Quick Scan** works; full mapped import is not ready yet. |
-| **AI 2030 Prediction** | Trend forecast to 2030 with uncertainty — indicative only. |
-| **Climate Finance** | Screening tool for project costs and carbon revenue — not investment advice. |
-| **Emissions Map** | Map of Uganda with emission sources as coloured bubbles. |
-| **Documentation** | Explains terms, colours, and menus (this guide in the UI). |
+## Three layers of truth
 
-## Dashboard in 30 seconds
+1. **Official pledges** — Uganda NDC 2022 targets and catalogue activities (bundled in app).  
+2. **Observed emissions** — Climate TRACE (live API) on Dashboard and Map.  
+3. **Evidence & screening** — Policy document links (CPR export); indicative finance and pathway diagram (not MRV).
 
-1. Choose **Sector** (e.g. AFOLU).
-2. Click one **NDC target** card on the left (one click).
-3. Read **Observed Data** (centre) and **Progress** (right).
+**Intended** outcomes (targets, pathway diagram) are not the same as **measured** outcomes (Climate TRACE charts).
 
-**Geography:** National = whole Uganda. District = one district’s observed emissions for context (NDC targets stay national).
+## Policy documents
 
-## Colours
+- **Document library** — filter UN Submissions, Executive, Legislative, MCF; search; open CPR or PDF.  
+- **Intervention pathway** — illustrative urban transport logic model (interventions → outcomes).  
+- Rebuild corpus: `npm run build:documents` with path to latest CPR CSV.
 
-| Label | Meaning |
-| ----- | ------- |
-| On track | Within reach at current pace (check data quality). |
-| At risk | Concerning trend or weak data. |
-| Off track | Far from the 2030 goal. |
-| IMPL. GAPS | No linked delivery activity in catalogue. |
-| MRV GAPS | Activities exist but observed data is thin. |
+See PROJECT_DOCUMENTATION.txt § A6c–A7 for full detail.
 
-## Abbreviations
+## Dashboard pop-ups
 
-| Term | Meaning |
-| ---- | ------- |
-| NDC | Uganda’s climate pledge under the Paris Agreement (2022 update in this app). |
-| MtCO₂e | Million tonnes of CO₂ equivalent. |
-| AFOLU | Agriculture, forestry and other land use. |
-| MRV | Measurement, reporting and verification. |
-| Climate TRACE | Independent global emissions estimates (satellites + models). |
+Activities, Top emitting sources, Spatial certainty, Climate TRACE trackability, Mitigation options, Official sources — each explained in PROJECT_DOCUMENTATION.txt § A6d.
 
-## Roles (demo)
+## Advanced menu
 
-The top-right role switch changes what you can edit (e.g. create activities vs read-only). It does not change national totals.
+Strategy Library, My Work (browser-only), Climate Risk (illustrative seed data) — § A7 in PROJECT_DOCUMENTATION.txt.
 
-## Data trust
+## Developers
 
-- **Emissions:** Climate TRACE (live API), labelled on screen.
-- **Targets & catalogue:** Uganda NDC and project catalogues — see `docs/DATA_AND_CATALOG.md` for what is audited vs indicative.
-
-For full detail, open `/docs` in the running application.
+| Doc | Purpose |
+| --- | ------- |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Routes, API, folders |
+| [DATA_AND_CATALOG.md](./DATA_AND_CATALOG.md) | Live vs indicative data |
+| [DEPLOY-VERCEL.md](./DEPLOY-VERCEL.md) | Hosting |

@@ -7,228 +7,60 @@ import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 import { ALL_ROLES } from "@/hooks/use-current-role";
+import type { FeatureGuide } from "@/data/user-guide-content";
+import {
+  GETTING_STARTED,
+  BASIC_FEATURES,
+  ADVANCED_FEATURES,
+  DASHBOARD_DIALOGS,
+  DASHBOARD_PANELS,
+  FILTERS,
+  STATUS_CODES,
+  TARGET_BADGES,
+  SECTORS,
+  DATA_SOURCES_TABLE,
+  GLOSSARY,
+  FAQ,
+} from "@/data/user-guide-content";
 import {
   BookOpen, Target, Satellite, HelpCircle, Palette, LayoutGrid, Users, ArrowRight,
-  ExternalLink, CheckCircle2, AlertTriangle, XCircle, MinusCircle,
+  ExternalLink, CheckCircle2, AlertTriangle, XCircle, MinusCircle, ListOrdered,
+  Cog, Flag, AlertCircle,
 } from "lucide-react";
 
-/* ── Content blocks (user manual — not a duplicate of Home) ── */
-
-const GETTING_STARTED = [
-  {
-    step: "1",
-    title: "Pick your country",
-    text: "On first visit you choose Uganda (the only country with a full cockpit today). You can change country later from the globe icon in the top bar.",
-  },
-  {
-    step: "2",
-    title: "Open the Dashboard",
-    text: "This is where NDC pledges meet live emissions. Select a sector, click one target in the left column, and the charts in the middle and right update immediately.",
-  },
-  {
-    step: "3",
-    title: "Use other tabs when you need them",
-    text: "Emissions Map shows where pollution comes from on a map. Climate Finance screens projects for investors. Documentation (this page) explains words and colours you see elsewhere.",
-  },
-];
-
-interface NavItem {
-  title: string;
-  to: string;
-  who: string;
-  plain: string;
-  youWillSee: string[];
-}
-
-const BASIC_NAV: NavItem[] = [
-  {
-    title: "Home",
-    to: "/",
-    who: "Everyone — first stop after choosing a country",
-    plain: "A short welcome and links into the main tools. It does not show detailed data.",
-    youWillSee: ["Summary of what the app can do", "Quick links to Dashboard and Map"],
-  },
-  {
-    title: "Dashboard",
-    to: "/dashboard",
-    who: "Planners, MRV teams, ministry staff, partners",
-    plain: "The core workspace. Compare each NDC target to observed emissions and see whether delivery looks on track.",
-    youWillSee: [
-      "List of NDC targets (left)",
-      "Observed vs target chart (centre)",
-      "Progress % and related panels (right)",
-      "Sector, National/District, and Historical/Projection filters at the top",
-    ],
-  },
-  {
-    title: "Data Ingestion",
-    to: "/ingest",
-    who: "Data officers uploading files",
-    plain: "Bring spreadsheets or reports into the system. Quick Scan profiles a file fast; full column mapping is coming later.",
-    youWillSee: ["Quick Scan for triage", "GIS upload and data-source connections"],
-  },
-  {
-    title: "AI 2030 Prediction",
-    to: "/ai-2030",
-    who: "Policy and planning teams",
-    plain: "A forecast of where emissions may be in 2030 if recent trends continue — with a shaded uncertainty band, not a guarantee.",
-    youWillSee: ["Per-sector trend lines toward 2030", "Gap vs NDC target where data allows"],
-  },
-  {
-    title: "Climate Finance",
-    to: "/climate-finance",
-    who: "Investment and climate-finance colleagues",
-    plain: "Indicative screening: cost to cut a tonne of CO₂, possible carbon-credit revenue, and which fund windows might fit. Not financial advice.",
-    youWillSee: ["Sliders for carbon price and assumptions", "Project cards and funding-pathway hints"],
-  },
-  {
-    title: "Emissions Map",
-    to: "/map",
-    who: "Anyone who thinks geographically",
-    plain: "Uganda on a map with coloured bubbles for emission sources. Filter by year and sector; bubble size shows how much each source emits.",
-    youWillSee: ["National totals for the selected year", "Sector legend and source tooltips"],
-  },
-  {
-    title: "Documentation",
-    to: "/docs",
-    who: "You — when something is unclear",
-    plain: "This user guide: what screens mean, what colours and abbreviations stand for, and where data comes from.",
-    youWillSee: ["Plain-English explanations", "Glossary and FAQ"],
-  },
-];
-
-const ADVANCED_NAV: NavItem[] = [
-  {
-    title: "Strategy Library",
-    to: "/library",
-    who: "Policy analysts",
-    plain: "National plans (NDP IV, Vision 2040, sector strategies) linked to NDC targets so you can see the policy behind a number.",
-    youWillSee: ["Searchable strategy documents and cross-links"],
-  },
-  {
-    title: "My Work",
-    to: "/my-work",
-    who: "Delivery teams",
-    plain: "Your draft activities and decision log — work in progress for tracking who did what.",
-    youWillSee: ["Personal activity list and notes"],
-  },
-  {
-    title: "Climate Risk",
-    to: "/risk",
-    who: "Adaptation and disaster-risk teams",
-    plain: "Hazard and vulnerability views to prioritise districts — separate from mitigation emissions on the Dashboard.",
-    youWillSee: ["Risk maps and screening tools"],
-  },
-];
-
-const DASHBOARD_PANELS = [
-  {
-    name: "NDC Targets (left column)",
-    text: "Every card is one pledge from Uganda’s Updated NDC (2022). Click a card once to select it — the big charts update. The small arrow expands extra detail and a mini trend line inside the card.",
-  },
-  {
-    name: "Observed Data (centre)",
-    text: "Shows measured or modelled values over time for the target you selected. Solid line = history; dashed = projection where available. Compares to the NDC baseline and 2030 goal.",
-  },
-  {
-    name: "Progress toward target (right)",
-    text: "A simple read on how far the latest data is from the 2030 goal: on track, at risk, or off track. Open the buttons below for activities, top emitters, spatial certainty, and mitigation options.",
-  },
-  {
-    name: "Strip above the columns",
-    text: "Coloured counts (ON-TRACK, OFF-TRACK, IMPL. GAPS, MRV GAPS) summarise all targets at a glance. Click a row to jump to that target.",
-  },
-];
-
-const FILTERS = [
-  { label: "Sector", meaning: "Which part of the economy — e.g. AFOLU (forests & land), Energy, Transport. Economy-wide shows all sectors grouped." },
-  { label: "Geography · National", meaning: "Country total from Climate TRACE for Uganda." },
-  { label: "Geography · District", meaning: "Same data split by district (county). Some national-only targets show a proxy sector instead." },
-  { label: "Time · Historical", meaning: "Past years only — what has already happened." },
-  { label: "Time · Projection", meaning: "Includes forward-looking lines where the app has projection data." },
-  { label: "Refresh", meaning: "Fetches the latest figures from the server (cached for speed)." },
-  { label: "Export", meaning: "Download Excel, PDF summary, or a CSV shaped for reporting (CRT/BTR style)." },
-];
-
-const STATUS_CODES = [
-  { code: "On track", color: "text-on-track", icon: CheckCircle2, meaning: "Latest data suggests the target is within reach at the current pace — still check assumptions." },
-  { code: "At risk", color: "text-at-risk", icon: AlertTriangle, meaning: "Trend is worrying or data quality is thin; needs attention before 2030." },
-  { code: "Off track", color: "text-off-track", icon: XCircle, meaning: "Current path is far from the goal; strong course correction or more finance may be needed." },
-  { code: "Unknown", color: "text-muted-foreground", icon: MinusCircle, meaning: "Not enough observed data to judge yet." },
-  { code: "IMPL. GAPS", color: "text-muted-foreground", icon: HelpCircle, meaning: "No delivery activity linked to this target in the catalogue yet." },
-  { code: "MRV GAPS", color: "text-muted-foreground", icon: HelpCircle, meaning: "Activities exist but measured data is missing or weak." },
-];
-
-const TARGET_BADGES = [
-  { badge: "Unconditional", meaning: "Uganda intends to meet this with domestic resources." },
-  { badge: "Conditional", meaning: "Depends on international finance, technology, or capacity support." },
-  { badge: "Mixed", meaning: "Contains both unconditional and conditional parts (read the target text)." },
-  { badge: "Emissions Reduction", meaning: "Measured in tonnes of CO₂ equivalent (MtCO₂e)." },
-  { badge: "Forest Cover / Renewable Energy / …", meaning: "Non-emissions metric (hectares, %, MW, etc.) — chart units change accordingly." },
-];
-
-const SECTORS = [
-  { abbr: "Economy-wide", full: "All sectors combined under the headline NDC pledge." },
-  { abbr: "AFOLU", full: "Agriculture, Forestry and Other Land Use — forests, land use, much of Uganda’s emissions story." },
-  { abbr: "Energy", full: "Power generation and stationary energy use (not transport)." },
-  { abbr: "Transport", full: "Road, rail, and other moving sources." },
-  { abbr: "Waste", full: "Solid waste and wastewater." },
-  { abbr: "IPPU", full: "Industrial Processes and Product Use (e.g. cement, refrigerants)." },
-  { abbr: "Agriculture", full: "Farming and livestock emissions within the NDC structure." },
-];
-
-const GLOSSARY: { term: string; def: string }[] = [
-  { term: "NDC", def: "Nationally Determined Contribution — Uganda’s official climate pledge under the Paris Agreement (updated 2022 in this app)." },
-  { term: "MtCO₂e", def: "Million tonnes of carbon dioxide equivalent. One number that compares CO₂ and other greenhouse gases." },
-  { term: "tCO₂e", def: "Tonnes of CO₂ equivalent — used for smaller sources or per-tonne costs." },
-  { term: "BAU", def: "Business as usual — where emissions would go without extra climate action." },
-  { term: "MRV", def: "Measurement, Reporting and Verification — proving that data and progress are real." },
-  { term: "Climate TRACE", def: "Independent global emissions inventory built from satellites, sensors, and models. Source of live data in this app." },
-  { term: "GADM", def: "Global map of admin boundaries. Here, districts and counties inside Uganda." },
-  { term: "Spatial certainty", def: "How much of an area’s total is tied to known map locations vs spread using statistical guesses." },
-  { term: "Asset", def: "On the map: a specific facility or place with coordinates (power plant, landfill, etc.)." },
-  { term: "Cost to abate", def: "Rough dollars needed to avoid one tonne of CO₂ with a project — for screening only." },
-  { term: "Carbon credit", def: "A tradable certificate for one tonne of reduced or removed CO₂, if independently verified." },
-  { term: "Indicative", def: "Estimate for discussion — not audited, tendered, or guaranteed." },
-  { term: "BTR / CRT", def: "Biennial Transparency Report / Common Reporting Table — UNFCCC reporting formats; Export can produce CSV aligned to these." },
-  { term: "ATMS", def: "When enabled in advanced views: filter to indicators tagged as suitable for automated tracking." },
-];
-
-const FAQ: { q: string; a: string }[] = [
-  { q: "Why do I need to click a target twice sometimes?", a: "You should only need one click. If charts stay empty, pick the target again or refresh — a recent fix ensures the first click always selects it." },
-  { q: "Why does district view differ from national?", a: "Some NDC targets are only defined nationally. The app may show a related emissions sector for your district as context, labelled clearly." },
-  { q: "Is AI 2030 a promise?", a: "No. It extrapolates recent trends and shows uncertainty. Use it for direction, not legal commitments." },
-  { q: "Can I trust Climate Finance numbers?", a: "They are indicative costs from the NDC catalogue plus sliders you control. Use them to start conversations, not to sign contracts." },
-  { q: "What does the role dropdown do?", a: "It changes what you are allowed to edit (e.g. create activities vs read-only briefing). It does not change the underlying national data." },
-  { q: "Where is the data from?", a: "Emissions: Climate TRACE (CC BY 4.0). Targets and activities: Uganda’s NDC and related catalogues maintained in this project." },
-];
+const STATUS_ICONS = {
+  "On track": { icon: CheckCircle2, color: "text-on-track" },
+  "At risk": { icon: AlertTriangle, color: "text-at-risk" },
+  "Off track": { icon: XCircle, color: "text-off-track" },
+  Unknown: { icon: MinusCircle, color: "text-muted-foreground" },
+  "IMPL. GAPS": { icon: HelpCircle, color: "text-muted-foreground" },
+  "MRV GAPS": { icon: HelpCircle, color: "text-muted-foreground" },
+} as const;
 
 export default function Documentation() {
   const [technical, setTechnical] = useState(false);
 
   return (
     <ScrollArea className="h-full">
-      <div className="mx-auto max-w-3xl p-4 pb-12 space-y-8">
-        {/* Hero — manual, not marketing */}
+      <div className="mx-auto max-w-3xl p-4 pb-12 space-y-10">
         <header className="space-y-2 border-b border-border pb-6">
           <div className="flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-primary" />
             <h1 className="font-brand text-2xl font-bold text-foreground">User guide</h1>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-            Plain-language help for the NDC Data Explorer. This page explains what each screen does,
-            what the colours and abbreviations mean, and where numbers come from — written for
-            colleagues who are not climate-data specialists.
+            Detailed help for non-specialists: what each feature is for, how to use it step by step,
+            how the app produces its results, and what you should <em>not</em> claim in official settings.
           </p>
           <p className="text-xs text-muted-foreground">
-            Looking for a quick tour? Visit{" "}
-            <Link to="/" className="text-primary font-medium hover:underline">Home</Link> first, then return here when you need definitions.
+            For a short tour, visit <Link to="/" className="text-primary font-medium hover:underline">Home</Link> first.
+            Return here for full detail on every menu item.
           </p>
         </header>
 
         {/* Getting started */}
         <section className="space-y-3">
-          <SectionTitle>Getting started in three steps</SectionTitle>
+          <SectionTitle icon={ListOrdered}>Getting started</SectionTitle>
           <ol className="space-y-3">
             {GETTING_STARTED.map((s) => (
               <li key={s.step} className="flex gap-3">
@@ -246,9 +78,9 @@ export default function Documentation() {
 
         {/* Roles */}
         <section className="space-y-3">
-          <SectionTitle>Your role (top-right dropdown)</SectionTitle>
+          <SectionTitle icon={Users}>Your role (top-right)</SectionTitle>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Roles control what you can change in the app. They do not change Uganda’s official numbers.
+            Controls edit rights only. National emissions and NDC text do not change when you switch role.
           </p>
           <div className="rounded-lg border divide-y">
             {ALL_ROLES.map((r) => (
@@ -260,24 +92,39 @@ export default function Documentation() {
           </div>
         </section>
 
-        {/* Navigation */}
+        {/* Feature guides — Basic */}
         <section className="space-y-4">
-          <SectionTitle icon={LayoutGrid}>Menu guide — Basic section</SectionTitle>
-          <NavTable items={BASIC_NAV} />
-
-          <SectionTitle icon={LayoutGrid}>Menu guide — Advanced section</SectionTitle>
-          <p className="text-xs text-muted-foreground -mt-2">
-            Expand <strong className="text-foreground font-medium">Advanced</strong> in the left sidebar to open these tools.
+          <SectionTitle icon={LayoutGrid}>Basic menu — full feature guides</SectionTitle>
+          <p className="text-xs text-muted-foreground -mt-2 leading-relaxed">
+            Each card explains: purpose → steps → how it works → what you get → limitations.
           </p>
-          <NavTable items={ADVANCED_NAV} />
+          <div className="space-y-4">
+            {BASIC_FEATURES.map((f) => (
+              <FeatureGuideCard key={f.title} guide={f} />
+            ))}
+          </div>
         </section>
 
-        {/* Dashboard deep dive */}
+        {/* Advanced */}
         <section className="space-y-4">
-          <SectionTitle icon={Target}>Understanding the Dashboard</SectionTitle>
+          <SectionTitle icon={LayoutGrid}>Advanced menu</SectionTitle>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Expand <strong className="text-foreground font-medium">Advanced</strong> in the left sidebar.
+          </p>
+          <div className="space-y-4">
+            {ADVANCED_FEATURES.map((f) => (
+              <FeatureGuideCard key={f.title} guide={f} />
+            ))}
+          </div>
+        </section>
+
+        {/* Dashboard */}
+        <section className="space-y-4">
+          <SectionTitle icon={Target}>Dashboard — extra detail</SectionTitle>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            The Dashboard is three columns plus filters. Think: <em>what we promised</em> (left) →{" "}
-            <em>what we measure</em> (centre) → <em>are we on course</em> (right).
+            Three columns: <strong className="text-foreground">promised</strong> (left) →{" "}
+            <strong className="text-foreground">measured</strong> (centre) →{" "}
+            <strong className="text-foreground">on course?</strong> (right).
           </p>
 
           <div className="space-y-2">
@@ -293,7 +140,32 @@ export default function Documentation() {
 
           <Card>
             <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm">Top filters — what they mean</CardTitle>
+              <CardTitle className="text-sm">Pop-up tools (right column buttons)</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 pt-0 space-y-3">
+              {DASHBOARD_DIALOGS.map((d) => (
+                <div key={d.name} className="border-b border-border/60 last:border-0 pb-3 last:pb-0">
+                  <p className="text-xs font-bold text-foreground">{d.name}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    <span className="font-medium text-foreground/80">Purpose: </span>
+                    {d.purpose}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    <span className="font-medium text-foreground/80">How: </span>
+                    {d.how}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    <span className="font-medium text-foreground/80">Result: </span>
+                    {d.result}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm">Top filters</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0 space-y-2">
               {FILTERS.map((f) => (
@@ -306,29 +178,35 @@ export default function Documentation() {
           </Card>
         </section>
 
-        {/* Status codes */}
+        {/* Status & sectors */}
         <section className="space-y-3">
-          <SectionTitle icon={Palette}>Colours and status codes</SectionTitle>
+          <SectionTitle icon={Palette}>Colours, badges, and sectors</SectionTitle>
           <div className="grid gap-2 sm:grid-cols-2">
-            {STATUS_CODES.map((s) => (
-              <div key={s.code} className="flex gap-2 rounded-lg border p-2.5 items-start">
-                <s.icon className={cn("h-4 w-4 shrink-0 mt-0.5", s.color)} />
-                <div>
-                  <p className={cn("text-xs font-bold", s.color)}>{s.code}</p>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">{s.meaning}</p>
+            {STATUS_CODES.map((s) => {
+              const meta = STATUS_ICONS[s.code as keyof typeof STATUS_ICONS] ?? STATUS_ICONS.Unknown;
+              const Icon = meta.icon;
+              return (
+                <div key={s.code} className="flex gap-2 rounded-lg border p-2.5 items-start">
+                  <Icon className={cn("h-4 w-4 shrink-0 mt-0.5", meta.color)} />
+                  <div>
+                    <p className={cn("text-xs font-bold", meta.color)}>{s.code}</p>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">{s.meaning}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <Card>
             <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm">Labels on target cards</CardTitle>
+              <CardTitle className="text-sm">Target card badges</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0 space-y-2">
               {TARGET_BADGES.map((b) => (
                 <div key={b.badge} className="text-xs">
-                  <Badge variant="outline" className="text-[9px] h-5 mr-1.5">{b.badge}</Badge>
+                  <Badge variant="outline" className="text-[9px] h-5 mr-1.5">
+                    {b.badge}
+                  </Badge>
                   <span className="text-muted-foreground">{b.meaning}</span>
                 </div>
               ))}
@@ -337,7 +215,7 @@ export default function Documentation() {
 
           <Card>
             <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm">Sector names in the dropdown</CardTitle>
+              <CardTitle className="text-sm">Sector dropdown</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0">
               <dl className="space-y-2">
@@ -352,37 +230,62 @@ export default function Documentation() {
           </Card>
         </section>
 
-        {/* Data source */}
+        {/* Data sources table */}
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <SectionTitle icon={Satellite}>Where the emissions numbers come from</SectionTitle>
+            <SectionTitle icon={Satellite}>Where every type of number comes from</SectionTitle>
             <label className="flex items-center gap-2 text-[11px] text-muted-foreground cursor-pointer">
               Simple
               <Switch checked={technical} onCheckedChange={setTechnical} aria-label="Toggle technical detail" />
               Technical
             </label>
           </div>
+
+          <Card>
+            <CardContent className="p-0 overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b bg-muted/30 text-left">
+                    <th className="p-2 font-semibold">Area</th>
+                    <th className="p-2 font-semibold">Source</th>
+                    <th className="p-2 font-semibold">What you get</th>
+                    <th className="p-2 font-semibold">Caveat</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {DATA_SOURCES_TABLE.map((row) => (
+                    <tr key={row.area} className="border-b border-border/60">
+                      <td className="p-2 font-medium text-foreground">{row.area}</td>
+                      <td className="p-2 text-muted-foreground">{row.source}</td>
+                      <td className="p-2 text-muted-foreground">{row.whatYouGet}</td>
+                      <td className="p-2 text-muted-foreground">{row.caveat}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardContent className="p-4 text-xs text-muted-foreground leading-relaxed space-y-3">
               {technical ? (
                 <p>
-                  The app calls the Climate TRACE v7 API. Observed sector totals and geolocated sources
-                  are aggregated to national and GADM level-1 (district) boundaries. Spatial-confidence
-                  splits located emissions from spatially uncertain emissions (SUEs) allocated via proxies.
+                  Emissions use Climate TRACE API v7 aggregated to GADM 0/1. Map and sources use geolocated
+                  facility rows; spatial-confidence separates located from spatially uncertain emissions (SUEs).
+                  NDC targets from config/ndcTargets.js. Policy JSON from CPR CSV build. Finance economics computed
+                  client-side from catalogue fields.
                 </p>
               ) : (
                 <p>
-                  Independent scientists combine <strong className="text-foreground">satellite pictures</strong>,{" "}
-                  <strong className="text-foreground">sensors</strong>, and{" "}
-                  <strong className="text-foreground">computer models</strong> to estimate who is emitting
-                  greenhouse gases, year by year. This app pulls those published estimates for Uganda and
-                  lines them up next to your NDC targets.
+                  Think of the app as <strong className="text-foreground">three layers</strong>: (1) official pledges
+                  and programmes from Uganda’s NDC, (2) independent observed emissions from Climate TRACE, (3) evidence
+                  documents and illustrative tools (finance screening, pathway diagram) that support decisions but do
+                  not replace government MRV.
                 </p>
               )}
               <p>
-                When trees are cut or land is cleared, stored carbon is released (emissions). When forests
-                grow back, carbon is stored again (removals). The net change feeds the forestry and land-use
-                figures you see on the Dashboard and Map.
+                Forest loss releases carbon; regrowth stores it — net AFOLU figures on the Dashboard and Map reflect
+                that balance from Climate TRACE, not from manual tree counts in this app.
               </p>
               <a
                 href="https://climatetrace.org"
@@ -462,46 +365,82 @@ function SectionTitle({
   );
 }
 
-function NavTable({ items }: { items: NavItem[] }) {
+function FeatureGuideCard({ guide }: { guide: FeatureGuide }) {
   return (
-    <div className="space-y-3">
-      {items.map((item) => (
-        <Card key={item.title} className="overflow-hidden">
-          <CardContent className="p-0">
-            <div className="flex items-start justify-between gap-2 border-b border-border/60 bg-muted/30 px-3 py-2">
-              <div>
-                <p className="text-sm font-bold text-foreground">{item.title}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  <Users className="h-3 w-3 inline mr-1 -mt-0.5" />
-                  {item.who}
-                </p>
-              </div>
-              <Link
-                to={item.to}
-                className="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-              >
-                Open <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-            <div className="px-3 py-2.5 space-y-2">
-              <p className="text-xs text-foreground/90 leading-relaxed">{item.plain}</p>
-              <div>
-                <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground mb-1">
-                  On screen you will see
-                </p>
-                <ul className="space-y-0.5">
-                  {item.youWillSee.map((line) => (
-                    <li key={line} className="flex gap-1.5 text-[11px] text-muted-foreground">
-                      <span className="text-primary mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
-                      {line}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">
+        <div className="flex items-start justify-between gap-2 border-b border-border/60 bg-muted/30 px-3 py-2.5">
+          <div>
+            <p className="text-sm font-bold text-foreground">{guide.title}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              <Users className="h-3 w-3 inline mr-1 -mt-0.5" />
+              {guide.who}
+            </p>
+          </div>
+          <Link
+            to={guide.to}
+            className="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+          >
+            Open <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+
+        <div className="px-3 py-3 space-y-3">
+          <GuideBlock icon={Flag} label="What it is for" text={guide.purpose} />
+
+          <div>
+            <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
+              <ListOrdered className="h-3 w-3" />
+              How to use it (steps)
+            </p>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-foreground/90 leading-relaxed">
+              {guide.steps.map((step, i) => (
+                <li key={i}>{step}</li>
+              ))}
+            </ol>
+          </div>
+
+          <GuideBlock icon={Cog} label="How the app implements it" text={guide.howItWorks} />
+          <GuideBlock icon={CheckCircle2} label="What result you should expect" text={guide.result} tone="text-on-track" />
+          <GuideBlock icon={AlertCircle} label="What it is not / limitations" text={guide.limitations} tone="text-amber-700 dark:text-amber-500" />
+
+          <div>
+            <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground mb-1">
+              On screen you will see
+            </p>
+            <ul className="space-y-0.5">
+              {guide.youWillSee.map((line) => (
+                <li key={line} className="flex gap-1.5 text-[11px] text-muted-foreground">
+                  <span className="text-primary mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function GuideBlock({
+  icon: Icon,
+  label,
+  text,
+  tone,
+}: {
+  icon: typeof Flag;
+  label: string;
+  text: string;
+  tone?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+        <Icon className="h-3 w-3" />
+        {label}
+      </p>
+      <p className={cn("text-xs leading-relaxed", tone ?? "text-foreground/90")}>{text}</p>
     </div>
   );
 }

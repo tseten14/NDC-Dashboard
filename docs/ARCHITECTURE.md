@@ -9,6 +9,7 @@ Browser (Vite, port 8080)
 
 Express (server.js, port 8787)
   ├── routes/emissions.js      Climate TRACE aggregation, map, predictions
+  ├── routes/documents.js      Policy document corpus (CPR export JSON)
   ├── routes/ndcCockpit.js     Catalog (activities, mitigation)
   ├── routes/ingest.js         File upload / scan (writes need API key)
   └── routes/risk.js           Illustrative risk seed data
@@ -26,6 +27,7 @@ Production may serve `frontend/dist` and the API on one host (Vercel) so the bro
 | `/ingest` | Data ingestion | Quick scan live; mapped import WIP |
 | `/ai-2030` | 2030 forecast | Sector predictions vs targets |
 | `/climate-finance` | Finance screening | Indicative MAC / fund matching |
+| `/documents` | Policy documents | CPR export corpus (laws, UN, MCF) |
 | `/map` | Emissions map | Geolocated sources choropleth + bubbles |
 | `/docs` | User guide | Non-technical documentation |
 | `/library`, `/my-work`, `/risk/*` | Advanced | Strategy, workbench, risk module |
@@ -41,6 +43,9 @@ Production may serve `frontend/dist` and the API on one host (Vercel) so the bro
 | `frontend/src/data/uganda-ndc-data.ts` | Bundled NDC targets, activities seed, mitigation seed |
 | `frontend/src/lib/emissions-integration.ts` | Maps NDC targets → Climate TRACE sectors / indicator panel |
 | `frontend/src/lib/climate-finance*.ts` | Indicative finance economics + fund pathways |
+| `frontend/src/data/user-guide-content.ts` | In-app Documentation tab copy (sync with PROJECT_DOCUMENTATION.txt § A7) |
+| `frontend/src/data/transport-theory-of-change.ts` | Intervention pathway model for `/documents` |
+| `data/uganda-policy-documents.json` | CPR export corpus (built by `npm run build:documents`) |
 | `config/ndcTargets.js` | Server-side NDC target config (source of truth for API logic) |
 | `config/ndcCockpitCatalog.js` | Activities + mitigation catalog bodies |
 | `config/ugandaDistrictGadm.js` | District name ↔ GADM id |
@@ -65,6 +70,9 @@ Beyond dashboard endpoints, see `routes/emissions.js`:
 | `GET /api/v1/emissions/predictions` | 2030 sector forecast bundle |
 | `GET /api/v1/emissions/spatial-confidence` | Located vs distributed emissions share |
 | `GET /api/v1/emissions/trackability` | Measurable variables vs Climate TRACE |
+| `GET /api/v1/documents` | Policy corpus list (`category`, `source`, `q`, pagination) |
+| `GET /api/v1/documents/meta` | Category/source facet counts |
+| `GET /api/v1/documents/curated` | Bonn demo links per sector |
 
 ## Dev proxy
 

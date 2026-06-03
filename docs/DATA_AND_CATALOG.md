@@ -15,6 +15,12 @@ This document helps developers and reviewers know **what is real**, **what is in
 
 Figures are converted to MtCO₂e for display only. Sector reconciliation rules are in `PROJECT_DOCUMENTATION.txt` § B2a.
 
+## Policy document corpus (Climate Policy Radar export)
+
+| Data | File | Shown in UI | Honesty |
+| ---- | ---- | ----------- | ------- |
+| Laws, UN submissions, MCF projects | `data/uganda-policy-documents.json` (from CSV via `npm run build:documents`) | `/documents`, Dashboard “Official sources”, Climate Finance MCF panel | Metadata + CPR/PDF links only; not full-text search until enhanced file (mid-2026). Curated ids in `data/uganda-policy-curated.json`. |
+
 ## Bundled catalogue (not live MRV)
 
 | Data | File | Shown in UI | Honesty |
@@ -46,4 +52,4 @@ Figures are converted to MtCO₂e for display only. Sector reconciliation rules 
 1. State the **source** (Climate TRACE, NDC PDF, assumption).
 2. Label **indicative** if not from audited MRV.
 3. Update `docs/Climate-TRACE-Data-Gaps-and-Requests.txt` if CT cannot supply the metric.
-4. Update in-app `/docs` glossary if users will see new abbreviations.
+4. Update `PROJECT_DOCUMENTATION.txt` § A2/A7 and in-app `user-guide-content.ts` glossary if users will see new terms.
