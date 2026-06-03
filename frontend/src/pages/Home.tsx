@@ -8,7 +8,7 @@ import { useCountry } from "@/context/CountryContext";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight, BarChart3, Globe2, LayoutDashboard, Sparkles, Target,
-  TrendingUp, Upload, Leaf, Satellite, ChevronRight,
+  TrendingUp, Upload, Leaf, Satellite, ChevronRight, Scale,
 } from "lucide-react";
 
 const FEATURES = [
@@ -53,6 +53,13 @@ const FEATURES = [
     blurb: "Forecast 2030 trajectories and spot emerging gaps.",
     to: "/ai-2030",
     accent: "from-fuchsia-500/20 to-fuchsia-500/5",
+  },
+  {
+    icon: Scale,
+    title: "Policy documents",
+    blurb: "Browse national documents and see how interventions link to intended outcomes.",
+    to: "/documents",
+    accent: "from-slate-500/20 to-slate-500/5",
   },
 ];
 

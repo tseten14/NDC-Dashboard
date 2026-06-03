@@ -41,6 +41,7 @@ Pick a country, choose a demo role from the top bar, and explore. **Home** (`/`)
 | `/ingest` | Data ingestion (quick scan; mapped import WIP) |
 | `/ai-2030` | 2030 sector predictions |
 | `/climate-finance` | Indicative finance / fund screening |
+| `/documents` | Policy corpus (laws, UN submissions, MCF projects) |
 | `/map` | Emissions map (geolocated sources) |
 | `/docs` | User guide (non-technical) |
 

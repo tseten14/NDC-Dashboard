@@ -13,6 +13,7 @@ import { MitigationOptionsColumn } from "@/components/columns/MitigationOptions"
 import { TopEmittingSources } from "@/components/TopEmittingSources";
 import { DataTrackabilityPanel } from "@/components/DataTrackabilityPanel";
 import { SpatialConfidencePanel } from "@/components/SpatialConfidencePanel";
+import { OfficialSourcesPanel } from "@/components/OfficialSourcesPanel";
 import { ndcTargets, sectorDefinitions, getDataCompleteness, getLastRefreshTimestamp } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { Badge } from "@/components/ui/badge";
@@ -330,6 +331,8 @@ export default function NDCLayer() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            <OfficialSourcesPanel sectorId={state.selectedSector as SectorId} />
 
             <Dialog>
               <DialogTrigger asChild>

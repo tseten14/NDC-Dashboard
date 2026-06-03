@@ -11,6 +11,11 @@
  */
 
 import type { IndicatorPanelEntry } from "./emissions-integration";
+import type {
+  PolicyDocumentsCuratedResponse,
+  PolicyDocumentsListResponse,
+  PolicyDocumentsMetaResponse,
+} from "./policy-documents";
 import type { ZodType } from "zod";
 import {
   safeParseOrLog,
@@ -628,4 +633,22 @@ export const cockpitApi = {
   catalogActivities: () => getJSON<{ activities: CatalogActivityRow[]; data_source: string }>("/api/v1/catalog/activities"),
   catalogMitigationOptions: () =>
     getJSON<{ options: CatalogMitigationRow[]; data_source: string }>("/api/v1/catalog/mitigation-options"),
+};
+
+export const documentsApi = {
+  meta: () => getJSON<PolicyDocumentsMetaResponse>("/api/v1/documents/meta"),
+  list: (params?: { category?: string; source?: string; q?: string; limit?: number; offset?: number }) => {
+    const sp = new URLSearchParams();
+    if (params?.category) sp.set("category", params.category);
+    if (params?.source) sp.set("source", params.source);
+    if (params?.q) sp.set("q", params.q);
+    if (params?.limit != null) sp.set("limit", String(params.limit));
+    if (params?.offset != null) sp.set("offset", String(params.offset));
+    const qs = sp.toString();
+    return getJSON<PolicyDocumentsListResponse>(`/api/v1/documents${qs ? `?${qs}` : ""}`);
+  },
+  curated: (sectorId: string, context: "dashboard" | "finance" = "dashboard") =>
+    getJSON<PolicyDocumentsCuratedResponse>(
+      `/api/v1/documents/curated?sectorId=${encodeURIComponent(sectorId)}&context=${context}`,
+    ),
 };

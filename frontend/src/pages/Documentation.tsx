@@ -28,7 +28,7 @@ const GETTING_STARTED = [
   {
     step: "3",
     title: "Use other tabs when you need them",
-    text: "Emissions Map shows where pollution comes from on a map. Climate Finance screens projects for investors. Documentation (this page) explains words and colours you see elsewhere.",
+    text: "Emissions Map shows where pollution comes from on a map. Climate Finance screens projects for investors. Policy documents lists national laws, UN submissions, and fund projects with links to official PDFs. Documentation (this page) explains words and colours you see elsewhere.",
   },
 ];
 
@@ -80,6 +80,13 @@ const BASIC_NAV: NavItem[] = [
     who: "Investment and climate-finance colleagues",
     plain: "Indicative screening: cost to cut a tonne of CO₂, possible carbon-credit revenue, and which fund windows might fit. Not financial advice.",
     youWillSee: ["Sliders for carbon price and assumptions", "Project cards and funding-pathway hints"],
+  },
+  {
+    title: "Policy documents",
+    to: "/documents",
+    who: "Policy officers, MRV staff, and partners preparing for meetings",
+    plain: "Searchable list of Uganda laws, executive plans, UN climate submissions, and multilateral fund project documents. The Intervention pathway tab shows how policy instruments can link to intended outcomes (illustrative transport model).",
+    youWillSee: ["Document library with category filters", "Intervention pathway diagram", "Links to CPR and PDF"],
   },
   {
     title: "Emissions Map",
@@ -200,7 +207,7 @@ const FAQ: { q: string; a: string }[] = [
   { q: "Is AI 2030 a promise?", a: "No. It extrapolates recent trends and shows uncertainty. Use it for direction, not legal commitments." },
   { q: "Can I trust Climate Finance numbers?", a: "They are indicative costs from the NDC catalogue plus sliders you control. Use them to start conversations, not to sign contracts." },
   { q: "What does the role dropdown do?", a: "It changes what you are allowed to edit (e.g. create activities vs read-only briefing). It does not change the underlying national data." },
-  { q: "Where is the data from?", a: "Emissions: Climate TRACE (CC BY 4.0). Targets and activities: Uganda’s NDC and related catalogues maintained in this project." },
+  { q: "Where is the data from?", a: "Emissions: Climate TRACE (CC BY 4.0). Targets and activities: Uganda’s NDC and related catalogues in this project. Policy documents: Climate Policy Radar export (metadata and links, not a live API)." },
 ];
 
 export default function Documentation() {

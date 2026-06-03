@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import emissionsRouter from "../routes/emissions.js";
 import mockEmissionsRouter from "../routes/mock/emissions.js";
 import ndcCockpitRouter from "../routes/ndcCockpit.js";
+import documentsRouter from "../routes/documents.js";
 import riskRouter from "../routes/risk.js";
 import ingestRouter from "../routes/ingest.js";
 import persistenceRouter from "../routes/persistence.js";
@@ -48,6 +49,7 @@ export function createApp() {
   app.use("/v1", healthRouter);
   app.use("/v1/mock", mockEmissionsRouter);
   app.use("/v1", ndcCockpitRouter);
+  app.use("/v1", documentsRouter);
   app.use("/v1", ingestRouter);
   app.use("/v1", persistenceRouter);
   app.use("/v1", dbHealthRouter);

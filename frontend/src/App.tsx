@@ -49,6 +49,7 @@ import OwnershipFocals from "./pages/OwnershipFocals.tsx";
 import Projections from "./pages/Projections.tsx";
 import Ai2030Prediction from "./pages/Ai2030Prediction.tsx";
 import ClimateFinance from "./pages/ClimateFinance.tsx";
+import PolicyDocuments from "./pages/PolicyDocuments.tsx";
 import Documentation from "./pages/Documentation.tsx";
 import MapExplorer from "./pages/MapExplorer.tsx";
 import Home from "./pages/Home.tsx";
@@ -124,6 +125,7 @@ function ProtectedShell() {
                   <Route path="/ingest" element={<DataIngestion />} />
                   <Route path="/ai-2030" element={<Ai2030Prediction />} />
                   <Route path="/climate-finance" element={<ClimateFinance />} />
+                  <Route path="/documents" element={<PolicyDocuments />} />
                   <Route path="/map" element={<MapExplorer />} />
                   <Route path="/docs" element={<Documentation />} />
 

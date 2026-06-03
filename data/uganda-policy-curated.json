@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "description": "Bonn demo curated links — document ids from uganda-policy-documents.json",
+  "global": [
+    "e3642b688afc72ce",
+    "bc02432a9bd936e2",
+    "20599c0aa062229c",
+    "3f111582cd3dc467"
+  ],
+  "dashboard": {
+    "AFOLU": [
+      "e3642b688afc72ce",
+      "bc02432a9bd936e2",
+      "20599c0aa062229c",
+      "3f111582cd3dc467",
+      "275f8e47b8bd88c7"
+    ],
+    "Energy": [
+      "e3642b688afc72ce",
+      "bc02432a9bd936e2",
+      "20599c0aa062229c",
+      "3f111582cd3dc467",
+      "8c220ce7dd77cda9"
+    ],
+    "Transport": [
+      "e3642b688afc72ce",
+      "bc02432a9bd936e2",
+      "20599c0aa062229c",
+      "3f111582cd3dc467"
+    ],
+    "IPPU": [
+      "e3642b688afc72ce",
+      "bc02432a9bd936e2",
+      "20599c0aa062229c",
+      "3f111582cd3dc467"
+    ],
+    "Agriculture": [
+      "e3642b688afc72ce",
+      "bc02432a9bd936e2",
+      "20599c0aa062229c",
+      "3f111582cd3dc467",
+      "275f8e47b8bd88c7"
+    ],
+    "Waste": [
+      "e3642b688afc72ce",
+      "bc02432a9bd936e2",
+      "20599c0aa062229c",
+      "3f111582cd3dc467"
+    ]
+  },
+  "finance": {
+    "default": [
+      "3f111582cd3dc467",
+      "8c220ce7dd77cda9"
+    ],
+    "AFOLU": [
+      "3f111582cd3dc467",
+      "20599c0aa062229c",
+      "275f8e47b8bd88c7"
+    ],
+    "Energy": [
+      "8c220ce7dd77cda9"
+    ]
+  },
+  "resolved": {
+    "ndc": "Uganda Nationally Determined Contribution. NDC1 (Updated 2022)",
+    "bur": "Uganda’s Second Biennial Update Report To The UNFCCC",
+    "wetland": "National Wetland Strategic Plan 2026-2036",
+    "redd": "Uganda REDD+ RBP for results period 2016 - 2017"
+  }
+}

@@ -18,6 +18,7 @@
     "db:migrate": "node --import tsx db/migrate.ts",
     "db:seed": "SEED_DB=true node --import tsx db/seed.ts",
     "setup:ingest-python": "pip3 install -r requirements-ingest.txt",
+    "build:documents": "node scripts/build_policy_documents.mjs",
     "verify:climatetrace": "node scripts/verify_climatetrace_v7.mjs",
     "vercel:deploy": "vercel --prod"
   },
