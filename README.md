@@ -2,7 +2,7 @@
 
 Web application for exploring Uganda’s Nationally Determined Contribution (NDC) data: decision-support cockpit, emissions map, climate finance screening, strategy library, climate risk views, and role-based delivery tools.
 
-**Documentation:** [docs/README.md](docs/README.md) (architecture, data honesty, deploy). End users: in-app **Documentation** tab at `/docs`.
+**Documentation:** [PROJECT_DOCUMENTATION.txt](PROJECT_DOCUMENTATION.txt) (full non-technical + technical reference). Also [docs/README.md](docs/README.md) (architecture, data honesty, deploy). In-app guide at `/docs`.
 
 ## What you can do (in plain terms)
 
@@ -77,6 +77,7 @@ The dashboard covers all mitigation and key adaptation targets from Uganda's Upd
 | Activities & mitigation catalog | Express → `config/ndcCockpitCatalog.js` |
 | Climate risk map | Express → `data/riskSeed.js` |
 | My Work / activities | `localStorage` in this browser |
+| Policy documents (CPR export) | `data/uganda-policy-documents.json` via `GET /api/v1/documents/*` |
 
 ### Emissions API geography
 
@@ -126,6 +127,7 @@ Exceeded limits return `429` with `{ "error": "rate_limited", "retry_after_secon
 | `npm run build` | Production build → `frontend/dist` |
 | `npm run test` | Vitest |
 | `npm run lint` | ESLint |
+| `npm run build:documents` | Regenerate policy JSON from CPR CSV export |
 
 ## Deploy
 

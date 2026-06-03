@@ -52,4 +52,4 @@ Figures are converted to MtCO₂e for display only. Sector reconciliation rules 
 1. State the **source** (Climate TRACE, NDC PDF, assumption).
 2. Label **indicative** if not from audited MRV.
 3. Update `docs/Climate-TRACE-Data-Gaps-and-Requests.txt` if CT cannot supply the metric.
-4. Update in-app `/docs` glossary if users will see new abbreviations.
+4. Update `PROJECT_DOCUMENTATION.txt` § A2/A7 and in-app `user-guide-content.ts` glossary if users will see new terms.

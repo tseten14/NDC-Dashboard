@@ -43,6 +43,9 @@ Production may serve `frontend/dist` and the API on one host (Vercel) so the bro
 | `frontend/src/data/uganda-ndc-data.ts` | Bundled NDC targets, activities seed, mitigation seed |
 | `frontend/src/lib/emissions-integration.ts` | Maps NDC targets → Climate TRACE sectors / indicator panel |
 | `frontend/src/lib/climate-finance*.ts` | Indicative finance economics + fund pathways |
+| `frontend/src/data/user-guide-content.ts` | In-app Documentation tab copy (sync with PROJECT_DOCUMENTATION.txt § A7) |
+| `frontend/src/data/transport-theory-of-change.ts` | Intervention pathway model for `/documents` |
+| `data/uganda-policy-documents.json` | CPR export corpus (built by `npm run build:documents`) |
 | `config/ndcTargets.js` | Server-side NDC target config (source of truth for API logic) |
 | `config/ndcCockpitCatalog.js` | Activities + mitigation catalog bodies |
 | `config/ugandaDistrictGadm.js` | District name ↔ GADM id |

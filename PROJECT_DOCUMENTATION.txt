@@ -16,8 +16,12 @@ A2. DATA SOURCES
     and config/ndcTargets.js). All sector numbers, conditionality, and BAU references are from
     the official MWE submission to UNFCCC.
   • NDC strategies: bundled in the application
+  • Policy documents: Climate Policy Radar CSV export → data/uganda-policy-documents.json
+    (~207 Uganda rows: laws, executive plans, UN submissions, multilateral fund projects).
+    Metadata and CPR/PDF links only — no live CPR API yet. Rebuild with npm run build:documents.
   • Climate risk (demo): illustrative district layers in the repo
   • Delivery activities: saved in the user’s browser (localStorage)
+  • Mitigation economics (Climate Finance): indicative costs/abatement from NDC catalogue — not audited
 
   Note on versions: the application uses Climate TRACE API v7. "v7" is the API
   version (which endpoints exist), NOT the data version. Climate TRACE updates the
@@ -86,14 +90,142 @@ A5b. TOP EMITTING SOURCES (asset-level drill-down)
   the exact location), which are in the total but not tied to a single listed
   source. The panel says this on screen so the headline total is never misread.
 
-A6a. OTHER MAIN SCREENS (2026)
-  • Home (/) — welcome and shortcuts; not the data workspace.
-  • Emissions Map (/map) — geolocated Climate TRACE sources on a Uganda map.
-  • AI 2030 Prediction (/ai-2030) — trend forecast with uncertainty bands (indicative).
-  • Climate Finance (/climate-finance) — screening using catalogue indicative costs;
-    not investment advice. Fund pathways reference NAP Navigator / NAPX-style windows.
-  • Documentation (/docs) — in-app user guide for non-technical users.
-  • Data Ingestion (/ingest) — Quick Scan is live; full mapped import is work in progress.
+A6a. MAIN SCREENS AND ROUTES (2026)
+
+  Basic sidebar:
+    /              Home — landing, links only (no live charts)
+    /dashboard     NDC cockpit — targets vs observed emissions (core workspace)
+    /ingest        Data ingestion — Quick Scan live; mapped import WIP
+    /ai-2030       2030 sector trend forecast (indicative, with uncertainty)
+    /climate-finance  MAC-style screening + fund pathways + MCF document links
+    /documents     Policy corpus + intervention pathway diagram
+    /map           Geolocated emission sources on Uganda map
+    /docs          In-app user guide (React UI; see A7 for repository text copy)
+
+  Advanced sidebar (expand in UI): Strategy Library, My Work, Climate Risk, legacy cockpit pages.
+
+A6b. INTENDED VS MEASURED OUTCOMES (important for briefings)
+
+  The app separates three ideas that stakeholders often conflate:
+
+    INTENDED OUTCOMES     — NDC targets, health/air-quality goals, policy aims (left column;
+                            pathway diagram on /documents; indicator panel for non-CO2 metrics)
+    DELIVERY / PROGRAMMES — Activities and mitigation options in the NDC catalogue (dialogs on
+                            Dashboard; indicative costs in Climate Finance)
+    MEASURED OUTCOMES     — Climate TRACE observed emissions (centre column, Map, AI 2030 history)
+
+  The urban transport "intervention pathway" on Policy documents is an ILLUSTRATIVE theory of
+  change (interventions → attributes → behaviour → activity shift → outcomes). It explains
+  logic; it does not attribute tonnes of CO2 to each policy instrument. Measured transport CO2
+  remains on the Dashboard.
+
+A6c. POLICY DOCUMENTS (/documents)
+
+  Tab "Document library":
+    • Filter by Category: UN Submissions, Executive, Legislative, MCF (multilateral climate funds), Reports
+    • Search by title or summary; open Climate Policy Radar (CPR) or hosted PDF
+    • Result: fast access to national evidence for meetings (Bonn, MRV, finance)
+
+  Tab "Intervention pathway":
+    • Six-column diagram (urban transport example from NDC Align / data-driven transitions materials)
+    • "Related documents" on an intervention jumps to library search
+    • Link to Dashboard Transport sector for measured emissions
+
+  Dashboard "Official sources" panel (right column): small curated list per sector from
+  data/uganda-policy-curated.json (NDC, BUR, flagship GCF projects, sector plans).
+
+A6d. DASHBOARD POP-UP TOOLS (right column buttons)
+
+  Activities / Measures     — NDC catalogue activities for selected target; gaps → IMPL. GAPS
+  Top Emitting Sources    — Climate TRACE named sources; do NOT sum to sector total
+  Spatial Certainty       — located vs spatially uncertain emissions share
+  What CT Can Track       — which NDC variables have direct Climate TRACE coverage
+  Mitigation Options      — indicative abatement options; decision log
+  Official sources        — curated policy document links for current sector
+
+A7. FEATURE GUIDE — PURPOSE, HOW IT WORKS, RESULT (non-technical)
+
+  For each feature: what it is for → what you do → how the app implements it → what you get.
+
+  HOME (/)
+    For: Orientation.
+    Steps: Read cards; click through to Dashboard or other tools.
+    How: Static page; ?target= URLs redirect to /dashboard.
+    Result: Navigation only — no emissions tables.
+
+  DASHBOARD (/dashboard)
+    For: Compare NDC 2022 pledges to observed emissions; executive and MRV briefings.
+    Steps: Pick sector → click one target (single click) → read centre chart and right progress;
+           optional District geography; Export if needed; open pop-ups for activities/sources.
+    How: Targets from bundled NDC config; observed series from Climate TRACE API aggregated
+         to national or GADM district; progress rules compare latest year to 2030 ceiling
+         (BAU-relative framing for growing sectors).
+    Result: Per-target time series, on-track/at-risk/off-track status, sector summary strip.
+    Not: Official UNFCCC submission system; district view is not an NDC pass/fail grade.
+
+  DATA INGESTION (/ingest)
+    For: Profile uploaded files before manual MRV workflows.
+    Steps: Quick Scan upload (CSV/Excel/JSON/PDF/text); read report.
+    How: Server profiles file; optional Python/pandas for charts when installed.
+    Result: Column/year/sector hints for triage.
+    Not: Mapped import into Dashboard (WIP); does not replace Climate TRACE.
+
+  AI 2030 PREDICTION (/ai-2030)
+    For: Directional view of 2030 if recent trends continue.
+    Steps: Open page; read sector charts and uncertainty band.
+    How: Server fits trend on Climate TRACE history; compares to bundled NDC 2030 values.
+    Result: Indicative gap narrative for planning.
+    Not: Government forecast or climate model with new policies.
+
+  CLIMATE FINANCE (/climate-finance)
+    For: Screen mitigation options — cost per tonne, carbon revenue, fund windows.
+    Steps: Adjust sliders; select project cards; read pathway text; review MCF documents list.
+    How: Client-side economics from catalogue indicative fields; fund rules from
+         climate-finance-pathways.ts (NAPX-style); MCF rows from policy corpus + sector keywords.
+    Result: Ranked options and fund-fit hints for workshops.
+    Not: Investment advice or audited project accounts.
+
+  POLICY DOCUMENTS (/documents)
+    For: Evidence library + intervention logic model.
+    Steps: Library tab — filter/search/open links; Pathway tab — read diagram; use Related documents.
+    How: Static JSON from CPR export (services/policyDocuments.js); pathway from
+         frontend/src/data/transport-theory-of-change.ts.
+    Result: ~207 linked national documents; illustrative transport pathway for stakeholders.
+    Not: Full-text PDF search until enhanced CPR file (mid-2026); pathway is not attribution.
+
+  EMISSIONS MAP (/map)
+    For: Geographic view of major sources for a year/sector.
+    Steps: Set filters; pan/zoom; read tooltips and side totals.
+    How: Climate TRACE geolocated sources via GET /api/v1/emissions/map.
+    Result: Map briefing aid.
+    Not: Every tonne appears as a bubble (see Spatial Certainty).
+
+  STRATEGY LIBRARY (/library) [Advanced]
+    For: Link NDP IV / Tenfold / Vision 2040 indicators to NDC where matched.
+    How: Bundled indicator registry with best-effort NDC links.
+    Result: Cross-strategy alignment view.
+
+  MY WORK (/my-work) [Advanced]
+    For: Personal activity drafts.
+    How: localStorage in browser.
+    Result: Private workspace — not national registry.
+
+  CLIMATE RISK (/risk) [Advanced]
+    For: Illustrative hazard screening (adaptation).
+    How: data/riskSeed.js demo layers.
+    Result: Discussion prioritisation — not operational hazard models.
+
+A8. STATUS COLOURS AND BADGES (Dashboard)
+
+  On track / At risk / Off track / Unknown — progress vs NDC 2030 ceiling given trend and data.
+  IMPL. GAPS — no catalogue activity linked to target.
+  MRV GAPS — activities exist but observed data weak or missing.
+  Target badges: Unconditional, Conditional, Mixed; Emissions Reduction (MtCO2e) vs physical indicators.
+
+A9. ROLES (demo, top-right)
+
+  Role switcher changes edit permissions (e.g. create activities vs read-only). Does NOT change
+  national totals or Climate TRACE figures.
 
 A6. EXPORTING DATA
   The "Export" button on the dashboard produces:
@@ -111,10 +243,12 @@ B1. ARCHITECTURE
 
   frontend/     React SPA (Vite)
   server.js     Express API on port 8787 (default)
-  routes/       emissions, cockpit catalog, risk, mock
-  services/     Climate TRACE client, emissions aggregation, catalog
+  routes/       emissions, documents, cockpit catalog, risk, ingest, mock
+  services/     Climate TRACE client, emissions aggregation, catalog, policyDocuments
   config/       NDC targets, Climate TRACE helpers, district GADM map, catalog
-  data/         Illustrative risk seed data
+  data/         risk seed, uganda-policy-documents.json, uganda-policy-curated.json
+  scripts/      build_policy_documents.mjs (CPR CSV → JSON)
+  frontend/src/data/user-guide-content.ts — source text for in-app /docs (keep in sync with A7)
 
 B2. EXPRESS API
 
@@ -134,6 +268,9 @@ B2. EXPRESS API
   GET  /api/v1/indicators/panel
   GET  /api/v1/catalog/activities
   GET  /api/v1/catalog/mitigation-options
+  GET  /api/v1/documents              (params: category, source, q, limit, offset)
+  GET  /api/v1/documents/meta         (category and source counts)
+  GET  /api/v1/documents/curated      (params: sectorId, context=dashboard|finance)
   GET  /api/v1/risk/*
 
   Geography parameters (national is the default):
@@ -253,18 +390,39 @@ B3. ENVIRONMENT
   API_PORT=8787
   USE_MOCK_DATA=false
 
+B2c. POLICY DOCUMENT CORPUS
+  • Source: Climate Policy Radar export CSV (not committed; path via CLI or ~/Downloads default)
+  • Build: npm run build:documents [path/to.csv]
+  • Output: data/uganda-policy-documents.json, data/uganda-policy-curated.json
+  • Filter: rows with geography UGA; dedupe by Document URL
+  • services/policyDocuments.js — load JSON, list/filter/curated
+  • routes/documents.js — REST under /api/v1/documents*
+  • UI: frontend/src/pages/PolicyDocuments.tsx, PolicyPathwayDiagram.tsx
+  • Sector keyword match for MCF panel: frontend/src/lib/policy-document-match.ts
+
 B4. NPM SCRIPTS
 
-  npm run dev:all       — frontend + API
-  npm run start:api     — API only
-  npm run build         — production frontend build
+  npm run dev:all          — frontend + API
+  npm run start:api        — API only
+  npm run build            — production frontend build
+  npm run build:documents  — regenerate policy JSON from CPR CSV export
 
 B6. REPOSITORY DOCUMENTATION (2026)
-  docs/README.md           — index of all documentation files
-  docs/ARCHITECTURE.md     — routes, folders, state, dev proxy
-  docs/USER_GUIDE.md       — plain-language mirror of in-app /docs
-  docs/DATA_AND_CATALOG.md — live vs indicative vs localStorage
-  docs/DEPLOY-VERCEL.md    — production hosting
+
+  Canonical long-form reference (this file):
+    PROJECT_DOCUMENTATION.txt — Part A non-technical (features, data honesty, how-to);
+                              Part B technical (API, config, scripts)
+
+  Markdown supplements:
+    README.md                 — quick start, navigation table, NDC target summary
+    docs/README.md            — index of all doc files
+    docs/ARCHITECTURE.md      — routes, folders, state, dev proxy
+    docs/USER_GUIDE.md        — abbreviated feature guide (points to this .txt for full detail)
+    docs/DATA_AND_CATALOG.md  — live vs indicative vs localStorage honesty table
+    docs/DEPLOY-VERCEL.md     — production hosting
+
+  In-app only (not a substitute for this .txt in the repo):
+    /docs tab — renders frontend/src/data/user-guide-content.ts (update A7 and that file together)
 
 ================================================================================
   See README.md for day-to-day developer commands.
