@@ -3,7 +3,7 @@ import { getTargets, getObservationsForTarget } from "../services/persistence.js
 
 const router = express.Router();
 
-router.get("/targets", async (_req, res) => {
+router.get("/targets", async (req, res) => {
   try {
     const rows = await getTargets();
     return res.json({ targets: rows, count: rows.length });

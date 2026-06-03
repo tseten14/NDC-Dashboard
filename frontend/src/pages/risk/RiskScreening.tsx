@@ -7,13 +7,33 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { allFlatTargets } from "@/data/strategy-targets-flat";
 import { useAdaptationOptions, useHazardLayers, useRiskCells, useRiskDistricts, riskColor, riskLevelFromScore } from "@/hooks/use-risk-data";
-import { Download, FileText } from "lucide-react";
+import { AlertCircle, Download, FileText, Loader2 } from "lucide-react";
 
 export default function RiskScreening() {
-  const { data: hazards } = useHazardLayers();
-  const { data: cells } = useRiskCells();
-  const { data: districts } = useRiskDistricts();
-  const { data: options } = useAdaptationOptions();
+  const { data: hazards, loading: hazardsLoading, error: hazardsError } = useHazardLayers();
+  const { data: cells, loading: cellsLoading } = useRiskCells();
+  const { data: districts, loading: districtsLoading } = useRiskDistricts();
+  const { data: options, loading: optionsLoading } = useAdaptationOptions();
+
+  const isLoading = hazardsLoading || cellsLoading || districtsLoading || optionsLoading;
+
+  if (hazardsError) {
+    return (
+      <div className="flex items-center gap-2 p-4 text-destructive">
+        <AlertCircle className="h-4 w-4 shrink-0" />
+        <span className="text-xs">Failed to load risk data: {hazardsError.message}</span>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 p-4 text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+        <span className="text-xs">Loading risk screening data…</span>
+      </div>
+    );
+  }
 
   const [targetId, setTargetId] = useState<string>(allFlatTargets[0]?.id || "");
   const [districtId, setDistrictId] = useState<string>("ALL");

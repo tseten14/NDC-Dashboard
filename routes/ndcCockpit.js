@@ -29,7 +29,7 @@ router.get("/catalog/activities", async (req, res) => {
     const rows = await getCatalogActivities(targetId || null);
     return res.json({ activities: rows, data_source: "bundled catalog" });
   } catch (err) {
-    req.log?.error({ err }, "indicators_panel_failed");
+    req.log?.error({ err }, "catalog_activities_failed");
     return res.status(500).json({ error: err.message });
   }
 });
@@ -40,7 +40,7 @@ router.get("/catalog/mitigation-options", async (req, res) => {
     const rows = await getCatalogMitigation(targetId || null, sectorId || null);
     return res.json({ options: rows, data_source: "bundled catalog" });
   } catch (err) {
-    req.log?.error({ err }, "indicators_panel_failed");
+    req.log?.error({ err }, "catalog_mitigation_options_failed");
     return res.status(500).json({ error: err.message });
   }
 });

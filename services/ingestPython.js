@@ -4,6 +4,7 @@
 import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
+import { logger } from "../server/logger.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPT = path.join(__dirname, "..", "scripts", "ingest_analyze.py");
@@ -96,34 +97,34 @@ export async function analyzeTabularWithPython(input) {
 
     const timer = setTimeout(() => {
       proc.kill("SIGTERM");
-      console.warn("[ingestPython] timed out for", input.filename);
+      logger.warn({ event: "ingest_python_timeout", filename: input.filename }, "ingest_analyze.py timed out");
       resolve(null);
     }, TIMEOUT_MS);
 
     proc.on("close", (code) => {
       clearTimeout(timer);
       if (code !== 0) {
-        console.warn("[ingestPython] exit", code, stderr.slice(0, 300));
+        logger.warn({ event: "ingest_python_exit", code, stderr: stderr.slice(0, 300) }, "ingest_analyze.py exited with error");
         resolve(null);
         return;
       }
       try {
         const parsed = JSON.parse(stdout);
         if (!parsed.ok) {
-          console.warn("[ingestPython]", parsed.error);
+          logger.warn({ event: "ingest_python_error", error: parsed.error }, "ingest_analyze.py returned error");
           resolve(null);
           return;
         }
         resolve(parsed);
       } catch (e) {
-        console.warn("[ingestPython] invalid JSON:", e.message);
+        logger.warn({ event: "ingest_python_invalid_json", error: e.message }, "ingest_analyze.py returned invalid JSON");
         resolve(null);
       }
     });
 
     proc.on("error", (e) => {
       clearTimeout(timer);
-      console.warn("[ingestPython]", e.message);
+      logger.warn({ event: "ingest_python_spawn_error", error: e.message }, "ingest_analyze.py spawn failed");
       resolve(null);
     });
 

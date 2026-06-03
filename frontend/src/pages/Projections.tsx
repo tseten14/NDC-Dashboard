@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { projections, kpis, generateProjectionSeries, strategies, computeKPIProgress } from "@/data/uganda-strategy-data";
+import { projections, kpis, generateProjectionSeries, strategies } from "@/data/uganda-strategy-data";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";

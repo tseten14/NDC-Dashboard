@@ -221,7 +221,7 @@ router.get("/emissions/timeseries", async (req, res) => {
       timeseries,
     });
   } catch (err) {
-    req.log?.error({ err }, "emissions_dashboard_failed");
+    req.log?.error({ err }, "emissions_timeseries_failed");
     return res.status(500).json({ error: err.message });
   }
 });
@@ -264,7 +264,7 @@ router.get("/emissions/progress", async (req, res) => {
       target_scope: "national",
     });
   } catch (err) {
-    req.log?.error({ err }, "emissions_dashboard_failed");
+    req.log?.error({ err }, "emissions_progress_failed");
     return res.status(500).json({ error: err.message });
   }
 });
@@ -274,7 +274,7 @@ router.get("/emissions/summary", async (_req, res) => {
     const summary = await getSectorSummary();
     return res.json(summary);
   } catch (err) {
-    req.log?.error({ err }, "emissions_dashboard_failed");
+    req.log?.error({ err }, "emissions_summary_failed");
     return res.status(500).json({ error: err.message });
   }
 });
@@ -284,7 +284,6 @@ router.get("/provenance", async (_req, res) => {
     const payload = await getProvenancePayload();
     return res.json(payload);
   } catch (err) {
-    req.log?.error({ err }, "emissions_dashboard_failed");
     return res.status(500).json({ error: err.message });
   }
 });

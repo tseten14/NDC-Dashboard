@@ -5,16 +5,35 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useHazardLayers, useRiskCells, useRiskDistricts } from "@/hooks/use-risk-data";
 import { ProvenanceCard } from "@/components/risk/ProvenanceCard";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 export default function RiskDrilldown() {
-  const { data: hazards } = useHazardLayers();
-  const { data: cells } = useRiskCells();
-  const { data: districts } = useRiskDistricts();
+  const { data: hazards, loading: hL, error: hErr } = useHazardLayers();
+  const { data: cells, loading: cL } = useRiskCells();
+  const { data: districts, loading: dL } = useRiskDistricts();
   const [tab, setTab] = useState("hazard");
   const [selectedHazardId, setSelectedHazardId] = useState<string>(hazards[0]?.id || "");
 
   const selected = hazards.find(h => h.id === selectedHazardId) || hazards[0];
   const cellsForHazard = cells.filter(c => c.hazard_layer_id === selected?.id);
+
+  if (hErr) {
+    return (
+      <div className="flex items-center gap-2 p-4 text-destructive">
+        <AlertCircle className="h-4 w-4 shrink-0" />
+        <span className="text-xs">Failed to load risk data: {hErr.message}</span>
+      </div>
+    );
+  }
+
+  if (hL || cL || dL) {
+    return (
+      <div className="flex items-center gap-2 p-4 text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+        <span className="text-xs">Loading drill-down data…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

@@ -73,49 +73,69 @@ export interface AdaptationOption {
 export function useHazardLayers() {
   const [data, setData] = useState<HazardLayer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   useEffect(() => {
+    setError(null);
     fetchRiskJSON<{ layers: HazardLayer[] }>("/api/v1/risk/hazard-layers")
       .then((r) => setData(r.layers || []))
-      .catch(() => setData([]))
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e : new Error(String(e)));
+        setData([]);
+      })
       .finally(() => setLoading(false));
   }, []);
-  return { data, loading };
+  return { data, loading, error };
 }
 
 export function useRiskDistricts() {
   const [data, setData] = useState<RiskDistrict[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   useEffect(() => {
+    setError(null);
     fetchRiskJSON<{ districts: RiskDistrict[] }>("/api/v1/risk/districts")
       .then((r) => setData(r.districts || []))
-      .catch(() => setData([]))
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e : new Error(String(e)));
+        setData([]);
+      })
       .finally(() => setLoading(false));
   }, []);
-  return { data, loading };
+  return { data, loading, error };
 }
 
 export function useRiskCells() {
   const [data, setData] = useState<RiskCell[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   useEffect(() => {
+    setError(null);
     fetchRiskJSON<{ cells: RiskCell[] }>("/api/v1/risk/cells")
       .then((r) => setData(r.cells || []))
-      .catch(() => setData([]))
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e : new Error(String(e)));
+        setData([]);
+      })
       .finally(() => setLoading(false));
   }, []);
-  return { data, loading };
+  return { data, loading, error };
 }
 
 export function useAdaptationOptions() {
   const [data, setData] = useState<AdaptationOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   useEffect(() => {
+    setError(null);
     fetchRiskJSON<{ options: AdaptationOption[] }>("/api/v1/risk/adaptation-options")
       .then((r) => setData(r.options || []))
-      .catch(() => setData([]))
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e : new Error(String(e)));
+        setData([]);
+      })
       .finally(() => setLoading(false));
   }, []);
-  return { data, loading };
+  return { data, loading, error };
 }
 
 export function riskColor(score: number): string {
@@ -133,10 +153,12 @@ export function riskLevelFromScore(score: number): RiskLevel {
 }
 
 export function useTopHotspots(limit = 5) {
-  const { data: cells } = useRiskCells();
-  const { data: districts } = useRiskDistricts();
-  const { data: hazards } = useHazardLayers();
-  return useMemo(() => {
+  const { data: cells, loading: cellsLoading, error: cellsError } = useRiskCells();
+  const { data: districts, loading: districtsLoading, error: districtsError } = useRiskDistricts();
+  const { data: hazards, loading: hazardsLoading, error: hazardsError } = useHazardLayers();
+  const loading = cellsLoading || districtsLoading || hazardsLoading;
+  const error = cellsError || districtsError || hazardsError;
+  const hotspots = useMemo(() => {
     const dById = new Map(districts.map((d) => [d.id, d]));
     const hById = new Map(hazards.map((h) => [h.id, h]));
     return [...cells]
@@ -148,4 +170,5 @@ export function useTopHotspots(limit = 5) {
         hazard: hById.get(c.hazard_layer_id),
       }));
   }, [cells, districts, hazards, limit]);
+  return { hotspots, loading, error };
 }

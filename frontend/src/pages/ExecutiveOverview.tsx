@@ -143,29 +143,31 @@ export default function ExecutiveOverview() {
               {backlog.length === 0 ? (
                 <p className="text-[11px] text-muted-foreground italic">No backlog in current scope.</p>
               ) : (
-                <table className="w-full text-[10px]">
-                  <thead>
-                    <tr className="border-b border-border text-muted-foreground">
-                      <th className="text-left py-1 font-semibold">Indicator</th>
-                      <th className="text-left py-1 font-semibold">Strategy</th>
-                      <th className="text-left py-1 font-semibold">Sector</th>
-                      <th className="text-left py-1 font-semibold">Missing</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {backlog.map(i => (
-                      <tr key={i.id} className="border-b border-border/30">
-                        <td className="py-1 font-medium text-foreground">{i.indicator_name}</td>
-                        <td className="py-1">{i.strategy}</td>
-                        <td className="py-1 text-muted-foreground">{i.sector_or_programme}</td>
-                        <td className="py-1 text-muted-foreground">
-                          {i.target_value_2030 === null && i.target_value_2025 === null && i.target_value_2040 === null ? "Target" :
-                           i.baseline_value === null ? "Baseline" : i.validation_status}
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[10px] min-w-[480px]">
+                    <thead>
+                      <tr className="border-b border-border text-muted-foreground">
+                        <th className="text-left py-1 font-semibold">Indicator</th>
+                        <th className="text-left py-1 font-semibold">Strategy</th>
+                        <th className="text-left py-1 font-semibold">Sector</th>
+                        <th className="text-left py-1 font-semibold">Missing</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {backlog.map(i => (
+                        <tr key={i.id} className="border-b border-border/30">
+                          <td className="py-1 font-medium text-foreground">{i.indicator_name}</td>
+                          <td className="py-1">{i.strategy}</td>
+                          <td className="py-1 text-muted-foreground">{i.sector_or_programme}</td>
+                          <td className="py-1 text-muted-foreground">
+                            {i.target_value_2030 === null && i.target_value_2025 === null && i.target_value_2040 === null ? "Target" :
+                             i.baseline_value === null ? "Baseline" : i.validation_status}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -5,13 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useHazardLayers, useRiskCells, useRiskDistricts } from "@/hooks/use-risk-data";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCircle } from "lucide-react";
 import { ChoroplethMap, RiskLegend } from "@/components/risk/ChoroplethMap";
 import { ProvenanceCard } from "@/components/risk/ProvenanceCard";
 
 export default function RiskMap() {
-  const { data: hazards, loading: hL } = useHazardLayers();
-  const { data: districts, loading: dL } = useRiskDistricts();
-  const { data: cells, loading: cL } = useRiskCells();
+  const { data: hazards, loading: hL, error: hErr } = useHazardLayers();
+  const { data: districts, loading: dL, error: dErr } = useRiskDistricts();
+  const { data: cells, loading: cL, error: cErr } = useRiskCells();
 
   const [hazardId, setHazardId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("All");
@@ -37,8 +39,44 @@ export default function RiskMap() {
 
   const selected = hazards.find(h => h.id === hazardId);
 
+  const loadError = hErr || dErr || cErr;
+  if (loadError) {
+    return (
+      <div className="flex items-center gap-2 p-4 text-destructive">
+        <AlertCircle className="h-4 w-4 shrink-0" />
+        <span className="text-xs">Failed to load risk data: {loadError.message}</span>
+      </div>
+    );
+  }
+
   if (hL || dL || cL) {
-    return <p className="text-[11px] text-muted-foreground">Loading risk layers…</p>;
+    return (
+      <div className="space-y-3">
+        <Card><CardContent className="p-3 grid grid-cols-1 md:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="space-y-1.5">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-7 w-full" />
+            </div>
+          ))}
+        </CardContent></Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <div className="lg:col-span-2">
+            <Card><CardContent className="p-3 space-y-2">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-64 w-full rounded" />
+            </CardContent></Card>
+          </div>
+          <div>
+            <Card><CardContent className="p-3 space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-3/4" />
+            </CardContent></Card>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -124,33 +162,35 @@ export default function RiskMap() {
           <Card>
             <CardContent className="p-3">
               <p className="text-xs font-semibold text-foreground mb-2">District scores</p>
-              <table className="w-full text-[11px]">
-                <thead className="text-muted-foreground">
-                  <tr>
-                    <th className="text-left font-normal pb-1">District</th>
-                    <th className="text-left font-normal pb-1">Region</th>
-                    <th className="text-right font-normal pb-1">Score</th>
-                    <th className="text-left font-normal pb-1 pl-3">Level</th>
-                    <th className="text-left font-normal pb-1">Confidence</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {districts.map(d => {
-                    const cell = cells.find(c => c.district_id === d.id && c.hazard_layer_id === hazardId);
-                    return (
-                      <tr key={d.id} className="border-t border-border">
-                        <td className="py-1 text-foreground">{d.name}</td>
-                        <td className="py-1 text-muted-foreground">{d.region}</td>
-                        <td className="py-1 text-right text-foreground">{cell?.intensity_score_0_100 ?? "—"}</td>
-                        <td className="py-1 pl-3">
-                          {cell ? <Badge variant="outline" className="text-[9px]">{cell.risk_level}</Badge> : "—"}
-                        </td>
-                        <td className="py-1 text-muted-foreground">{cell?.confidence ?? "—"}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[11px] min-w-[360px]">
+                  <thead className="text-muted-foreground">
+                    <tr>
+                      <th className="text-left font-normal pb-1">District</th>
+                      <th className="text-left font-normal pb-1">Region</th>
+                      <th className="text-right font-normal pb-1">Score</th>
+                      <th className="text-left font-normal pb-1 pl-3">Level</th>
+                      <th className="text-left font-normal pb-1">Confidence</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {districts.map(d => {
+                      const cell = cells.find(c => c.district_id === d.id && c.hazard_layer_id === hazardId);
+                      return (
+                        <tr key={d.id} className="border-t border-border">
+                          <td className="py-1 text-foreground">{d.name}</td>
+                          <td className="py-1 text-muted-foreground">{d.region}</td>
+                          <td className="py-1 text-right text-foreground">{cell?.intensity_score_0_100 ?? "—"}</td>
+                          <td className="py-1 pl-3">
+                            {cell ? <Badge variant="outline" className="text-[9px]">{cell.risk_level}</Badge> : "—"}
+                          </td>
+                          <td className="py-1 text-muted-foreground">{cell?.confidence ?? "—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
         </div>

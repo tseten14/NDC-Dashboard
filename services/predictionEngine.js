@@ -17,6 +17,7 @@ import { getEmissionsDashboard } from "./emissionsData.js";
 import { NDC_TARGETS } from "../config/ndcTargets.js";
 import { UGANDA_NATIONAL_GADM } from "../config/ugandaDistrictGadm.js";
 import { defaultInventoryRange } from "../config/climateTrace.js";
+import { logger } from "../server/logger.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPT = path.join(__dirname, "..", "scripts", "predict_emissions.py");
@@ -215,7 +216,7 @@ function runPython(payload) {
     proc.on("close", (code) => {
       clearTimeout(timer);
       if (code !== 0) {
-        console.warn("[predictionEngine] python exit", code, stderr.slice(0, 200));
+        logger.warn({ event: "prediction_python_exit", code, stderr: stderr.slice(0, 200) }, "python predict_emissions.py exited with error");
         resolve(null);
         return;
       }

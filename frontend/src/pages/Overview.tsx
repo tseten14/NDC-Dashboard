@@ -1,4 +1,4 @@
-import { strategies, activities, kpis, progressRecords, actors, getActor, computeKPIProgress, roadmapPhases, raciData } from "@/data/uganda-strategy-data";
+import { strategies, activities, kpis, progressRecords, getActor, roadmapPhases, raciData } from "@/data/uganda-strategy-data";
 import { useAppContext } from "@/hooks/use-app-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,8 +18,6 @@ export default function Overview() {
 
   const verifiedCount = progressRecords.filter(p => p.validation_status === "Verified").length;
   const totalKPIs = kpis.length;
-  const fundingGap = filteredActivities.filter(a => a.investment_readiness_level === "NotReady" || a.investment_readiness_level === "Emerging").length;
-
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4 max-w-6xl">

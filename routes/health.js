@@ -23,41 +23,46 @@ router.get("/health", (_req, res) => {
 });
 
 router.get("/health/full", async (_req, res) => {
-  const dbStarted = Date.now();
-  const { mode } = getPersistenceMode();
-  let db = { status: "disabled", latency_ms: 0 };
+  try {
+    const dbStarted = Date.now();
+    const { mode } = getPersistenceMode();
+    let db = { status: "disabled", latency_ms: 0 };
 
-  if (mode === "postgres") {
-    const result = await checkDatabaseConnectivity();
-    db = {
-      status: result.ok ? "ok" : "error",
-      latency_ms: result.latencyMs ?? Date.now() - dbStarted,
-    };
-  } else if (mode === "fallback") {
-    db = { status: "fallback", latency_ms: Date.now() - dbStarted };
-  } else {
-    db = { status: "disabled", latency_ms: Date.now() - dbStarted };
+    if (mode === "postgres") {
+      const result = await checkDatabaseConnectivity();
+      db = {
+        status: result.ok ? "ok" : "error",
+        latency_ms: result.latencyMs ?? Date.now() - dbStarted,
+      };
+    } else if (mode === "fallback") {
+      db = { status: "fallback", latency_ms: Date.now() - dbStarted };
+    } else {
+      db = { status: "disabled", latency_ms: Date.now() - dbStarted };
+    }
+
+    const ctHealth = await checkApiHealth();
+    const cacheMetrics = getCacheMetrics();
+
+    const allOk = !isMockMode() && db.status === "ok" && ctHealth.status === "ok";
+
+    res.json({
+      status: allOk ? "ok" : "degraded",
+      mock_mode: isMockMode(),
+      db,
+      climate_trace: {
+        reachable: ctHealth.status === "ok",
+        last_checked: ctHealth.last_checked,
+      },
+      cache: {
+        hit_rate: cacheMetrics.hit_rate,
+        size: cacheMetrics.size,
+      },
+      uptime_seconds: Math.floor((Date.now() - startedAt) / 1000),
+    });
+  } catch (err) {
+    logger.error({ err, event: "health_full_failed" }, err.message);
+    res.status(500).json({ status: "error", error: err.message });
   }
-
-  const ctHealth = await checkApiHealth();
-  const cacheMetrics = getCacheMetrics();
-
-  const allOk = !isMockMode() && db.status === "ok" && ctHealth.status === "ok";
-
-  res.json({
-    status: allOk ? "ok" : "degraded",
-    mock_mode: isMockMode(),
-    db,
-    climate_trace: {
-      reachable: ctHealth.status === "ok",
-      last_checked: ctHealth.last_checked,
-    },
-    cache: {
-      hit_rate: cacheMetrics.hit_rate,
-      size: cacheMetrics.size,
-    },
-    uptime_seconds: Math.floor((Date.now() - startedAt) / 1000),
-  });
 });
 
 router.post("/client-errors", clientErrorsRateLimiter, (req, res) => {
