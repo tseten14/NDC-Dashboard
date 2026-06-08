@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   policyImpactApi,
@@ -27,6 +27,7 @@ import {
   Scale,
   Sparkles,
   TrendingUp,
+  UserRound,
   Users,
   Workflow,
 } from "lucide-react";
@@ -46,6 +47,7 @@ const OUTCOME_ICONS: Record<string, typeof TrendingUp> = {
   jobs: Users,
   gdp: TrendingUp,
   inequality: Scale,
+  gender: UserRound,
   trade: Coins,
 };
 
@@ -71,6 +73,7 @@ function pathwayToModel(
 }
 
 export default function PolicyImpact() {
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState<Step>("Objective");
   const [objective, setObjective] = useState(OBJECTIVES[1]);
   const [customObjective, setCustomObjective] = useState("");
@@ -79,6 +82,24 @@ export default function PolicyImpact() {
   const [scale, setScale] = useState(1);
   const [timelineYears, setTimelineYears] = useState(10);
   const [result, setResult] = useState<PolicyImpactForecastResponse | null>(null);
+  const [prefillApplied, setPrefillApplied] = useState(false);
+
+  const sectorParam = searchParams.get("sector");
+  const interventionParam = searchParams.get("intervention");
+  const objectiveParam = searchParams.get("objective");
+
+  useEffect(() => {
+    if (prefillApplied) return;
+    if (!sectorParam && !interventionParam && !objectiveParam) return;
+
+    if (objectiveParam) {
+      setCustomObjective(objectiveParam);
+    }
+    if (sectorParam) {
+      setSector(sectorParam);
+    }
+    setPrefillApplied(true);
+  }, [sectorParam, interventionParam, objectiveParam, prefillApplied]);
 
   const casesQuery = useQuery({
     queryKey: ["policy-cases"],
@@ -91,6 +112,15 @@ export default function PolicyImpact() {
     queryFn: () => policyImpactApi.tefElements(sector),
     staleTime: 1000 * 60 * 60,
   });
+
+  useEffect(() => {
+    if (!interventionParam || !tefQuery.data?.elements.length) return;
+    const match = tefQuery.data.elements.find((el) => el.intervention_type === interventionParam);
+    if (match) {
+      setIntervention(match);
+      setStep("Parameters");
+    }
+  }, [interventionParam, tefQuery.data?.elements]);
 
   const forecastMut = useMutation({
     mutationFn: () =>
@@ -292,15 +322,36 @@ export default function PolicyImpact() {
         {step === "Results" && result && (
           <div className="space-y-4">
             <Card className="border-primary/20 bg-primary/[0.02]">
-              <CardContent className="p-3 flex flex-wrap items-center gap-2">
-                <Badge className="text-[10px]">
-                  Confidence {Math.round(result.overall_confidence * 100)}%
-                </Badge>
-                {result.matched_cases.map((c) => (
-                  <Badge key={c.id} variant="outline" className="text-[9px]">
-                    {c.country} — {Math.round(c.match_score * 100)}% match
+              <CardContent className="p-3 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="text-[10px]">
+                    Confidence {Math.round(result.overall_confidence * 100)}%
                   </Badge>
-                ))}
+                  {result.matched_cases.map((c) => (
+                    <Badge key={c.id} variant="outline" className="text-[9px]">
+                      {c.country} — {Math.round(c.match_score * 100)}% match
+                    </Badge>
+                  ))}
+                </div>
+                {result.matched_cases[0]?.sector_score != null && (
+                  <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/60">
+                    <span className="text-[9px] text-muted-foreground w-full">Match breakdown (top case):</span>
+                    {(
+                      [
+                        ["Sector", result.matched_cases[0].sector_score],
+                        ["Intervention", result.matched_cases[0].intervention_score],
+                        ["Region", result.matched_cases[0].region_score],
+                        ["Scale", result.matched_cases[0].scale_score],
+                      ] as const
+                    ).map(([label, score]) =>
+                      score != null ? (
+                        <Badge key={label} variant="secondary" className="text-[8px] font-normal">
+                          {label} {Math.round(score * 100)}%
+                        </Badge>
+                      ) : null,
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -320,7 +371,7 @@ export default function PolicyImpact() {
                       <div className="flex items-center gap-1.5">
                         <Icon className="h-3.5 w-3.5 text-primary" />
                         <Badge variant="outline" className="text-[9px] capitalize">
-                          {imp.category.replace("_", " ")}
+                          {imp.category.replace(/_/g, " ")}
                         </Badge>
                         <Badge
                           variant="secondary"

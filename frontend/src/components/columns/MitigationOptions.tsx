@@ -1,15 +1,17 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   type NDCTarget, type SectorId, type TimeMode, type MitigationOption,
   type DecisionLogEntry, type DecisionStatus,
   getMitigationOptionsForTarget,
 } from "@/data/uganda-ndc-data";
+import { policyImpactHrefForMitigationOption } from "@/lib/policy-impact-link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FlaskConical, Plus, BarChart3, Layers } from "lucide-react";
+import { FlaskConical, Plus, BarChart3, Layers, Workflow } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
@@ -153,6 +155,13 @@ function OptionCard({ option, timeMode, isSelected, onToggle, onAddToLog }: {
             <Plus className="h-2.5 w-2.5" />Log
           </Button>
         </div>
+
+        <Button variant="ghost" size="sm" className="h-6 text-[9px] gap-0.5 w-full mt-1.5" asChild>
+          <Link to={policyImpactHrefForMitigationOption(option)}>
+            <Workflow className="h-2.5 w-2.5" />
+            Forecast socio-economic impact
+          </Link>
+        </Button>
       </CardContent>
     </Card>
   );

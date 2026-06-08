@@ -85,7 +85,32 @@ export function scoreCaseMatch(policyCase, request) {
     match_score: Math.round(total * 1000) / 1000,
     sector_score: sectorScore,
     intervention_score: interventionScore,
+    region_score: regionScore,
+    scale_score: scaleScore,
   };
+}
+
+function averageOutcomeConfidence(policyCase) {
+  if (!policyCase.outcomes.length) return 0.6;
+  const sum = policyCase.outcomes.reduce((s, o) => s + o.confidence, 0);
+  return sum / policyCase.outcomes.length;
+}
+
+/** Weighted confidence from top matches — primary match dominates, weak analogues don't drag score down. */
+function computeOverallConfidence(topMatches) {
+  if (topMatches.length === 0) return 0.25;
+
+  const weightSum = topMatches.reduce((s, t) => s + t.match_score, 0);
+  const topMatchScore = topMatches[0].match_score;
+
+  const evidenceQuality = topMatches.reduce((s, t) => {
+    const w = t.match_score / weightSum;
+    return s + w * averageOutcomeConfidence(t.case);
+  }, 0);
+
+  // Emphasise best analogue (55%) plus corpus evidence quality (45%)
+  const raw = topMatchScore * 0.55 + evidenceQuality * 0.45;
+  return Math.round(Math.min(0.92, raw) * 100) / 100;
 }
 
 function scaleMagnitude(magnitude, scale) {
@@ -150,6 +175,10 @@ export function runPolicyImpactForecast(allCases, request) {
         title: n.title,
         match_score: n.match_score,
         country: n.country,
+        sector_score: n.sector_score,
+        intervention_score: n.intervention_score,
+        region_score: n.region_score,
+        scale_score: n.scale_score,
       })),
       overall_confidence: 0.25,
       disclaimers: [
@@ -207,9 +236,7 @@ export function runPolicyImpactForecast(allCases, request) {
     }
   }
 
-  const overallConfidence =
-    top.reduce((s, t) => s + t.match_score * (top[0]?.case.outcomes[0]?.confidence ?? 0.6), 0) /
-    Math.max(top.length, 1);
+  const overallConfidence = computeOverallConfidence(top);
 
   return {
     impacts: Array.from(impactMap.values()).sort((a, b) => b.confidence - a.confidence),
@@ -223,8 +250,12 @@ export function runPolicyImpactForecast(allCases, request) {
       title: t.title,
       match_score: t.match_score,
       country: t.country,
+      sector_score: t.sector_score,
+      intervention_score: t.intervention_score,
+      region_score: t.region_score,
+      scale_score: t.scale_score,
     })),
-    overall_confidence: Math.round(Math.min(0.92, overallConfidence) * 100) / 100,
+    overall_confidence: overallConfidence,
     disclaimers: [
       "Indicative forecast — not an official government projection.",
       "Analogical matching from UNFCCC KCI case studies; Uganda-specific evidence limited.",

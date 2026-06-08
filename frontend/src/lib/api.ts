@@ -688,7 +688,16 @@ export interface PolicyImpactForecastResponse {
     case_ids?: string[];
   }>;
   pathway_diagram: { nodes: Array<{ id: string; kind: string; label: string }>; edges: Array<{ from: string; to: string }> };
-  matched_cases: Array<{ id: string; title: string; match_score: number; country: string }>;
+  matched_cases: Array<{
+    id: string;
+    title: string;
+    match_score: number;
+    country: string;
+    sector_score?: number;
+    intervention_score?: number;
+    region_score?: number;
+    scale_score?: number;
+  }>;
   overall_confidence: number;
   disclaimers: string[];
   data_source: string;

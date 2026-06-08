@@ -42,9 +42,12 @@ describe("policyImpactEngine", () => {
     });
     expect(result.impacts.length).toBeGreaterThan(0);
     expect(result.matched_cases[0].id).toBe("kci-brazil-ag-credit");
+    expect(result.matched_cases[0].match_score).toBeGreaterThan(0.7);
+    expect(result.matched_cases[0].sector_score).toBe(1);
+    expect(result.matched_cases[0].intervention_score).toBe(1);
     expect(result.impacts[0].provenance).toContain("Brazil");
     expect(result.trade_offs.length).toBeGreaterThan(0);
-    expect(result.overall_confidence).toBeGreaterThan(0.3);
+    expect(result.overall_confidence).toBeGreaterThan(0.65);
   });
 
   it("returns low-confidence fallback when no match", () => {
