@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useCountry } from "@/context/CountryContext";
 import { useCurrentRole } from "@/hooks/use-current-role";
+import { NdcGapSummary } from "@/components/NdcGapSummary";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight, BarChart3, Globe2, LayoutDashboard, Sparkles, Target,
@@ -67,7 +68,7 @@ const FEATURES = [
 
 export default function Home() {
   const { country, clearCountry } = useCountry();
-  const { getHomeRoleStartHere } = useCurrentRole();
+  const { activeRole, getHomeRoleStartHere } = useCurrentRole();
   const { startDemoPresentation } = useDemoMode();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -148,6 +149,12 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {activeRole === "SeniorDecisionMaker" && (
+          <section className="mx-auto max-w-5xl px-4 sm:px-6 py-2 sm:py-4">
+            <NdcGapSummary />
+          </section>
+        )}
 
         <section className="mx-auto max-w-5xl px-4 sm:px-6 py-6">
           <Card className="border-primary/25 bg-primary/[0.04]">

@@ -6,6 +6,7 @@ import { useCurrentRole } from "@/hooks/use-current-role";
 import { DASHBOARD_MODE_LABELS, getDashboardPresets } from "@/lib/role-capabilities";
 import { AlertCircle } from "lucide-react";
 import { TargetStatusSummary } from "@/components/TargetStatusSummary";
+import { NdcGapSummary } from "@/components/NdcGapSummary";
 import { DataCoveragePanel } from "@/components/DataCoveragePanel";
 import { NDCTargetsColumn } from "@/components/columns/NDCTargets";
 import { NDCActivitiesColumn } from "@/components/columns/NDCActivities";
@@ -108,6 +109,11 @@ export default function NDCLayer() {
     state.setSelectedSector(sectorId, { preserveTarget: true });
     state.setSelectedTargetId(targetId);
     setSearchParams({ target: targetId, sector: sectorId });
+  }, [state, setSearchParams]);
+
+  const handleGapSectorSelect = useCallback((sectorId: string) => {
+    state.setSelectedSector(sectorId);
+    setSearchParams({ sector: sectorId });
   }, [state, setSearchParams]);
 
   const selectedTarget = state.selectedTargetId
@@ -315,6 +321,10 @@ export default function NDCLayer() {
       </div>
 
       <DataCoveragePanel />
+
+      {dashboardMode === "briefing" && (
+        <NdcGapSummary variant="compact" onSelectSector={handleGapSectorSelect} />
+      )}
 
       {/* Target Status Summary — 'all targets first' anchor */}
       <TargetStatusSummary onSelectTarget={handleSummarySelect} />
