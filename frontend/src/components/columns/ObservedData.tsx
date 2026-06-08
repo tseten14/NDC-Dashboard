@@ -1,6 +1,17 @@
 import { type NDCTarget, type TimeMode, type ObservedDataSet, type QAQCStatus, getObservedDataForTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
-import { buildLiveObservedDataSet, getClimateTraceSectorForTarget, buildIndicatorPanelObservedDataSet, isIndicatorPanelTarget, getProxySectorForTarget, getProxySectorLabel } from "@/lib/emissions-integration";
+import {
+  buildLiveObservedDataSet,
+  getClimateTraceSectorForTarget,
+  buildIndicatorPanelObservedDataSet,
+  buildIngestedObservedDataSet,
+  isIndicatorPanelTarget,
+  isIngestedObservationSource,
+  getProxySectorForTarget,
+  getProxySectorLabel,
+} from "@/lib/emissions-integration";
+import { DataProvenanceBadge } from "@/components/DataProvenanceBadge";
+import { useTargetObservations } from "@/hooks/use-target-observations";
 import { reconciliationDeltaPercent } from "@/lib/progress";
 import { DataLineageChip } from "@/components/DataLineageChip";
 import { buildTargetLineage } from "@/lib/lineage";
@@ -32,6 +43,14 @@ interface ObservedDataProps {
 
 export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigationOptions: _omit }: ObservedDataProps) {
   const emissions = useEmissionsData();
+  const obsQuery = useTargetObservations(
+    selectedTarget && isIndicatorPanelTarget(selectedTarget) ? selectedTarget.id : null,
+  );
+  const ingestedRows = (obsQuery.data?.observations ?? []).filter((o) =>
+    isIngestedObservationSource(o.source),
+  );
+  const hasIngestedObs = ingestedRows.length > 0;
+  const ingestSourceLabel = ingestedRows[ingestedRows.length - 1]?.source;
 
   if (!selectedTarget) {
     return <SelectTargetPlaceholder column="Observed Data" />;
@@ -126,6 +145,12 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
       proxyPr.target_value,
       { dataStale: emissions.dashboard?.data_stale },
     );
+  } else if (hasIngestedObs && isIndicatorPanelTarget(selectedTarget) && observedMode === "live") {
+    observedData =
+      buildIngestedObservedDataSet(selectedTarget, ingestedRows, indEntry) ??
+      (indEntry?.timeseries?.length
+        ? buildIndicatorPanelObservedDataSet(selectedTarget, indEntry)
+        : undefined);
   } else if (indEntry?.timeseries?.length && observedMode === "live") {
     observedData = buildIndicatorPanelObservedDataSet(selectedTarget, indEntry);
   } else if (
@@ -238,6 +263,9 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
             Indicators API
           </Badge>
         )}
+        {hasIngestedObs && (
+          <DataProvenanceBadge count={ingestedRows.length} source={ingestSourceLabel} />
+        )}
       </div>
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-2">
@@ -287,6 +315,16 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
               <p className="text-muted-foreground mt-0.5">
                 No district-level data is available for this indicator from any source.
                 Showing national data for context.
+              </p>
+            </div>
+          )}
+
+          {hasIngestedObs && !apiSector && !usingProxyData && (
+            <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs leading-snug">
+              <p className="text-foreground font-medium">Includes file-ingested observations</p>
+              <p className="text-muted-foreground mt-0.5">
+                {ingestedRows.length} point(s) from Data Ingestion are merged into this chart. They are stored in
+                the observations database and marked unverified until MRV validation.
               </p>
             </div>
           )}

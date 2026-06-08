@@ -581,7 +581,33 @@ export interface IngestConfirmResponse {
   rowsSkipped: number;
   errors: Array<{ row: number; message: string }>;
   persisted: boolean;
+  persistenceMode?: "postgres" | "fallback" | "disabled";
+  storage?: string | null;
+  targetKeys?: string[];
+  yearRange?: { min: number; max: number } | null;
+  dashboardHint?: string | null;
+  auditFile?: string;
 }
+
+export interface PersistenceObservationRow {
+  id: string;
+  target_id: string;
+  year: number;
+  value: number;
+  source: string;
+  as_of: string;
+  is_estimated: boolean;
+  is_validated: boolean;
+  qaqc_status: string;
+  created_at: string;
+}
+
+export const persistenceApi = {
+  targetObservations: (targetId: string) =>
+    getJSON<{ target_id: string; observations: PersistenceObservationRow[]; count: number }>(
+      `/api/v1/targets/${encodeURIComponent(targetId)}/observations`,
+    ),
+};
 
 export interface IngestJobRow {
   id: string;
