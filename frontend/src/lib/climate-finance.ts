@@ -1,25 +1,11 @@
 /**
  * Climate-finance economics engine (indicative).
- *
- * Built around ONE honest, easy-to-understand idea:
- *   - Every mitigation project has a "cost to abate" (USD per tonne of CO2e
- *     avoided), levelised over its lifetime.
- *   - Carbon credits pay a price per tonne.
- *   - If the cost to abate is below the carbon price, selling credits more than
- *     covers the cost -> the project is self-funding / attractive.
- *
- * We deliberately do NOT report NPV / IRR / multi-year ROI: the underlying cost
- * figures are rough public estimates, so precise financial returns would imply
- * false accuracy. Everything here is INDICATIVE screening, not investment advice.
  */
 import type { MitigationOption } from "@/data/uganda-ndc-data";
 
 export interface FinanceAssumptions {
-  /** Carbon credit price, USD per tonne CO2e. */
   carbonPrice: number;
-  /** Project economic lifetime, years (used to spread upfront cost). */
   lifetimeYears: number;
-  /** Discount rate (fraction, e.g. 0.10 = 10%). */
   discountRate: number;
 }
 
@@ -43,35 +29,29 @@ export interface ProjectEconomics {
   description: string;
   sectorId: string;
   confidence: DataConfidence;
-  /** Abatement potential, MtCO2e per year. */
   abatementMtPerYr: number;
-  /** Abatement potential, tonnes CO2e per year. */
   abatementTPerYr: number;
+  abatementUnit: string;
+  abatementIsAnnual: boolean;
   costType: "capex" | "annual";
   capexUSD: number;
   annualCostUSD: number;
-  /** Total funding need to deploy (upfront capex, or annual cost over the lifetime). */
   fundingNeedUSD: number;
-  /** Levelised annual cost (capex spread via CRF + any annual cost). */
   annualizedCostUSD: number;
-  /** Cost to abate one tonne of CO2e, USD/t (levelised). The headline metric. */
   costToAbateUSDPerT: number | null;
-  /** Screening range when confidence is not high (± fraction of cost to abate). */
   costToAbateLowUSDPerT: number | null;
   costToAbateHighUSDPerT: number | null;
-  /** Carbon-credit revenue per year at the chosen price. */
   annualRevenueUSD: number;
-  /** Net annual value = revenue - levelised cost = (price - costToAbate) * tonnes. */
   netAnnualUSD: number;
-  /** True when the carbon price alone covers the cost to abate. */
   carbonCoversCost: boolean;
+  abatementSource: string;
+  costSource: string;
 }
 
 function isAnnualCost(magnitude: string): boolean {
   return /\/\s*yr|per year|annum|annual/i.test(magnitude);
 }
 
-/** Capital recovery factor: spreads an upfront cost into an equivalent annual cost. */
 function crf(rate: number, years: number): number {
   if (years <= 0) return 1;
   if (rate <= 0) return 1 / years;
@@ -79,7 +59,6 @@ function crf(rate: number, years: number): number {
   return (rate * f) / (f - 1);
 }
 
-/** Uncertainty band on levelised cost to abate from NDC data confidence (screening only). */
 function confidenceBand(
   costToAbate: number | null,
   confidence: DataConfidence,
@@ -97,15 +76,71 @@ function normalizeConfidence(c: string): DataConfidence {
   return "medium";
 }
 
+const DEFAULT_ABATEMENT_SOURCE =
+  "Uganda Updated NDC (Sept 2022) mitigation analysis — indicative sector-level estimate";
+const DEFAULT_COST_SOURCE =
+  "Indicative cost benchmark compiled for Climate Finance screening — not tendered or audited";
+
+export function parseAbatementMtPerYr(option: MitigationOption): {
+  mtPerYr: number;
+  isAnnual: boolean;
+  unit: string;
+} {
+  const raw = Math.max(0, Number(option.emissionsReductionPotential) || 0);
+  const unit = String(option.emissionsReductionUnit || "MtCO₂e/yr").trim();
+  const normalized = unit.replace(/\s+/g, "").toLowerCase();
+
+  if (/kt.*\/yr|kt.*peryr|ktco2e\/yr/.test(normalized)) {
+    return { mtPerYr: raw / 1000, isAnnual: true, unit };
+  }
+  if (/tco2e\/yr|t\/yr|tonnes?.*\/yr/.test(normalized) && !normalized.startsWith("mt")) {
+    return { mtPerYr: raw / 1e6, isAnnual: true, unit };
+  }
+  if (/mt.*\/yr|mt.*peryr|mtco2e\/yr/.test(normalized)) {
+    return { mtPerYr: raw, isAnnual: true, unit };
+  }
+  if (/mtco2e|mtco₂e|mt\b/.test(normalized) && !/\/yr|peryr|annual/.test(normalized)) {
+    return { mtPerYr: raw / 8, isAnnual: false, unit };
+  }
+
+  const hasAnnualMarker = /\/yr|per\s*year|annual/i.test(unit);
+  return { mtPerYr: raw, isAnnual: hasAnnualMarker, unit };
+}
+
+export function parseCostUSD(option: MitigationOption): {
+  amountUSD: number;
+  isAnnual: boolean;
+} {
+  const estimate = Math.max(0, Number(option.costEstimate) || 0);
+  const magnitude = String(option.costMagnitude || "million").toLowerCase();
+
+  let multiplier = 1;
+  if (/billion|bn/.test(magnitude)) multiplier = 1e9;
+  else if (/million|m\b/.test(magnitude)) multiplier = 1e6;
+  else if (/thousand|k\b/.test(magnitude)) multiplier = 1e3;
+
+  return {
+    amountUSD: estimate * multiplier,
+    isAnnual: isAnnualCost(option.costMagnitude || ""),
+  };
+}
+
+export function maccSortKey(
+  e: Pick<ProjectEconomics, "costToAbateUSDPerT" | "costToAbateHighUSDPerT" | "confidence" | "id">,
+): number {
+  if (e.costToAbateUSDPerT == null) return Infinity;
+  if (e.confidence === "high") return e.costToAbateUSDPerT;
+  return e.costToAbateHighUSDPerT ?? e.costToAbateUSDPerT;
+}
+
 export function computeProjectEconomics(
   option: MitigationOption,
   a: FinanceAssumptions,
 ): ProjectEconomics {
-  const abatementMt = Math.max(0, Number(option.emissionsReductionPotential) || 0);
+  const { mtPerYr: abatementMt, isAnnual: abatementIsAnnual, unit: abatementUnit } =
+    parseAbatementMtPerYr(option);
   const abatementT = abatementMt * 1e6;
-  // Cost figures in the catalogue are expressed in USD millions.
-  const amountUSD = (Number(option.costEstimate) || 0) * 1e6;
-  const annual = isAnnualCost(option.costMagnitude || "");
+  const { amountUSD, isAnnual: annual } = parseCostUSD(option);
   const capexUSD = annual ? 0 : amountUSD;
   const annualCostUSD = annual ? amountUSD : 0;
 
@@ -116,6 +151,7 @@ export function computeProjectEconomics(
   const netAnnualUSD = annualRevenueUSD - annualizedCostUSD;
   const confidence = normalizeConfidence(option.confidence);
   const band = confidenceBand(costToAbateUSDPerT, confidence);
+  const prov = option.financeProvenance;
 
   return {
     id: option.id,
@@ -125,6 +161,8 @@ export function computeProjectEconomics(
     confidence,
     abatementMtPerYr: abatementMt,
     abatementTPerYr: abatementT,
+    abatementUnit,
+    abatementIsAnnual,
     costType: annual ? "annual" : "capex",
     capexUSD,
     annualCostUSD,
@@ -136,6 +174,8 @@ export function computeProjectEconomics(
     annualRevenueUSD,
     netAnnualUSD,
     carbonCoversCost: costToAbateUSDPerT != null && costToAbateUSDPerT <= a.carbonPrice,
+    abatementSource: prov?.abatementSource ?? DEFAULT_ABATEMENT_SOURCE,
+    costSource: prov?.costSource ?? DEFAULT_COST_SOURCE,
   };
 }
 
@@ -143,15 +183,19 @@ export interface MaccEntry extends ProjectEconomics {
   cumulativeAbatementMt: number;
 }
 
-/** Marginal-abatement-cost curve: projects cheapest-first with running abatement. */
 export function buildMaccCurve(
   options: MitigationOption[],
   a: FinanceAssumptions,
 ): MaccEntry[] {
   const econ = options
     .map((o) => computeProjectEconomics(o, a))
-    .filter((e) => e.abatementMtPerYr > 0)
-    .sort((x, y) => (x.costToAbateUSDPerT ?? Infinity) - (y.costToAbateUSDPerT ?? Infinity));
+    .filter((e) => e.abatementMtPerYr > 0 && e.costToAbateUSDPerT != null)
+    .sort((x, y) => {
+      const dx = maccSortKey(x);
+      const dy = maccSortKey(y);
+      if (dx !== dy) return dx - dy;
+      return x.id.localeCompare(y.id);
+    });
   let cum = 0;
   return econ.map((e) => {
     cum += e.abatementMtPerYr;
@@ -166,10 +210,9 @@ export interface GapClosure {
   shortfallMt: number;
   fundingNeedUSD: number;
   annualRevenueUSD: number;
-  optionsUsed: ProjectEconomics[];
+  optionsUsed: Array<ProjectEconomics & { deploymentFraction: number }>;
 }
 
-/** Greedily stack the cheapest options (by cost to abate) toward the sector's gap. */
 export function investmentToCloseGap(
   gapMt: number,
   sectorOptions: MitigationOption[],
@@ -177,21 +220,32 @@ export function investmentToCloseGap(
 ): GapClosure {
   const sorted = sectorOptions
     .map((o) => computeProjectEconomics(o, a))
-    .filter((e) => e.abatementMtPerYr > 0)
-    .sort((x, y) => (x.costToAbateUSDPerT ?? Infinity) - (y.costToAbateUSDPerT ?? Infinity));
+    .filter((e) => e.abatementMtPerYr > 0 && e.costToAbateUSDPerT != null)
+    .sort((x, y) => {
+      const dx = maccSortKey(x);
+      const dy = maccSortKey(y);
+      if (dx !== dy) return dx - dy;
+      return x.id.localeCompare(y.id);
+    });
 
-  const used: ProjectEconomics[] = [];
+  const used: GapClosure["optionsUsed"] = [];
   let secured = 0;
   let funding = 0;
   let revenue = 0;
   const target = Math.max(0, gapMt);
+
   for (const e of sorted) {
     if (target > 0 && secured >= target) break;
-    used.push(e);
-    secured += e.abatementMtPerYr;
-    funding += e.fundingNeedUSD;
-    revenue += e.annualRevenueUSD;
+
+    const remaining = target > 0 ? target - secured : e.abatementMtPerYr;
+    const fraction = target > 0 ? Math.min(1, remaining / e.abatementMtPerYr) : 1;
+
+    used.push({ ...e, deploymentFraction: fraction });
+    secured += e.abatementMtPerYr * fraction;
+    funding += e.fundingNeedUSD * fraction;
+    revenue += e.annualRevenueUSD * fraction;
   }
+
   return {
     gapMt: target,
     abatementSecuredMt: secured,
@@ -203,7 +257,6 @@ export function investmentToCloseGap(
   };
 }
 
-// ── Formatters ──────────────────────────────────────────────────────────────
 export function formatUSD(v: number | null | undefined): string {
   if (v == null || Number.isNaN(v)) return "—";
   const abs = Math.abs(v);

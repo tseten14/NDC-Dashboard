@@ -74,6 +74,11 @@ export interface ObservedDataSet {
   provenance: DataProvenance;
 }
 
+export interface FinanceDataProvenance {
+  abatementSource: string;
+  costSource: string;
+}
+
 export interface MitigationOption {
   id: string;
   targetId: string;
@@ -88,6 +93,7 @@ export interface MitigationOption {
   costCurrency: string;
   costMagnitude: string;
   confidence: ConfidenceLevel;
+  financeProvenance?: FinanceDataProvenance;
 }
 
 export interface DecisionLogEntry {
@@ -500,79 +506,19 @@ export const observedDataSets: ObservedDataSet[] = [
  * by the Climate Finance screening tool (not shown as data in the tab). Foreign
  * "best practice" case studies were removed in the June 2026 data audit. */
 
+const NDC_ABATEMENT = "Uganda Updated NDC (Sept 2022) mitigation tables — indicative MtCO₂e/yr at full deployment";
+const NDC_COST = "NDC cost annex / programme benchmarks — indicative USD millions, not tendered";
+
 export const mitigationOptions: MitigationOption[] = [
-  {
-    id: "m1", targetId: "t1", sectorId: "afolu",
-    title: "Payment for Ecosystem Services (PES)",
-    description: "Establish PES schemes to incentivize forest conservation by local communities; target 500,000 ha",
-    emissionsReductionPotential: 2.5, emissionsReductionUnit: "MtCO₂e/yr",
-    costEstimate: 15, costCurrency: "USD", costMagnitude: "million/yr",
-    confidence: "medium",
-  },
-  {
-    id: "m2", targetId: "t1", sectorId: "afolu",
-    title: "Commercial Plantation Expansion",
-    description: "Scale up commercial timber/pole/bioenergy woodlot plantations on degraded lands (~10 MtCO₂e combined abatement potential)",
-    emissionsReductionPotential: 3.8, emissionsReductionUnit: "MtCO₂e/yr",
-    costEstimate: 45, costCurrency: "USD", costMagnitude: "million",
-    confidence: "high",
-  },
-  {
-    id: "m8", targetId: "t1", sectorId: "afolu",
-    title: "Improved Charcoal Kilns (AFOLU Energy Efficiency)",
-    description: "Scale up efficient charcoal production technology from 12% (2020) to 75% kiln efficiency by 2030; ~3.37 MtCO₂e reduction potential",
-    emissionsReductionPotential: 3.37, emissionsReductionUnit: "MtCO₂e/yr",
-    costEstimate: 20, costCurrency: "USD", costMagnitude: "million",
-    confidence: "medium",
-  },
-  {
-    id: "m3", targetId: "t4", sectorId: "energy",
-    title: "Mini-Grid Solar Deployment",
-    description: "Deploy 200 solar mini-grids in off-grid rural areas; part of total 4,200 MW generation target",
-    emissionsReductionPotential: 0.8, emissionsReductionUnit: "MtCO₂e/yr",
-    costEstimate: 120, costCurrency: "USD", costMagnitude: "million",
-    confidence: "high",
-  },
-  {
-    id: "m4", targetId: "t4", sectorId: "energy",
-    title: "Improved Cookstove Distribution",
-    description: "Distribute 65,000 improved cookstoves/year and promote cooking fuel switch to electricity (50% of cooking by 2025)",
-    emissionsReductionPotential: 1.09, emissionsReductionUnit: "MtCO₂e/yr",
-    costEstimate: 25, costCurrency: "USD", costMagnitude: "million",
-    confidence: "medium",
-  },
-  {
-    id: "m5", targetId: "t5", sectorId: "transport",
-    title: "E-Buses & BRT for Greater Kampala",
-    description: "Introduce 200+ e-buses in GKMA; implement 101 km BRT corridors; target 29% below BAU transport emissions by 2030",
-    emissionsReductionPotential: 0.54, emissionsReductionUnit: "MtCO₂e/yr",
-    costEstimate: 200, costCurrency: "USD", costMagnitude: "million",
-    confidence: "low",
-  },
-  {
-    id: "m9", targetId: "t5", sectorId: "transport",
-    title: "Road Fuel Efficiency Standards",
-    description: "Implement GFEI 50by50 fuel economy improvement (20% by 2030); regulate imported vehicle fleet; ~1.86 MtCO₂e reduction potential",
-    emissionsReductionPotential: 1.86, emissionsReductionUnit: "MtCO₂e/yr",
-    costEstimate: 10, costCurrency: "USD", costMagnitude: "million",
-    confidence: "medium",
-  },
-  {
-    id: "m6", targetId: "t6", sectorId: "waste",
-    title: "Green Cities Waste Management",
-    description: "Comprehensive solid waste + wastewater management in 5 cities and 15 municipalities; ~1.1 MtCO₂e reduction potential by 2030",
-    emissionsReductionPotential: 1.1, emissionsReductionUnit: "MtCO₂e/yr",
-    costEstimate: 80, costCurrency: "USD", costMagnitude: "million",
-    confidence: "medium",
-  },
-  {
-    id: "m7", targetId: "t8", sectorId: "agriculture",
-    title: "Agroforestry Integration Programme",
-    description: "Promote agroforestry across 1.3 million ha of farmland by 2030 (Aichi Biodiversity Target 15); part of CSA adoption target",
-    emissionsReductionPotential: 1.5, emissionsReductionUnit: "MtCO₂e/yr",
-    costEstimate: 35, costCurrency: "USD", costMagnitude: "million",
-    confidence: "high",
-  },
+  { id: "m1", targetId: "t1", sectorId: "afolu", title: "Payment for Ecosystem Services (PES)", description: "Establish PES schemes to incentivize forest conservation by local communities; target 500,000 ha", emissionsReductionPotential: 2.5, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 15, costCurrency: "USD", costMagnitude: "million/yr", confidence: "medium", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; AFOLU REDD+ / forest conservation`, costSource: `${NDC_COST}; recurring programme cost (million USD/yr)` } },
+  { id: "m2", targetId: "t1", sectorId: "afolu", title: "Commercial Plantation Expansion", description: "Scale up commercial timber/pole/bioenergy woodlot plantations on degraded lands; 3.8 MtCO₂e/yr at full scale", emissionsReductionPotential: 3.8, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 45, costCurrency: "USD", costMagnitude: "million", confidence: "high", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; commercial plantation programme`, costSource: `${NDC_COST}; upfront capex (million USD)` } },
+  { id: "m8", targetId: "t1", sectorId: "afolu", title: "Improved Charcoal Kilns (AFOLU Energy Efficiency)", description: "Scale up efficient charcoal production technology from 12% (2020) to 75% kiln efficiency by 2030; 3.37 MtCO₂e/yr at full scale", emissionsReductionPotential: 3.37, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 20, costCurrency: "USD", costMagnitude: "million", confidence: "medium", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; charcoal kiln efficiency`, costSource: `${NDC_COST}; upfront capex (million USD)` } },
+  { id: "m3", targetId: "t4", sectorId: "energy", title: "Mini-Grid Solar Deployment", description: "Deploy 200 solar mini-grids in off-grid rural areas; part of total 4,200 MW generation target", emissionsReductionPotential: 0.8, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 120, costCurrency: "USD", costMagnitude: "million", confidence: "high", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; distributed renewable energy`, costSource: `${NDC_COST}; mini-grid capex benchmark` } },
+  { id: "m4", targetId: "t4", sectorId: "energy", title: "Improved Cookstove Distribution", description: "Distribute 65,000 improved cookstoves/year and promote cooking fuel switch to electricity (50% of cooking by 2025)", emissionsReductionPotential: 1.09, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 25, costCurrency: "USD", costMagnitude: "million", confidence: "medium", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; clean cooking / fuel switch`, costSource: `${NDC_COST}; programme capex (million USD)` } },
+  { id: "m5", targetId: "t5", sectorId: "transport", title: "E-Buses & BRT for Greater Kampala", description: "Introduce 200+ e-buses in GKMA; implement 101 km BRT corridors; target 29% below BAU transport emissions by 2030", emissionsReductionPotential: 0.54, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 200, costCurrency: "USD", costMagnitude: "million", confidence: "low", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; GKMA BRT / e-mobility — wide uncertainty`, costSource: `${NDC_COST}; infrastructure order-of-magnitude` } },
+  { id: "m9", targetId: "t5", sectorId: "transport", title: "Road Fuel Efficiency Standards", description: "Implement GFEI 50by50 fuel economy improvement (20% by 2030); regulate imported vehicle fleet; 1.86 MtCO₂e/yr at full scale", emissionsReductionPotential: 1.86, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 10, costCurrency: "USD", costMagnitude: "million", confidence: "medium", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; vehicle fuel-economy standards`, costSource: `${NDC_COST}; policy implementation cost` } },
+  { id: "m6", targetId: "t6", sectorId: "waste", title: "Green Cities Waste Management", description: "Comprehensive solid waste + wastewater management in 5 cities and 15 municipalities; 1.1 MtCO₂e/yr at full scale", emissionsReductionPotential: 1.1, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 80, costCurrency: "USD", costMagnitude: "million", confidence: "medium", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; municipal waste & wastewater`, costSource: `${NDC_COST}; municipal infrastructure benchmark` } },
+  { id: "m7", targetId: "t8", sectorId: "agriculture", title: "Agroforestry Integration Programme", description: "Promote agroforestry across 1.3 million ha of farmland by 2030 (Aichi Biodiversity Target 15); part of CSA adoption target", emissionsReductionPotential: 1.5, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 35, costCurrency: "USD", costMagnitude: "million", confidence: "high", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; agroforestry on 1.3M ha`, costSource: `${NDC_COST}; programme capex (million USD)` } },
 ];
 
 /* ── Utility functions ── */

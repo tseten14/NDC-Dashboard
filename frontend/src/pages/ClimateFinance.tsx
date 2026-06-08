@@ -125,10 +125,18 @@ export default function ClimateFinance() {
   const sequencing = useMemo(() => getUgandaSequencingGuidance(), []);
 
   function handleCsv() {
-    const header = ["Project", "Sector", "Abatement_MtCO2e_yr", "CostToAbate_USD_per_t", "Investment_USD", "AnnualCarbonRevenue_USD", "NetAnnualValue_USD", "CarbonCoversCost"];
+    const header = [
+      "Project", "Sector", "Abatement_MtCO2e_yr", "Abatement_Unit", "CostToAbate_USD_per_t",
+      "CostToAbate_Low_USD_per_t", "CostToAbate_High_USD_per_t", "Investment_USD",
+      "AnnualCarbonRevenue_USD", "NetAnnualValue_USD", "CarbonCoversCost", "Confidence",
+      "Abatement_Source", "Cost_Source",
+    ];
     const rows = macc.map((e) => [
-      JSON.stringify(e.title), e.sectorId, e.abatementMtPerYr, e.costToAbateUSDPerT?.toFixed(2) ?? "",
-      Math.round(e.fundingNeedUSD), Math.round(e.annualRevenueUSD), Math.round(e.netAnnualUSD), e.carbonCoversCost ? "yes" : "no",
+      JSON.stringify(e.title), e.sectorId, e.abatementMtPerYr, JSON.stringify(e.abatementUnit),
+      e.costToAbateUSDPerT?.toFixed(2) ?? "", e.costToAbateLowUSDPerT?.toFixed(2) ?? "",
+      e.costToAbateHighUSDPerT?.toFixed(2) ?? "", Math.round(e.fundingNeedUSD),
+      Math.round(e.annualRevenueUSD), Math.round(e.netAnnualUSD), e.carbonCoversCost ? "yes" : "no",
+      e.confidence, JSON.stringify(e.abatementSource), JSON.stringify(e.costSource),
     ]);
     const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
@@ -187,6 +195,30 @@ export default function ClimateFinance() {
           </CardContent>
         </Card>
 
+        <Card className="border-border/80">
+          <CardContent className="p-3 space-y-2">
+            <h3 className="text-xs font-bold text-foreground">Methodology — indicative vs derived</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[10px] leading-relaxed">
+              <div>
+                <p className="font-semibold text-foreground mb-1">Indicative inputs (NDC catalogue)</p>
+                <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
+                  <li>Abatement (MtCO₂e/yr) and costs (USD millions) from NDC mitigation analysis</li>
+                  <li>Confidence bands on cost to abate (±10–35% by data quality)</li>
+                  <li>Fund window scales — public guidelines, not eligibility decisions</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-foreground mb-1">Derived metrics (your sliders)</p>
+                <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
+                  <li>Cost to abate — levelised capex (CRF) + annual costs ÷ tonnes avoided</li>
+                  <li>Gap closure — greedy cheapest-first stack; last project prorated to gap</li>
+                  <li>MAC order — conservative rank uses upper cost band when confidence is not high</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Data accuracy warnings */}
         <div className="space-y-2">
           {dataWarnings.map((w) => (
@@ -235,10 +267,10 @@ export default function ClimateFinance() {
 
         {/* Summary tiles */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <Tile label="2030 gap to close" value={formatMt(summary.totalGapMt, 1)} sub="CO₂e above target" icon={Leaf} tone="text-off-track" />
-          <Tile label="Investment needed" value={formatUSD(summary.investment)} sub="for matched projects" icon={Banknote} />
-          <Tile label="Carbon revenue / yr" value={formatUSD(summary.annualRevenue)} sub={`at $${assumptions.carbonPrice}/tonne`} icon={TrendingUp} tone="text-on-track" />
-          <Tile label="Projects that pay for themselves" value={`${summary.selfFunding} of ${macc.length}`} sub="at this carbon price" icon={CheckCircle2} />
+          <Tile label="2030 gap to close" value={formatMt(summary.totalGapMt, 1)} sub="from Climate TRACE trend" icon={Leaf} tone="text-off-track" indicative={false} />
+          <Tile label="Investment needed" value={formatUSD(summary.investment)} sub="indicative NDC costs, prorated" icon={Banknote} indicative />
+          <Tile label="Carbon revenue / yr" value={formatUSD(summary.annualRevenue)} sub={`derived at $${assumptions.carbonPrice}/t`} icon={TrendingUp} tone="text-on-track" indicative={false} />
+          <Tile label="Self-funding at carbon price" value={`${summary.selfFunding} of ${macc.length}`} sub="screening only" icon={CheckCircle2} indicative />
         </div>
 
         {/* Sector gap -> opportunity */}
@@ -287,10 +319,10 @@ export default function ClimateFinance() {
         {/* Cost-to-abate chart */}
         <Card>
           <CardContent className="p-3">
-            <h3 className="text-xs font-bold text-foreground mb-0.5">Cost to cut carbon, by project</h3>
+            <h3 className="text-xs font-bold text-foreground mb-0.5">Cost to cut carbon, by project (indicative MAC)</h3>
             <p className="text-[10px] text-muted-foreground mb-2">
-              Sorted cheapest first. <span className="text-on-track font-medium">Green bars</span> sit below the carbon
-              price line — those projects can pay for themselves with carbon credits.
+              Conservative sort (upper band when NDC confidence is not high).{" "}
+              <span className="text-on-track font-medium">Green bars</span> below the carbon price — screening signal only.
             </p>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={chartData} margin={{ bottom: 44 }}>
@@ -359,6 +391,15 @@ export default function ClimateFinance() {
                 Matched funding — {selectedEcon.title}
               </h3>
               <p className="text-[10px] text-muted-foreground">{selectedRec.dataCaveat}</p>
+              <div className="rounded-md border border-border/60 bg-muted/20 px-2.5 py-2 text-[10px] space-y-1">
+                <p><span className="font-semibold text-foreground">Abatement source: </span>{selectedEcon.abatementSource}</p>
+                <p><span className="font-semibold text-foreground">Cost source: </span>{selectedEcon.costSource}</p>
+                <p className="text-muted-foreground">
+                  Unit: {selectedEcon.abatementUnit}
+                  {!selectedEcon.abatementIsAnnual ? " (annualised from cumulative total)" : ""}
+                  {" · "}Cost: {selectedEcon.costType === "annual" ? "recurring USD/yr" : "upfront capex (USD millions)"}
+                </p>
+              </div>
               {selectedRec.primaryWindow && (
                 <div className="rounded-md border border-primary/30 bg-primary/5 px-2.5 py-2 text-[11px]">
                   <span className="font-semibold text-primary">Primary window: </span>
@@ -463,13 +504,22 @@ function SliderControl({
   );
 }
 
-function Tile({ label, value, sub, icon: Icon, tone }: { label: string; value: string; sub?: string; icon: typeof Coins; tone?: string }) {
+function Tile({
+  label, value, sub, icon: Icon, tone, indicative,
+}: {
+  label: string; value: string; sub?: string; icon: typeof Coins; tone?: string; indicative?: boolean;
+}) {
   return (
     <Card>
       <CardContent className="p-3">
-        <div className="flex items-center gap-1.5 mb-1">
+        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
           <Icon className="h-3.5 w-3.5 text-muted-foreground" />
           <p className="text-[9px] uppercase tracking-wide text-muted-foreground leading-tight">{label}</p>
+          {indicative != null && (
+            <Badge variant="outline" className="text-[7px] h-4 px-1">
+              {indicative ? "indicative" : "derived"}
+            </Badge>
+          )}
         </div>
         <p className={cn("text-lg font-bold tabular-nums", tone ?? "text-foreground")}>{value}</p>
         {sub && <p className="text-[9px] text-muted-foreground">{sub}</p>}

@@ -154,10 +154,10 @@ export interface ProjectRecommendation {
 }
 
 function fitFromScale(usd: number, w: FundingWindow): FundFit {
-  if (usd < w.scaleMinUSD * 0.5 && w.scaleMinUSD > 0) return "low";
-  if (usd > w.scaleMaxUSD * 1.5) return "low";
+  if (usd < w.scaleMinUSD * 0.75 && w.scaleMinUSD > 0) return "low";
+  if (usd > w.scaleMaxUSD * 1.25) return "low";
   if (usd >= w.scaleMinUSD && usd <= w.scaleMaxUSD) return "high";
-  if (usd >= w.scaleMinUSD * 0.5 && usd <= w.scaleMaxUSD * 1.25) return "medium";
+  if (usd >= w.scaleMinUSD * 0.75 && usd <= w.scaleMaxUSD * 1.1) return "medium";
   return "low";
 }
 
@@ -191,21 +191,27 @@ export function matchFundingWindows(econ: ProjectEconomics): FundMatch[] {
       }
     }
 
-    if (window.id === "gcf-readiness" && (usd > 15_000_000 || econ.confidence === "low")) {
-      if (fit === "low") fit = "medium";
-      rationale =
-        usd > 15_000_000
-          ? "Large programme — use readiness to prepare feasibility, safeguards, and accredited-entity packaging."
-          : "Low confidence cost data — readiness funds can finance feasibility before full proposal.";
-    }
-
-    if (preferred.includes(window.id) && fit !== "ineligible") {
-      if (fit === "low") fit = "medium";
-      rationale += ` Sector (${sector}) commonly financed through this channel in comparable LDC programmes.`;
-    }
-
-    if (window.id === "national-budget" && usd < 50_000_000) {
+    if (
+      window.id === "gcf-readiness" &&
+      econ.confidence === "low" &&
+      usd <= w.scaleMaxUSD &&
+      fit !== "high"
+    ) {
       fit = fit === "low" ? "medium" : fit;
+      rationale =
+        "Low confidence cost data — readiness funds can finance feasibility before a full proposal (if scale fits).";
+    } else if (window.id === "gcf-readiness" && usd > 15_000_000 && fit === "low") {
+      rationale =
+        "Large programme — readiness may help prepare feasibility, but scale likely needs a larger window after preparation.";
+    }
+
+    if (preferred.includes(window.id) && fit === "high") {
+      rationale += ` Sector (${sector}) commonly financed through this channel in comparable LDC programmes.`;
+    } else if (preferred.includes(window.id) && fit === "medium") {
+      rationale += ` Sector (${sector}) has used this channel before — verify scale and eligibility.`;
+    }
+
+    if (window.id === "national-budget" && usd < 50_000_000 && fit !== "low") {
       rationale += " Many NDC measures expect domestic co-finance or line-ministry delivery.";
     }
 
