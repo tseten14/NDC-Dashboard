@@ -10,6 +10,14 @@ export function OverviewPanel() {
   const totalReduction = totalBaseline - totalCurrent;
   const atRiskCount = sectors.filter(s => getSectorStatus(s) !== "on-track").length;
 
+  if (!sectors || sectors.length === 0) {
+    return (
+      <div className="flex items-center justify-center p-12 text-sm text-muted-foreground" role="status">
+        Climate data is not yet available.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* KPI Cards */}

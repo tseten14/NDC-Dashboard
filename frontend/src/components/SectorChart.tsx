@@ -35,7 +35,7 @@ export function SectorChart({ sector, dataView }: SectorChartProps) {
     ];
 
     return (
-      <div>
+      <div aria-label={`${sector.name} emissions chart — observed and projected`} role="img">
         <ResponsiveContainer width="100%" height={300}>
           <ComposedChart data={data}>
             <ChartHatchPatternDef id={HATCH_ID} />
@@ -82,7 +82,7 @@ export function SectorChart({ sector, dataView }: SectorChartProps) {
   const isProjected = dataView === "projected";
 
   return (
-    <div>
+    <div aria-label={`${sector.name} ${isProjected ? "projected" : "historical"} emissions chart`} role="img">
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
           <ChartHatchPatternDef id={HATCH_ID} />

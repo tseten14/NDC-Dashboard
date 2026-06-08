@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { CircleDot, Send, Check, Undo2 } from "lucide-react";
@@ -9,7 +10,7 @@ const styles: Record<string, { cls: string; Icon: any; label: string }> = {
   Returned: { cls: "bg-at-risk/15 text-at-risk border-at-risk/40", Icon: Undo2, label: "Returned" },
 };
 
-export function WorkflowBadge({ state, className }: { state: string; className?: string }) {
+export const WorkflowBadge = memo(function WorkflowBadge({ state, className }: { state: string; className?: string }) {
   const s = styles[state] ?? styles.Draft;
   const Icon = s.Icon;
   return (
@@ -18,7 +19,7 @@ export function WorkflowBadge({ state, className }: { state: string; className?:
       {s.label}
     </Badge>
   );
-}
+});
 
 const validationStyles: Record<string, string> = {
   Seeded: "bg-muted text-muted-foreground border-muted-foreground/30",
@@ -27,10 +28,10 @@ const validationStyles: Record<string, string> = {
   Modelled: "bg-chart-3/15 text-chart-3 border-chart-3/40",
 };
 
-export function ValidationBadge({ status, className }: { status: string; className?: string }) {
+export const ValidationBadge = memo(function ValidationBadge({ status, className }: { status: string; className?: string }) {
   return (
     <Badge variant="outline" className={cn("text-[9px] h-4 px-1.5", validationStyles[status] ?? validationStyles.Seeded, className)}>
       {status}
     </Badge>
   );
-}
+});

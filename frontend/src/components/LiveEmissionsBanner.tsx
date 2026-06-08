@@ -65,7 +65,7 @@ export function LiveEmissionsBanner() {
     : null;
 
   return (
-    <div className="px-3 py-1.5 border-b border-border bg-card flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
+    <div className="px-3 py-1.5 border-b border-border bg-card flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
       <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto min-w-0">
         <Satellite className="h-3.5 w-3.5 text-primary" />
         <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
@@ -96,7 +96,7 @@ export function LiveEmissionsBanner() {
 
       {data && (
         <>
-          <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto min-w-0 shrink-0">
             {(Object.entries(data.sectors) as [string, { latest_year: number | null; latest_value: number | null; status: string }][]).map(
               ([key, s]) => (
                 <Badge
@@ -115,7 +115,7 @@ export function LiveEmissionsBanner() {
             )}
           </div>
 
-          <div className="w-full sm:ml-auto sm:w-auto flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground min-w-0">
+          <div className="w-full sm:ml-auto sm:w-auto flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground min-w-0">
             {data.global_rank != null && (
               <span>
                 Global rank <span className="font-mono">#{data.global_rank}</span>

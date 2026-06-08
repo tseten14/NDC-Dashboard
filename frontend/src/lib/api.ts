@@ -84,7 +84,7 @@ async function postJSON<T>(path: string, body: unknown, headers: HeadersInit = {
   return res.json() as Promise<T>;
 }
 
-export type NdcSectorKey = "afolu" | "energy" | "ippu" | "agriculture" | "waste";
+export type NdcSectorKey = "afolu" | "energy" | "transport" | "ippu" | "agriculture" | "waste";
 export type SectorStatus = "on_track" | "at_risk" | "mixed" | "off_track" | "unknown";
 
 export interface SectorSummaryEntry {

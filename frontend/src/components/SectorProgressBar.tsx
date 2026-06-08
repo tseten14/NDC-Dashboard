@@ -1,7 +1,8 @@
+import { memo } from "react";
 import { type Sector, getProgressPercent, getSectorStatus } from "@/data/climate-data";
 import { cn } from "@/lib/utils";
 
-export function SectorProgressBar({ sector }: { sector: Sector }) {
+export const SectorProgressBar = memo(function SectorProgressBar({ sector }: { sector: Sector }) {
   const progress = getProgressPercent(sector);
   const status = getSectorStatus(sector);
   const Icon = sector.icon;
@@ -42,4 +43,4 @@ export function SectorProgressBar({ sector }: { sector: Sector }) {
       </span>
     </div>
   );
-}
+});

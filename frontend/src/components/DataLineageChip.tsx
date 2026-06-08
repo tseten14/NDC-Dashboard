@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +14,7 @@ interface DataLineageChipProps {
   className?: string;
 }
 
-export function DataLineageChip({ lineage, className }: DataLineageChipProps) {
+export const DataLineageChip = memo(function DataLineageChip({ lineage, className }: DataLineageChipProps) {
   const asOfLabel = lineage.asOf
     ? new Date(lineage.asOf).toLocaleDateString("en-UG", { day: "numeric", month: "short", year: "numeric" })
     : "—";
@@ -42,4 +43,4 @@ export function DataLineageChip({ lineage, className }: DataLineageChipProps) {
       )}
     </span>
   );
-}
+});

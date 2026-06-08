@@ -2,12 +2,13 @@ import type { PolicyDocument } from "./policy-documents";
 import type { SectorId } from "@/data/uganda-ndc-data";
 
 const SECTOR_KEYWORDS: Record<SectorId, string[]> = {
-  AFOLU: ["forest", "redd", "wetland", "land use", "afolu", "forestry", "deforest"],
-  Energy: ["energy", "power", "electrification", "electricity", "solar", "grid", "renewable"],
-  Transport: ["transport", "road", "vehicle", "mobility", "rail"],
-  IPPU: ["industrial", "manufacturing", "ippu", "cement", "fluorinated"],
-  Agriculture: ["agriculture", "agroforestry", "livestock", "crop", "dairy", "csa"],
-  Waste: ["waste", "landfill", "sanitation"],
+  "economy-wide": ["economy", "national", "gdp", "cross-sector", "overall"],
+  afolu: ["forest", "redd", "wetland", "land use", "afolu", "forestry", "deforest"],
+  energy: ["energy", "power", "electrification", "electricity", "solar", "grid", "renewable"],
+  transport: ["transport", "road", "vehicle", "mobility", "rail"],
+  ippu: ["industrial", "manufacturing", "ippu", "cement", "fluorinated"],
+  agriculture: ["agriculture", "agroforestry", "livestock", "crop", "dairy", "csa"],
+  waste: ["waste", "landfill", "sanitation"],
 };
 
 function docSearchText(doc: PolicyDocument): string {

@@ -84,7 +84,7 @@ export function useHazardLayers() {
       })
       .finally(() => setLoading(false));
   }, []);
-  return { data, loading, error };
+  return useMemo(() => ({ data, loading, error }), [data, loading, error]);
 }
 
 export function useRiskDistricts() {
@@ -101,7 +101,7 @@ export function useRiskDistricts() {
       })
       .finally(() => setLoading(false));
   }, []);
-  return { data, loading, error };
+  return useMemo(() => ({ data, loading, error }), [data, loading, error]);
 }
 
 export function useRiskCells() {
@@ -118,7 +118,7 @@ export function useRiskCells() {
       })
       .finally(() => setLoading(false));
   }, []);
-  return { data, loading, error };
+  return useMemo(() => ({ data, loading, error }), [data, loading, error]);
 }
 
 export function useAdaptationOptions() {
@@ -135,7 +135,7 @@ export function useAdaptationOptions() {
       })
       .finally(() => setLoading(false));
   }, []);
-  return { data, loading, error };
+  return useMemo(() => ({ data, loading, error }), [data, loading, error]);
 }
 
 export function riskColor(score: number): string {

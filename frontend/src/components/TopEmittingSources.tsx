@@ -161,8 +161,12 @@ export function TopEmittingSources() {
 
       <div className="flex-1 overflow-auto">
         {sources.length === 0 ? (
-          <div className="p-6 text-xs text-muted-foreground">
-            No source-level rows for this geography{sectorFilter !== "all" ? " and sector filter" : ""}.
+          <div className="flex flex-col items-center justify-center gap-2 p-8 text-center" role="status" aria-live="polite">
+            <Layers className="h-8 w-8 text-muted-foreground/40" />
+            <p className="text-sm font-medium text-muted-foreground">No data available</p>
+            <p className="text-xs text-muted-foreground/70">
+              No source-level rows for this geography{sectorFilter !== "all" ? " and sector filter" : ""}. Try changing the sector filter or selecting a different region.
+            </p>
           </div>
         ) : (
           <table className="w-full text-xs">

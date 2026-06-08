@@ -74,6 +74,14 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
     );
   }
 
+  if (!isLoading && !hasError && snapshots.length === 0) {
+    return (
+      <div className="px-3 py-2 border-b border-border bg-muted/20" role="status">
+        <p className="text-xs text-muted-foreground">No NDC targets found. Please check the data configuration.</p>
+      </div>
+    );
+  }
+
   if (hasError) {
     return (
       <div className="px-3 py-2 border-b border-border bg-destructive/5" role="alert">

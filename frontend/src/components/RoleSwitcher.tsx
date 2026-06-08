@@ -49,7 +49,7 @@ export function RoleSwitcher() {
         </Badge>
       )}
       <Select value={activeRole ?? ""} onValueChange={(v) => switchRole(v as AppRole)}>
-        <SelectTrigger className="w-[180px] h-7 text-[11px]">
+        <SelectTrigger className="w-[180px] h-7 text-[11px]" aria-label="Switch active role">
           <SelectValue placeholder="Select role…" />
         </SelectTrigger>
         <SelectContent>
@@ -66,7 +66,7 @@ export function RoleSwitcher() {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1">
+          <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1" aria-label="Open role management menu">
             <UserPlus className="h-3 w-3" /> Roles
           </Button>
         </DropdownMenuTrigger>
