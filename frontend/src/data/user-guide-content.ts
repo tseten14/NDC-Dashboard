@@ -43,17 +43,18 @@ export const BASIC_FEATURES: FeatureGuide[] = [
     title: "Home",
     to: "/",
     who: "Everyone — first stop after choosing a country",
-    purpose: "Orient new users and jump to the main tools without opening heavy charts.",
+    purpose: "Orient new users, surface NDC delivery gaps, and jump to main tools.",
     steps: [
-      "Read the short welcome and feature cards.",
-      "Click a card (e.g. Dashboard, Policy documents) to go straight there.",
+      "Read the short welcome and feature cards (Live vs Indicative labels).",
+      "Review the NDC gap priorities panel — sectors ranked by distance to 2030 goals.",
+      "Click a gap row or card (e.g. Dashboard, Policy Impact) to go straight there.",
       "Use Change country in the header if you need to re-select Uganda.",
     ],
     howItWorks:
-      "Home is a static landing page. It does not load emissions data. Any old links with ?target= in the URL are forwarded to the Dashboard automatically.",
-    result: "You know where to go next; no tables or downloads on this page.",
-    limitations: "Not a reporting screen — open Dashboard for numbers.",
-    youWillSee: ["Welcome message", "Feature cards with links", "Country name in the header"],
+      "Home loads a gap summary from live Climate TRACE predictions where available; indicator-only targets are labelled Indicative. Feature cards link to modules. Old ?target= URLs forward to Dashboard.",
+    result: "You see which sectors need attention before opening charts.",
+    limitations: "Gap panel is a briefing aid — open Dashboard for full target detail.",
+    youWillSee: ["Welcome message", "NDC gap priorities panel", "Feature cards with Live/Indicative chips", "Country name in the header"],
   },
   {
     title: "Dashboard",
@@ -80,7 +81,35 @@ export const BASIC_FEATURES: FeatureGuide[] = [
       "Observed vs target chart with baseline and 2030 markers",
       "Progress % and status colour",
       "Strip of ON-TRACK / OFF-TRACK / IMPL. GAPS / MRV GAPS counts",
+      "Compact NDC gap priorities strip (click a sector to filter)",
       "Data coverage and refresh date",
+      "Ingested provenance badge on indicator targets when ministry data is uploaded",
+    ],
+  },
+  {
+    title: "Policy Impact",
+    to: "/policy-impact",
+    who: "Socio-economic planners, gender/equity teams, policy designers",
+    purpose:
+      "Forecast socio-economic outcomes of an intervention using UNFCCC KCI case analogies and the Transition Element Framework (TEF).",
+    steps: [
+      "Open Policy Impact from the menu (or from Dashboard Mitigation Options).",
+      "Step 1 — set objective and sector (gap context may pre-fill from NDC priorities).",
+      "Step 2 — pick a TEF intervention type and scale/timeline sliders.",
+      "Step 3 — review matched KCI cases and confidence.",
+      "Step 4 — read impacts, trade-offs, and pathway diagram; link to Climate Finance for funding screening.",
+    ],
+    howItWorks:
+      "The server matches your intervention to curated KCI policy cases (rule-based: sector, intervention type, region, scale). Outcomes aggregate top matches with provenance strings — not ML or country-specific attribution.",
+    result:
+      "A structured forecast of jobs, equity, and other socio-economic nodes plus explicit trade-offs — for workshop discussion, not legal commitments.",
+    limitations:
+      "Indicative analogies only. Does not replace national impact assessments or gender analysis sign-off.",
+    youWillSee: [
+      "Four-step wizard",
+      "Matched KCI cases with confidence %",
+      "Impact and trade-off cards",
+      "Link to Climate Finance with sector pre-filled",
     ],
   },
   {
@@ -346,6 +375,8 @@ export const DATA_SOURCES_TABLE = [
   { area: "Policy documents", source: "Climate Policy Radar export", whatYouGet: "Titles, dates, CPR/PDF links", caveat: "Not live API; no full-text search yet" },
   { area: "Your activities in My Work", source: "This browser only", whatYouGet: "Personal drafts", caveat: "Not shared nationally" },
   { area: "Climate Risk maps", source: "Illustrative seed data", whatYouGet: "Demo prioritisation", caveat: "Not operational hazard models" },
+  { area: "Policy Impact forecasts", source: "KCI case corpus (bundled)", whatYouGet: "Socio-economic analogies", caveat: "Not country-specific causal attribution" },
+  { area: "Mapped ingest", source: "Ministry upload → Postgres", whatYouGet: "Indicator observations on Dashboard", caveat: "Unverified until MRV sign-off; not Climate TRACE MtCO₂e" },
 ];
 
 export const GLOSSARY: { term: string; def: string }[] = [
@@ -363,6 +394,9 @@ export const GLOSSARY: { term: string; def: string }[] = [
   { term: "Intended outcome", def: "What policy aims for (NDC target, health, air quality)." },
   { term: "Measured outcome", def: "What satellites/models observe (Dashboard, Climate TRACE)." },
   { term: "Indicative", def: "Estimate for discussion — not audited." },
+  { term: "KCI", def: "UNFCCC Katowice Committee of Experts on Impacts — source reports for Policy Impact case studies." },
+  { term: "TEF", def: "Transition Element Framework — intervention taxonomy used in Policy Impact wizard." },
+  { term: "NDC gap priorities", def: "Home/Dashboard panel ranking sectors by distance to 2030 goals using live or indicative data." },
   { term: "BTR / CRT", def: "UNFCCC reporting formats; Export CSV is a helper only." },
 ];
 

@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 import { Globe2 } from "lucide-react";
@@ -20,54 +21,61 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "./pages/NotFound.tsx";
 import CountrySelect from "./pages/CountrySelect.tsx";
 
-import MyWork from "./pages/MyWork.tsx";
 import ActivityForm from "./pages/ActivityForm.tsx";
 import ActivityDetail from "./pages/ActivityDetail.tsx";
-
-// Primary cockpit
-import ExecutiveOverview from "./pages/ExecutiveOverview.tsx";
-import DeliveryAccountability from "./pages/DeliveryAccountability.tsx";
-import EvidenceMRV from "./pages/EvidenceMRV.tsx";
-import FinanceInvestment from "./pages/FinanceInvestment.tsx";
-import DataIngestion from "./pages/DataIngestion.tsx";
-import StrategyLibrary from "./pages/StrategyLibrary.tsx";
-
-// Climate Risk & Vulnerability module
-import RiskLayout from "./pages/risk/RiskLayout.tsx";
-import RiskOverview from "./pages/risk/RiskOverview.tsx";
-import RiskMap from "./pages/risk/RiskMap.tsx";
-import RiskScreening from "./pages/risk/RiskScreening.tsx";
-import RiskDrilldown from "./pages/risk/RiskDrilldown.tsx";
-
-// Advanced (legacy)
-import Overview from "./pages/Overview.tsx";
 import NDCLayer from "./pages/NDCLayer.tsx";
-import TenfoldLayer from "./pages/TenfoldLayer.tsx";
-import NDPIVLayer from "./pages/NDPIVLayer.tsx";
-import Vision2040 from "./pages/Vision2040.tsx";
-import AFOLUmrv from "./pages/AFOLUmrv.tsx";
-import KPIsProxies from "./pages/KPIsProxies.tsx";
-import OwnershipFocals from "./pages/OwnershipFocals.tsx";
-import Projections from "./pages/Projections.tsx";
 import Ai2030Prediction from "./pages/Ai2030Prediction.tsx";
 import ClimateFinance from "./pages/ClimateFinance.tsx";
 import PolicyDocuments from "./pages/PolicyDocuments.tsx";
 import Documentation from "./pages/Documentation.tsx";
-import MapExplorer from "./pages/MapExplorer.tsx";
 import Home from "./pages/Home.tsx";
-import InvestmentTemplates from "./pages/InvestmentTemplates.tsx";
-import ExportsAPI from "./pages/ExportsAPI.tsx";
-import Admin from "./pages/Admin.tsx";
-import Indicators from "./pages/Indicators.tsx";
-import Interlinkages from "./pages/Interlinkages.tsx";
-import CausalChains from "./pages/CausalChains.tsx";
-import ProjectCheck from "./pages/ProjectCheck.tsx";
 import PolicyImpact from "./pages/PolicyImpact.tsx";
+
+const MapExplorer = lazy(() => import("./pages/MapExplorer.tsx"));
+const DataIngestion = lazy(() => import("./pages/DataIngestion.tsx"));
+const MyWork = lazy(() => import("./pages/MyWork.tsx"));
+const StrategyLibrary = lazy(() => import("./pages/StrategyLibrary.tsx"));
+const ExecutiveOverview = lazy(() => import("./pages/ExecutiveOverview.tsx"));
+const DeliveryAccountability = lazy(() => import("./pages/DeliveryAccountability.tsx"));
+const EvidenceMRV = lazy(() => import("./pages/EvidenceMRV.tsx"));
+const FinanceInvestment = lazy(() => import("./pages/FinanceInvestment.tsx"));
+const RiskLayout = lazy(() => import("./pages/risk/RiskLayout.tsx"));
+const RiskOverview = lazy(() => import("./pages/risk/RiskOverview.tsx"));
+const RiskMap = lazy(() => import("./pages/risk/RiskMap.tsx"));
+const RiskScreening = lazy(() => import("./pages/risk/RiskScreening.tsx"));
+const RiskDrilldown = lazy(() => import("./pages/risk/RiskDrilldown.tsx"));
+const Overview = lazy(() => import("./pages/Overview.tsx"));
+const TenfoldLayer = lazy(() => import("./pages/TenfoldLayer.tsx"));
+const NDPIVLayer = lazy(() => import("./pages/NDPIVLayer.tsx"));
+const Vision2040 = lazy(() => import("./pages/Vision2040.tsx"));
+const AFOLUmrv = lazy(() => import("./pages/AFOLUmrv.tsx"));
+const KPIsProxies = lazy(() => import("./pages/KPIsProxies.tsx"));
+const OwnershipFocals = lazy(() => import("./pages/OwnershipFocals.tsx"));
+const Projections = lazy(() => import("./pages/Projections.tsx"));
+const InvestmentTemplates = lazy(() => import("./pages/InvestmentTemplates.tsx"));
+const ExportsAPI = lazy(() => import("./pages/ExportsAPI.tsx"));
+const Admin = lazy(() => import("./pages/Admin.tsx"));
+const Indicators = lazy(() => import("./pages/Indicators.tsx"));
+const Interlinkages = lazy(() => import("./pages/Interlinkages.tsx"));
+const CausalChains = lazy(() => import("./pages/CausalChains.tsx"));
+const ProjectCheck = lazy(() => import("./pages/ProjectCheck.tsx"));
 import { DemoModeProvider } from "@/hooks/use-demo-mode";
 import { DemoModePanel, DemoModeToggle, DemoPresenterController } from "@/components/DemoModePanel";
 import { useDemoMode } from "@/hooks/use-demo-mode";
 
 const queryClient = new QueryClient();
+
+function RouteFallback() {
+  return (
+    <div className="flex h-full min-h-[12rem] items-center justify-center p-6 text-sm text-muted-foreground">
+      Loading…
+    </div>
+  );
+}
+
+function LazyPage({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<RouteFallback />}>{children}</Suspense>;
+}
 
 function ShellHeader() {
   const { country, clearCountry } = useCountry();
@@ -123,49 +131,49 @@ function ProtectedShell() {
                   {/* Main */}
                   <Route path="/" element={<Home />} />
                   <Route path="/dashboard" element={<NDCLayer />} />
-                  <Route path="/library" element={<StrategyLibrary />} />
-                  <Route path="/my-work" element={<MyWork />} />
+                  <Route path="/library" element={<LazyPage><StrategyLibrary /></LazyPage>} />
+                  <Route path="/my-work" element={<LazyPage><MyWork /></LazyPage>} />
                   <Route path="/activities/new" element={<ActivityForm />} />
                   <Route path="/activities/:id/edit" element={<ActivityForm />} />
                   <Route path="/activities/:id" element={<ActivityDetail />} />
 
                   {/* Cockpit / Advanced */}
-                  <Route path="/executive" element={<ExecutiveOverview />} />
-                  <Route path="/delivery" element={<DeliveryAccountability />} />
-                  <Route path="/evidence" element={<EvidenceMRV />} />
-                  <Route path="/finance" element={<FinanceInvestment />} />
-                  <Route path="/ingest" element={<DataIngestion />} />
+                  <Route path="/executive" element={<LazyPage><ExecutiveOverview /></LazyPage>} />
+                  <Route path="/delivery" element={<LazyPage><DeliveryAccountability /></LazyPage>} />
+                  <Route path="/evidence" element={<LazyPage><EvidenceMRV /></LazyPage>} />
+                  <Route path="/finance" element={<LazyPage><FinanceInvestment /></LazyPage>} />
+                  <Route path="/ingest" element={<LazyPage><DataIngestion /></LazyPage>} />
                   <Route path="/ai-2030" element={<Ai2030Prediction />} />
                   <Route path="/climate-finance" element={<ClimateFinance />} />
                   <Route path="/documents" element={<PolicyDocuments />} />
                   <Route path="/policy-impact" element={<PolicyImpact />} />
-                  <Route path="/map" element={<MapExplorer />} />
+                  <Route path="/map" element={<LazyPage><MapExplorer /></LazyPage>} />
                   <Route path="/docs" element={<Documentation />} />
 
                   {/* Climate Risk & Vulnerability */}
-                  <Route path="/risk" element={<RiskLayout />}>
-                    <Route index element={<RiskOverview />} />
-                    <Route path="map" element={<RiskMap />} />
-                    <Route path="screening" element={<RiskScreening />} />
-                    <Route path="drilldown" element={<RiskDrilldown />} />
+                  <Route path="/risk" element={<LazyPage><RiskLayout /></LazyPage>}>
+                    <Route index element={<LazyPage><RiskOverview /></LazyPage>} />
+                    <Route path="map" element={<LazyPage><RiskMap /></LazyPage>} />
+                    <Route path="screening" element={<LazyPage><RiskScreening /></LazyPage>} />
+                    <Route path="drilldown" element={<LazyPage><RiskDrilldown /></LazyPage>} />
                   </Route>
 
-                  <Route path="/legacy-overview" element={<Overview />} />
+                  <Route path="/legacy-overview" element={<LazyPage><Overview /></LazyPage>} />
                   <Route path="/ndc" element={<NDCLayer />} />
-                  <Route path="/indicators" element={<Indicators />} />
-                  <Route path="/interlinkages" element={<Interlinkages />} />
-                  <Route path="/causal-chains" element={<CausalChains />} />
-                  <Route path="/project-check" element={<ProjectCheck />} />
-                  <Route path="/tenfold" element={<TenfoldLayer />} />
-                  <Route path="/ndp-iv" element={<NDPIVLayer />} />
-                  <Route path="/vision-2040" element={<Vision2040 />} />
-                  <Route path="/afolu-mrv" element={<AFOLUmrv />} />
-                  <Route path="/kpis" element={<KPIsProxies />} />
-                  <Route path="/ownership" element={<OwnershipFocals />} />
-                  <Route path="/projections" element={<Projections />} />
-                  <Route path="/investment" element={<InvestmentTemplates />} />
-                  <Route path="/exports" element={<ExportsAPI />} />
-                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/indicators" element={<LazyPage><Indicators /></LazyPage>} />
+                  <Route path="/interlinkages" element={<LazyPage><Interlinkages /></LazyPage>} />
+                  <Route path="/causal-chains" element={<LazyPage><CausalChains /></LazyPage>} />
+                  <Route path="/project-check" element={<LazyPage><ProjectCheck /></LazyPage>} />
+                  <Route path="/tenfold" element={<LazyPage><TenfoldLayer /></LazyPage>} />
+                  <Route path="/ndp-iv" element={<LazyPage><NDPIVLayer /></LazyPage>} />
+                  <Route path="/vision-2040" element={<LazyPage><Vision2040 /></LazyPage>} />
+                  <Route path="/afolu-mrv" element={<LazyPage><AFOLUmrv /></LazyPage>} />
+                  <Route path="/kpis" element={<LazyPage><KPIsProxies /></LazyPage>} />
+                  <Route path="/ownership" element={<LazyPage><OwnershipFocals /></LazyPage>} />
+                  <Route path="/projections" element={<LazyPage><Projections /></LazyPage>} />
+                  <Route path="/investment" element={<LazyPage><InvestmentTemplates /></LazyPage>} />
+                  <Route path="/exports" element={<LazyPage><ExportsAPI /></LazyPage>} />
+                  <Route path="/admin" element={<LazyPage><Admin /></LazyPage>} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>

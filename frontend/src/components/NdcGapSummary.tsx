@@ -238,7 +238,10 @@ export function NdcGapSummary({ variant = "full", onSelectSector }: NdcGapSummar
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Target className="h-4 w-4 text-primary" />
-              <h2 className="font-brand text-base sm:text-lg font-semibold text-foreground">
+              <h2
+                className="font-brand text-base sm:text-lg font-semibold text-foreground"
+                data-testid="ndc-gap-summary"
+              >
                 NDC gap &amp; priorities
               </h2>
             </div>

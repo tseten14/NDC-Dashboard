@@ -13,14 +13,23 @@ import {
   TrendingUp, Upload, Leaf, Satellite, ChevronRight, Scale, Presentation,
 } from "lucide-react";
 import { useDemoMode } from "@/hooks/use-demo-mode";
+import { DataHonestyBadge, type DataHonestyKind } from "@/components/DataHonestyBadge";
 
-const FEATURES = [
+const FEATURES: {
+  icon: typeof Target;
+  title: string;
+  blurb: string;
+  to: string;
+  accent: string;
+  honesty: DataHonestyKind;
+}[] = [
   {
     icon: Target,
     title: "Explore NDCs",
     blurb: "Browse sector targets, pledges and linked measures.",
     to: "/dashboard",
     accent: "from-emerald-500/20 to-emerald-500/5",
+    honesty: "live",
   },
   {
     icon: TrendingUp,
@@ -28,6 +37,7 @@ const FEATURES = [
     blurb: "Compare live Climate TRACE data against NDC goals.",
     to: "/dashboard",
     accent: "from-sky-500/20 to-sky-500/5",
+    honesty: "live",
   },
   {
     icon: BarChart3,
@@ -35,6 +45,7 @@ const FEATURES = [
     blurb: "Drill into districts, sources and spatial certainty.",
     to: "/dashboard",
     accent: "from-violet-500/20 to-violet-500/5",
+    honesty: "live",
   },
   {
     icon: Leaf,
@@ -42,6 +53,7 @@ const FEATURES = [
     blurb: "Review activities and options tied to each target.",
     to: "/dashboard",
     accent: "from-teal-500/20 to-teal-500/5",
+    honesty: "indicative",
   },
   {
     icon: Upload,
@@ -49,6 +61,7 @@ const FEATURES = [
     blurb: "Import your own files and publish trusted observations.",
     to: "/ingest",
     accent: "from-amber-500/20 to-amber-500/5",
+    honesty: "live",
   },
   {
     icon: Sparkles,
@@ -56,6 +69,7 @@ const FEATURES = [
     blurb: "Forecast 2030 trajectories and spot emerging gaps.",
     to: "/ai-2030",
     accent: "from-fuchsia-500/20 to-fuchsia-500/5",
+    honesty: "indicative",
   },
   {
     icon: Scale,
@@ -63,6 +77,7 @@ const FEATURES = [
     blurb: "Browse national documents and see how interventions link to intended outcomes.",
     to: "/documents",
     accent: "from-slate-500/20 to-slate-500/5",
+    honesty: "live",
   },
 ];
 
@@ -201,9 +216,12 @@ export default function Home() {
                     >
                       <f.icon className="h-5 w-5 text-foreground/80" />
                     </div>
-                    <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                      {f.title}
-                    </h3>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                        {f.title}
+                      </h3>
+                      <DataHonestyBadge kind={f.honesty} />
+                    </div>
                     <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{f.blurb}</p>
                     <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                       Open <ChevronRight className="h-3 w-3" />

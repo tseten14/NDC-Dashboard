@@ -76,9 +76,30 @@ KCI: https://unfccc.int/constituted-bodies/KCI
   console.log(result.stdout);
 }
 
+function printReviewChecklist() {
+  const indexPath = join(CASES_DIR, "index.json");
+  const index = JSON.parse(readFileSync(indexPath, "utf8"));
+  console.log("\nColleague validation checklist (sign off before merge):\n");
+  for (const entry of index.cases) {
+    const raw = JSON.parse(readFileSync(join(CASES_DIR, `${entry.id}.json`), "utf8"));
+    const genderOutcomes = (raw.outcomes ?? []).filter((o) =>
+      ["gender", "equity", "inequality"].includes(String(o.category)),
+    );
+    console.log(`  [ ] ${entry.id}`);
+    console.log(`      Title: ${entry.title}`);
+    console.log(`      Sources: ${(raw.sources ?? []).map((s) => s.section ?? s.title).join("; ")}`);
+    console.log(`      Gender/equity nodes: ${genderOutcomes.length}`);
+    console.log(`      Reviewer: __________  Date: __________\n`);
+  }
+  console.log("Run: npm run build:policy-cases — must pass before merging corpus changes.\n");
+}
+
 const args = process.argv.slice(2);
 if (args[0] === "--scan" && args[1]) {
   scanPdf(args[1]);
+} else if (args.includes("--review")) {
+  validateCorpus();
+  printReviewChecklist();
 } else {
   validateCorpus();
 }

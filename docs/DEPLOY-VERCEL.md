@@ -23,8 +23,31 @@ No `VITE_API_BASE_URL` is required in production — the frontend calls `/api/v1
 
 | Variable | Required | Notes |
 |----------|----------|--------|
-| `USE_MOCK_DATA` | No | Defaults to `true` in `vercel.json` (fast, reliable). Set `false` for live Climate TRACE (slower; may timeout on Hobby) |
+| `USE_MOCK_DATA` | No | Set in `vercel.json` to `false` for **live Climate TRACE**. Set `true` for reliable demos if CT is slow or times out |
 | `VITE_API_BASE_URL` | No | Leave unset for same-origin `/api/v1` |
+| `DATABASE_URL` | For mapped ingest | Postgres connection string (e.g. [Neon](https://neon.tech) or [Supabase](https://supabase.com) via Vercel Marketplace). Enables `POST /api/v1/ingest/confirm` → dashboard provenance |
+| `SEED_DB` | No | Set `true` on first deploy to seed `targets` / `observations` from bundled catalog |
+| `USE_DB_FALLBACK` | No | Set `true` to serve in-memory seed when Postgres is unavailable (dev/demo only) |
+| `INGEST_API_KEY` | For ingest writes | Server-side key for `POST /api/v1/ingest/*` confirm/upload |
+| `VITE_INGEST_API_KEY` | For ingest writes | Same value exposed to the browser for mapped file import |
+| `FRONTEND_ORIGIN` | Production | Your Vercel app URL (e.g. `https://your-project.vercel.app`) for CORS |
+
+### Postgres setup (ministry pilot)
+
+1. Add a Postgres integration in the Vercel project (Neon, Supabase, or other).
+2. Set `DATABASE_URL` from the integration (automatic on Marketplace).
+3. Deploy — `api/index.js` runs migrations on cold start via `bootstrapDatabase()`.
+4. Optionally set `SEED_DB=true` for the first deploy, then remove or set `false`.
+5. Verify: `GET /api/v1/health/full` should report `persistence_mode: "postgres"`.
+
+### Demo vs live emissions
+
+| Profile | `USE_MOCK_DATA` | When to use |
+|---------|-----------------|-------------|
+| **Live stakeholder demo** | `false` | Pre-warm with `GET /api/v1/health/full` 2–3 min before presenting |
+| **Reliable offline demo** | `true` | Bonn-style events; no Climate TRACE dependency |
+
+Bookmark before stage time: `/api/v1/health/full` and `/dashboard?demo=1&sector=transport`
 
 ## Limits on Vercel
 
@@ -51,8 +74,8 @@ npm run dev:all
 | Path | Role |
 |------|------|
 | `vercel.json` | Build → `public/`, rewrite `/api/*` → `api/index.js`, SPA fallback |
-| `api/index.js` | Re-exports `server.js` (Express under `/api`) for Vercel Functions |
-| `server.js` | Local `listen()`; same default export as Vercel |
+| `api/index.js` | Express under `/api` + `bootstrapDatabase()` on cold start |
+| `server.js` | Local `listen()` + DB bootstrap; not used by Vercel rewrites |
 | `server/createApp.js` | Route definitions mounted at `/api/v1/*` and `/api/health` |
 
 ## Troubleshooting

@@ -15,7 +15,8 @@ Web application for exploring Uganda’s Nationally Determined Contribution (NDC
 
 - **Frontend:** Vite + React + TypeScript + Tailwind / shadcn
 - **API:** Express (`server.js`) — Climate TRACE live (API v7) + bundled catalog/risk data
-- **Activities:** Browser `localStorage` (no remote database)
+- **Mapped ingest:** Postgres when `DATABASE_URL` is set (indicator targets); otherwise ingest confirm is disabled
+- **Activities / roles:** Browser `localStorage` (demo)
 
 ## Quick start
 
@@ -36,9 +37,10 @@ Pick a country, choose a demo role from the top bar, and explore. **Home** (`/`)
 
 | Route | Screen |
 | ----- | ------ |
-| `/` | Home |
-| `/dashboard` | NDC cockpit (sectors, targets, observed, progress) |
-| `/ingest` | Data ingestion (quick scan; mapped import WIP) |
+| `/` | Home (NDC gap priorities panel for decision-makers) |
+| `/dashboard` | NDC cockpit (sectors, targets, observed, progress, compact gap panel) |
+| `/policy-impact` | Socio-economic impact forecasting (KCI case analogies) |
+| `/ingest` | Data ingestion (mapped import → Postgres; quick scan profiling) |
 | `/ai-2030` | 2030 sector predictions |
 | `/climate-finance` | Indicative finance / fund screening |
 | `/documents` | Policy corpus (laws, UN submissions, MCF projects) |
@@ -77,6 +79,8 @@ The dashboard covers all mitigation and key adaptation targets from Uganda's Upd
 | Activities & mitigation catalog | Express → `config/ndcCockpitCatalog.js` |
 | Climate risk map | Express → `data/riskSeed.js` |
 | My Work / activities | `localStorage` in this browser |
+| Mapped ingest observations | Postgres `observations` table when `DATABASE_URL` set |
+| Policy Impact forecasts | Express → `data/policy-cases/*.json` (KCI analogies, rule-based matching) |
 | Policy documents (CPR export) | `data/uganda-policy-documents.json` via `GET /api/v1/documents/*` |
 
 ### Emissions API geography
@@ -98,6 +102,8 @@ Set `USE_MOCK_DATA=true` in `.env` for offline fixture mode (no Climate TRACE ca
 
 | Variable | Purpose |
 | -------- | ------- |
+| `DATABASE_URL` | Postgres for mapped ingest + `GET /targets/:id/observations` (see [DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md)) |
+| `SEED_DB` | Run bundled seed on bootstrap (`true` for first deploy) |
 | `FRONTEND_ORIGIN` | Only browser origin allowed by CORS (default `http://localhost:8080`) |
 | `INGEST_API_KEY` | Shared secret for **write** endpoints (`POST` under `/api/v1/ingest/*`) |
 | `VITE_INGEST_API_KEY` | Same value in the frontend `.env` so the ingest UI can send `x-api-key` |

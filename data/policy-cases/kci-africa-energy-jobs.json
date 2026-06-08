@@ -93,6 +93,23 @@
       "description": "Transition away from fossil fuel operations reduces legacy sector employment",
       "confidence": 0.6,
       "evidence_refs": ["kci-africa-energy-jobs"]
+    },
+    {
+      "id": "o-gender-jobs",
+      "category": "gender",
+      "direction": "increase",
+      "description": "Distributed solar and mini-grids create local installation jobs with higher female participation than fossil sectors in several African case studies",
+      "magnitude": { "value": 22, "unit": "% female share in solar O&M (illustrative)", "low": 15, "high": 35 },
+      "confidence": 0.55,
+      "evidence_refs": ["kci-africa-energy-jobs"]
+    },
+    {
+      "id": "o-equity-access",
+      "category": "equity",
+      "direction": "increase",
+      "description": "Off-grid renewables improve electricity access for rural households previously excluded from the central grid",
+      "confidence": 0.7,
+      "evidence_refs": ["kci-africa-energy-jobs"]
     }
   ],
   "trade_offs": [

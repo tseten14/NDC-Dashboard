@@ -97,6 +97,24 @@
       "evidence_refs": ["kci-brazil-ag-credit"]
     },
     {
+      "id": "o-gender",
+      "category": "gender",
+      "direction": "ambiguous",
+      "description": "Women farmers often face collateral and tenure barriers — credit uptake skews male-headed households without targeted quotas",
+      "magnitude": { "value": 18, "unit": "% lower uptake among women-led farms (scenario)", "low": 10, "high": 28 },
+      "confidence": 0.62,
+      "evidence_refs": ["kci-brazil-ag-credit"]
+    },
+    {
+      "id": "o-equity-access",
+      "category": "equity",
+      "direction": "increase",
+      "description": "Dedicated credit lines for smallholders and women producers can narrow rural income gaps when paired with extension",
+      "magnitude": { "value": 6, "unit": "% income gain for targeted groups", "low": 2, "high": 12 },
+      "confidence": 0.58,
+      "evidence_refs": ["kci-brazil-ag-credit"]
+    },
+    {
       "id": "o-emissions",
       "category": "emissions",
       "direction": "ambiguous",

@@ -25,12 +25,11 @@ import { mapRowsToObservations } from "../lib/ingest/confirmRows.ts";
 import { resolveTargetId } from "../db/id.ts";
 import { safeParseOrLog } from "../shared/validate.js";
 import { ingestScanReportSchema } from "../shared/schemas/ingestScan.schema.js";
-import { writeAuthUnlessGet } from "../server/middleware/apiKeyAuth.js";
+import { requireWriteApiKey } from "../server/middleware/apiKeyAuth.js";
 import { validateUploadMime } from "../server/middleware/uploadValidation.js";
 import { logIngestEvent } from "../server/logger.js";
 
 const router = express.Router();
-router.use(writeAuthUnlessGet);
 
 /** Vercel serverless body limits — keep uploads smaller in production. */
 const ON_VERCEL = Boolean(process.env.VERCEL);
@@ -675,7 +674,7 @@ function uploadMiddleware(req, res, next) {
   });
 }
 
-router.post("/ingest/scan", uploadMiddleware, async (req, res) => {
+router.post("/ingest/scan", requireWriteApiKey, uploadMiddleware, async (req, res) => {
   try {
     const files = req.files ?? [];
     if (!files.length) {
@@ -720,7 +719,7 @@ router.post("/ingest/scan", uploadMiddleware, async (req, res) => {
   }
 });
 
-router.post("/ingest/files/import", async (req, res) => {
+router.post("/ingest/files/import", requireWriteApiKey, async (req, res) => {
   try {
     const validation = validateImportPayload(req.body ?? {});
     if (!validation.ok) {
@@ -825,7 +824,7 @@ function formatParseWarnings(warnings) {
   );
 }
 
-router.post("/ingest/upload", uploadSingle.single("file"), async (req, res) => {
+router.post("/ingest/upload", requireWriteApiKey, uploadSingle.single("file"), async (req, res) => {
   try {
     const file = req.file;
     if (!file) {
@@ -896,7 +895,7 @@ router.post("/ingest/upload", uploadSingle.single("file"), async (req, res) => {
   }
 });
 
-router.post("/ingest/confirm", async (req, res) => {
+router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
   try {
     const { jobId, finalColumnMapping } = req.body ?? {};
     if (!jobId || typeof jobId !== "string") {

@@ -10,9 +10,10 @@ The in-app **Documentation** tab (`/docs`) renders the same content family from 
 
 | Screen | Route | What you get |
 | ------ | ----- | ------------ |
-| Home | `/` | Links only — no data tables |
-| Dashboard | `/dashboard` | NDC targets vs Climate TRACE emissions; export |
-| Data Ingestion | `/ingest` | Quick Scan file profile (mapped import WIP) |
+| Home | `/` | Feature cards + **NDC gap priorities** (live vs indicative chips) |
+| Dashboard | `/dashboard` | NDC targets vs Climate TRACE emissions; compact gap panel; export |
+| Policy Impact | `/policy-impact` | Socio-economic forecast from KCI case analogies (indicative) |
+| Data Ingestion | `/ingest` | Mapped import → Postgres (indicator targets); Quick Scan profiling |
 | AI 2030 | `/ai-2030` | Trend to 2030 with uncertainty (indicative) |
 | Climate Finance | `/climate-finance` | Cost/abatement screening + fund hints + MCF docs |
 | Policy documents | `/documents` | CPR corpus + intervention pathway diagram |
@@ -22,7 +23,8 @@ The in-app **Documentation** tab (`/docs`) renders the same content family from 
 
 1. **Official pledges** — Uganda NDC 2022 targets and catalogue activities (bundled in app).  
 2. **Observed emissions** — Climate TRACE (live API) on Dashboard and Map.  
-3. **Evidence & screening** — Policy document links (CPR export); indicative finance and pathway diagram (not MRV).
+3. **Evidence & screening** — Policy document links (CPR export); indicative finance, Policy Impact (KCI analogies), and pathway diagram (not MRV).
+4. **Ministry uploads** — Mapped ingest observations on indicator targets when Postgres is configured (provenance badge on Dashboard).
 
 **Intended** outcomes (targets, pathway diagram) are not the same as **measured** outcomes (Climate TRACE charts).
 

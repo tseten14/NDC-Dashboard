@@ -19,6 +19,7 @@ import {
 } from "@/lib/role-capabilities";
 import { getWorkQueueCounts } from "@/lib/work-queue-counts";
 import { Badge } from "@/components/ui/badge";
+import { DataHonestyBadge } from "@/components/DataHonestyBadge";
 
 const primary = [
   { title: "Home", url: "/", icon: Home },
@@ -120,6 +121,7 @@ export function AppSidebar() {
             >
               {advOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
               Advanced
+              {!collapsed && <DataHonestyBadge kind="illustrative" className="ml-auto" />}
             </SidebarGroupLabel>
             {advOpen && (
               <SidebarGroupContent>

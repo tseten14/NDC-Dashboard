@@ -34,7 +34,30 @@ Figures are converted to MtCO₂e for display only. Sector reconciliation rules 
 
 ## Climate Finance — indicative only
 
-`frontend/src/lib/climate-finance.ts` and `climate-finance-pathways.ts` use catalogue `costEstimate` / `emissionsReductionPotential` for screening. UI must never imply audited project costs or investment advice.
+`frontend/src/lib/climate-finance.ts` and `climate-finance-pathways.ts` use catalogue `costEstimate` / `emissionsReductionPotential` for screening. UI must never imply audited project costs or investment advice. The page can show **live sector gap** from the same emissions predictions API as `NdcGapSummary`.
+
+## Policy Impact — KCI analogies (indicative)
+
+| Data | File | Shown in UI | Honesty |
+| ---- | ---- | ----------- | ------- |
+| KCI case corpus | `data/policy-cases/*.json` | `/policy-impact` wizard + results | Rule-based matching to UNFCCC KCI reports — not country-specific attribution |
+| TEF elements | `services/policyImpactEngine.js` | Intervention picker | Transition Element Framework labels |
+| Mitigation deep links | `frontend/src/lib/policy-impact-link.ts` | Dashboard Mitigation Options | Pre-fills wizard from catalogue option |
+
+Build/validate corpus: `npm run build:policy-cases` (`scripts/build_policy_cases.mjs`).
+
+## NDC gap priorities panel
+
+`frontend/src/components/NdcGapSummary.tsx` on Home and Dashboard uses live Climate TRACE predictions where available and labels indicator-only targets as **Indicative**. Chips distinguish live emissions sectors from physical indicators.
+
+## Mapped ingest (Postgres)
+
+| Mode | Persists? | Dashboard effect |
+| ---- | --------- | ---------------- |
+| Quick scan | No | Profiling report only |
+| Mapped import (confirm) | Yes, when `DATABASE_URL` set | Indicator targets (forest, electricity, CSA, wetlands, capacity) show ingested observations + provenance badge |
+
+Does **not** replace Climate TRACE MtCO₂e on emissions sectors. Requires `INGEST_API_KEY` / `VITE_INGEST_API_KEY` for writes.
 
 ## Browser-only
 

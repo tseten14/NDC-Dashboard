@@ -58,3 +58,34 @@ export function policyImpactHrefForMitigationOption(option: MitigationOption): s
   const params = new URLSearchParams({ sector, intervention, objective });
   return `/policy-impact?${params.toString()}`;
 }
+
+const SECTOR_LABEL_TO_ID: Record<string, SectorId> = {
+  "economy-wide": "economy-wide",
+  afolu: "afolu",
+  AFOLU: "afolu",
+  energy: "energy",
+  Energy: "energy",
+  transport: "transport",
+  Transport: "transport",
+  waste: "waste",
+  Waste: "waste",
+  ippu: "ippu",
+  IPPU: "ippu",
+  agriculture: "agriculture",
+  Agriculture: "agriculture",
+};
+
+/** Deep link from Policy Impact results to Climate Finance screening. */
+export function climateFinanceHrefFromPolicyImpact(params: {
+  sector: string;
+  projectId?: string;
+  mitigationOptionId?: string;
+}): string {
+  const sp = new URLSearchParams();
+  const sectorId = SECTOR_LABEL_TO_ID[params.sector] ?? "afolu";
+  sp.set("sector", sectorId);
+  const projectId = params.mitigationOptionId ?? params.projectId;
+  if (projectId) sp.set("projectId", projectId);
+  sp.set("from", "policy-impact");
+  return `/climate-finance?${sp.toString()}`;
+}

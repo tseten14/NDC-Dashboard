@@ -32,6 +32,7 @@ import {
   Workflow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { climateFinanceHrefFromPolicyImpact } from "@/lib/policy-impact-link";
 
 const STEPS = ["Objective", "Intervention", "Parameters", "Results"] as const;
 type Step = (typeof STEPS)[number];
@@ -457,7 +458,7 @@ export default function PolicyImpact() {
                 Adjust parameters
               </Button>
               <Button variant="outline" size="sm" className="text-xs" asChild>
-                <Link to="/climate-finance">
+                <Link to={climateFinanceHrefFromPolicyImpact({ sector })}>
                   <Coins className="h-3 w-3 mr-1" /> Funding requirements (Climate Finance)
                 </Link>
               </Button>

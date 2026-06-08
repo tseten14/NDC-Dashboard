@@ -151,7 +151,7 @@ export function DemoModePanel() {
         <QuestionsOverlay onDismiss={() => setQuestionsVisible(false)} />
       )}
 
-      <div className="fixed bottom-4 left-4 z-50 flex flex-wrap items-center gap-2">
+      <div className="fixed bottom-4 left-4 z-50 flex flex-wrap items-center gap-2" data-testid="demo-presenter-toolbar">
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button size="sm" className="h-8 text-xs shadow-lg gap-1.5">

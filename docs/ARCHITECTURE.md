@@ -11,7 +11,8 @@ Express (server.js, port 8787)
   ├── routes/emissions.js      Climate TRACE aggregation, map, predictions
   ├── routes/documents.js      Policy document corpus (CPR export JSON)
   ├── routes/ndcCockpit.js     Catalog (activities, mitigation)
-  ├── routes/ingest.js         File upload / scan (writes need API key)
+  ├── routes/ingest.js         File upload / scan / confirm (writes need API key + Postgres)
+  ├── routes/policyImpact.js   KCI case matching + TEF forecast
   └── routes/risk.js           Illustrative risk seed data
 ```
 
@@ -24,9 +25,10 @@ Production may serve `frontend/dist` and the API on one host (Vercel) so the bro
 | `/select-country` | Country gate | Uganda only fully supported |
 | `/` | Home | Landing; legacy `?target=` redirects to `/dashboard` |
 | `/dashboard` | NDC cockpit | Main three-column workspace |
-| `/ingest` | Data ingestion | Quick scan live; mapped import WIP |
+| `/ingest` | Data ingestion | Mapped import → Postgres; quick scan profiling |
+| `/policy-impact` | Policy Impact wizard | KCI analogies + TEF intervention forecast |
 | `/ai-2030` | 2030 forecast | Sector predictions vs targets |
-| `/climate-finance` | Finance screening | Indicative MAC / fund matching |
+| `/climate-finance` | Finance screening | Indicative MAC / fund matching; links from Policy Impact |
 | `/documents` | Policy documents | CPR export corpus (laws, UN, MCF) |
 | `/map` | Emissions map | Geolocated sources choropleth + bubbles |
 | `/docs` | User guide | Non-technical documentation |

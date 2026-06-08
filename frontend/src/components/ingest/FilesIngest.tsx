@@ -206,8 +206,26 @@ export function FilesIngest() {
   const inferredTypes = uploadResult?.inferredTypes ?? {};
   const warnings = uploadResult?.warnings ?? [];
 
+  const downloadTemplate = () => {
+    const a = document.createElement("a");
+    a.href = "/samples/indicator-import-template.csv";
+    a.download = "indicator-import-template.csv";
+    a.click();
+  };
+
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
+        <p className="text-[10px] text-muted-foreground">
+          Sample CSV for indicator targets (forest cover <code className="text-[9px]">t2</code>, electricity{" "}
+          <code className="text-[9px]">t3</code>, CSA <code className="text-[9px]">t8</code>).
+        </p>
+        <Button type="button" size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={downloadTemplate}>
+          <FileSpreadsheet className="h-3 w-3" />
+          Download template
+        </Button>
+      </div>
+
       {/* Drop zone */}
       {!uploadResult && (
         <div

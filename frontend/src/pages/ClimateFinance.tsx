@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid,
@@ -49,12 +50,20 @@ const READINESS_STYLE: Record<InvestmentReadiness, string> = {
 
 export default function ClimateFinance() {
   const { geographyLevel, selectedDistrictId, selectedSector } = useAppContext();
+  const [searchParams] = useSearchParams();
   const districtName = geographyLevel === "district" && selectedDistrictId ? selectedDistrictId : null;
   const geoKey = districtName ?? "national";
+  const sectorParam = searchParams.get("sector") as SectorId | null;
+  const projectParam = searchParams.get("projectId");
+  const fromPolicyImpact = searchParams.get("from") === "policy-impact";
 
   const [assumptions, setAssumptions] = useState<FinanceAssumptions>(DEFAULT_ASSUMPTIONS);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projectParam);
   const setA = (patch: Partial<FinanceAssumptions>) => setAssumptions((a) => ({ ...a, ...patch }));
+
+  useEffect(() => {
+    if (projectParam) setSelectedProjectId(projectParam);
+  }, [projectParam]);
 
   const predQuery = useQuery({
     queryKey: ["emissions", "predictions", geoKey],
@@ -80,6 +89,15 @@ export default function ClimateFinance() {
   const pred = predQuery.data;
 
   const macc = useMemo(() => buildMaccCurve(options, assumptions), [options, assumptions]);
+
+  const focusSectorKey = sectorParam ?? selectedSector ?? null;
+
+  const focusSectorGap = useMemo(() => {
+    if (!pred || !focusSectorKey) return null;
+    const p = pred.predictions[focusSectorKey as keyof typeof pred.predictions];
+    if (!p) return null;
+    return { key: focusSectorKey, label: p.label, gapMt: p.gap ?? 0 };
+  }, [pred, focusSectorKey]);
 
   const sectorRows = useMemo(() => {
     if (!pred) return [];
@@ -179,6 +197,30 @@ export default function ClimateFinance() {
             </Button>
           </div>
         </div>
+
+        {fromPolicyImpact && focusSectorGap && (
+          <Card className="border-sky-500/30 bg-sky-500/5">
+            <CardContent className="p-3 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
+                <span>
+                  <span className="font-semibold">From Policy Impact — {focusSectorGap.label}</span>
+                  {" · "}
+                  Live 2030 gap:{" "}
+                  {focusSectorGap.gapMt > 0 ? (
+                    <span className="text-off-track font-semibold">+{formatMt(focusSectorGap.gapMt, 1)}</span>
+                  ) : (
+                    <span className="text-on-track font-semibold">on track</span>
+                  )}
+                  {" "}(Climate TRACE trend — same source as NDC gap panel)
+                </span>
+              </div>
+              <Button asChild size="sm" variant="outline" className="h-7 text-[10px]">
+                <Link to={`/dashboard?sector=${focusSectorGap.key}`}>Open sector on Dashboard</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Plain-language explainer */}
         <Card className="border-primary/20 bg-primary/5">
@@ -292,7 +334,13 @@ export default function ClimateFinance() {
                 </thead>
                 <tbody>
                   {sectorRows.map((r) => (
-                    <tr key={r.key} className="border-b border-border/20">
+                    <tr
+                      key={r.key}
+                      className={cn(
+                        "border-b border-border/20",
+                        focusSectorKey === r.key && "bg-primary/5 ring-1 ring-inset ring-primary/20",
+                      )}
+                    >
                       <td className="py-1.5 px-1 font-medium text-foreground">{r.label}</td>
                       <td className="py-1.5 px-1 text-right">
                         {r.gapMt > 0 ? (

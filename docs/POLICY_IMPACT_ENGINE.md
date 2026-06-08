@@ -49,7 +49,9 @@ Top 3 cases aggregated; each outcome includes provenance string and case IDs.
 | `kci-india-carbon-pricing` | India destination-based carbon pricing |
 | `kci-maldives-response` | Maldives response measures |
 
-Build/validate: `node scripts/build_policy_cases.mjs`
+Build/validate: `npm run build:policy-cases` (`node scripts/build_policy_cases.mjs`)
+
+Colleague sign-off checklist: `node scripts/build_policy_cases.mjs --review`
 
 ## Design principles
 
@@ -61,6 +63,7 @@ Build/validate: `node scripts/build_policy_cases.mjs`
 
 ## Integration points
 
-- `/climate-finance` — funding step link from results
+- `/climate-finance` — funding step link from results (sector + project query params)
 - `/documents` — intervention pathway (TEF diagram)
-- `/dashboard` — mitigation options (future deep link)
+- `/dashboard` — mitigation options deep link via `policy-impact-link.ts` (done)
+- `NdcGapSummary` — objective/gap context on Home and Dashboard briefing

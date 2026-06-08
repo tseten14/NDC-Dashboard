@@ -31,6 +31,7 @@ export const outcomeCategorySchema = z.enum([
   "gdp",
   "inequality",
   "gender",
+  "equity",
   "trade",
   "productivity",
   "emissions",
