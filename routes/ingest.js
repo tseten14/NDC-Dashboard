@@ -13,6 +13,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildPdfTextSections, buildTabularSections } from "../services/ingestInsights.js";
 import { analyzeTabularWithPython, checkPythonIngest } from "../services/ingestPython.js";
+import { getPersistenceMode } from "../db/bootstrap.ts";
 import { createIngestJob, getRecentIngestJobs, inferIngestFileType, insertObservationsBatch, updateIngestJobStatus } from "../services/persistence.js";
 import { createUploadJob, deleteUploadJob, getUploadJob } from "../services/ingestUploadStore.js";
 import { parseCsvText } from "../lib/ingest/parsers/csv.ts";
@@ -962,6 +963,30 @@ router.post("/ingest/confirm", async (req, res) => {
 
     deleteUploadJob(jobId);
 
+    const { mode: persistenceMode } = getPersistenceMode();
+    const years = observations.map((o) => o.year);
+    const targetKeys = new Set();
+    const targetCol = finalColumnMapping.target_id;
+    if (targetCol) {
+      for (const row of staged.parseResult.rows) {
+        const raw = row[targetCol];
+        if (raw != null && String(raw).trim()) targetKeys.add(String(raw).trim());
+      }
+    }
+
+    let storage = null;
+    let dashboardHint = null;
+    if (inserted > 0) {
+      storage = "postgres.observations";
+      dashboardHint =
+        "Open the Dashboard, select a matching indicator target (forest cover, electricity access, CSA adoption, wetlands, or capacity), and check the Observed Data column for ingested points.";
+    } else if (persistenceMode !== "postgres") {
+      dashboardHint =
+        "No database connection — rows were validated but not stored. Configure DATABASE_URL and re-import to see points on the Dashboard.";
+    } else if (failed) {
+      dashboardHint = "No rows were stored. Fix mapping errors and try again.";
+    }
+
     return res.json({
       jobId,
       status: failed ? "failed" : "complete",
@@ -969,6 +994,15 @@ router.post("/ingest/confirm", async (req, res) => {
       rowsSkipped: skipped,
       errors: errors.slice(0, 100),
       persisted: inserted > 0,
+      persistenceMode,
+      storage,
+      targetKeys: [...targetKeys],
+      yearRange:
+        years.length > 0
+          ? { min: Math.min(...years), max: Math.max(...years) }
+          : null,
+      dashboardHint,
+      auditFile: `data/ingest-imports/${jobId}.json`,
     });
   } catch (err) {
     req.log?.error({ err }, "ingest_confirm_failed");

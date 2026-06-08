@@ -87,18 +87,26 @@ export const BASIC_FEATURES: FeatureGuide[] = [
     title: "Data Ingestion",
     to: "/ingest",
     who: "Data officers, GIS teams, MRV units uploading files",
-    purpose: "Check whether an uploaded file looks usable before it enters national workflows.",
+    purpose: "Profile ad-hoc files (quick scan) or import structured observation rows into the database (mapped import).",
     steps: [
       "Open Data Ingestion from the menu.",
-      "Use Quick Scan: upload CSV, Excel, JSON, PDF, or text.",
-      "Read the scan report (columns, years, sectors detected).",
-      "GIS upload and full “mapped import” into the dashboard are marked work in progress — do not expect live dashboard updates from mapped import yet.",
+      "Mapped import (default): upload CSV or JSON with year, value, optional source, and target_id columns; review auto-mapping; confirm.",
+      "After confirm, read the success panel — it states how many rows were stored and which dashboard targets they affect.",
+      "Quick scan: switch tab to upload CSV, JSON, PDF, or text for profiling only (no database write).",
+      "GIS upload and live connectors remain work in progress.",
     ],
     howItWorks:
-      "Files are sent to the server for profiling. Tabular files may use Python (pandas) when installed to summarise years and sectors. Results are shown in the browser; they are not automatically merged into Climate TRACE or NDC targets unless a future release enables that.",
-    result: "A quick quality report: file shape, likely year range, and warnings — useful for triage before manual MRV.",
-    limitations: "Mapped import disabled. Upload does not replace official inventory or Climate TRACE figures on the Dashboard.",
-    youWillSee: ["Quick Scan upload area", "Scan results and charts when Python analysis is available", "WIP notice for mapped import"],
+      "Mapped import parses on the server, maps columns to observation fields, and writes rows to the Postgres observations table when DATABASE_URL is configured. Ingested points appear on the Dashboard Observed Data column for indicator targets (forest cover, electricity access, CSA adoption, wetlands, capacity) — not Climate TRACE MtCO₂e sectors yet. Quick scan profiles files (optionally with pandas) and never persists.",
+    result:
+      "Mapped import: stored observation rows plus an audit JSON under data/ingest-imports. Quick scan: a triage report in the browser.",
+    limitations:
+      "Requires Postgres for persistence. Ingested data is unverified until MRV sign-off. Does not replace Climate TRACE emissions on MtCO₂e targets. PDF mapped import is analysis-only unless exported to CSV/JSON.",
+    youWillSee: [
+      "Mapped import drop zone and column mapper",
+      "Post-import summary (storage location, target keys, dashboard link)",
+      "Quick scan tab for profiling",
+      "Ingested badge on Dashboard when DB observations exist",
+    ],
   },
   {
     title: "AI 2030 Prediction",
@@ -365,6 +373,9 @@ export const FAQ: { q: string; a: string }[] = [
   { q: "Is AI 2030 official?", a: "No — trend extrapolation with uncertainty, for planning conversations." },
   { q: "Can I sign contracts from Climate Finance?", a: "No — indicative screening only." },
   { q: "What’s the difference between Policy documents tabs?", a: "Library = searchable evidence. Intervention pathway = logic model (how policies could lead to outcomes). Dashboard = measured CO₂." },
-  { q: "Will uploaded files change the Dashboard?", a: "Not yet via mapped import. Quick Scan is for profiling only until that feature ships." },
+  {
+    q: "Will uploaded files change the Dashboard?",
+    a: "Mapped import can — when Postgres is connected, confirmed rows are stored as observations and appear on indicator targets (forest, electricity, CSA, wetlands, capacity) with an “Ingested” badge. Quick scan never writes data. Climate TRACE MtCO₂e charts are unchanged by ingest today.",
+  },
   { q: "What does my role change?", a: "Edit permissions only, not national totals." },
 ];

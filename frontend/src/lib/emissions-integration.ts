@@ -249,3 +249,72 @@ export function buildIndicatorPanelObservedDataSet(target: NDCTarget, entry: Ind
     provenance,
   };
 }
+
+export function isIngestedObservationSource(source: string): boolean {
+  return source === "ingest-upload" || source.startsWith("ingest:");
+}
+
+export interface IngestedObservationInput {
+  year: number;
+  value: number;
+  source: string;
+  as_of: string;
+  is_validated: boolean;
+}
+
+export function mergeIngestedIntoIndicatorEntry(
+  entry: IndicatorPanelEntry,
+  ingested: { year: number; value: number }[],
+): IndicatorPanelEntry {
+  const byYear = new Map(entry.timeseries.map((p) => [p.year, p.value]));
+  for (const { year, value } of ingested) {
+    byYear.set(year, value);
+  }
+  const timeseries = [...byYear.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([year, value]) => ({ year, value }));
+  return { ...entry, timeseries };
+}
+
+/** Overlay file-ingested observations onto an indicator-panel series. */
+export function buildIngestedObservedDataSet(
+  target: NDCTarget,
+  rows: IngestedObservationInput[],
+  baseEntry?: IndicatorPanelEntry,
+): ObservedDataSet | null {
+  const ingested = rows.filter((r) => isIngestedObservationSource(r.source));
+  if (!ingested.length) return null;
+
+  const timeseries = ingested.map((r) => ({ year: r.year, value: r.value }));
+  const entry: IndicatorPanelEntry = baseEntry
+    ? mergeIngestedIntoIndicatorEntry(baseEntry, timeseries)
+    : {
+        meta: {
+          targetId: target.id,
+          baselineYear: target.baselineYear,
+          baselineValue: target.baselineValue,
+          targetYear: target.targetYear,
+          targetValue: target.targetValue,
+          unit: target.unit,
+          dataProviders: ["File ingest"],
+          sourceType: "reported",
+          mrvOwnerMinistry: "—",
+          qaqcStatus: "ok",
+          isValidated: false,
+          lastUpdated: ingested[ingested.length - 1]?.as_of ?? new Date().toISOString(),
+        },
+        timeseries,
+      };
+
+  const dataset = buildIndicatorPanelObservedDataSet(target, entry);
+  dataset.provenance = {
+    ...dataset.provenance,
+    sourceType: "reported",
+    isValidated: ingested.some((r) => r.is_validated),
+    lastUpdated: ingested[ingested.length - 1]?.as_of ?? dataset.provenance.lastUpdated,
+  };
+  if (!dataset.dataProviders.includes("File ingest")) {
+    dataset.dataProviders = [...dataset.dataProviders, "File ingest"];
+  }
+  return dataset;
+}

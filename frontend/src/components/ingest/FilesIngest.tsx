@@ -18,13 +18,17 @@ import {
   ChevronDown,
   Loader2,
   History,
+  Database,
+  LayoutDashboard,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   ingestApi,
   type IngestJobRow,
   type IngestParseWarning,
+  type IngestConfirmResponse,
   type IngestUploadResponse,
   type ObservationField,
 } from "@/lib/api";
@@ -105,6 +109,7 @@ export function FilesIngest() {
     Partial<Record<ObservationField, string | null>>
   >({});
   const [importDone, setImportDone] = useState(false);
+  const [confirmResult, setConfirmResult] = useState<IngestConfirmResponse | null>(null);
   const [jobs, setJobs] = useState<IngestJobRow[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
 
@@ -143,6 +148,7 @@ export function FilesIngest() {
     setSelectedFile(file);
     setUploading(true);
     setImportDone(false);
+    setConfirmResult(null);
     setUploadResult(null);
     try {
       const result = await ingestApi.uploadFile(file);
@@ -170,8 +176,11 @@ export function FilesIngest() {
         jobId: uploadResult.jobId,
         finalColumnMapping: columnMapping,
       });
-      if (res.status === "complete") {
-        toast.success(`Imported ${res.rowsImported} observation row(s)`);
+      setConfirmResult(res);
+      if (res.status === "complete" && res.persisted) {
+        toast.success(`Stored ${res.rowsImported} observation row(s) in the database`);
+      } else if (res.status === "complete" && !res.persisted) {
+        toast.warning("Import validated but nothing was stored — database not connected");
       } else {
         toast.error(res.errors[0]?.message ?? "Import failed");
       }
@@ -189,6 +198,7 @@ export function FilesIngest() {
     setUploadResult(null);
     setColumnMapping({});
     setImportDone(false);
+    setConfirmResult(null);
   };
 
   const previewRows = uploadResult?.preview ?? [];
@@ -449,13 +459,7 @@ export function FilesIngest() {
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2 py-2">
-              <CheckCircle2 className="h-5 w-5 text-on-track" />
-              <span className="text-xs text-foreground font-medium">Import submitted.</span>
-              <Button size="sm" variant="outline" className="h-7 text-xs ml-2" onClick={reset}>
-                Import another file
-              </Button>
-            </div>
+            <ImportSuccessPanel result={confirmResult} onReset={reset} />
           )}
         </>
       )}
@@ -504,6 +508,78 @@ export function FilesIngest() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ImportSuccessPanel({
+  result,
+  onReset,
+}: {
+  result: IngestConfirmResponse | null;
+  onReset: () => void;
+}) {
+  const persisted = result?.persisted ?? false;
+  const borderClass = persisted
+    ? "border-on-track/30 bg-on-track/5"
+    : "border-at-risk/30 bg-at-risk/5";
+
+  return (
+    <div className={cn("rounded-lg border p-3 space-y-2", borderClass)}>
+      <div className="flex items-start gap-2">
+        {persisted ? (
+          <CheckCircle2 className="h-5 w-5 text-on-track shrink-0 mt-0.5" />
+        ) : (
+          <AlertTriangle className="h-5 w-5 text-at-risk shrink-0 mt-0.5" />
+        )}
+        <div className="space-y-1.5 min-w-0">
+          <p className="text-xs font-semibold text-foreground">
+            {persisted
+              ? `${result?.rowsImported ?? 0} observation row(s) written to the database`
+              : "Import finished — nothing was stored"}
+          </p>
+          {result?.storage && (
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+              <Database className="h-3 w-3 shrink-0" />
+              Stored in <span className="font-mono text-foreground">{result.storage}</span>
+              {result.auditFile && (
+                <span className="text-muted-foreground"> · audit copy at {result.auditFile}</span>
+              )}
+            </p>
+          )}
+          {result?.targetKeys && result.targetKeys.length > 0 && (
+            <p className="text-[11px] text-muted-foreground">
+              Target keys:{" "}
+              <span className="font-medium text-foreground">{result.targetKeys.join(", ")}</span>
+              {result.yearRange && (
+                <span>
+                  {" "}
+                  · years {result.yearRange.min}–{result.yearRange.max}
+                </span>
+              )}
+            </p>
+          )}
+          {result?.rowsSkipped ? (
+            <p className="text-[11px] text-at-risk">
+              {result.rowsSkipped} row(s) skipped — see warnings above or fix mapping.
+            </p>
+          ) : null}
+          {result?.dashboardHint && (
+            <p className="text-[11px] text-muted-foreground leading-relaxed">{result.dashboardHint}</p>
+          )}
+          {persisted && (
+            <Button asChild size="sm" variant="outline" className="h-7 text-xs mt-1">
+              <Link to="/dashboard">
+                <LayoutDashboard className="h-3 w-3 mr-1" />
+                Open Dashboard
+              </Link>
+            </Button>
+          )}
+        </div>
+      </div>
+      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onReset}>
+        Import another file
+      </Button>
     </div>
   );
 }
