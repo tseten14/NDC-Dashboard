@@ -9,8 +9,9 @@ import { useCurrentRole } from "@/hooks/use-current-role";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight, BarChart3, Globe2, LayoutDashboard, Sparkles, Target,
-  TrendingUp, Upload, Leaf, Satellite, ChevronRight, Scale,
+  TrendingUp, Upload, Leaf, Satellite, ChevronRight, Scale, Presentation,
 } from "lucide-react";
+import { useDemoMode } from "@/hooks/use-demo-mode";
 
 const FEATURES = [
   {
@@ -67,6 +68,7 @@ const FEATURES = [
 export default function Home() {
   const { country, clearCountry } = useCountry();
   const { getHomeRoleStartHere } = useCurrentRole();
+  const { startDemoPresentation } = useDemoMode();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const roleStart = getHomeRoleStartHere();
@@ -110,7 +112,16 @@ export default function Home() {
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2.5">
-              <Button asChild size="default" className="gap-1.5 shadow-sm">
+              <Button
+                type="button"
+                size="default"
+                className="gap-1.5 shadow-sm"
+                onClick={startDemoPresentation}
+              >
+                <Presentation className="h-4 w-4" />
+                Start 3-minute demo
+              </Button>
+              <Button asChild size="default" variant="outline" className="gap-1.5">
                 <Link to="/dashboard">
                   <LayoutDashboard className="h-4 w-4" />
                   Open Dashboard

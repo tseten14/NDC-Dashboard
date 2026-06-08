@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   DEMO_CLICK_PATH,
+  DEMO_DURATION_SECONDS,
   DEMO_POLICY_QUESTIONS,
+  getFullscreenHint,
+  isFullscreen,
+  isFullscreenSupported,
+  matchDemoStep,
+  toggleFullscreen,
 } from "@/lib/demo-mode";
 import { useDemoMode } from "@/hooks/use-demo-mode";
+import { useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +24,21 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Presentation, ChevronRight, X, ListChecks } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Presentation,
+  ChevronRight,
+  X,
+  ListChecks,
+  Maximize2,
+  Minimize2,
+  PanelLeft,
+  LogOut,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function DemoModeToggle() {
@@ -34,6 +55,20 @@ export function DemoModeToggle() {
       <span className="hidden sm:inline">Demo</span>
     </Button>
   );
+}
+
+/** Collapses sidebar while demo presenter mode is active. */
+export function DemoPresenterController() {
+  const { presenterMode } = useDemoMode();
+  const { setOpen, setOpenMobile } = useSidebar();
+
+  useEffect(() => {
+    if (!presenterMode) return;
+    setOpen(false);
+    setOpenMobile(false);
+  }, [presenterMode, setOpen, setOpenMobile]);
+
+  return null;
 }
 
 function QuestionsOverlay({ onDismiss }: { onDismiss: () => void }) {
@@ -64,15 +99,51 @@ function QuestionsOverlay({ onDismiss }: { onDismiss: () => void }) {
   );
 }
 
+function FullscreenButton() {
+  const [fullscreen, setFullscreen] = useState(isFullscreen);
+  const hint = getFullscreenHint();
+
+  useEffect(() => {
+    const onChange = () => setFullscreen(isFullscreen());
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 text-xs shadow-lg gap-1.5 bg-card/95 backdrop-blur-sm"
+          onClick={() => void toggleFullscreen()}
+        >
+          {fullscreen ? (
+            <Minimize2 className="h-3.5 w-3.5" />
+          ) : (
+            <Maximize2 className="h-3.5 w-3.5" />
+          )}
+          <span className="hidden sm:inline">{fullscreen ? "Exit" : "Fullscreen"}</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-[240px] text-xs">
+        {isFullscreenSupported() ? hint : `Fullscreen API unavailable. ${hint}`}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function DemoModePanel() {
-  const { active, navigateWithDemo } = useDemoMode();
+  const { active, presenterMode, sidebarPeek, setSidebarPeek, setActive, navigateWithDemo } = useDemoMode();
   const location = useLocation();
   const [questionsVisible, setQuestionsVisible] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   if (!active) return null;
 
-  const currentPath = location.pathname + location.search;
+  const currentStepIdx = matchDemoStep(location.pathname, location.search);
+  const currentStep = currentStepIdx >= 0 ? DEMO_CLICK_PATH[currentStepIdx] : null;
 
   return (
     <>
@@ -80,25 +151,31 @@ export function DemoModePanel() {
         <QuestionsOverlay onDismiss={() => setQuestionsVisible(false)} />
       )}
 
-      <div className="fixed bottom-4 left-4 z-50">
+      <div className="fixed bottom-4 left-4 z-50 flex flex-wrap items-center gap-2">
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button size="sm" className="h-8 text-xs shadow-lg gap-1.5">
               <Presentation className="h-3.5 w-3.5" />
               Demo script
+              {currentStep && (
+                <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-0.5">
+                  {currentStep.time}
+                </Badge>
+              )}
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-[min(400px,90vw)] p-0">
             <SheetHeader className="p-4 border-b border-border">
               <SheetTitle className="text-sm">3-minute demo path</SheetTitle>
               <SheetDescription className="text-xs">
-                Pre-curated clicks — Uganda, Senior Decision-Maker, Transport sector.
+                Pre-curated clicks — Uganda, Senior Decision-Maker, Transport sector (~
+                {Math.round(DEMO_DURATION_SECONDS / 60)} min).
               </SheetDescription>
             </SheetHeader>
             <ScrollArea className="h-[calc(100vh-8rem)]">
               <div className="p-3 space-y-2">
                 {DEMO_CLICK_PATH.map((step, idx) => {
-                  const isCurrent = currentPath.includes(step.route.split("?")[0]);
+                  const isCurrent = idx === currentStepIdx;
                   return (
                     <button
                       key={idx}
@@ -113,7 +190,7 @@ export function DemoModePanel() {
                       }}
                     >
                       <div className="flex items-center justify-between gap-2 mb-1">
-                        <Badge variant="outline" className="text-[9px] h-4">
+                        <Badge variant={isCurrent ? "default" : "outline"} className="text-[9px] h-4">
                           {step.time}
                         </Badge>
                         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -127,6 +204,58 @@ export function DemoModePanel() {
             </ScrollArea>
           </SheetContent>
         </Sheet>
+
+        <FullscreenButton />
+
+        {presenterMode && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs shadow-lg gap-1.5 bg-card/95 backdrop-blur-sm"
+                onClick={() => setSidebarPeek(true)}
+              >
+                <PanelLeft className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Nav</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              Temporarily show sidebar navigation
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {sidebarPeek && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="h-8 text-xs shadow-lg gap-1.5"
+            onClick={() => setSidebarPeek(false)}
+          >
+            Hide nav
+          </Button>
+        )}
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs shadow-lg gap-1.5 bg-card/80 backdrop-blur-sm text-muted-foreground"
+              onClick={() => setActive(false)}
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Exit demo</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs">
+            Turn off presenter mode and restore normal navigation
+          </TooltipContent>
+        </Tooltip>
       </div>
     </>
   );
