@@ -1,5 +1,17 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { DEMO_USER, DEMO_ROLES } from "@/lib/auth-config";
+import {
+  canExport as canExportFmt,
+  canUseIngest as canUseIngestRole,
+  getDashboardMode,
+  getDefaultRoute,
+  getDocumentsDefaultCategory,
+  getDocumentsDefaultTab,
+  getHomeRoleStartHere,
+  getRoleContextMessage,
+  type DashboardMode,
+  type ExportFormat,
+} from "@/lib/role-capabilities";
 
 export type AppRole =
   | "ProjectDeveloper"
@@ -36,6 +48,14 @@ interface RoleCtx {
   canApproveMapping: () => boolean;
   canVerify: () => boolean;
   isReadOnly: () => boolean;
+  getDefaultRoute: () => string;
+  getDashboardMode: () => DashboardMode;
+  getRoleContextMessage: () => string;
+  canExport: (format: ExportFormat) => boolean;
+  canUseIngest: () => boolean;
+  getDocumentsDefaultCategory: () => string;
+  getDocumentsDefaultTab: () => "browse" | "pathway";
+  getHomeRoleStartHere: () => ReturnType<typeof getHomeRoleStartHere>;
 }
 
 const Ctx = createContext<RoleCtx | null>(null);
@@ -104,6 +124,15 @@ export function CurrentRoleProvider({ children }: { children: ReactNode }) {
   const canVerify = useCallback(() => activeRole === "MRVOfficer" || activeRole === "Admin", [activeRole]);
   const isReadOnly = useCallback(() => activeRole === "SeniorDecisionMaker", [activeRole]);
 
+  const roleDefaultRoute = useCallback(() => getDefaultRoute(activeRole), [activeRole]);
+  const roleDashboardMode = useCallback(() => getDashboardMode(activeRole), [activeRole]);
+  const roleContextMessage = useCallback(() => getRoleContextMessage(activeRole), [activeRole]);
+  const roleCanExport = useCallback((format: ExportFormat) => canExportFmt(activeRole, format), [activeRole]);
+  const roleCanUseIngest = useCallback(() => canUseIngestRole(activeRole), [activeRole]);
+  const roleDocsCategory = useCallback(() => getDocumentsDefaultCategory(activeRole), [activeRole]);
+  const roleDocsTab = useCallback(() => getDocumentsDefaultTab(activeRole), [activeRole]);
+  const roleHomeStart = useCallback(() => getHomeRoleStartHere(activeRole), [activeRole]);
+
   return (
     <Ctx.Provider
       value={{
@@ -119,6 +148,14 @@ export function CurrentRoleProvider({ children }: { children: ReactNode }) {
         canApproveMapping,
         canVerify,
         isReadOnly,
+        getDefaultRoute: roleDefaultRoute,
+        getDashboardMode: roleDashboardMode,
+        getRoleContextMessage: roleContextMessage,
+        canExport: roleCanExport,
+        canUseIngest: roleCanUseIngest,
+        getDocumentsDefaultCategory: roleDocsCategory,
+        getDocumentsDefaultTab: roleDocsTab,
+        getHomeRoleStartHere: roleHomeStart,
       }}
     >
       {children}

@@ -14,6 +14,7 @@ import { CurrentRoleProvider } from "@/hooks/use-current-role";
 import { AuthGate } from "@/components/AuthGate";
 import { CountryGate } from "@/components/CountryGate";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { RoleContextStrip } from "@/components/RoleContextStrip";
 import { CountryProvider, useCountry } from "@/context/CountryContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "./pages/NotFound.tsx";
@@ -107,6 +108,7 @@ function ProtectedShell() {
             <AppSidebar />
             <div className="flex-1 flex flex-col min-w-0 min-h-0">
               <ShellHeader />
+              <RoleContextStrip />
               <main className="flex-1 min-h-0 overflow-hidden">
                 <ErrorBoundary label="Page">
                 <Routes>

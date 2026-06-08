@@ -4,12 +4,21 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard, Network, ShieldCheck, Wallet, Upload, ChevronDown, ChevronRight,
   Target, TrendingUp, Building2, Eye, Trees, BarChart3, Users, LineChart, FileText, Download, Settings,
   Database, GitBranch, Workflow, Search, Library, Briefcase, ShieldAlert, Sparkles, Coins, BookOpen, Map, Home, Scale,
 } from "lucide-react";
+import { useCurrentRole } from "@/hooks/use-current-role";
+import {
+  isAdvancedNavVisible,
+  isPrimaryNavVisible,
+  shouldShowAdvancedNav,
+  getWorkQueueBadgeCount,
+} from "@/lib/role-capabilities";
+import { getWorkQueueCounts } from "@/lib/work-queue-counts";
+import { Badge } from "@/components/ui/badge";
 
 const primary = [
   { title: "Home", url: "/", icon: Home },
@@ -50,7 +59,22 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { activeRole } = useCurrentRole();
+  const [queueCounts, setQueueCounts] = useState({ approvals: 0, verifications: 0 });
   const [advOpen, setAdvOpen] = useState(advanced.some(a => location.pathname.startsWith(a.url) && a.url !== "/"));
+
+  useEffect(() => {
+    setQueueCounts(getWorkQueueCounts());
+  }, [location.pathname, activeRole]);
+
+  const myWorkBadge = useMemo(
+    () => getWorkQueueBadgeCount(activeRole, queueCounts),
+    [activeRole, queueCounts],
+  );
+
+  const visiblePrimary = primary.filter((item) => isPrimaryNavVisible(activeRole, item.url));
+  const visibleAdvanced = advanced.filter((item) => isAdvancedNavVisible(activeRole, item.url));
+  const showAdvanced = shouldShowAdvancedNav(activeRole) && visibleAdvanced.length > 0;
 
   return (
     <Sidebar collapsible="icon">
@@ -73,7 +97,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="h-7 px-1.5 text-[10px]">Basic</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-0.5">
-              {primary.map(item => (
+              {visiblePrimary.map(item => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild size="sm">
                     <NavLink to={item.url} end={item.url === "/"} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
@@ -87,31 +111,42 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="p-1.5">
-          <SidebarGroupLabel
-            className="h-7 px-1.5 text-[10px] cursor-pointer flex items-center gap-1 select-none"
-            onClick={() => setAdvOpen(o => !o)}
-          >
-            {advOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-            Advanced
-          </SidebarGroupLabel>
-          {advOpen && (
-            <SidebarGroupContent>
-              <SidebarMenu className="gap-0.5">
-                {advanced.map(item => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild size="sm">
-                      <NavLink to={item.url} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
-                        <item.icon className="h-3.5 w-3.5 shrink-0" />
-                        {!collapsed && <span className="text-[11px] leading-tight truncate">{item.title}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          )}
-        </SidebarGroup>
+        {showAdvanced && (
+          <SidebarGroup className="p-1.5">
+            <SidebarGroupLabel
+              className="h-7 px-1.5 text-[10px] cursor-pointer flex items-center gap-1 select-none"
+              onClick={() => setAdvOpen(o => !o)}
+            >
+              {advOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+              Advanced
+            </SidebarGroupLabel>
+            {advOpen && (
+              <SidebarGroupContent>
+                <SidebarMenu className="gap-0.5">
+                  {visibleAdvanced.map(item => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild size="sm">
+                        <NavLink to={item.url} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                          <item.icon className="h-3.5 w-3.5 shrink-0" />
+                          {!collapsed && (
+                            <span className="text-[11px] leading-tight truncate flex-1 flex items-center gap-1">
+                              {item.title}
+                              {item.url === "/my-work" && myWorkBadge > 0 && (
+                                <Badge variant="secondary" className="h-4 min-w-4 px-1 text-[9px] ml-auto">
+                                  {myWorkBadge}
+                                </Badge>
+                              )}
+                            </span>
+                          )}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            )}
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );

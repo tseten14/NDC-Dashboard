@@ -8,9 +8,31 @@ import { Upload, Zap, ShieldCheck, Construction } from "lucide-react";
 import { GisIngest } from "@/components/ingest/GisIngest";
 import { ConnectionsIngest } from "@/components/ingest/ConnectionsIngest";
 import { ScanReportIngest } from "@/components/ingest/ScanReportIngest";
+import { useCurrentRole } from "@/hooks/use-current-role";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 export default function DataIngestion() {
   const [tab, setTab] = useState("scan");
+  const { canUseIngest } = useCurrentRole();
+
+  if (!canUseIngest()) {
+    return (
+      <div className="flex flex-col h-full min-h-0">
+        <CockpitBar />
+        <div className="p-6 max-w-lg mx-auto text-center space-y-3">
+          <h1 className="text-lg font-bold">Data Ingestion</h1>
+          <p className="text-sm text-muted-foreground">
+            Your current role does not include file ingestion. Switch to MRV Officer, Ministry Delivery Officer, or Admin in the top bar.
+          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/dashboard">Back to Dashboard</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full min-h-0">
       <CockpitBar />

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { documentsApi } from "@/lib/api";
+import { useCurrentRole } from "@/hooks/use-current-role";
 import type { PolicyDocument } from "@/lib/policy-documents";
 import { PolicyPathwayDiagram } from "@/components/PolicyPathwayDiagram";
 import { Card, CardContent } from "@/components/ui/card";
@@ -76,11 +77,26 @@ function DocumentRow({ doc }: { doc: PolicyDocument }) {
 }
 
 export default function PolicyDocuments() {
+  const { getDocumentsDefaultCategory, getDocumentsDefaultTab, activeRole } = useCurrentRole();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(tabParam === "pathway" ? "pathway" : "browse");
   const initialCategory = searchParams.get("category") ?? "";
   const [category, setCategory] = useState(initialCategory);
+  const [roleDefaultsApplied, setRoleDefaultsApplied] = useState(false);
+
+  useEffect(() => {
+    if (roleDefaultsApplied) return;
+    if (searchParams.has("category") || searchParams.has("tab")) {
+      setRoleDefaultsApplied(true);
+      return;
+    }
+    const defaultCat = getDocumentsDefaultCategory();
+    const defaultTab = getDocumentsDefaultTab();
+    if (defaultCat) setCategory(defaultCat);
+    if (defaultTab === "pathway") setActiveTab("pathway");
+    setRoleDefaultsApplied(true);
+  }, [activeRole, getDocumentsDefaultCategory, getDocumentsDefaultTab, roleDefaultsApplied, searchParams]);
   const [qInput, setQInput] = useState(searchParams.get("q") ?? "");
   const [q, setQ] = useState(qInput);
   const [page, setPage] = useState(0);

@@ -1,9 +1,27 @@
+import { Link } from "react-router-dom";
 import { strategies, programmes, kpis, actors, dataSources } from "@/data/uganda-strategy-data";
+import { useCurrentRole } from "@/hooks/use-current-role";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Admin() {
+  const { activeRole } = useCurrentRole();
+
+  if (activeRole !== "Admin") {
+    return (
+      <div className="p-6 max-w-lg mx-auto text-center space-y-3">
+        <h2 className="text-lg font-bold">Admin</h2>
+        <p className="text-sm text-muted-foreground">
+          Admin tools are only available when the Admin role is selected in the top bar.
+        </p>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/dashboard">Back to Dashboard</Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4 max-w-4xl">

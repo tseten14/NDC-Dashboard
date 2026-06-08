@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAppContext } from "@/hooks/use-app-state";
+import { useCurrentRole } from "@/hooks/use-current-role";
+import { DASHBOARD_MODE_LABELS, getDashboardPresets } from "@/lib/role-capabilities";
 import { AlertCircle } from "lucide-react";
 import { TargetStatusSummary } from "@/components/TargetStatusSummary";
 import { DataCoveragePanel } from "@/components/DataCoveragePanel";
@@ -31,8 +33,14 @@ export default function NDCLayer() {
   const state = useAppContext();
   const emissions = useEmissionsData();
   const queryClient = useQueryClient();
+  const { activeRole, getDashboardMode, canExport, isReadOnly } = useCurrentRole();
+  const dashboardMode = getDashboardMode();
+  const dashboardPresets = getDashboardPresets(activeRole);
+  const readOnly = isReadOnly();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [spatialOpen, setSpatialOpen] = useState(false);
+  const [trackabilityOpen, setTrackabilityOpen] = useState(false);
 
   // Deep-link support: /dashboard?target=...&sector=...
   useEffect(() => {
@@ -60,6 +68,31 @@ export default function NDCLayer() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.geographyLevel, state.selectedDistrictId, emissions.availableDistricts]);
+
+  // Re-apply dashboard presets whenever the active role changes.
+  useEffect(() => {
+    if (!activeRole) return;
+
+    if (state.geographyLevel !== dashboardPresets.geographyLevel) {
+      state.setGeographyLevel(dashboardPresets.geographyLevel);
+    }
+
+    if (dashboardPresets.sector && state.selectedSector !== dashboardPresets.sector) {
+      state.setSelectedSector(dashboardPresets.sector);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("sector", dashboardPresets.sector!);
+        next.delete("target");
+        return next;
+      });
+    }
+
+    if (!dashboardPresets.emphasizeMrvPanels) {
+      setSpatialOpen(false);
+      setTrackabilityOpen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeRole]);
 
   const handleSelectTarget = useCallback((targetId: string) => {
     const target = ndcTargets.find((t) => t.id === targetId);
@@ -128,8 +161,33 @@ export default function NDCLayer() {
           </button>
         </div>
       )}
+      {dashboardMode === "mrv" && (
+        <div className="px-3 py-1.5 border-b border-primary/20 bg-primary/5 text-[10px] text-muted-foreground">
+          <span className="font-semibold text-foreground">MRV view:</span> AFOLU sector selected; spatial certainty and trackability tools highlighted below. Use Export for CRT/BTR CSV.
+        </div>
+      )}
+      {dashboardMode === "briefing" && (
+        <div className="px-3 py-1.5 border-b border-border bg-muted/40 text-[10px] text-muted-foreground">
+          <span className="font-semibold text-foreground">Briefing view:</span> national geography locked; PDF export only; mitigation edits disabled.
+        </div>
+      )}
+      {dashboardMode === "delivery" && (
+        <div className="px-3 py-1.5 border-b border-amber-500/20 bg-amber-500/5 text-[10px] text-muted-foreground">
+          <span className="font-semibold text-foreground">Delivery view:</span> focus on implementation gaps and activity approval — check My Work for pending approvals.
+        </div>
+      )}
+      {dashboardMode === "field" && (
+        <div className="px-3 py-1.5 border-b border-emerald-500/20 bg-emerald-500/5 text-[10px] text-muted-foreground">
+          <span className="font-semibold text-foreground">Field view:</span> district geography selected — use district selector and Emissions Map for local context.
+        </div>
+      )}
+
       {/* NDC sub-controls */}
       <div className="px-3 py-1.5 border-b border-border bg-muted/30 flex flex-wrap items-center gap-3">
+        <Badge variant="secondary" className="h-6 text-[10px] font-semibold shrink-0">
+          {DASHBOARD_MODE_LABELS[dashboardMode]} mode
+        </Badge>
+
         <div className="flex items-center gap-1.5">
           <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Sector</span>
           <Select value={state.selectedSector} onValueChange={(v) => state.setSelectedSector(v)}>
@@ -145,18 +203,21 @@ export default function NDCLayer() {
           <div className="flex rounded-md border border-input overflow-hidden">
             <button
               type="button"
+              disabled={dashboardPresets.lockGeography && dashboardPresets.geographyLevel !== "national"}
               onClick={() => state.setGeographyLevel("national")}
               className={cn(
                 "px-2 py-0.5 text-xs font-medium transition-colors",
                 state.geographyLevel === "national"
                   ? "bg-primary text-primary-foreground"
                   : "bg-background text-muted-foreground hover:bg-muted",
+                dashboardPresets.lockGeography && dashboardPresets.geographyLevel !== "national" && "opacity-50 cursor-not-allowed",
               )}
             >
               National
             </button>
             <button
               type="button"
+              disabled={dashboardPresets.lockGeography && dashboardPresets.geographyLevel !== "district"}
               onClick={() => {
                 state.setGeographyLevel("district");
                 if (!state.selectedDistrictId) {
@@ -170,6 +231,7 @@ export default function NDCLayer() {
                 state.geographyLevel === "district"
                   ? "bg-primary text-primary-foreground"
                   : "bg-background text-muted-foreground hover:bg-muted",
+                dashboardPresets.lockGeography && dashboardPresets.geographyLevel !== "district" && "opacity-50 cursor-not-allowed",
               )}
             >
               District
@@ -217,30 +279,36 @@ export default function NDCLayer() {
               <Button variant="outline" size="sm" className="gap-1 h-7 text-xs"><Download className="h-3 w-3" />Export</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => {
-                  exportNdcDashboardExcel(emissions);
-                  toast.success(`Excel exported (${exportGeographyLabel})`);
-                }}
-              >
-                <FileSpreadsheet className="h-4 w-4 mr-2" />Excel
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  exportNdcDashboardPdf(emissions);
-                  toast.success(`PDF exported (${exportGeographyLabel})`);
-                }}
-              >
-                <FileText className="h-4 w-4 mr-2" />Summary PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  exportCrtBtrCsv(emissions);
-                  toast.success(`CRT/BTR CSV exported (${exportGeographyLabel})`);
-                }}
-              >
-                <FileText className="h-4 w-4 mr-2" />CRT/BTR CSV
-              </DropdownMenuItem>
+              {canExport("excel") && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    exportNdcDashboardExcel(emissions);
+                    toast.success(`Excel exported (${exportGeographyLabel})`);
+                  }}
+                >
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />Excel
+                </DropdownMenuItem>
+              )}
+              {canExport("pdf") && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    exportNdcDashboardPdf(emissions);
+                    toast.success(`PDF exported (${exportGeographyLabel})`);
+                  }}
+                >
+                  <FileText className="h-4 w-4 mr-2" />Summary PDF
+                </DropdownMenuItem>
+              )}
+              {canExport("csv") && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    exportCrtBtrCsv(emissions);
+                    toast.success(`CRT/BTR CSV exported (${exportGeographyLabel})`);
+                  }}
+                >
+                  <FileText className="h-4 w-4 mr-2" />CRT/BTR CSV
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -300,9 +368,16 @@ export default function NDCLayer() {
               </DialogContent>
             </Dialog>
 
-            <Dialog>
+            <Dialog open={spatialOpen} onOpenChange={setSpatialOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "w-full justify-start text-xs",
+                    dashboardPresets.emphasizeMrvPanels && "border-primary ring-1 ring-primary/30 bg-primary/5",
+                  )}
+                >
                   🛰️ Spatial Certainty
                 </Button>
               </DialogTrigger>
@@ -316,9 +391,16 @@ export default function NDCLayer() {
               </DialogContent>
             </Dialog>
 
-            <Dialog>
+            <Dialog open={trackabilityOpen} onOpenChange={setTrackabilityOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "w-full justify-start text-xs",
+                    dashboardPresets.emphasizeMrvPanels && "border-primary ring-1 ring-primary/30 bg-primary/5",
+                  )}
+                >
                   📡 What Climate TRACE Can Track
                 </Button>
               </DialogTrigger>
@@ -334,6 +416,7 @@ export default function NDCLayer() {
 
             <OfficialSourcesPanel sectorId={state.selectedSector as SectorId} />
 
+            {!readOnly && (
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="w-full justify-start text-xs">
@@ -358,6 +441,7 @@ export default function NDCLayer() {
                 </div>
               </DialogContent>
             </Dialog>
+            )}
           </div>
         </div>
       </div>

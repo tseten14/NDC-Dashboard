@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useCountry } from "@/context/CountryContext";
+import { useCurrentRole } from "@/hooks/use-current-role";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight, BarChart3, Globe2, LayoutDashboard, Sparkles, Target,
@@ -65,8 +66,10 @@ const FEATURES = [
 
 export default function Home() {
   const { country, clearCountry } = useCountry();
+  const { getHomeRoleStartHere } = useCurrentRole();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const roleStart = getHomeRoleStartHere();
 
   // Legacy deep-links: /?target=... → /dashboard?target=...
   useEffect(() => {
@@ -133,6 +136,28 @@ export default function Home() {
               </Button>
             </div>
           </div>
+        </section>
+
+        <section className="mx-auto max-w-5xl px-4 sm:px-6 py-6">
+          <Card className="border-primary/25 bg-primary/[0.04]">
+            <CardContent className="p-4 sm:p-5">
+              <h2 className="font-brand text-sm font-semibold text-foreground">{roleStart.title}</h2>
+              <ul className="mt-2 space-y-1">
+                {roleStart.bullets.map((b) => (
+                  <li key={b} className="text-xs text-muted-foreground flex gap-2">
+                    <span className="text-primary mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
+                    {b}
+                  </li>
+                ))}
+              </ul>
+              <Button asChild size="sm" className="mt-3 h-8 text-xs gap-1">
+                <Link to={roleStart.to}>
+                  {roleStart.cta}
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         </section>
 
         {/* What you can do */}

@@ -1,4 +1,6 @@
+import { useLocation, useNavigate } from "react-router-dom";
 import { useCurrentRole, ALL_ROLES, type AppRole } from "@/hooks/use-current-role";
+import { getDefaultRoute } from "@/lib/role-capabilities";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,12 +13,32 @@ import {
 
 export function RoleSwitcher() {
   const { user, activeRole, availableRoles, setActiveRole, grantRole, signOut, isReadOnly } = useCurrentRole();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   if (!user) return null;
 
   const switchRole = (role: AppRole) => {
     grantRole(role);
-    toast.success(`Switched to ${ALL_ROLES.find((r) => r.id === role)?.label ?? role}`);
+    const meta = ALL_ROLES.find((r) => r.id === role);
+    toast.success(`Switched to ${meta?.label ?? role}`, {
+      description: meta?.description,
+    });
+
+    const defaultRoute = getDefaultRoute(role);
+    const onDashboard = location.pathname === "/dashboard" || location.pathname === "/ndc";
+
+    if (role === "ProjectDeveloper") {
+      navigate("/my-work");
+    } else if (role === "Admin" && !location.pathname.startsWith("/admin")) {
+      navigate("/admin");
+    } else if (role === "SeniorDecisionMaker" && !onDashboard) {
+      navigate(defaultRoute);
+    } else if (onDashboard && role === "MRVOfficer") {
+      navigate("/dashboard?sector=afolu", { replace: true });
+    } else if (onDashboard && (role === "FieldOfficer" || role === "SeniorDecisionMaker" || role === "MinistryDeliveryOfficer")) {
+      navigate("/dashboard", { replace: true });
+    }
   };
 
   return (
@@ -26,7 +48,7 @@ export function RoleSwitcher() {
           <ShieldOff className="h-2.5 w-2.5" /> Read-only
         </Badge>
       )}
-      <Select value={activeRole ?? ""} onValueChange={(v) => setActiveRole(v as AppRole)}>
+      <Select value={activeRole ?? ""} onValueChange={(v) => switchRole(v as AppRole)}>
         <SelectTrigger className="w-[180px] h-7 text-[11px]">
           <SelectValue placeholder="Select role…" />
         </SelectTrigger>

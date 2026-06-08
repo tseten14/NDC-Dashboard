@@ -1,6 +1,7 @@
 import { Navigate, useNavigate } from "react-router-dom";
 import { COUNTRY_OPTIONS, type CountryCode } from "@/data/countries";
 import { useCountry } from "@/context/CountryContext";
+import { useCurrentRole } from "@/hooks/use-current-role";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,7 @@ function LandingBackdrop() {
 export default function CountrySelect() {
   const navigate = useNavigate();
   const { country, selectCountry } = useCountry();
+  const { getDefaultRoute } = useCurrentRole();
 
   if (country) {
     return <Navigate to="/" replace />;
@@ -65,7 +67,7 @@ export default function CountrySelect() {
       return;
     }
     selectCountry(code);
-    navigate("/", { replace: true });
+    navigate(getDefaultRoute(), { replace: true });
   };
 
   return (
