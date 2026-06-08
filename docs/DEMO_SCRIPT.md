@@ -1,12 +1,14 @@
 # NDC Data Explorer — 3-Minute Demo Script
 
-**Pre-flight:** Open `https://ndc-data-explorer-e051f914.vercel.app/select-country` → Uganda → bookmark:
+**Pre-flight (fastest):** Select Uganda → on **Home**, click **Start 3-minute demo**. This enables presenter mode, sets **Senior Decision-Maker**, and opens:
 
 ```
 /dashboard?demo=1&sector=transport
 ```
 
-Set role to **Senior Decision-Maker** (auto-set when `?demo=1` is active). Enable demo panel via the **Demo** button in the header or keep `?demo=1` in the URL.
+**Manual bookmark:** Same URL as above. Demo mode also persists in the session if you navigate away from `?demo=1`.
+
+**Presenter UI:** Bottom-left toolbar — **Demo script** (timed steps), **Fullscreen** (or F11 / ⌃⌘F hint), **Nav** (temporarily show sidebar), **Exit demo**. Sidebar is hidden automatically during demo for a cleaner stage.
 
 **Fallback:** Set `USE_MOCK_DATA=true` on the API if Climate TRACE is slow.
 
@@ -38,7 +40,7 @@ Set role to **Senior Decision-Maker** (auto-set when `?demo=1` is active). Enabl
 
 > Across ministries, we consistently heard the same set of questions.
 
-*Open demo panel (Demo button) — Five Policy Questions overlay appears.*
+*Five Policy Questions overlay appears on dashboard (dismiss with × if needed). Open **Demo script** panel for the timed path.*
 
 ---
 
@@ -76,7 +78,7 @@ Set role to **Senior Decision-Maker** (auto-set when `?demo=1` is active). Enabl
 
 ### Screen 2 — Sector / policy insight (1:45)
 
-**CLICK:** Demo panel step → `/documents?tab=pathway&demo=1`
+**CLICK:** Demo script step → `/documents?tab=pathway&demo=1`
 
 **SCRIPT:**
 
@@ -84,7 +86,7 @@ Set role to **Senior Decision-Maker** (auto-set when `?demo=1` is active). Enabl
 
 ### Screen 3 — Scenario / decision support (2:00)
 
-**CLICK:** Demo panel step → `/climate-finance?demo=1`
+**CLICK:** Demo script step → `/climate-finance?demo=1`
 
 **SCRIPT:**
 

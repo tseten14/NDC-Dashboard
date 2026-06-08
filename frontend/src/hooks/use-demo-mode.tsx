@@ -2,8 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   DEMO_MODE_KEY,
-  enableDemoMode,
+  DEMO_START_PATH,
+  applyPresenterBodyClass,
   disableDemoMode,
+  enableDemoMode,
   isDemoModeFromSearch,
   withDemoParam,
 } from "@/lib/demo-mode";
@@ -11,7 +13,11 @@ import { useCurrentRole } from "@/hooks/use-current-role";
 
 interface DemoModeCtx {
   active: boolean;
+  presenterMode: boolean;
+  sidebarPeek: boolean;
+  setSidebarPeek: (on: boolean) => void;
   setActive: (on: boolean) => void;
+  startDemoPresentation: () => void;
   navigateWithDemo: (path: string) => void;
 }
 
@@ -22,6 +28,9 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { setActiveRole, activeRole } = useCurrentRole();
   const [active, setActiveState] = useState(() => isDemoModeFromSearch(location.search));
+  const [sidebarPeek, setSidebarPeek] = useState(false);
+
+  const presenterMode = active && !sidebarPeek;
 
   useEffect(() => {
     const fromUrl = isDemoModeFromSearch(location.search);
@@ -36,6 +45,15 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
     }
   }, [location.search, activeRole, setActiveRole]);
 
+  useEffect(() => {
+    applyPresenterBodyClass(presenterMode);
+    return () => applyPresenterBodyClass(false);
+  }, [presenterMode]);
+
+  useEffect(() => {
+    if (!active) setSidebarPeek(false);
+  }, [active]);
+
   const setActive = useCallback(
     (on: boolean) => {
       if (on) {
@@ -48,6 +66,7 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
       } else {
         disableDemoMode();
         setActiveState(false);
+        setSidebarPeek(false);
         const params = new URLSearchParams(location.search);
         params.delete("demo");
         const q = params.toString();
@@ -57,6 +76,14 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
     [location.pathname, location.search, navigate, setActiveRole],
   );
 
+  const startDemoPresentation = useCallback(() => {
+    enableDemoMode();
+    setActiveState(true);
+    setSidebarPeek(false);
+    setActiveRole("SeniorDecisionMaker");
+    navigate(DEMO_START_PATH);
+  }, [navigate, setActiveRole]);
+
   const navigateWithDemo = useCallback(
     (path: string) => {
       navigate(active ? withDemoParam(path) : path);
@@ -65,8 +92,16 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ active, setActive, navigateWithDemo }),
-    [active, setActive, navigateWithDemo],
+    () => ({
+      active,
+      presenterMode,
+      sidebarPeek,
+      setSidebarPeek,
+      setActive,
+      startDemoPresentation,
+      navigateWithDemo,
+    }),
+    [active, presenterMode, sidebarPeek, setActive, startDemoPresentation, navigateWithDemo],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

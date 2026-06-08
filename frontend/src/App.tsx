@@ -64,17 +64,19 @@ import CausalChains from "./pages/CausalChains.tsx";
 import ProjectCheck from "./pages/ProjectCheck.tsx";
 import PolicyImpact from "./pages/PolicyImpact.tsx";
 import { DemoModeProvider } from "@/hooks/use-demo-mode";
-import { DemoModePanel, DemoModeToggle } from "@/components/DemoModePanel";
+import { DemoModePanel, DemoModeToggle, DemoPresenterController } from "@/components/DemoModePanel";
+import { useDemoMode } from "@/hooks/use-demo-mode";
 
 const queryClient = new QueryClient();
 
 function ShellHeader() {
   const { country, clearCountry } = useCountry();
   const navigate = useNavigate();
+  const { presenterMode } = useDemoMode();
 
   return (
     <div className="flex items-center justify-between border-b border-border bg-card px-2 h-10 gap-2">
-      <SidebarTrigger />
+      {!presenterMode && <SidebarTrigger />}
       <div className="flex items-center gap-2 min-w-0">
         {country && (
           <span className="hidden sm:inline text-xs text-muted-foreground truncate">
@@ -108,6 +110,7 @@ function ProtectedShell() {
       <EmissionsDataProvider>
       <CockpitProvider>
         <SidebarProvider>
+          <DemoPresenterController />
           <div className="min-h-screen flex w-full">
             <AppSidebar />
             <div className="flex-1 flex flex-col min-w-0 min-h-0">
