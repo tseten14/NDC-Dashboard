@@ -62,6 +62,9 @@ import Indicators from "./pages/Indicators.tsx";
 import Interlinkages from "./pages/Interlinkages.tsx";
 import CausalChains from "./pages/CausalChains.tsx";
 import ProjectCheck from "./pages/ProjectCheck.tsx";
+import PolicyImpact from "./pages/PolicyImpact.tsx";
+import { DemoModeProvider } from "@/hooks/use-demo-mode";
+import { DemoModePanel, DemoModeToggle } from "@/components/DemoModePanel";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +94,7 @@ function ShellHeader() {
           <Globe2 className="h-3.5 w-3.5" />
           <span className="hidden md:inline">Change country</span>
         </Button>
+        <DemoModeToggle />
         <RoleSwitcher />
       </div>
     </div>
@@ -109,7 +113,8 @@ function ProtectedShell() {
             <div className="flex-1 flex flex-col min-w-0 min-h-0">
               <ShellHeader />
               <RoleContextStrip />
-              <main className="flex-1 min-h-0 overflow-hidden">
+              <main className="flex-1 min-h-0 overflow-hidden relative">
+                <DemoModePanel />
                 <ErrorBoundary label="Page">
                 <Routes>
                   {/* Main */}
@@ -130,6 +135,7 @@ function ProtectedShell() {
                   <Route path="/ai-2030" element={<Ai2030Prediction />} />
                   <Route path="/climate-finance" element={<ClimateFinance />} />
                   <Route path="/documents" element={<PolicyDocuments />} />
+                  <Route path="/policy-impact" element={<PolicyImpact />} />
                   <Route path="/map" element={<MapExplorer />} />
                   <Route path="/docs" element={<Documentation />} />
 
@@ -180,6 +186,7 @@ const App = () => (
         <CountryProvider>
           <BrowserRouter>
             <CurrentRoleProvider>
+              <DemoModeProvider>
               <Routes>
                 <Route
                   path="/select-country"
@@ -200,6 +207,7 @@ const App = () => (
                   }
                 />
               </Routes>
+              </DemoModeProvider>
             </CurrentRoleProvider>
           </BrowserRouter>
         </CountryProvider>

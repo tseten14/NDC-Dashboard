@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0",
+  "description": "UNFCCC KCI socio-economic impact case study corpus for Policy Impact Engine",
+  "source": "https://unfccc.int/constituted-bodies/KCI",
+  "cases": [
+    {
+      "id": "kci-brazil-ag-credit",
+      "title": "Assessing climate and socio-economic effects of agricultural credit policies: Brazil",
+      "country": "Brazil",
+      "sector": "AFOLU",
+      "intervention_type": "agricultural_credit",
+      "summary": "Directed agricultural credit increases farm productivity and rural employment with land-use and equity trade-offs."
+    },
+    {
+      "id": "kci-africa-energy-jobs",
+      "title": "Understanding the Implications of the Energy Transition on African Economies: Economy and Jobs",
+      "country": "Multi-country (Africa)",
+      "sector": "Energy",
+      "intervention_type": "renewable_energy_investment",
+      "summary": "Renewable energy deployment creates jobs and GDP gains but requires workforce transition and grid investment."
+    },
+    {
+      "id": "kci-india-carbon-pricing",
+      "title": "The impacts and incentives inherent in destination-based carbon pricing: India",
+      "country": "India",
+      "sector": "Energy",
+      "intervention_type": "carbon_pricing",
+      "summary": "Destination-based carbon pricing shifts industrial behaviour with competitiveness and public revenue effects."
+    },
+    {
+      "id": "kci-maldives-response",
+      "title": "Impacts of domestic and global response measures: Maldives",
+      "country": "Maldives",
+      "sector": "Economy-wide",
+      "intervention_type": "response_measures",
+      "summary": "Climate response measures affect tourism-dependent small island economies with trade and fiscal spillovers."
+    }
+  ]
+}

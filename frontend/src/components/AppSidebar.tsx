@@ -26,6 +26,7 @@ const primary = [
   { title: "Data Ingestion", url: "/ingest", icon: Upload },
   { title: "AI 2030 Prediction", url: "/ai-2030", icon: Sparkles },
   { title: "Climate Finance", url: "/climate-finance", icon: Coins },
+  { title: "Policy Impact", url: "/policy-impact", icon: Workflow },
   { title: "Policy documents", url: "/documents", icon: Scale },
   { title: "Emissions Map", url: "/map", icon: Map },
   { title: "Documentation", url: "/docs", icon: BookOpen },

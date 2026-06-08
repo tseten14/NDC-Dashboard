@@ -1,0 +1,74 @@
+{
+  "request": {
+    "objective": "Increase smallholder productivity while limiting land-use pressure",
+    "intervention": {
+      "type": "agricultural_credit",
+      "label": "Agricultural credit subsidy"
+    },
+    "parameters": {
+      "scale": 1,
+      "timeline_years": 10,
+      "sector": "AFOLU"
+    },
+    "context": {
+      "country": "UGA"
+    }
+  },
+  "response": {
+    "impacts": [
+      {
+        "category": "jobs",
+        "direction": "increase",
+        "description": "Rural labour demand rises with expanded production and seasonal harvesting",
+        "magnitude": { "value": 8, "unit": "% employment in target regions", "low": 3, "high": 15 },
+        "confidence": 0.26,
+        "provenance": "Based on Assessing climate and socio-economic effects of agricultural credit policies: A case study of Brazil (match 88%)",
+        "case_ids": ["kci-brazil-ag-credit"]
+      },
+      {
+        "category": "productivity",
+        "direction": "increase",
+        "description": "Yield per hectare improves where credit is paired with technical assistance",
+        "magnitude": { "value": 12, "unit": "% yield increase", "low": 5, "high": 20 },
+        "confidence": 0.27,
+        "provenance": "Based on Assessing climate and socio-economic effects of agricultural credit policies: A case study of Brazil (match 88%)",
+        "case_ids": ["kci-brazil-ag-credit"]
+      },
+      {
+        "category": "land_use",
+        "direction": "increase",
+        "description": "Pressure to convert natural land to agriculture where credit incentives favour expansion",
+        "confidence": 0.23,
+        "provenance": "Based on Assessing climate and socio-economic effects of agricultural credit policies: A case study of Brazil (match 88%)",
+        "case_ids": ["kci-brazil-ag-credit"]
+      }
+    ],
+    "trade_offs": [
+      {
+        "id": "t1",
+        "positive_effect": "Increased agricultural productivity and rural jobs",
+        "negative_effect": "Reduced natural conservation area / biodiversity pressure",
+        "affected_groups": ["smallholder farmers", "rural workers", "indigenous communities", "biodiversity"],
+        "severity": "high",
+        "confidence": 0.7,
+        "provenance": "Based on Brazil agricultural credit case (match 88%)",
+        "case_ids": ["kci-brazil-ag-credit"]
+      }
+    ],
+    "matched_cases": [
+      {
+        "id": "kci-brazil-ag-credit",
+        "title": "Assessing climate and socio-economic effects of agricultural credit policies: A case study of Brazil",
+        "match_score": 0.88,
+        "country": "Brazil"
+      }
+    ],
+    "overall_confidence": 0.62,
+    "disclaimers": [
+      "Indicative forecast — not an official government projection.",
+      "Analogical matching from UNFCCC KCI case studies; Uganda-specific evidence limited.",
+      "Objective: Increase smallholder productivity while limiting land-use pressure"
+    ],
+    "data_source": "bundled KCI corpus"
+  }
+}

@@ -635,6 +635,78 @@ export const cockpitApi = {
     getJSON<{ options: CatalogMitigationRow[]; data_source: string }>("/api/v1/catalog/mitigation-options"),
 };
 
+export interface PolicyCaseSummary {
+  id: string;
+  title: string;
+  country: string;
+  sector: string;
+  intervention_type: string;
+  summary: string;
+}
+
+export interface PolicyCaseIndexResponse {
+  version: string;
+  description: string;
+  source: string;
+  cases: PolicyCaseSummary[];
+  data_source: string;
+}
+
+export interface TefElement {
+  id: string;
+  label: string;
+  intervention_type: string;
+}
+
+export interface PolicyImpactForecastRequest {
+  objective: string;
+  intervention: { type: string; label?: string };
+  parameters: { scale: number; timeline_years: number; sector: string };
+  context?: { country: string };
+}
+
+export interface PolicyImpactOutcome {
+  category: string;
+  direction: string;
+  description: string;
+  magnitude?: { value: number; unit: string; low?: number; high?: number };
+  confidence: number;
+  provenance: string;
+  case_ids: string[];
+}
+
+export interface PolicyImpactForecastResponse {
+  impacts: PolicyImpactOutcome[];
+  trade_offs: Array<{
+    id: string;
+    positive_effect: string;
+    negative_effect: string;
+    affected_groups: string[];
+    severity?: string;
+    confidence: number;
+    provenance?: string;
+    case_ids?: string[];
+  }>;
+  pathway_diagram: { nodes: Array<{ id: string; kind: string; label: string }>; edges: Array<{ from: string; to: string }> };
+  matched_cases: Array<{ id: string; title: string; match_score: number; country: string }>;
+  overall_confidence: number;
+  disclaimers: string[];
+  data_source: string;
+}
+
+export const policyImpactApi = {
+  listCases: () => getJSON<PolicyCaseIndexResponse>("/api/v1/policy-cases"),
+  getCase: (id: string) => getJSON<{ case: Record<string, unknown>; data_source: string }>(`/api/v1/policy-cases/${id}`),
+  forecast: (body: PolicyImpactForecastRequest) =>
+    postJSON<PolicyImpactForecastResponse>("/api/v1/policy-impact/forecast", body),
+  tefElements: (sector?: string) => {
+    const qs = sector ? `?sector=${encodeURIComponent(sector)}` : "";
+    return getJSON<{ sector: string; elements: TefElement[]; data_source: string }>(
+      `/api/v1/policy-impact/tef-elements${qs}`,
+    );
+  },
+};
+
 export const documentsApi = {
   meta: () => getJSON<PolicyDocumentsMetaResponse>("/api/v1/documents/meta"),
   list: (params?: { category?: string; source?: string; q?: string; limit?: number; offset?: number }) => {

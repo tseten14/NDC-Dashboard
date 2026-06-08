@@ -1,0 +1,134 @@
+{
+  "id": "kci-brazil-ag-credit",
+  "title": "Assessing climate and socio-economic effects of agricultural credit policies: A case study of Brazil",
+  "country": "Brazil",
+  "region": "Latin America",
+  "sector": "AFOLU",
+  "intervention_type": "agricultural_credit",
+  "description": "Analysis of how directed agricultural credit programmes influence farm investment, productivity, rural labour markets, and land-use patterns, with implications for mitigation co-benefits and deforestation pressure.",
+  "methodology": "Econometric assessment linking credit disbursement to farm-level productivity, employment, and land expansion; scenario comparison of credit allocation rules.",
+  "assumptions": [
+    "Credit uptake responds to interest rate subsidies and eligibility rules",
+    "Productivity gains require complementary inputs (seeds, fertiliser, extension)",
+    "Land expansion is possible where tenure and market access allow"
+  ],
+  "limitations": [
+    "Results specific to Brazilian credit institutions and farm structure",
+    "Does not capture all indirect leakage effects",
+    "Uganda farm sizes and credit markets differ materially"
+  ],
+  "sources": [
+    {
+      "title": "UNFCCC Katowice Committee of Experts on the Impacts of the Implementation of Response Measures (KCI)",
+      "url": "https://unfccc.int/constituted-bodies/KCI",
+      "publisher": "UNFCCC",
+      "section": "Agricultural credit case study — Brazil"
+    }
+  ],
+  "intervention": {
+    "type": "agricultural_credit",
+    "parameters": {
+      "credit_volume_usd_m": 500,
+      "subsidy_rate_pct": 30,
+      "target_farmers": "smallholder_commercial"
+    }
+  },
+  "tef_chain": {
+    "nodes": [
+      { "id": "i1", "kind": "intervention", "label": "Subsidised agricultural credit" },
+      { "id": "a1", "kind": "attribute", "label": "Lower cost of capital for farms" },
+      { "id": "b1", "kind": "behaviour", "label": "Increased investment in inputs & equipment" },
+      { "id": "s1", "kind": "shift", "label": "Expansion of cultivated area & intensification" },
+      { "id": "o1", "kind": "outcome", "label": "Higher agricultural productivity" },
+      { "id": "o2", "kind": "outcome", "label": "Rural employment growth" },
+      { "id": "o3", "kind": "outcome", "label": "Land-use pressure / deforestation risk" }
+    ],
+    "edges": [
+      { "from": "i1", "to": "a1" },
+      { "from": "a1", "to": "b1" },
+      { "from": "b1", "to": "s1" },
+      { "from": "s1", "to": "o1" },
+      { "from": "s1", "to": "o2" },
+      { "from": "s1", "to": "o3" }
+    ]
+  },
+  "outcomes": [
+    {
+      "id": "o-jobs",
+      "category": "jobs",
+      "direction": "increase",
+      "description": "Rural labour demand rises with expanded production and seasonal harvesting",
+      "magnitude": { "value": 8, "unit": "% employment in target regions", "low": 3, "high": 15 },
+      "confidence": 0.72,
+      "evidence_refs": ["kci-brazil-ag-credit"]
+    },
+    {
+      "id": "o-gdp",
+      "category": "gdp",
+      "direction": "increase",
+      "description": "Agricultural output and downstream value-chain activity contribute to regional GDP",
+      "magnitude": { "value": 2.5, "unit": "% regional GDP", "low": 1, "high": 4 },
+      "confidence": 0.68,
+      "evidence_refs": ["kci-brazil-ag-credit"]
+    },
+    {
+      "id": "o-productivity",
+      "category": "productivity",
+      "direction": "increase",
+      "description": "Yield per hectare improves where credit is paired with technical assistance",
+      "magnitude": { "value": 12, "unit": "% yield increase", "low": 5, "high": 20 },
+      "confidence": 0.75,
+      "evidence_refs": ["kci-brazil-ag-credit"]
+    },
+    {
+      "id": "o-land",
+      "category": "land_use",
+      "direction": "increase",
+      "description": "Pressure to convert natural land to agriculture where credit incentives favour expansion",
+      "confidence": 0.65,
+      "evidence_refs": ["kci-brazil-ag-credit"]
+    },
+    {
+      "id": "o-inequality",
+      "category": "inequality",
+      "direction": "ambiguous",
+      "description": "Benefits may concentrate among larger farms with better access to credit markets",
+      "confidence": 0.6,
+      "evidence_refs": ["kci-brazil-ag-credit"]
+    },
+    {
+      "id": "o-emissions",
+      "category": "emissions",
+      "direction": "ambiguous",
+      "description": "Mitigation potential from productivity gains vs. emissions from land conversion",
+      "confidence": 0.55,
+      "evidence_refs": ["kci-brazil-ag-credit"]
+    }
+  ],
+  "trade_offs": [
+    {
+      "id": "t1",
+      "positive_effect": "Increased agricultural productivity and rural jobs",
+      "negative_effect": "Reduced natural conservation area / biodiversity pressure",
+      "affected_groups": ["smallholder farmers", "rural workers", "indigenous communities", "biodiversity"],
+      "severity": "high",
+      "confidence": 0.7
+    },
+    {
+      "id": "t2",
+      "positive_effect": "Higher farm incomes",
+      "negative_effect": "Credit access skewed toward commercial farms — equity gap widens",
+      "affected_groups": ["smallholders", "women farmers", "commercial agribusiness"],
+      "severity": "medium",
+      "confidence": 0.65
+    },
+    {
+      "id": "t3",
+      "positive_effect": "More space for real estate / development at forest margins",
+      "negative_effect": "Less primary forest and carbon stock retention",
+      "affected_groups": ["land developers", "conservation agencies", "local communities"],
+      "severity": "high",
+      "confidence": 0.68
+    }
+  ]
+}

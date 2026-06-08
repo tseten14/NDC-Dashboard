@@ -85,7 +85,7 @@ export function CurrentRoleProvider({ children }: { children: ReactNode }) {
     const roles = loadStoredRoles();
     setAvailableRoles(roles);
     const stored = localStorage.getItem(ACTIVE_ROLE_KEY) as AppRole | null;
-    setActiveRoleState(stored && roles.includes(stored) ? stored : "MRVOfficer");
+    setActiveRoleState(stored && roles.includes(stored) ? stored : "Admin");
     setLoading(false);
   }, []);
 
@@ -105,7 +105,7 @@ export function CurrentRoleProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(() => {
     localStorage.removeItem(ACTIVE_ROLE_KEY);
-    setActiveRoleState("MRVOfficer");
+    setActiveRoleState("Admin");
   }, []);
 
   const canCreateActivity = useCallback(

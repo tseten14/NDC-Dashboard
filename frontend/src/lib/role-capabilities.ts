@@ -122,9 +122,20 @@ export function shouldShowAdvancedNav(role: AppRole | null): boolean {
   return role !== "SeniorDecisionMaker";
 }
 
+function isDemoModeNavOverride(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    new URLSearchParams(window.location.search).get("demo") === "1" ||
+    sessionStorage.getItem("uganda-ndc-demo-mode") === "1"
+  );
+}
+
 export function isPrimaryNavVisible(role: AppRole | null, url: string): boolean {
+  const demo = isDemoModeNavOverride();
   if (url === "/ingest" && role === "SeniorDecisionMaker") return false;
-  if (url === "/climate-finance" && (role === "SeniorDecisionMaker" || role === "FieldOfficer")) return false;
+  if (url === "/climate-finance" && (role === "SeniorDecisionMaker" || role === "FieldOfficer") && !demo) {
+    return false;
+  }
   return true;
 }
 

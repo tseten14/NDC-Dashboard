@@ -82,11 +82,19 @@ function NodeCard({
 }
 
 interface PolicyPathwayDiagramProps {
+  model?: TransportPathwayModel;
   onFindDocuments?: (hints: string[]) => void;
+  compact?: boolean;
+  showFooter?: boolean;
 }
 
-export function PolicyPathwayDiagram({ onFindDocuments }: PolicyPathwayDiagramProps) {
-  const model = URBAN_TRANSPORT_PATHWAY;
+export function PolicyPathwayDiagram({
+  model: modelProp,
+  onFindDocuments,
+  compact = false,
+  showFooter = true,
+}: PolicyPathwayDiagramProps) {
+  const model = modelProp ?? URBAN_TRANSPORT_PATHWAY;
 
   return (
     <div className="space-y-4">
@@ -151,38 +159,41 @@ export function PolicyPathwayDiagram({ onFindDocuments }: PolicyPathwayDiagramPr
         </div>
       </div>
 
-      <Card>
-        <CardContent className="p-3">
-          <p className="text-[10px] font-semibold text-foreground mb-1">How this relates to documents</p>
-          <p className="text-[10px] text-muted-foreground leading-relaxed">
-            Interventions (left) are the kinds of measures described in national plans, laws, and fund
-            proposals in the document library. Outcomes (right) connect to NDC targets; confirming
-            achievement uses observed data, not this diagram alone. Click{" "}
-            <span className="font-medium">Related documents</span> on an intervention to search the corpus.
-          </p>
-          <p className="text-[9px] text-muted-foreground mt-2 italic">
-            Model adapted from NDC Align / data-driven transitions stakeholder materials (illustrative
-            urban transport example).
-          </p>
-        </CardContent>
-      </Card>
+      {showFooter && !compact && (
+        <Card>
+          <CardContent className="p-3">
+            <p className="text-[10px] font-semibold text-foreground mb-1">How this relates to documents</p>
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              Interventions (left) are the kinds of measures described in national plans, laws, and fund
+              proposals in the document library. Outcomes (right) connect to NDC targets; confirming
+              achievement uses observed data, not this diagram alone. Click{" "}
+              <span className="font-medium">Related documents</span> on an intervention to search the corpus.
+            </p>
+            <p className="text-[9px] text-muted-foreground mt-2 italic">
+              Model adapted from NDC Align / data-driven transitions stakeholder materials (illustrative
+              urban transport example).
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Compact edge legend for accessibility */}
-      <details className="text-[10px] text-muted-foreground">
-        <summary className="cursor-pointer font-medium text-foreground">Show link map ({model.edges.length} connections)</summary>
-        <ul className="mt-2 space-y-0.5 max-h-32 overflow-y-auto font-mono text-[9px]">
-          {model.edges.slice(0, 24).map((e, i) => {
-            const from = model.nodes.find((n) => n.id === e.from)?.label ?? e.from;
-            const to = model.nodes.find((n) => n.id === e.to)?.label ?? e.to;
-            return (
-              <li key={i}>
-                {from} → {to}
-              </li>
-            );
-          })}
-          {model.edges.length > 24 && <li>…and {model.edges.length - 24} more</li>}
-        </ul>
-      </details>
+      {!compact && (
+        <details className="text-[10px] text-muted-foreground">
+          <summary className="cursor-pointer font-medium text-foreground">Show link map ({model.edges.length} connections)</summary>
+          <ul className="mt-2 space-y-0.5 max-h-32 overflow-y-auto font-mono text-[9px]">
+            {model.edges.slice(0, 24).map((e, i) => {
+              const from = model.nodes.find((n) => n.id === e.from)?.label ?? e.from;
+              const to = model.nodes.find((n) => n.id === e.to)?.label ?? e.to;
+              return (
+                <li key={i}>
+                  {from} → {to}
+                </li>
+              );
+            })}
+            {model.edges.length > 24 && <li>…and {model.edges.length - 24} more</li>}
+          </ul>
+        </details>
+      )}
     </div>
   );
 }

@@ -1,0 +1,106 @@
+{
+  "id": "kci-maldives-response",
+  "title": "Impacts of the implementation of domestic and global response measures: Case study on Maldives",
+  "country": "Maldives",
+  "region": "Small Island Developing States",
+  "sector": "Economy-wide",
+  "intervention_type": "response_measures",
+  "description": "Assessment of how domestic and international climate response measures affect a tourism-dependent small island economy, including trade, fiscal, and employment spillovers.",
+  "methodology": "Macroeconomic scenario analysis with tourism and trade channel emphasis; policy response measure inventory.",
+  "assumptions": [
+    "Tourism remains primary economic driver",
+    "International aviation/shipping policies affect visitor access and import costs",
+    "Adaptation spending rises with climate impacts"
+  ],
+  "limitations": [
+    "Maldives economic structure differs from continental economies",
+    "Global policy timing highly uncertain"
+  ],
+  "sources": [
+    {
+      "title": "UNFCCC KCI — Maldives response measures",
+      "url": "https://unfccc.int/constituted-bodies/KCI",
+      "publisher": "UNFCCC",
+      "section": "Maldives case study"
+    }
+  ],
+  "intervention": {
+    "type": "response_measures",
+    "parameters": {
+      "tourism_share_gdp_pct": 28,
+      "import_dependency_pct": 80,
+      "adaptation_investment_usd_m": 200
+    }
+  },
+  "tef_chain": {
+    "nodes": [
+      { "id": "i1", "kind": "intervention", "label": "Domestic & global climate response measures" },
+      { "id": "a1", "kind": "attribute", "label": "Changed trade costs & tourism demand" },
+      { "id": "b1", "kind": "behaviour", "label": "Operators adjust pricing & sourcing" },
+      { "id": "s1", "kind": "shift", "label": "Economic activity shifts across sectors" },
+      { "id": "o1", "kind": "outcome", "label": "Tourism revenue volatility" },
+      { "id": "o2", "kind": "outcome", "label": "Import cost changes" },
+      { "id": "o3", "kind": "outcome", "label": "Fiscal pressure for adaptation" }
+    ],
+    "edges": [
+      { "from": "i1", "to": "a1" },
+      { "from": "a1", "to": "b1" },
+      { "from": "b1", "to": "s1" },
+      { "from": "s1", "to": "o1" },
+      { "from": "s1", "to": "o2" },
+      { "from": "s1", "to": "o3" }
+    ]
+  },
+  "outcomes": [
+    {
+      "id": "o-gdp",
+      "category": "gdp",
+      "direction": "ambiguous",
+      "description": "GDP sensitive to tourism flows and trade cost changes from response measures",
+      "confidence": 0.6,
+      "evidence_refs": ["kci-maldives-response"]
+    },
+    {
+      "id": "o-trade",
+      "category": "trade",
+      "direction": "ambiguous",
+      "description": "Import-dependent economy faces cost shifts from global carbon policies",
+      "confidence": 0.65,
+      "evidence_refs": ["kci-maldives-response"]
+    },
+    {
+      "id": "o-jobs",
+      "category": "jobs",
+      "direction": "ambiguous",
+      "description": "Tourism-linked employment vulnerable to demand shocks",
+      "confidence": 0.62,
+      "evidence_refs": ["kci-maldives-response"]
+    },
+    {
+      "id": "o-finance",
+      "category": "public_finance",
+      "direction": "decrease",
+      "description": "Adaptation and infrastructure needs strain fiscal space",
+      "confidence": 0.7,
+      "evidence_refs": ["kci-maldives-response"]
+    }
+  ],
+  "trade_offs": [
+    {
+      "id": "t1",
+      "positive_effect": "Long-term resilience and international climate finance access",
+      "negative_effect": "Short-term fiscal burden and debt pressure",
+      "affected_groups": ["government", "taxpayers", "development partners"],
+      "severity": "high",
+      "confidence": 0.68
+    },
+    {
+      "id": "t2",
+      "positive_effect": "Cleaner tourism product & brand positioning",
+      "negative_effect": "Higher operating costs for resorts and transport",
+      "affected_groups": ["tourism operators", "workers", "visitors"],
+      "severity": "medium",
+      "confidence": 0.6
+    }
+  ]
+}

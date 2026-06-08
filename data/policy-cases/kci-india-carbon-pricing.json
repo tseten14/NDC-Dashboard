@@ -1,0 +1,107 @@
+{
+  "id": "kci-india-carbon-pricing",
+  "title": "The impacts and incentives inherent in destination-based carbon pricing: An Indian Case study",
+  "country": "India",
+  "region": "South Asia",
+  "sector": "Energy",
+  "intervention_type": "carbon_pricing",
+  "description": "Analysis of destination-based carbon pricing mechanisms and their effects on industrial behaviour, competitiveness, public revenue, and emissions.",
+  "methodology": "Partial equilibrium modelling of carbon price pass-through; sectoral competitiveness assessment.",
+  "assumptions": [
+    "Carbon price is enforced at point of consumption/destination",
+    "Trade-exposed sectors can relocate or pass costs to consumers",
+    "Revenue is recycled into public programmes"
+  ],
+  "limitations": [
+    "India-specific industrial structure; border adjustment debates ongoing globally",
+    "Informal economy responses not fully modelled"
+  ],
+  "sources": [
+    {
+      "title": "UNFCCC KCI — India destination-based carbon pricing",
+      "url": "https://unfccc.int/constituted-bodies/KCI",
+      "publisher": "UNFCCC",
+      "section": "Carbon pricing — India case study"
+    }
+  ],
+  "intervention": {
+    "type": "carbon_pricing",
+    "parameters": {
+      "carbon_price_usd_per_t": 25,
+      "coverage_pct": 60,
+      "revenue_recycling_pct": 50
+    }
+  },
+  "tef_chain": {
+    "nodes": [
+      { "id": "i1", "kind": "intervention", "label": "Destination-based carbon price" },
+      { "id": "a1", "kind": "attribute", "label": "Higher cost of carbon-intensive goods" },
+      { "id": "b1", "kind": "behaviour", "label": "Firms shift to cleaner inputs & efficiency" },
+      { "id": "s1", "kind": "shift", "label": "Production mix moves to lower-carbon processes" },
+      { "id": "o1", "kind": "outcome", "label": "Emissions reduction" },
+      { "id": "o2", "kind": "outcome", "label": "Public revenue for green investment" },
+      { "id": "o3", "kind": "outcome", "label": "Trade competitiveness pressure" }
+    ],
+    "edges": [
+      { "from": "i1", "to": "a1" },
+      { "from": "a1", "to": "b1" },
+      { "from": "b1", "to": "s1" },
+      { "from": "s1", "to": "o1" },
+      { "from": "s1", "to": "o2" },
+      { "from": "s1", "to": "o3" }
+    ]
+  },
+  "outcomes": [
+    {
+      "id": "o-emissions",
+      "category": "emissions",
+      "direction": "decrease",
+      "description": "Price signal reduces emissions in covered sectors",
+      "magnitude": { "value": 5, "unit": "% covered sector emissions", "low": 2, "high": 10 },
+      "confidence": 0.7,
+      "evidence_refs": ["kci-india-carbon-pricing"]
+    },
+    {
+      "id": "o-finance",
+      "category": "public_finance",
+      "direction": "increase",
+      "description": "Carbon fee revenue available for climate and social programmes",
+      "confidence": 0.75,
+      "evidence_refs": ["kci-india-carbon-pricing"]
+    },
+    {
+      "id": "o-trade",
+      "category": "trade",
+      "direction": "ambiguous",
+      "description": "Export-oriented industries face cost pressures; may shift supply chains",
+      "confidence": 0.65,
+      "evidence_refs": ["kci-india-carbon-pricing"]
+    },
+    {
+      "id": "o-jobs",
+      "category": "jobs",
+      "direction": "ambiguous",
+      "description": "Job losses in carbon-intensive industries offset by growth in clean sectors",
+      "confidence": 0.55,
+      "evidence_refs": ["kci-india-carbon-pricing"]
+    }
+  ],
+  "trade_offs": [
+    {
+      "id": "t1",
+      "positive_effect": "Emissions reduction and public revenue",
+      "negative_effect": "Higher consumer prices for energy-intensive goods",
+      "affected_groups": ["households", "industry", "exporters"],
+      "severity": "medium",
+      "confidence": 0.7
+    },
+    {
+      "id": "t2",
+      "positive_effect": "Efficiency gains and innovation incentives",
+      "negative_effect": "Risk of carbon leakage to jurisdictions without pricing",
+      "affected_groups": ["domestic manufacturers", "trade ministry"],
+      "severity": "high",
+      "confidence": 0.68
+    }
+  ]
+}

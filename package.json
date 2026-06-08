@@ -19,6 +19,7 @@
     "db:seed": "SEED_DB=true node --import tsx db/seed.ts",
     "setup:ingest-python": "pip3 install -r requirements-ingest.txt",
     "build:documents": "node scripts/build_policy_documents.mjs",
+    "build:policy-cases": "node scripts/build_policy_cases.mjs",
     "verify:climatetrace": "node scripts/verify_climatetrace_v7.mjs",
     "vercel:deploy": "vercel --prod"
   },
