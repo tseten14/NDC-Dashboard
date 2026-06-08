@@ -1,5 +1,6 @@
 // Finance & Investment — conditionality, finance gap, Investment Note + Minister brief.
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { CockpitBar } from "@/components/CockpitBar";
 import { useCockpit } from "@/hooks/use-cockpit";
 import { applyScope, type Indicator } from "@/data/indicator-registry";
@@ -61,10 +62,15 @@ export default function FinanceInvestment() {
                           </div>
                         </td>
                         <td className="py-1 px-2 text-right">
-                          <Button size="sm" variant="ghost" className="h-5 text-[10px] px-1.5"
-                            onClick={async (e) => { e.stopPropagation(); await exportInvestmentNoteFromIndicator(i); toast.success("Investment Note exported"); }}>
-                            <FileText className="h-2.5 w-2.5 mr-0.5" /> Note
-                          </Button>
+                          <div className="inline-flex items-center gap-1">
+                            <Button size="sm" variant="ghost" className="h-5 text-[10px] px-1.5"
+                              onClick={async (e) => { e.stopPropagation(); await exportInvestmentNoteFromIndicator(i); toast.success("Investment Note exported"); }}>
+                              <FileText className="h-2.5 w-2.5 mr-0.5" /> Note
+                            </Button>
+                            <Button asChild size="sm" variant="ghost" className="h-5 text-[10px] px-1.5" onClick={(e) => e.stopPropagation()}>
+                              <Link to="/evidence">→ Evidence</Link>
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}

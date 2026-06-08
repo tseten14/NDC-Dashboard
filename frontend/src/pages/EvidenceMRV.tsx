@@ -1,5 +1,6 @@
 // Evidence & MRV — provenance, qa_flags, confidence, Evidence Pack export.
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { CockpitBar } from "@/components/CockpitBar";
 import { useCockpit } from "@/hooks/use-cockpit";
 import { applyScope, confidenceScore } from "@/data/indicator-registry";
@@ -103,6 +104,17 @@ export default function EvidenceMRV() {
             <CardContent className="p-3">
               <p className="text-[10px] uppercase tracking-wider text-at-risk font-semibold mb-1 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Trust principle</p>
               <p className="text-[10px] text-foreground/80 leading-snug">No indicator with status <strong>Missing</strong> contributes to progress or confidence calculations. Sources, owners and update dates must be visible at all times.</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/20 bg-primary/[0.03]">
+            <CardContent className="p-3">
+              <p className="text-[10px] text-foreground/80">
+                Need to investigate a bottleneck?{" "}
+                <Link to="/delivery" className="text-primary font-medium hover:underline">
+                  → View Delivery &amp; Accountability
+                </Link>
+              </p>
             </CardContent>
           </Card>
         </div>

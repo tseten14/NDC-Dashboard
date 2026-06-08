@@ -1,5 +1,6 @@
 // Delivery & Accountability — indicator → activity → district chain.
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CockpitBar } from "@/components/CockpitBar";
 import { useCockpit } from "@/hooks/use-cockpit";
 import { applyScope, getById, progressPct, statusColor } from "@/data/indicator-registry";
@@ -7,10 +8,12 @@ import { seedActivities } from "@/data/seed-activities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { Network, MapPin, Users, AlertCircle, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function DeliveryAccountability() {
+  const navigate = useNavigate();
   const c = useCockpit();
   const inds = useMemo(() => applyScope({ strategies: c.strategies, atms_only: c.atms_only, verified_only: c.verified_only }), [c.strategies, c.atms_only, c.verified_only]);
   const [selectedAct, setSelectedAct] = useState<string | null>(seedActivities[0]?.id ?? null);
@@ -80,6 +83,11 @@ export default function DeliveryAccountability() {
                           </Badge>
                         ))}
                       </div>
+                    </div>
+                    <div className="pt-2 border-t border-border flex justify-end">
+                      <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => navigate("/finance")}>
+                        → Check finance
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

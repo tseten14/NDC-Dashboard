@@ -193,6 +193,29 @@ export default function Home() {
           </Card>
         </section>
 
+        {/* Decision Cockpit */}
+        <section className="mx-auto max-w-5xl px-4 sm:px-6 py-6 sm:py-8">
+          <h2 className="font-brand text-base sm:text-lg font-semibold text-foreground mb-3">Decision Cockpit</h2>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              { question: "Are we on track?", cta: "Check NDC progress", to: "/dashboard" },
+              { question: "Where are the bottlenecks?", cta: "Find delayed projects", to: "/delivery" },
+              { question: "Are we aligned?", cta: "Review ownership", to: "/ownership" },
+            ].map((item) => (
+              <Link key={item.to} to={item.to} className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
+                <Card className="h-full border-primary/20 bg-primary/[0.03] transition-all duration-200 group-hover:border-primary/40 group-hover:shadow-md group-hover:-translate-y-0.5">
+                  <CardContent className="p-3 flex flex-col justify-between gap-2">
+                    <p className="text-xs font-medium text-foreground/80 leading-snug">{item.question}</p>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
+                      {item.cta} <ArrowRight className="h-3 w-3" />
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         {/* What you can do */}
         <section className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-10">
           <div className="mb-6 max-w-xl">
