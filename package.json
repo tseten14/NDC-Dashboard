@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config frontend/vite.config.ts",
-    "dev:all": "concurrently -k -n web,api -c cyan,magenta \"npm run dev\" \"npm run start:api\"",
+    "dev:all": "node scripts/dev_all.mjs",
+    "dev:servers": "concurrently -k -n web,api -c cyan,magenta \"npm run dev\" \"npm run start:api\"",
+    "verify:all": "npm run verify:climatetrace && npm run verify:predictions",
     "build": "vite build --config frontend/vite.config.ts",
     "build:dev": "vite build --config frontend/vite.config.ts --mode development",
     "lint": "eslint frontend services routes scripts server.js config/ndcTargets.js --config config/eslint.config.js",
@@ -21,6 +23,7 @@
     "build:documents": "node scripts/build_policy_documents.mjs",
     "build:policy-cases": "node scripts/build_policy_cases.mjs",
     "verify:climatetrace": "node scripts/verify_climatetrace_v7.mjs",
+    "verify:predictions": "node --import tsx scripts/verify_predictions.mjs",
     "vercel:deploy": "vercel --prod"
   },
   "dependencies": {

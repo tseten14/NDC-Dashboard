@@ -2,8 +2,6 @@
 import { useCockpit } from "@/hooks/use-cockpit";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { ugandaDistricts } from "@/data/uganda-districts";
 import type { Strategy } from "@/data/indicator-registry";
 
@@ -25,16 +23,6 @@ export function CockpitBar() {
             </Button>
           );
         })}
-      </div>
-
-      <div className="flex items-center gap-1.5">
-        <Switch id="atms" checked={c.atms_only} onCheckedChange={c.setATMS} />
-        <Label htmlFor="atms" className="text-[10px] cursor-pointer">ATMS only</Label>
-      </div>
-
-      <div className="flex items-center gap-1.5">
-        <Switch id="ver" checked={c.verified_only} onCheckedChange={c.setVerified} />
-        <Label htmlFor="ver" className="text-[10px] cursor-pointer">Verified only</Label>
       </div>
 
       <div className="flex items-center gap-1.5 ml-auto">

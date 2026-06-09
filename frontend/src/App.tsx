@@ -26,6 +26,8 @@ import PolicyDocuments from "./pages/PolicyDocuments.tsx";
 import Documentation from "./pages/Documentation.tsx";
 import Home from "./pages/Home.tsx";
 import PolicyImpact from "./pages/PolicyImpact.tsx";
+import BrazilChatbot from "./pages/BrazilChatbot.tsx";
+import PolicyDocumentView from "./pages/PolicyDocumentView.tsx";
 
 const MapExplorer = lazy(() => import("./pages/MapExplorer.tsx"));
 const DataIngestion = lazy(() => import("./pages/DataIngestion.tsx"));
@@ -100,8 +102,10 @@ function ProtectedShell() {
                   <Route path="/finance" element={<LazyPage><FinanceInvestment /></LazyPage>} />
                   <Route path="/ingest" element={<LazyPage><DataIngestion /></LazyPage>} />
                   <Route path="/ai-2030" element={<Ai2030Prediction />} />
+                  <Route path="/brazil-chat" element={<BrazilChatbot />} />
                   <Route path="/climate-finance" element={<ClimateFinance />} />
                   <Route path="/documents" element={<PolicyDocuments />} />
+                  <Route path="/documents/view" element={<PolicyDocumentView />} />
                   <Route path="/policy-impact" element={<PolicyImpact />} />
                   <Route path="/map" element={<LazyPage><MapExplorer /></LazyPage>} />
                   <Route path="/docs" element={<Documentation />} />

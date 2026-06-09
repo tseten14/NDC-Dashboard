@@ -26,6 +26,7 @@ export default defineConfig({
     env: {
       ...process.env,
       USE_MOCK_DATA: "true",
+      SKIP_DEV_VERIFY: "true",
       INGEST_API_KEY: process.env.INGEST_API_KEY ?? "dev-ingest-key-change-me",
     },
   },

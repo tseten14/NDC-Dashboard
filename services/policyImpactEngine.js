@@ -205,7 +205,7 @@ export function runPolicyImpactForecast(allCases, request) {
           direction: outcome.direction,
           description: outcome.description,
           magnitude: scaleMagnitude(outcome.magnitude, scale),
-          confidence: outcome.confidence * w * scale,
+          confidence: outcome.confidence * w,
           provenance,
           case_ids: [id],
         });
@@ -213,9 +213,12 @@ export function runPolicyImpactForecast(allCases, request) {
         existing.confidence = Math.min(0.95, existing.confidence + outcome.confidence * w * 0.5);
         if (!existing.case_ids.includes(id)) existing.case_ids.push(id);
         existing.provenance += `; ${provenance}`;
-        if (outcome.magnitude && existing.magnitude) {
+        // Only average magnitudes when both cases use the same unit — mixing incompatible units
+        // (e.g. raw job counts with percentages) produces nonsensical output.
+        if (outcome.magnitude && existing.magnitude && outcome.magnitude.unit === existing.magnitude.unit) {
+          const scaledNew = scaleMagnitude(outcome.magnitude, scale);
           existing.magnitude.value =
-            Math.round(((existing.magnitude.value + outcome.magnitude.value * w) / 2) * scale * 100) / 100;
+            Math.round(((existing.magnitude.value + scaledNew.value * w) / 2) * 100) / 100;
         }
       }
     }

@@ -98,8 +98,10 @@ A6a. MAIN SCREENS AND ROUTES (2026)
     /              Home — landing + Decision Cockpit quick-links
     /ingest        Data ingestion — Quick Scan live; mapped import WIP
     /documents     Policy corpus + intervention pathway diagram
+    /documents/view Policy document split-pane viewer + AI Policy Assistant (opened via Analyse button)
     /my-work       Personal activity drafts (localStorage)
     /executive     Executive overview briefing
+    /brazil-chat   Brazil Climate Intelligence — Perplexity-style research chatbot (demo, mock data)
 
   Q1 — Are we on track?
     /dashboard     NDC cockpit — targets vs observed emissions (core workspace)
@@ -163,6 +165,7 @@ A6c. POLICY DOCUMENTS (/documents)
   Tab "Document library":
     • Filter by Category: UN Submissions, Executive, Legislative, MCF (multilateral climate funds), Reports
     • Search by title or summary; open Climate Policy Radar (CPR) or hosted PDF
+    • "Analyse" button on each row → opens /documents/view in a split-pane with AI Policy Assistant
     • Result: fast access to national evidence for meetings (Bonn, MRV, finance)
 
   Tab "Intervention pathway":
@@ -170,8 +173,60 @@ A6c. POLICY DOCUMENTS (/documents)
     • "Related documents" on an intervention jumps to library search
     • Link to Dashboard Transport sector for measured emissions
 
+  Policy Document View (/documents/view):
+    • Split-pane layout: left = document metadata preview (cover, summary, details — mock pages);
+      right = AI Policy Assistant
+    • Quick-action buttons (2×2 grid): Executive Summary (strictly 5 lines), Key Items, Targets, Actions
+    • "Ask the document" free-form chat: keyword-matched responses with section/page refs [p.N], [§N.N]
+    • Document context passed via React Router location state (no new API endpoint needed)
+    • AI responses are template-driven from document metadata — not a live LLM
+
   Dashboard "Official sources" panel (right column): small curated list per sector from
   data/uganda-policy-curated.json (NDC, BUR, flagship GCF projects, sector plans).
+
+A6d-NEW. DATA TRACEABILITY (Dashboard)
+
+  Every emissions data point is now traceable to its literal source:
+
+  Click-to-Trace (Observed Data chart):
+    • Clicking any bar on the historical or projection chart shows a DataProvenancePanel below the chart
+    • Panel displays: year + value, methodology, data version, uncertainty %, primary sources,
+      "View on Climate TRACE" link, raw API path
+    • "Click any bar to trace its data source" hint appears when no bar is selected
+
+  View Source button (Observed Data header):
+    • <CodeXml> Source button appears when the sector has a Climate TRACE mapping
+    • Opens ViewSourceModal: Data References (API endpoint, raw table, harmonised view,
+      data version, refresh cadence), Methodology + uncertainty, Pipeline stages (numbered),
+      Primary Sources (badge chips), external Climate TRACE link
+
+  Lineage registry (frontend/src/lib/data-lineage.ts):
+    • SECTOR_LINEAGE record maps all 7 sectors (energy, afolu, agriculture, transport, waste,
+      ippu, economy-wide) to full lineage metadata
+    • getLineage(sector) → SectorLineage | null (null-safe for proxy/indicator series)
+
+  CT Verified / Estimated badges (Top Emitting Sources panel):
+    • is_asset=true rows: green "CT Verified" pill — directly-measured facility cross-verified
+      by Climate TRACE against satellite imagery and EDGAR/IEA
+    • is_asset=false rows: neutral "Estimated" pill — GADM spatial aggregation, activity-data model
+    • Both have tooltips explaining the confidence tier
+
+  NDC/BAU legend tooltips (Observed Data chart and Progress column):
+    • "2030 no-policy level" legend item has ⓘ tooltip: BAU explanation
+    • "NDC ceiling"/"NDC target path" has ⓘ tooltip: ceiling vs reduction-path distinction
+    • CapProgressScale markers (BAU, Cap) have cursor-help tooltips
+    • "Cap {N}" label has underline decoration and tooltip
+
+A6e-NEW. BRAZIL CLIMATE INTELLIGENCE (/brazil-chat)
+
+  Perplexity-style research chatbot for Brazil climate data (demo, mock data):
+    • Answers grounded in SEEG 11.0, INPE PRODES, Climate TRACE, MMA, UNFCCC, IBGE, MCTI figures
+    • Inline citation chips [N] auto-open References panel when clicked
+    • "Sources Verified" pill badges + animated source-search loading state
+    • "Data Provenance" collapsible panel with full dataset names
+    • 5 keyword-matched response topics: overview, LULUCF, agriculture, energy, NDC targets
+    • All data is mock/template-driven — no live LLM or API calls
+    • Clearly labelled "Demo · Mock Data" in the header
 
 A6d. DASHBOARD POP-UP TOOLS (right column buttons)
 
@@ -457,8 +512,27 @@ B2c. POLICY DOCUMENT CORPUS
   • Filter: rows with geography UGA; dedupe by Document URL
   • services/policyDocuments.js — load JSON, list/filter/curated
   • routes/documents.js — REST under /api/v1/documents*
-  • UI: frontend/src/pages/PolicyDocuments.tsx, PolicyPathwayDiagram.tsx
+  • UI: frontend/src/pages/PolicyDocuments.tsx (library + pathway tabs)
+        frontend/src/pages/PolicyDocumentView.tsx (split-pane viewer + AI panel)
+        frontend/src/data/policy-ai-mock.ts (template-driven analysis engine)
   • Sector keyword match for MCF panel: frontend/src/lib/policy-document-match.ts
+
+B2d. DATA TRACEABILITY LAYER
+  • frontend/src/lib/data-lineage.ts — SECTOR_LINEAGE record: 7 sectors × full lineage metadata
+    (API endpoint, raw table, harmonised view, methodology, uncertainty, pipeline stages,
+    primary sources, refresh cadence, Climate TRACE public URL)
+  • frontend/src/components/DataProvenancePanel.tsx — inline provenance card (below chart after
+    bar click); props: year, value, unit, sector, sectorLabel, onDismiss
+  • frontend/src/components/ViewSourceModal.tsx — full-page Data Lineage modal triggered by
+    Source button in Observed Data header
+  • frontend/src/components/columns/ObservedData.tsx — Bar onClick sets clickedPoint state;
+    CodeXml Source button sets viewSourceOpen state
+
+B2e. BRAZIL DEMO LAYER
+  • frontend/src/data/brazil-mock-data.ts — DATA_SOURCES, BRAZIL_SECTOR_TIMESERIES,
+    MOCK_RESPONSES (5 topics), queryBrazilData() keyword scorer, SUGGESTED_QUESTIONS
+  • frontend/src/pages/BrazilChatbot.tsx — full chatbot UI (searching animation,
+    inline citations, references section, data provenance panel)
 
 B4. NPM SCRIPTS
 

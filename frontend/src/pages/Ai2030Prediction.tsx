@@ -17,12 +17,12 @@ import {
   AlertTriangle, XCircle, HelpCircle, MapPin,
 } from "lucide-react";
 
-const STATUS: Record<PredictionStatus, { label: string; cls: string; icon: typeof CheckCircle2 }> = {
-  on_track: { label: "On track", cls: "bg-on-track/10 text-on-track border-on-track/30", icon: CheckCircle2 },
-  at_risk: { label: "At risk", cls: "bg-amber-500/10 text-amber-600 border-amber-500/30", icon: AlertTriangle },
-  off_track: { label: "Off track", cls: "bg-off-track/10 text-off-track border-off-track/30", icon: XCircle },
-  unknown: { label: "No target", cls: "bg-muted text-muted-foreground border-border", icon: HelpCircle },
-  insufficient_data: { label: "Too little data", cls: "bg-muted text-muted-foreground border-border", icon: HelpCircle },
+const STATUS: Record<PredictionStatus, { label: string; blurb: string; cls: string; icon: typeof CheckCircle2 }> = {
+  on_track:          { label: "On track",       blurb: "Likely to meet the 2030 climate target",         cls: "bg-on-track/10 text-on-track border-on-track/30",         icon: CheckCircle2 },
+  at_risk:           { label: "At risk",         blurb: "May miss the 2030 target if trend continues",   cls: "bg-amber-500/10 text-amber-600 border-amber-500/30",       icon: AlertTriangle },
+  off_track:         { label: "Off track",       blurb: "Likely to overshoot the 2030 target",           cls: "bg-off-track/10 text-off-track border-off-track/30",       icon: XCircle },
+  unknown:           { label: "No target set",   blurb: "No NDC commitment found for this sector",       cls: "bg-muted text-muted-foreground border-border",             icon: HelpCircle },
+  insufficient_data: { label: "Not enough data", blurb: "Not enough historical data to make a forecast", cls: "bg-muted text-muted-foreground border-border",             icon: HelpCircle },
 };
 
 function fmt(v: number | null | undefined, nd = 1): string {
@@ -86,11 +86,11 @@ export default function Ai2030Prediction() {
           <div>
             <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
-              AI 2030 Prediction
+              2030 Emissions Forecast
             </h2>
             <p className="text-xs text-muted-foreground max-w-2xl">
-              Machine-learning forecast of each NDC sector to 2030, trained on Climate TRACE observed
-              emissions and compared against Uganda's NDC 2030 targets.
+              Based on real historical emissions data, this shows where each sector is heading by 2030 —
+              and whether Uganda is on course to meet its national climate pledges (NDC 2022).
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -137,16 +137,16 @@ export default function Ai2030Prediction() {
             {/* Summary strip */}
             <Card>
               <CardContent className="p-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <Summary label="On track" value={data.summary.on_track} cls="text-on-track" />
-                <Summary label="At risk" value={data.summary.at_risk} cls="text-amber-600" />
-                <Summary label="Off track" value={data.summary.off_track} cls="text-off-track" />
+                <Summary label="On track" sub="Likely to meet 2030 goal" value={data.summary.on_track} cls="text-on-track" />
+                <Summary label="At risk" sub="Could miss if trend continues" value={data.summary.at_risk} cls="text-amber-600" />
+                <Summary label="Off track" sub="Likely to miss 2030 goal" value={data.summary.off_track} cls="text-off-track" />
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Projected 2030 gap</p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Overall 2030 shortfall</p>
                   <p className={cn("text-lg font-bold", (data.summary.total_gap ?? 0) > 0 ? "text-off-track" : "text-on-track")}>
-                    {(data.summary.total_gap ?? 0) > 0 ? "+" : ""}{fmt(data.summary.total_gap)} <span className="text-xs font-normal">MtCO₂e</span>
+                    {(data.summary.total_gap ?? 0) > 0 ? "+" : ""}{fmt(data.summary.total_gap)} <span className="text-xs font-normal">Mt</span>
                   </p>
                   <p className="text-[9px] text-muted-foreground">
-                    proj {fmt(data.summary.total_predicted)} vs target {fmt(data.summary.total_target)}
+                    Forecast: {fmt(data.summary.total_predicted)} Mt · NDC target: {fmt(data.summary.total_target)} Mt
                   </p>
                 </div>
               </CardContent>
@@ -175,24 +175,28 @@ export default function Ai2030Prediction() {
                       </Badge>
                     </div>
                     {p.status === "insufficient_data" ? (
-                      <p className="text-[10px] text-muted-foreground">{p.note}</p>
+                      <p className="text-[10px] text-muted-foreground">Not enough historical data to make a reliable forecast for this sector.</p>
                     ) : (
                       <>
+                        <p className="text-[9px] text-muted-foreground uppercase tracking-wide mb-0.5">Projected emissions by 2030</p>
                         <div className="flex items-end gap-1.5">
                           <span className="text-xl font-bold text-foreground tabular-nums">{fmt(p.predicted_value)}</span>
-                          <span className="text-[10px] text-muted-foreground mb-0.5">proj 2030 ({p.unit})</span>
+                          <span className="text-[10px] text-muted-foreground mb-0.5">million tonnes</span>
                         </div>
                         <p className="text-[9px] text-muted-foreground">
-                          80% PI {fmt(p.predicted_lower)}–{fmt(p.predicted_upper)} · target {fmt(p.target_value)}
+                          Likely range: {fmt(p.predicted_lower)}–{fmt(p.predicted_upper)} Mt
+                          {p.target_value != null && <> · NDC target: {fmt(p.target_value)} Mt</>}
                         </p>
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className={cn("inline-flex items-center gap-1 text-[11px] font-semibold", overshoot ? "text-off-track" : "text-on-track")}>
-                            {overshoot ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                            {overshoot ? "+" : ""}{fmt(p.gap)} {p.unit}
-                            {p.gap_pct != null && <span className="text-muted-foreground font-normal">({overshoot ? "+" : ""}{fmt(p.gap_pct)}%)</span>}
+                        <div className="mt-2 flex items-center gap-1">
+                          {overshoot ? <TrendingUp className="h-3 w-3 text-off-track shrink-0" /> : <TrendingDown className="h-3 w-3 text-on-track shrink-0" />}
+                          <span className={cn("text-[11px] font-semibold", overshoot ? "text-off-track" : "text-on-track")}>
+                            {fmt(Math.abs(p.gap ?? 0))} Mt {overshoot ? "above" : "below"} target
                           </span>
-                          <span className="text-[9px] text-muted-foreground font-mono">{p.model}{p.r2 != null ? ` · R²=${p.r2}` : ""}</span>
+                          {p.gap_pct != null && (
+                            <span className="text-[10px] text-muted-foreground">({overshoot ? "+" : ""}{fmt(p.gap_pct)}%)</span>
+                          )}
                         </div>
+                        <p className="text-[9px] text-muted-foreground mt-0.5">{STATUS[p.status].blurb}</p>
                       </>
                     )}
                   </button>
@@ -205,9 +209,12 @@ export default function Ai2030Prediction() {
               <Card>
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      Forecast trajectory
-                    </h3>
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Where is this sector heading?
+                      </h3>
+                      <p className="text-[9px] text-muted-foreground">Solid line = measured · Dashed = forecast · Shaded = likely range</p>
+                    </div>
                     <Select value={focusKey ?? undefined} onValueChange={setFocus}>
                       <SelectTrigger className="w-[180px] h-7 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -229,7 +236,9 @@ export default function Ai2030Prediction() {
                       <RTooltip
                         contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "6px", fontSize: 11 }}
                         formatter={(value: unknown, name: string) => {
-                          if (Array.isArray(value)) return [`${fmt(value[0])}–${fmt(value[1])}`, "80% interval"];
+                          if (Array.isArray(value)) return [`${fmt(value[0])}–${fmt(value[1])} Mt`, "Likely range"];
+                          if (name === "observed") return [`${fmt(value as number, 2)} Mt`, "Measured emissions"];
+                          if (name === "forecast") return [`${fmt(value as number, 2)} Mt`, "Forecast"];
                           return [fmt(value as number, 2), name];
                         }}
                       />
@@ -245,16 +254,16 @@ export default function Ai2030Prediction() {
                     </ComposedChart>
                   </ResponsiveContainer>
                   <p className="text-[10px] text-muted-foreground mt-2">
-                    Observed {focusPred.history[0]?.year ?? "—"}–{focusPred.history[focusPred.history.length - 1]?.year ?? "—"} from Climate TRACE.
-                    Dashed line is the {focusPred.model} forecast; shaded band is the 80% prediction interval.
-                    {focusPred.bau_2030 != null && ` NDC BAU 2030 ≈ ${fmt(focusPred.bau_2030)} ${focusPred.unit} (${focusPred.reduction_below_bau_pct ?? "—"}% below-BAU target).`}
+                    Measured emissions from {focusPred.history[0]?.year ?? "—"} to {focusPred.history[focusPred.history.length - 1]?.year ?? "—"} (Climate TRACE satellite data).
+                    The dashed line shows where emissions are heading if recent trends continue; the shaded area shows the range of likely outcomes.
+                    {focusPred.bau_2030 != null && ` Without new policies, emissions in this sector are expected to reach about ${fmt(focusPred.bau_2030)} Mt by 2030 — Uganda's NDC target sits ${focusPred.reduction_below_bau_pct ?? "—"}% below that level.`}
                   </p>
                 </CardContent>
               </Card>
             )}
 
             <p className="text-[10px] text-muted-foreground">
-              {data.methodology} Source: {data.data_source}. Observed {data.observed_from}–{data.observed_to}.
+              Forecasts are based on historical trends in Climate TRACE satellite data ({data.observed_from}–{data.observed_to}) and do not account for new policies not yet reflected in emissions. This is a planning tool, not an official government projection.
             </p>
           </>
         )}
@@ -263,11 +272,12 @@ export default function Ai2030Prediction() {
   );
 }
 
-function Summary({ label, value, cls }: { label: string; value: number; cls: string }) {
+function Summary({ label, sub, value, cls }: { label: string; sub: string; value: number; cls: string }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={cn("text-2xl font-bold tabular-nums", cls)}>{value}</p>
+      <p className={cn("text-[10px] font-semibold uppercase tracking-wide", cls)}>{label}</p>
+      <p className={cn("text-2xl font-bold tabular-nums", cls)}>{value} <span className="text-xs font-normal text-muted-foreground">sector{value !== 1 ? "s" : ""}</span></p>
+      <p className="text-[9px] text-muted-foreground leading-relaxed">{sub}</p>
     </div>
   );
 }

@@ -415,26 +415,54 @@ function CapProgressScale({
   return (
     <div className="w-full max-w-[240px] mt-2 text-left">
       <div className="relative h-2 rounded-full bg-muted overflow-hidden">
-        <div
-          className="absolute top-0 bottom-0 w-0.5 bg-chart-3 z-10"
-          style={{ left: pct(bau) }}
-          title={`No-policy trend: ${bau} ${unit}`}
-        />
-        <div
-          className="absolute top-0 bottom-0 w-0.5 bg-chart-2 z-10"
-          style={{ left: pct(cap) }}
-          title={`NDC ceiling: ${cap} ${unit}`}
-        />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className="absolute top-0 bottom-0 w-0.5 bg-chart-3 z-10 cursor-help"
+              style={{ left: pct(bau) }}
+            />
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[220px] p-2.5 space-y-1">
+            <p className="text-xs font-semibold">No-Policy Level (BAU): {bau} {unit}</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Projected emissions if no additional climate policies are enacted — the
+              Business-As-Usual baseline. Progress is measured relative to this line.
+            </p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className="absolute top-0 bottom-0 w-0.5 bg-chart-2 z-10 cursor-help"
+              style={{ left: pct(cap) }}
+            />
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[220px] p-2.5 space-y-1">
+            <p className="text-xs font-semibold">NDC Ceiling: {cap} {unit}</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              The maximum allowable emissions under the NDC commitment. Staying at or
+              below this level by 2030 counts as meeting the national climate pledge.
+            </p>
+          </TooltipContent>
+        </Tooltip>
         <div
           className="absolute top-0 bottom-0 h-full bg-chart-4/80 rounded-full"
           style={{ width: pct(latest) }}
-          title={`Latest observed: ${latest} ${unit}`}
         />
       </div>
       <div className="flex justify-between text-[9px] text-muted-foreground mt-1">
         <span>0</span>
         <span className="text-chart-4">Latest {latest}</span>
-        <span className="text-chart-2">Cap {cap}</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="text-chart-2 cursor-help underline decoration-dotted underline-offset-2">
+              Cap {cap}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[200px] p-2">
+            <p className="text-xs">NDC ceiling: max allowable emissions ({cap} {unit}) under the pledge.</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );

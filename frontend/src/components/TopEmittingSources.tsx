@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { MapPin, Factory, Layers, Loader2, AlertCircle, Download, Plus } from "lucide-react";
+import { MapPin, Layers, Loader2, AlertCircle, Download, Plus, ShieldCheck, Activity } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
 const STALE_MS = 15 * 60 * 1000;
@@ -175,7 +176,6 @@ export function TopEmittingSources() {
                 <th className="px-3 py-1.5 font-medium">#</th>
                 <th className="px-3 py-1.5 font-medium">Source</th>
                 <th className="px-3 py-1.5 font-medium">Sector / Subsector</th>
-                <th className="px-3 py-1.5 font-medium">Type</th>
                 <th className="px-3 py-1.5 font-medium text-right">MtCO2e</th>
               </tr>
             </thead>
@@ -183,22 +183,45 @@ export function TopEmittingSources() {
               {sources.map((s, i) => (
                 <tr key={`${s.id ?? i}-${i}`} className="border-t border-border/60 hover:bg-muted/30">
                   <td className="px-3 py-1.5 text-muted-foreground tabular-nums">{i + 1}</td>
-                  <td className="px-3 py-1.5 font-medium">{s.name ?? "Unnamed source"}</td>
+                  <td className="px-3 py-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium">{s.name ?? "Unnamed source"}</span>
+                      {s.is_asset ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full cursor-help shrink-0">
+                              <ShieldCheck className="h-2.5 w-2.5" />
+                              CT Verified
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[220px] p-2.5 space-y-1">
+                            <p className="text-xs font-semibold">Climate TRACE Verified Source</p>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              This is a directly-measured emission asset cross-verified by Climate TRACE against satellite imagery and independent global inventories (EDGAR, IEA). Highest confidence tier.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-medium text-muted-foreground border border-border px-1.5 py-0.5 rounded-full cursor-help shrink-0">
+                              <Activity className="h-2.5 w-2.5" />
+                              Estimated
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[220px] p-2.5 space-y-1">
+                            <p className="text-xs font-semibold">Sector-Level Estimate</p>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              This row is a spatial aggregation (GADM region) rather than a directly-measured facility. Values are derived from activity-data models, not point-source instruments.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-3 py-1.5 text-muted-foreground">
                     {titleize(s.sector)}
                     {s.subsector ? <span className="opacity-70"> · {titleize(s.subsector)}</span> : null}
-                  </td>
-                  <td className="px-3 py-1.5">
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "gap-1 text-[10px] h-5",
-                        s.is_asset ? "border-primary/40 text-primary" : "text-muted-foreground",
-                      )}
-                    >
-                      {s.is_asset ? <Factory className="h-2.5 w-2.5" /> : <Layers className="h-2.5 w-2.5" />}
-                      {s.is_asset ? "Asset" : "Aggregation"}
-                    </Badge>
                   </td>
                   <td className="px-3 py-1.5 text-right font-mono tabular-nums">
                     {s.emissions_mtco2e != null ? s.emissions_mtco2e.toFixed(2) : "—"}

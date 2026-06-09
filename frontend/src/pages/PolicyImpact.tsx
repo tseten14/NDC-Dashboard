@@ -478,7 +478,7 @@ export default function PolicyImpact() {
                           <p className="text-xs text-foreground leading-relaxed">{imp.description}</p>
                           {imp.magnitude && (
                             <p className="text-sm font-semibold text-foreground">
-                              {imp.magnitude.value} {imp.magnitude.unit}
+                              {imp.magnitude.value.toLocaleString(undefined, { maximumFractionDigits: 1 })} {imp.magnitude.unit}
                             </p>
                           )}
                         </div>

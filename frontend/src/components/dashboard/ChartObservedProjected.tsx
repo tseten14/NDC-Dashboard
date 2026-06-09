@@ -1,4 +1,6 @@
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 /** SVG hatch pattern for projected series (45°, 4px spacing). */
 export function ChartHatchPatternDef({ id = "chart-hatch-projected" }: { id?: string }) {
@@ -50,22 +52,63 @@ export function ObservedProjectedLegend({
         </span>
       )}
       {showBauPath && (
-        <span className="inline-flex items-center gap-1">
-          <span
-            className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-3))]"
-            aria-hidden
-          />
-          2030 no-policy level
-        </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex items-center gap-1 cursor-help">
+              <span
+                className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-3))]"
+                aria-hidden
+              />
+              2030 no-policy level
+              <Info className="h-2.5 w-2.5 text-muted-foreground/50" aria-hidden />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[260px] p-3 space-y-1">
+            <p className="text-xs font-semibold">Business-As-Usual (BAU) Baseline</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              The projected emissions trajectory if no additional climate policies or
+              interventions are implemented beyond those already in place. This
+              counterfactual "no-extra-policy" path shows what unconstrained emissions
+              growth looks like by 2030, and is the reference point for measuring NDC ambition.
+            </p>
+          </TooltipContent>
+        </Tooltip>
       )}
       {showTarget && (
-        <span className="inline-flex items-center gap-1">
-          <span
-            className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-2))]"
-            aria-hidden
-          />
-          {capTarget ? "2030 NDC ceiling" : "NDC target path"}
-        </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex items-center gap-1 cursor-help">
+              <span
+                className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-2))]"
+                aria-hidden
+              />
+              {capTarget ? "2030 NDC ceiling" : "NDC target path"}
+              <Info className="h-2.5 w-2.5 text-muted-foreground/50" aria-hidden />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[260px] p-3 space-y-1">
+            {capTarget ? (
+              <>
+                <p className="text-xs font-semibold">NDC Emissions Ceiling</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  The maximum allowable emissions level under the country's Nationally
+                  Determined Contributions (NDC) commitment. This is an absolute cap —
+                  emissions must stay at or below this value by 2030 to be considered
+                  on track with the national climate pledge.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-xs font-semibold">NDC Target Path</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  The linear emissions reduction pathway consistent with the NDC pledge,
+                  showing the expected trajectory from the baseline year to the 2030
+                  target value.
+                </p>
+              </>
+            )}
+          </TooltipContent>
+        </Tooltip>
       )}
     </div>
   );

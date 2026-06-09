@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard, Network, ShieldCheck, Wallet, Upload, ChevronDown, ChevronRight,
   Target, TrendingUp, Building2, Eye, Trees, BarChart3, Users, LineChart, FileText, Download, Settings,
-  Database, GitBranch, Workflow, Search, Library, Briefcase, ShieldAlert, Sparkles, Coins, BookOpen, Map, Home, Scale,
+  Database, GitBranch, Workflow, Search, Library, Briefcase, ShieldAlert, Sparkles, Coins, BookOpen, Map, Home, Scale, MessageSquareText,
 } from "lucide-react";
 import { useCurrentRole } from "@/hooks/use-current-role";
 import {
@@ -28,6 +28,7 @@ const primary: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: Target },
   { title: "Data Ingestion", url: "/ingest", icon: Upload },
   { title: "AI 2030 Prediction", url: "/ai-2030", icon: Sparkles },
+  { title: "Brazil Intelligence", url: "/brazil-chat", icon: MessageSquareText },
   { title: "Climate Finance", url: "/climate-finance", icon: Coins },
   { title: "Policy Impact", url: "/policy-impact", icon: Workflow },
   { title: "Policy documents", url: "/documents", icon: Scale },

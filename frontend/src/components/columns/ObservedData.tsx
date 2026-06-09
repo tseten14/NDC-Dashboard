@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { type NDCTarget, type TimeMode, type ObservedDataSet, type QAQCStatus, getObservedDataForTarget, bau2030ForTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import {
@@ -24,7 +25,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, CheckCircle2, HelpCircle, XCircle, Database, Satellite, MapPin } from "lucide-react";
+import { AlertTriangle, CheckCircle2, HelpCircle, XCircle, Database, Satellite, MapPin, CodeXml } from "lucide-react";
+import { DataProvenancePanel } from "@/components/DataProvenancePanel";
+import { ViewSourceModal } from "@/components/ViewSourceModal";
 import { cn } from "@/lib/utils";
 import {
   Line, Bar, XAxis, YAxis, CartesianGrid,
@@ -41,6 +44,8 @@ interface ObservedDataProps {
 
 export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigationOptions: _omit }: ObservedDataProps) {
   const emissions = useEmissionsData();
+  const [clickedPoint, setClickedPoint] = useState<{ year: number; value: number } | null>(null);
+  const [viewSourceOpen, setViewSourceOpen] = useState(false);
   const obsQuery = useTargetObservations(
     selectedTarget && isIndicatorPanelTarget(selectedTarget) ? selectedTarget.id : null,
   );
@@ -269,6 +274,17 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
         {hasIngestedObs && (
           <DataProvenanceBadge count={ingestedRows.length} source={ingestSourceLabel} />
         )}
+        {(apiSector || usingProxyData) && (
+          <button
+            type="button"
+            onClick={() => setViewSourceOpen(true)}
+            className="ml-auto flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            title="View data lineage and source audit"
+          >
+            <CodeXml className="h-3 w-3" />
+            <span className="hidden sm:inline">Source</span>
+          </button>
+        )}
       </div>
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-2">
@@ -398,6 +414,12 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
                       name={observedSeriesLabel}
                       fill="hsl(var(--chart-4))"
                       radius={[2, 2, 0, 0]}
+                      cursor="pointer"
+                      onClick={(data: { year?: number; observedValue?: number | null }) => {
+                        if (data?.observedValue != null && data?.year != null) {
+                          setClickedPoint({ year: data.year, value: data.observedValue });
+                        }
+                      }}
                     />
                     {isCapChart && (
                       <Line
@@ -440,6 +462,12 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
                       name={observedSeriesLabel}
                       fill="hsl(var(--chart-4))"
                       radius={[2, 2, 0, 0]}
+                      cursor="pointer"
+                      onClick={(data: { year?: number; observedValue?: number | null }) => {
+                        if (data?.observedValue != null && data?.year != null) {
+                          setClickedPoint({ year: data.year, value: data.observedValue });
+                        }
+                      }}
                     />
                     <Area
                       dataKey="projectedValue"
@@ -478,8 +506,24 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
                 showProjected={timeMode === "projection" && !isDistrictView}
                 capTarget={isCapChart}
               />
+              {(apiSector || usingProxyData) && !clickedPoint && (
+                <p className="text-[9px] text-muted-foreground/60 mt-1 px-1">
+                  Click any bar to trace its data source
+                </p>
+              )}
             </CardContent>
           </Card>
+
+          {clickedPoint && (
+            <DataProvenancePanel
+              year={clickedPoint.year}
+              value={clickedPoint.value}
+              unit={yUnit}
+              sector={usingProxyData ? null : (apiSector ?? null)}
+              sectorLabel={observedSeriesLabel}
+              onDismiss={() => setClickedPoint(null)}
+            />
+          )}
 
           <Card>
             <CardContent className="p-3">
@@ -539,6 +583,12 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
           </Card>
         </div>
       </ScrollArea>
+
+      <ViewSourceModal
+        open={viewSourceOpen}
+        onOpenChange={setViewSourceOpen}
+        sector={usingProxyData ? null : (apiSector ?? (selectedTarget?.sectorId === "economy-wide" ? "economy-wide" : null))}
+      />
     </div>
   );
 }

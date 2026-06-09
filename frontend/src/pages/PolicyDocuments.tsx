@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { documentsApi } from "@/lib/api";
 import { useCurrentRole } from "@/hooks/use-current-role";
 import type { PolicyDocument } from "@/lib/policy-documents";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ExternalLink, FileText, Scale, Search, Workflow, Library } from "lucide-react";
+import { ExternalLink, FileText, Scale, Search, Workflow, Library, Sparkles } from "lucide-react";
 
 const CATEGORY_ORDER = ["UN Submissions", "Executive", "Legislative", "MCF", "Reports"];
 
@@ -25,6 +25,7 @@ function formatDate(iso: string | null) {
 }
 
 function DocumentRow({ doc }: { doc: PolicyDocument }) {
+  const navigate = useNavigate();
   return (
     <div className="border-b border-border px-3 py-2.5 hover:bg-muted/20 transition-colors">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -54,6 +55,15 @@ function DocumentRow({ doc }: { doc: PolicyDocument }) {
           )}
         </div>
         <div className="flex shrink-0 gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-[10px] gap-1"
+            onClick={() => navigate("/documents/view", { state: { doc } })}
+          >
+            <Sparkles className="h-3 w-3" />
+            Analyse
+          </Button>
           {doc.documentUrl && (
             <Button size="sm" variant="outline" className="h-7 text-[10px]" asChild>
               <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer">
