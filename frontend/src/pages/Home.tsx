@@ -8,7 +8,7 @@ import { useCountry } from "@/context/CountryContext";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight, BarChart3, Globe2, LayoutDashboard, Sparkles, Target,
-  TrendingUp, Upload, Leaf, Satellite, ChevronRight, Scale,
+  TrendingUp, Upload, Leaf, Satellite, ChevronRight, Scale, Workflow, Briefcase,
 } from "lucide-react";
 
 const FEATURES = [
@@ -60,6 +60,20 @@ const FEATURES = [
     blurb: "Browse national documents and see how interventions link to intended outcomes.",
     to: "/documents",
     accent: "from-slate-500/20 to-slate-500/5",
+  },
+  {
+    icon: Workflow,
+    title: "Policy Impact",
+    blurb: "Model the impact of specific policies and trace outcomes to NDC targets.",
+    to: "/policy-impact",
+    accent: "from-indigo-500/20 to-indigo-500/5",
+  },
+  {
+    icon: Briefcase,
+    title: "My Work",
+    blurb: "Track your activities, approvals queue and pending verifications.",
+    to: "/my-work",
+    accent: "from-orange-500/20 to-orange-500/5",
   },
 ];
 
