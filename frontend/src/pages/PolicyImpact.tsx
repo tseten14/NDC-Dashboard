@@ -37,6 +37,20 @@ import { climateFinanceHrefFromPolicyImpact } from "@/lib/policy-impact-link";
 const STEPS = ["Objective", "Intervention", "Parameters", "Results"] as const;
 type Step = (typeof STEPS)[number];
 
+/** Normalize dashboard sector id/label for TEF API lookup. */
+function tefSectorQuery(sector: string): string {
+  const aliases: Record<string, string> = {
+    afolu: "AFOLU",
+    agriculture: "AFOLU",
+    energy: "Energy",
+    transport: "Transport",
+    waste: "Economy-wide",
+    ippu: "Energy",
+    "economy-wide": "Economy-wide",
+  };
+  return aliases[sector.trim().toLowerCase()] ?? sector;
+}
+
 const OBJECTIVES = [
   "Increase renewable generation",
   "Reduce AFOLU emissions while supporting rural livelihoods",
@@ -108,11 +122,17 @@ export default function PolicyImpact() {
     staleTime: 1000 * 60 * 60,
   });
 
+  const tefSector = tefSectorQuery(sector);
+
   const tefQuery = useQuery({
-    queryKey: ["tef-elements", sector],
-    queryFn: () => policyImpactApi.tefElements(sector),
+    queryKey: ["tef-elements", tefSector],
+    queryFn: () => policyImpactApi.tefElements(tefSector),
     staleTime: 1000 * 60 * 60,
   });
+
+  useEffect(() => {
+    setIntervention(null);
+  }, [tefSector]);
 
   useEffect(() => {
     if (!interventionParam || !tefQuery.data?.elements.length) return;
@@ -240,6 +260,20 @@ export default function PolicyImpact() {
           <Card>
             <CardContent className="p-4 space-y-3">
               <Label className="text-xs">Intervention type (TEF-aligned)</Label>
+              {tefQuery.isLoading && (
+                <p className="text-[11px] text-muted-foreground">Loading intervention types…</p>
+              )}
+              {tefQuery.isError && (
+                <p className="text-[11px] text-destructive flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  Could not load interventions — check that the API is running ({tefSector}).
+                </p>
+              )}
+              {!tefQuery.isLoading && !tefQuery.isError && (tefQuery.data?.elements?.length ?? 0) === 0 && (
+                <p className="text-[11px] text-muted-foreground">
+                  No TEF interventions for <strong>{sector}</strong> yet. Go back and pick AFOLU, Energy, Transport, or Economy-wide.
+                </p>
+              )}
               <div className="grid gap-2 sm:grid-cols-2">
                 {(tefQuery.data?.elements ?? []).map((el) => (
                   <button

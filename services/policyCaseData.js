@@ -70,12 +70,31 @@ export const TEF_ELEMENTS_BY_SECTOR = {
   ],
 };
 
+/** Map dashboard sector ids / labels to TEF catalogue keys. */
+const TEF_SECTOR_ALIASES = {
+  afolu: "AFOLU",
+  agriculture: "AFOLU",
+  energy: "Energy",
+  transport: "Transport",
+  waste: "Economy-wide",
+  ippu: "Energy",
+  "economy-wide": "Economy-wide",
+};
+
+function resolveTefSectorKey(sector) {
+  const normalized = sector.trim().toLowerCase();
+  if (TEF_SECTOR_ALIASES[normalized]) {
+    return TEF_SECTOR_ALIASES[normalized];
+  }
+  return Object.keys(TEF_ELEMENTS_BY_SECTOR).find(
+    (k) => k.toLowerCase() === normalized,
+  );
+}
+
 export function getTefElements(sector) {
   if (!sector) {
     return Object.values(TEF_ELEMENTS_BY_SECTOR).flat();
   }
-  const key = Object.keys(TEF_ELEMENTS_BY_SECTOR).find(
-    (k) => k.toLowerCase() === sector.toLowerCase(),
-  );
+  const key = resolveTefSectorKey(sector);
   return key ? TEF_ELEMENTS_BY_SECTOR[key] : [];
 }
