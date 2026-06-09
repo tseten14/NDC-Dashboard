@@ -28,11 +28,16 @@ export const GETTING_STARTED = [
   },
   {
     step: "3",
-    title: "Start on the Dashboard",
-    text: "Select a sector (e.g. Transport), click one NDC target on the left, and read the centre chart (what we measure) and right column (are we on track). Use other menu items when you need maps, documents, or finance screening.",
+    title: "Navigate by decision question",
+    text: "The left sidebar is organised into five questions: Q1 Are we on track? · Q2 Which interventions work? · Q3 Where are the bottlenecks? · Q4 Where do we invest next? · Q5 Are we aligned? Click any group to expand it and go straight to the right tool. The Home page also shows a Decision Cockpit with three quick-start links.",
   },
   {
     step: "4",
+    title: "Start on the Dashboard for emissions",
+    text: "Select a sector (e.g. Transport), click one NDC target on the left, and read the centre chart (what we measure) and right column (are we on track). Use other menu items when you need maps, documents, or finance screening.",
+  },
+  {
+    step: "5",
     title: "Return here when stuck",
     text: "This guide explains each screen, where numbers come from, and what you can safely tell ministers vs what still needs verification.",
   },
@@ -43,18 +48,18 @@ export const BASIC_FEATURES: FeatureGuide[] = [
     title: "Home",
     to: "/",
     who: "Everyone — first stop after choosing a country",
-    purpose: "Orient new users, surface NDC delivery gaps, and jump to main tools.",
+    purpose: "Orient new users, surface NDC delivery gaps, and jump to the right decision tool fast.",
     steps: [
-      "Read the short welcome and feature cards (Live vs Indicative labels).",
+      "Read the Decision Cockpit section at the top — three cards route you to Q1, Q3, or Q5 instantly.",
       "Review the NDC gap priorities panel — sectors ranked by distance to 2030 goals.",
-      "Click a gap row or card (e.g. Dashboard, Policy Impact) to go straight there.",
+      "Click a gap row or feature card (e.g. Dashboard, Policy Impact) to go straight there.",
       "Use Change country in the header if you need to re-select Uganda.",
     ],
     howItWorks:
-      "Home loads a gap summary from live Climate TRACE predictions where available; indicator-only targets are labelled Indicative. Feature cards link to modules. Old ?target= URLs forward to Dashboard.",
-    result: "You see which sectors need attention before opening charts.",
+      "Home loads a gap summary from live Climate TRACE predictions where available; indicator-only targets are labelled Indicative. The Decision Cockpit links to /dashboard, /delivery, and /ownership. Feature cards link to all modules. Old ?target= URLs forward to Dashboard.",
+    result: "You see which sectors need attention and immediately know which tool to open.",
     limitations: "Gap panel is a briefing aid — open Dashboard for full target detail.",
-    youWillSee: ["Welcome message", "NDC gap priorities panel", "Feature cards with Live/Indicative chips", "Country name in the header"],
+    youWillSee: ["Decision Cockpit with three Q1/Q3/Q5 quick-links", "NDC gap priorities panel", "Feature cards with Live/Indicative chips", "Country name in the header"],
   },
   {
     title: "Dashboard",
@@ -239,6 +244,57 @@ export const BASIC_FEATURES: FeatureGuide[] = [
 
 export const ADVANCED_FEATURES: FeatureGuide[] = [
   {
+    title: "Financial Flows",
+    to: "/financial-flow",
+    who: "Programme managers, finance officers — Q3: Where are the bottlenecks?",
+    purpose: "See committed, disbursed, and spent amounts for each active project at a glance — and spot which ones are falling behind on disbursement.",
+    steps: [
+      "Open Financial Flows from the Q3 sidebar group.",
+      "Read the three summary cards: Total Committed, Total Disbursed, and average Disbursement Rate.",
+      "Scan the colour-coded table: green ≥ 70% disbursed, amber 40–69%, red below 40%.",
+      "Sort by the % Disbursement column to find the most delayed projects.",
+    ],
+    howItWorks:
+      "Data is synthesised from the seed-activities registry with illustrative committed and disbursed figures. Status (Active / Delayed / Completed) drives the disbursement rate estimates. Clearly labelled illustrative — not connected to a live treasury or IFMS system.",
+    result: "A quick bottleneck scan showing which projects are under-disbursing and need follow-up.",
+    limitations: "Illustrative data only. Replace with real financial-system figures (IFMS, project accounts) for official use.",
+    youWillSee: ["Three summary stat cards", "Colour-coded disbursement table by project and district", "Illustrative data badge"],
+  },
+  {
+    title: "Cost Effectiveness",
+    to: "/cost-effectiveness",
+    who: "Investment planners, MRV teams — Q2: Which interventions work?",
+    purpose: "Rank interventions by cost per tonne of CO₂ avoided (USD/tCO2e) to support prioritisation decisions.",
+    steps: [
+      "Open Cost Effectiveness from the Q2 sidebar group.",
+      "Review the three stat cards: best cost/tCO2e, total mitigation potential, and average cost.",
+      "Click any column header to sort — cost/tCO2e ascending shows the best-value interventions first.",
+      "The top three rows are highlighted as Best Value; check their co-benefit badges for jobs, biodiversity, etc.",
+    ],
+    howItWorks:
+      "Illustrative cost and impact estimates are synthesised from the NDC activity registry and seed data. Cost per tCO2e = Total Budget ÷ Estimated tCO2e Avoided. Co-benefits are drawn from standard NDC co-benefit categories. Clearly labelled illustrative.",
+    result: "A ranked shortlist of interventions by value for money — useful for workshop prioritisation.",
+    limitations: "Illustrative only. Replace budget and impact figures with audited project data for binding investment decisions.",
+    youWillSee: ["Three summary stat cards", "Sortable cost-effectiveness table", "Best Value highlights on top 3 rows", "Co-benefit badges", "Illustrative data badge"],
+  },
+  {
+    title: "Institutional Map",
+    to: "/institutional-map",
+    who: "Coordination teams, planning officers — Q5: Are we aligned?",
+    purpose: "See which institution owns which NDC actions, spot overlapping mandates, and find focal points across government and partners.",
+    steps: [
+      "Open Institutional Map from the Q5 sidebar group.",
+      "Check the Mandate Overlaps alert at the top — actions owned by more than one actor are flagged.",
+      "Browse the four columns: Government Ministries, Regulatory Bodies, Development Partners, UN Agencies.",
+      "Click a card's action badges to see which NDC activity they are responsible for.",
+    ],
+    howItWorks:
+      "Built from the actors roster in the strategy data file. Actors are categorised by type; each card shows their responsible NDC actions. Overlap detection scans for activities with multiple ownership roles.",
+    result: "A visual coordination check — who owns what, where mandates overlap, and who the right focal point is.",
+    limitations: "Reflects the actors data in the app registry. Update the actors data to keep this current with real institutional arrangements.",
+    youWillSee: ["Mandate Overlaps alert (if any)", "Four-column institution grid", "NDC action badges per institution", "Focal point name and contact", "Illustrative data badge"],
+  },
+  {
     title: "Strategy Library",
     to: "/library",
     who: "Policy analysts linking NDC to national plans",
@@ -375,6 +431,9 @@ export const DATA_SOURCES_TABLE = [
   { area: "Policy documents", source: "Climate Policy Radar export", whatYouGet: "Titles, dates, CPR/PDF links", caveat: "Not live API; no full-text search yet" },
   { area: "Your activities in My Work", source: "This browser only", whatYouGet: "Personal drafts", caveat: "Not shared nationally" },
   { area: "Climate Risk maps", source: "Illustrative seed data", whatYouGet: "Demo prioritisation", caveat: "Not operational hazard models" },
+  { area: "Financial Flows (/financial-flow)", source: "Seed-activities registry (illustrative)", whatYouGet: "Committed → disbursed → spent by project", caveat: "Not live IFMS/treasury data — replace for official use" },
+  { area: "Cost Effectiveness (/cost-effectiveness)", source: "NDC activity registry (illustrative)", whatYouGet: "USD/tCO2e ranking, co-benefits", caveat: "Synthesised estimates — not audited project accounts" },
+  { area: "Institutional Map (/institutional-map)", source: "Actors roster in strategy data (illustrative)", whatYouGet: "Ministry/partner ownership and overlaps", caveat: "Reflects app registry — update actors data to stay current" },
   { area: "Policy Impact forecasts", source: "KCI case corpus (bundled)", whatYouGet: "Socio-economic analogies", caveat: "Not country-specific causal attribution" },
   { area: "Mapped ingest", source: "Ministry upload → Postgres", whatYouGet: "Indicator observations on Dashboard", caveat: "Unverified until MRV sign-off; not Climate TRACE MtCO₂e" },
 ];
@@ -398,6 +457,12 @@ export const GLOSSARY: { term: string; def: string }[] = [
   { term: "TEF", def: "Transition Element Framework — intervention taxonomy used in Policy Impact wizard." },
   { term: "NDC gap priorities", def: "Home/Dashboard panel ranking sectors by distance to 2030 goals using live or indicative data." },
   { term: "BTR / CRT", def: "UNFCCC reporting formats; Export CSV is a helper only." },
+  { term: "Decision Cockpit", def: "The three-card section on the Home page that routes users directly to Q1, Q3, or Q5 tools." },
+  { term: "Financial Flows", def: "The /financial-flow page showing committed → disbursed → spent per project. Illustrative data until connected to a live financial system." },
+  { term: "Cost Effectiveness (USD/tCO2e)", def: "Cost per tonne of CO₂ equivalent avoided — used on the /cost-effectiveness page to rank interventions by value for money." },
+  { term: "Institutional Map", def: "The /institutional-map page showing which ministry, agency, or partner owns each NDC action, with mandate overlap detection." },
+  { term: "Q1–Q5", def: "The five decision questions that organise the sidebar navigation: Are we on track? · Which interventions work? · Where are the bottlenecks? · Where do we invest next? · Are we aligned?" },
+  { term: "Disbursement rate", def: "Disbursed ÷ Committed, expressed as %. Used on Financial Flows to flag delayed projects (red < 40%, amber 40–69%, green ≥ 70%)." },
 ];
 
 export const FAQ: { q: string; a: string }[] = [
@@ -412,4 +477,9 @@ export const FAQ: { q: string; a: string }[] = [
     a: "Mapped import can — when Postgres is connected, confirmed rows are stored as observations and appear on indicator targets (forest, electricity, CSA, wetlands, capacity) with an “Ingested” badge. Quick scan never writes data. Climate TRACE MtCO₂e charts are unchanged by ingest today.",
   },
   { q: "What does my role change?", a: "Edit permissions only, not national totals." },
+  { q: "How is the sidebar organised?", a: "The left sidebar is grouped into five decision questions (Q1–Q5). Each group is collapsible. A page may appear in more than one group if it answers multiple questions — e.g. Delivery & Accountability appears under both Q2 and Q3." },
+  { q: "Where do I start if I want to know whether we are on track?", a: "Open the Q1 group in the sidebar and go to Dashboard. The Decision Cockpit on the Home page also has a direct 'Check NDC progress' link." },
+  { q: "Are the financial flow and cost-effectiveness numbers real?", a: "No — they are illustrative estimates synthesised from the NDC activity registry. They are clearly labelled with an Illustrative badge. Replace the underlying seed data with real project accounts and IFMS figures before using them in official reports." },
+  { q: "How do I trace a project from progress to bottleneck to finance?", a: "The app has a decision chain: from Dashboard (Q1) click indicators to see delivery status on Delivery & Accountability (Q2/Q3), then use the 'Check finance' button on each activity to jump to Finance & Investment (Q3). The Evidence & MRV page links back to Delivery at the bottom." },
+  { q: "What is the Institutional Map for?", a: "It shows which ministry or partner owns which NDC action, and flags where mandates overlap. It is built from the actors data in the app and is illustrative — update the actors registry to reflect actual institutional arrangements." },
 ];

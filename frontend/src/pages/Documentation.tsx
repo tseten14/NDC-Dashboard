@@ -92,9 +92,34 @@ export default function Documentation() {
           </div>
         </section>
 
-        {/* Feature guides — Basic */}
+        {/* Navigation structure callout */}
+        <section className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 space-y-1.5">
+          <p className="text-xs font-bold text-foreground">How the sidebar is organised</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            The left sidebar is grouped into <strong className="text-foreground">five decision questions</strong> (Q1–Q5).
+            Each group is collapsible and starts open. A page may appear in more than one group.
+            Always-visible items (Home, Data Ingestion, My Work, Executive Overview, Policy documents) sit above the groups.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0.5 pt-1">
+            {[
+              { q: "Q1", label: "Are we on track?", pages: "Dashboard · Indicators · Evidence & MRV · Projections · Map" },
+              { q: "Q2", label: "Which interventions work?", pages: "Project Check · Delivery · Causal Chains · Cost Effectiveness" },
+              { q: "Q3", label: "Where are the bottlenecks?", pages: "Delivery · Finance · Climate Finance · Financial Flows · Ownership" },
+              { q: "Q4", label: "Where do we invest next?", pages: "AI 2030 · Investment Templates · Tenfold · Policy Impact" },
+              { q: "Q5", label: "Are we aligned?", pages: "Ownership · NDP IV · Vision 2040 · Institutional Map" },
+            ].map(({ q, label, pages }) => (
+              <div key={q} className="text-[11px] py-0.5">
+                <span className="font-bold text-primary">{q}</span>
+                <span className="font-semibold text-foreground"> {label}</span>
+                <span className="text-muted-foreground"> — {pages}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Feature guides — always-visible */}
         <section className="space-y-4">
-          <SectionTitle icon={LayoutGrid}>Basic menu — full feature guides</SectionTitle>
+          <SectionTitle icon={LayoutGrid}>Always-visible pages — full feature guides</SectionTitle>
           <p className="text-xs text-muted-foreground -mt-2 leading-relaxed">
             Each card explains: purpose → steps → how it works → what you get → limitations.
           </p>
@@ -105,11 +130,11 @@ export default function Documentation() {
           </div>
         </section>
 
-        {/* Advanced */}
+        {/* Q1-Q5 decision pages */}
         <section className="space-y-4">
-          <SectionTitle icon={LayoutGrid}>Advanced menu</SectionTitle>
+          <SectionTitle icon={LayoutGrid}>Q1–Q5 decision pages</SectionTitle>
           <p className="text-xs text-muted-foreground -mt-2">
-            Expand <strong className="text-foreground font-medium">Advanced</strong> in the left sidebar.
+            Found inside the five question groups in the sidebar. The three pages marked <strong className="text-foreground">NEW</strong> use illustrative data — replace with real figures for official use.
           </p>
           <div className="space-y-4">
             {ADVANCED_FEATURES.map((f) => (
