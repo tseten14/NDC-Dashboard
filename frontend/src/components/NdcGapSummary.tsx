@@ -12,8 +12,10 @@ import {
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import {
   CLIMATE_TRACE_API_SECTORS,
+  progressFromLiveApiFields,
   type ClimatetraceApiSector,
 } from "@/lib/emissions-integration";
+import { ndcTargets } from "@/data/uganda-ndc-data";
 import { emissionsApi, type NdcSectorKey } from "@/lib/api";
 import { uiStatusFromApiStatus } from "@/lib/progress";
 import { sectorDefinitions, type SectorId, type ProgressStatus } from "@/data/uganda-ndc-data";
@@ -104,8 +106,13 @@ export function NdcGapSummary({ variant = "full", onSelectSector }: NdcGapSummar
       const sectorId = API_TO_SECTOR_ID[apiSector];
       const pr = emissions.progressBySector[apiSector];
       const summaryEntry = emissions.summary?.sectors?.[apiSector as NdcSectorKey];
+      const ndcTarget = ndcTargets.find(
+        (t) => t.sectorId === sectorId && t.metricType === "emissions-reduction",
+      );
+      const liveComputed =
+        pr && ndcTarget ? progressFromLiveApiFields(pr, ndcTarget) : null;
       const apiStatus = pr?.status ?? summaryEntry?.status ?? "unknown";
-      const status = uiStatusFromApiStatus(apiStatus);
+      const status = liveComputed?.percent != null ? liveComputed.status : uiStatusFromApiStatus(apiStatus);
       const hasLiveProgress =
         !!pr &&
         !emissions.sectorError[apiSector] &&
@@ -118,7 +125,11 @@ export function NdcGapSummary({ variant = "full", onSelectSector }: NdcGapSummar
         sectorId,
         name: sectorName(sectorId),
         status,
-        progressPct: pr?.progress_pct ?? summaryEntry?.progress_pct ?? null,
+        progressPct:
+          liveComputed?.percent ??
+          pr?.progress_pct ??
+          summaryEntry?.progress_pct ??
+          null,
         latestValue: pr?.latest_value ?? summaryEntry?.latest_value ?? null,
         latestYear: pr?.latest_year ?? summaryEntry?.latest_year ?? null,
         gapMt: pred?.gap ?? null,

@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   policyImpactApi,
   type PolicyImpactForecastResponse,
+  type PolicyImpactOutcome,
   type TefElement,
 } from "@/lib/api";
 import { PolicyPathwayDiagram } from "@/components/PolicyPathwayDiagram";
@@ -18,9 +19,15 @@ import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   AlertTriangle,
   ArrowRight,
   BookOpen,
+  ChevronDown,
   ChevronRight,
   Coins,
   ExternalLink,
@@ -66,6 +73,45 @@ const OUTCOME_ICONS: Record<string, typeof TrendingUp> = {
   trade: Coins,
 };
 
+const OUTCOME_LABELS: Record<string, string> = {
+  jobs: "Jobs",
+  gdp: "Economy",
+  inequality: "Fairness",
+  gender: "Gender equality",
+  trade: "Trade & finance",
+};
+
+const DIRECTION_LABELS: Record<string, string> = {
+  increase: "Likely up",
+  decrease: "Likely down",
+  mixed: "Mixed",
+};
+
+const HEADLINE_IMPACT_PRIORITY = ["jobs", "gdp", "inequality", "gender", "trade"];
+
+function confidenceLabel(score: number): string {
+  if (score >= 0.75) return "High";
+  if (score >= 0.5) return "Medium";
+  return "Low";
+}
+
+function pickHeadlineImpacts(impacts: PolicyImpactOutcome[], max = 5): PolicyImpactOutcome[] {
+  const ranked = [...impacts].sort((a, b) => {
+    const priorityA = HEADLINE_IMPACT_PRIORITY.indexOf(a.category);
+    const priorityB = HEADLINE_IMPACT_PRIORITY.indexOf(b.category);
+    const scoreA =
+      (priorityA >= 0 ? (HEADLINE_IMPACT_PRIORITY.length - priorityA) * 10 : 0) +
+      a.confidence * 5 +
+      (a.magnitude ? 3 : 0);
+    const scoreB =
+      (priorityB >= 0 ? (HEADLINE_IMPACT_PRIORITY.length - priorityB) * 10 : 0) +
+      b.confidence * 5 +
+      (b.magnitude ? 3 : 0);
+    return scoreB - scoreA;
+  });
+  return ranked.slice(0, max);
+}
+
 function pathwayToModel(
   diagram: PolicyImpactForecastResponse["pathway_diagram"],
   title: string,
@@ -73,11 +119,11 @@ function pathwayToModel(
   return {
     id: "forecast-pathway",
     title,
-    subtitle: "Aggregated causal pathway from matched KCI case studies (TEF framework)",
+    subtitle: "How similar programmes led to these outcomes elsewhere",
     sector: "Multi-sector",
-    ndcTargetHint: "Indicative — traceable to UNFCCC KCI evidence",
+    ndcTargetHint: "Based on comparable case studies — not an official Uganda forecast",
     measuredOutcomeNote:
-      "Socio-economic forecasts are analogies from comparable case studies, not attributed Uganda impacts.",
+      "These are analogies from other countries' experience, not measured impacts in Uganda.",
     nodes: diagram.nodes.map((n) => ({
       id: n.id,
       kind: n.kind as TransportPathwayModel["nodes"][0]["kind"],
@@ -170,6 +216,30 @@ export default function PolicyImpact() {
 
   const stepIdx = STEPS.indexOf(step);
 
+  const headlineImpacts = useMemo(
+    () => (result ? pickHeadlineImpacts(result.impacts) : []),
+    [result],
+  );
+  const extraImpacts = useMemo(
+    () =>
+      result
+        ? result.impacts.filter((imp) => !headlineImpacts.some((h) => h === imp))
+        : [],
+    [result, headlineImpacts],
+  );
+  const topTradeOffs = useMemo(
+    () =>
+      result
+        ? [...result.trade_offs].sort((a, b) => b.confidence - a.confidence).slice(0, 3)
+        : [],
+    [result],
+  );
+  const extraTradeOffs = useMemo(
+    () =>
+      result ? result.trade_offs.filter((t) => !topTradeOffs.some((top) => top.id === t.id)) : [],
+    [result, topTradeOffs],
+  );
+
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4 max-w-6xl">
@@ -180,11 +250,11 @@ export default function PolicyImpact() {
               Policy Impact Forecasting
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Socio-economic impacts beyond emissions — evidence from UNFCCC KCI case studies via the Transition Element Framework.
+              Explore what a policy might mean for jobs, income, and fairness — using lessons from similar programmes elsewhere.
             </p>
           </div>
           <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 border-amber-500/30">
-            Indicative forecast — not official projection
+            Illustrative — not an official forecast
           </Badge>
         </div>
 
@@ -259,7 +329,7 @@ export default function PolicyImpact() {
         {step === "Intervention" && (
           <Card>
             <CardContent className="p-4 space-y-3">
-              <Label className="text-xs">Intervention type (TEF-aligned)</Label>
+              <Label className="text-xs">What kind of policy?</Label>
               {tefQuery.isLoading && (
                 <p className="text-[11px] text-muted-foreground">Loading intervention types…</p>
               )}
@@ -271,7 +341,7 @@ export default function PolicyImpact() {
               )}
               {!tefQuery.isLoading && !tefQuery.isError && (tefQuery.data?.elements?.length ?? 0) === 0 && (
                 <p className="text-[11px] text-muted-foreground">
-                  No TEF interventions for <strong>{sector}</strong> yet. Go back and pick AFOLU, Energy, Transport, or Economy-wide.
+                  No policy types for <strong>{sector}</strong> yet. Go back and try AFOLU, Energy, Transport, or Economy-wide.
                 </p>
               )}
               <div className="grid gap-2 sm:grid-cols-2">
@@ -286,7 +356,6 @@ export default function PolicyImpact() {
                     onClick={() => setIntervention(el)}
                   >
                     <p className="font-semibold text-foreground">{el.label}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{el.intervention_type}</p>
                   </button>
                 ))}
               </div>
@@ -311,7 +380,7 @@ export default function PolicyImpact() {
           <Card>
             <CardContent className="p-4 space-y-4">
               <div>
-                <Label className="text-xs">Scale multiplier ({scale.toFixed(1)}×)</Label>
+                <Label className="text-xs">Programme size ({scale.toFixed(1)}× typical)</Label>
                 <Slider
                   className="mt-2"
                   min={0.25}
@@ -320,10 +389,9 @@ export default function PolicyImpact() {
                   value={[scale]}
                   onValueChange={([v]) => setScale(v)}
                 />
-                <p className="text-[10px] text-muted-foreground mt-1">Relative to reference case study scale</p>
               </div>
               <div>
-                <Label className="text-xs">Timeline ({timelineYears} years)</Label>
+                <Label className="text-xs">Over how many years? ({timelineYears})</Label>
                 <Slider
                   className="mt-2"
                   min={3}
@@ -357,135 +425,197 @@ export default function PolicyImpact() {
         {step === "Results" && result && (
           <div className="space-y-4">
             <Card className="border-primary/20 bg-primary/[0.02]">
-              <CardContent className="p-3 space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge className="text-[10px]">
-                    Confidence {Math.round(result.overall_confidence * 100)}%
-                  </Badge>
-                  {result.matched_cases.map((c) => (
-                    <Badge key={c.id} variant="outline" className="text-[9px]">
-                      {c.country} — {Math.round(c.match_score * 100)}% match
-                    </Badge>
-                  ))}
-                </div>
-                {result.matched_cases[0]?.sector_score != null && (
-                  <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/60">
-                    <span className="text-[9px] text-muted-foreground w-full">Match breakdown (top case):</span>
-                    {(
-                      [
-                        ["Sector", result.matched_cases[0].sector_score],
-                        ["Intervention", result.matched_cases[0].intervention_score],
-                        ["Region", result.matched_cases[0].region_score],
-                        ["Scale", result.matched_cases[0].scale_score],
-                      ] as const
-                    ).map(([label, score]) =>
-                      score != null ? (
-                        <Badge key={label} variant="secondary" className="text-[8px] font-normal">
-                          {label} {Math.round(score * 100)}%
-                        </Badge>
-                      ) : null,
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {result.disclaimers.map((d, i) => (
-              <p key={i} className="text-[10px] text-muted-foreground flex items-start gap-1.5">
-                <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5 text-amber-600" />
-                {d}
-              </p>
-            ))}
-
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {result.impacts.map((imp, i) => {
-                const Icon = OUTCOME_ICONS[imp.category] ?? TrendingUp;
-                return (
-                  <Card key={i}>
-                    <CardContent className="p-3 space-y-1">
-                      <div className="flex items-center gap-1.5">
-                        <Icon className="h-3.5 w-3.5 text-primary" />
-                        <Badge variant="outline" className="text-[9px] capitalize">
-                          {imp.category.replace(/_/g, " ")}
-                        </Badge>
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "text-[9px]",
-                            imp.direction === "increase" && "text-on-track",
-                            imp.direction === "decrease" && "text-destructive",
-                          )}
-                        >
-                          {imp.direction}
-                        </Badge>
-                      </div>
-                      <p className="text-[11px] text-foreground leading-snug">{imp.description}</p>
-                      {imp.magnitude && (
-                        <p className="text-sm font-bold text-foreground">
-                          {imp.magnitude.value} {imp.magnitude.unit}
-                        </p>
-                      )}
-                      <p className="text-[9px] text-muted-foreground italic">{imp.provenance}</p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-
-            <Card>
-              <CardContent className="p-3 space-y-2">
-                <p className="text-xs font-bold text-foreground">Trade-offs</p>
-                {result.trade_offs.map((t) => (
-                  <div key={t.id} className="border rounded-md p-2 text-[11px] space-y-1">
-                    <div className="flex gap-2">
-                      <span className="text-on-track font-medium">+ {t.positive_effect}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="text-destructive font-medium">− {t.negative_effect}</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">
-                      Affected: {t.affected_groups.join(", ")}
-                    </p>
-                    {t.provenance && (
-                      <p className="text-[9px] text-muted-foreground italic">{t.provenance}</p>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <PolicyPathwayDiagram
-              model={pathwayToModel(result.pathway_diagram, "Forecast causal pathway")}
-              compact
-              showFooter={false}
-            />
-
-            <Card>
-              <CardContent className="p-3 space-y-2">
-                <p className="text-xs font-bold text-foreground flex items-center gap-1">
-                  <BookOpen className="h-3.5 w-3.5" /> Evidence — source case studies
+              <CardContent className="p-4 space-y-2">
+                <p className="text-sm font-semibold text-foreground">What this might mean</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {intervention?.label ?? "Selected policy"} in {sector} — compared with similar programmes in{" "}
+                  {result.matched_cases[0]?.country ?? "other countries"}.
                 </p>
-                {(casesQuery.data?.cases ?? [])
-                  .filter((c) => result.matched_cases.some((m) => m.id === c.id))
-                  .map((c) => (
-                    <div key={c.id} className="flex items-start justify-between gap-2 border-b border-border pb-2 last:border-0">
-                      <div>
-                        <p className="text-[11px] font-semibold">{c.title}</p>
-                        <p className="text-[10px] text-muted-foreground">{c.summary}</p>
-                      </div>
-                      <Button size="sm" variant="outline" className="h-7 text-[10px] shrink-0" asChild>
-                        <a
-                          href="https://unfccc.int/constituted-bodies/KCI"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="h-3 w-3 mr-1" /> KCI
-                        </a>
-                      </Button>
-                    </div>
-                  ))}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <Badge variant="secondary" className="text-[10px]">
+                    Reliability: {confidenceLabel(result.overall_confidence)}
+                  </Badge>
+                  {result.matched_cases[0] && (
+                    <Badge variant="outline" className="text-[10px]">
+                      Based on {result.matched_cases[0].country}
+                    </Badge>
+                  )}
+                </div>
               </CardContent>
             </Card>
+
+            <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-600" />
+              {result.disclaimers[0] ??
+                "This is an illustrative comparison — not a prediction of what will happen in Uganda."}
+            </p>
+
+            <Card>
+              <CardContent className="p-4 space-y-3">
+                <p className="text-xs font-semibold text-foreground">Key outcomes</p>
+                <div className="space-y-3">
+                  {headlineImpacts.map((imp, i) => {
+                    const Icon = OUTCOME_ICONS[imp.category] ?? TrendingUp;
+                    return (
+                      <div key={i} className="flex gap-3 border-b border-border/60 pb-3 last:border-0 last:pb-0">
+                        <Icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-xs font-medium text-foreground">
+                              {OUTCOME_LABELS[imp.category] ?? imp.category.replace(/_/g, " ")}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-[10px]",
+                                imp.direction === "increase" && "text-on-track border-on-track/30",
+                                imp.direction === "decrease" && "text-destructive border-destructive/30",
+                              )}
+                            >
+                              {DIRECTION_LABELS[imp.direction] ?? imp.direction}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-foreground leading-relaxed">{imp.description}</p>
+                          {imp.magnitude && (
+                            <p className="text-sm font-semibold text-foreground">
+                              {imp.magnitude.value} {imp.magnitude.unit}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {topTradeOffs.length > 0 && (
+              <Card>
+                <CardContent className="p-4 space-y-3">
+                  <p className="text-xs font-semibold text-foreground">Trade-offs to watch</p>
+                  {topTradeOffs.map((t) => (
+                    <div key={t.id} className="rounded-md border border-border/60 p-3 text-xs space-y-1.5">
+                      <p>
+                        <span className="text-on-track font-medium">Benefit: </span>
+                        {t.positive_effect}
+                      </p>
+                      <p>
+                        <span className="text-destructive font-medium">Risk: </span>
+                        {t.negative_effect}
+                      </p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            <Collapsible>
+              <Card>
+                <CollapsibleTrigger className="w-full text-left">
+                  <CardContent className="p-3 flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-foreground">Show details</span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </CardContent>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="px-3 pb-4 pt-0 space-y-4 border-t border-border/60">
+                    {result.matched_cases[0]?.sector_score != null && (
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-medium text-foreground">How well this case matches</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(
+                            [
+                              ["Sector", result.matched_cases[0].sector_score],
+                              ["Policy type", result.matched_cases[0].intervention_score],
+                              ["Region", result.matched_cases[0].region_score],
+                              ["Scale", result.matched_cases[0].scale_score],
+                            ] as const
+                          ).map(([label, score]) =>
+                            score != null ? (
+                              <Badge key={label} variant="secondary" className="text-[10px] font-normal">
+                                {label}: {Math.round(score * 100)}%
+                              </Badge>
+                            ) : null,
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {extraImpacts.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-medium text-foreground">Other possible effects</p>
+                        {extraImpacts.map((imp, i) => (
+                          <p key={i} className="text-[11px] text-muted-foreground leading-relaxed">
+                            <span className="text-foreground font-medium">
+                              {OUTCOME_LABELS[imp.category] ?? imp.category}:{" "}
+                            </span>
+                            {imp.description}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+
+                    {extraTradeOffs.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-medium text-foreground">Additional trade-offs</p>
+                        {extraTradeOffs.map((t) => (
+                          <p key={t.id} className="text-[11px] text-muted-foreground">
+                            {t.positive_effect} — but {t.negative_effect.toLowerCase()}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+
+                    {result.disclaimers.length > 1 && (
+                      <div className="space-y-1">
+                        {result.disclaimers.slice(1).map((d, i) => (
+                          <p key={i} className="text-[10px] text-muted-foreground">
+                            {d}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-medium text-foreground">How we got here</p>
+                      <PolicyPathwayDiagram
+                        model={pathwayToModel(result.pathway_diagram, "Policy pathway")}
+                        compact
+                        showFooter={false}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-medium text-foreground flex items-center gap-1">
+                        <BookOpen className="h-3.5 w-3.5" /> Source case studies
+                      </p>
+                      {(casesQuery.data?.cases ?? [])
+                        .filter((c) => result.matched_cases.some((m) => m.id === c.id))
+                        .map((c) => (
+                          <div
+                            key={c.id}
+                            className="flex items-start justify-between gap-2 border-b border-border pb-2 last:border-0"
+                          >
+                            <div>
+                              <p className="text-[11px] font-semibold">{c.title}</p>
+                              <p className="text-[10px] text-muted-foreground">{c.summary}</p>
+                            </div>
+                            <Button size="sm" variant="outline" className="h-7 text-[10px] shrink-0" asChild>
+                              <a
+                                href="https://unfccc.int/constituted-bodies/KCI"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" /> View
+                              </a>
+                            </Button>
+                          </div>
+                        ))}
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" className="text-xs" onClick={() => setStep("Parameters")}>
@@ -493,7 +623,7 @@ export default function PolicyImpact() {
               </Button>
               <Button variant="outline" size="sm" className="text-xs" asChild>
                 <Link to={climateFinanceHrefFromPolicyImpact({ sector })}>
-                  <Coins className="h-3 w-3 mr-1" /> Funding requirements (Climate Finance)
+                  <Coins className="h-3 w-3 mr-1" /> Policy suggestions (Climate Finance)
                 </Link>
               </Button>
             </div>

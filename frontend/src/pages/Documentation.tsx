@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Link } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,11 +22,16 @@ import {
   GLOSSARY,
   FAQ,
 } from "@/data/user-guide-content";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BookOpen, Target, Satellite, HelpCircle, Palette, LayoutGrid, Users, ArrowRight,
   ExternalLink, CheckCircle2, AlertTriangle, XCircle, MinusCircle, ListOrdered,
-  Cog, Flag, AlertCircle,
+  Cog, Flag, AlertCircle, Workflow,
 } from "lucide-react";
+
+const SystemDesignDoc = lazy(() =>
+  import("@/components/docs/SystemDesignDoc").then((m) => ({ default: m.SystemDesignDoc })),
+);
 
 const STATUS_ICONS = {
   "On track": { icon: CheckCircle2, color: "text-on-track" },
@@ -42,34 +47,53 @@ export default function Documentation() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="mx-auto max-w-3xl p-4 pb-12 space-y-10">
-        <header className="space-y-2 border-b border-border pb-6">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-primary" />
-            <h1 className="font-brand text-2xl font-bold text-foreground">User guide</h1>
+      <div className="min-h-full w-full bg-muted/25">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-14 space-y-6">
+        <header className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-2 min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-6 w-6 text-primary shrink-0" />
+              <h1 className="font-brand text-2xl sm:text-3xl font-bold text-foreground">Documentation</h1>
+            </div>
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-3xl">
+              User guide for day-to-day use, plus system design for developers (architecture, data flows,
+              and API boundaries).
+            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              New here? Start on <Link to="/" className="text-primary font-medium hover:underline">Home</Link>, then
+              return for full detail on every screen.
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-            Detailed help for non-specialists: what each feature is for, how to use it step by step,
-            how the app produces its results, and what you should <em>not</em> claim in official settings.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            For a short tour, visit <Link to="/" className="text-primary font-medium hover:underline">Home</Link> first.
-            Return here for full detail on every menu item.
-          </p>
         </header>
 
+        <Tabs defaultValue="guide" className="space-y-6">
+          <TabsList className="h-auto w-full sm:w-auto flex flex-wrap justify-start gap-1 p-1">
+            <TabsTrigger value="guide" className="gap-1.5 px-4 py-2 text-sm">
+              <BookOpen className="h-4 w-4" />
+              User guide
+            </TabsTrigger>
+            <TabsTrigger value="system-design" className="gap-1.5 px-4 py-2 text-sm">
+              <Workflow className="h-4 w-4" />
+              System design
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="guide" className="mt-0 space-y-10 w-full">
         {/* Getting started */}
-        <section className="space-y-3">
+        <section className="space-y-4">
           <SectionTitle icon={ListOrdered}>Getting started</SectionTitle>
-          <ol className="space-y-3">
+          <ol className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-3 list-none p-0 m-0">
             {GETTING_STARTED.map((s) => (
-              <li key={s.step} className="flex gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+              <li
+                key={s.step}
+                className="flex gap-3 rounded-lg border border-border bg-card p-4 shadow-sm h-full"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
                   {s.step}
                 </span>
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground">{s.title}</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{s.text}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-1">{s.text}</p>
                 </div>
               </li>
             ))}
@@ -82,11 +106,11 @@ export default function Documentation() {
           <p className="text-xs text-muted-foreground leading-relaxed">
             Controls edit rights only. National emissions and NDC text do not change when you switch role.
           </p>
-          <div className="rounded-lg border divide-y">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {ALL_ROLES.map((r) => (
-              <div key={r.id} className="px-3 py-2.5 flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4">
-                <span className="text-xs font-semibold text-foreground shrink-0 sm:w-44">{r.label}</span>
-                <span className="text-xs text-muted-foreground">{r.description}</span>
+              <div key={r.id} className="rounded-lg border bg-card px-4 py-3 shadow-sm">
+                <p className="text-sm font-semibold text-foreground">{r.label}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">{r.description}</p>
               </div>
             ))}
           </div>
@@ -100,7 +124,7 @@ export default function Documentation() {
             Each group is collapsible and starts open. A page may appear in more than one group.
             Always-visible items (Home, Data Ingestion, My Work, Executive Overview, Policy documents) sit above the groups.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0.5 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1 pt-1">
             {[
               { q: "Q1", label: "Are we on track?", pages: "Dashboard · Indicators · Evidence & MRV · Projections · Map" },
               { q: "Q2", label: "Which interventions work?", pages: "Project Check · Delivery · Causal Chains · Cost Effectiveness" },
@@ -123,7 +147,7 @@ export default function Documentation() {
           <p className="text-xs text-muted-foreground -mt-2 leading-relaxed">
             Each card explains: purpose → steps → how it works → what you get → limitations.
           </p>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {BASIC_FEATURES.map((f) => (
               <FeatureGuideCard key={f.title} guide={f} />
             ))}
@@ -133,10 +157,10 @@ export default function Documentation() {
         {/* Q1-Q5 decision pages */}
         <section className="space-y-4">
           <SectionTitle icon={LayoutGrid}>Q1–Q5 decision pages</SectionTitle>
-          <p className="text-xs text-muted-foreground -mt-2">
+          <p className="text-xs sm:text-sm text-muted-foreground -mt-2 max-w-4xl">
             Found inside the five question groups in the sidebar. The three pages marked <strong className="text-foreground">NEW</strong> use illustrative data — replace with real figures for official use.
           </p>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {ADVANCED_FEATURES.map((f) => (
               <FeatureGuideCard key={f.title} guide={f} />
             ))}
@@ -152,18 +176,19 @@ export default function Documentation() {
             <strong className="text-foreground">on course?</strong> (right).
           </p>
 
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {DASHBOARD_PANELS.map((p) => (
-              <Card key={p.name}>
-                <CardContent className="p-3">
-                  <p className="text-xs font-bold text-foreground">{p.name}</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed mt-1">{p.text}</p>
+              <Card key={p.name} className="shadow-sm">
+                <CardContent className="p-4">
+                  <p className="text-sm font-bold text-foreground">{p.name}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-1.5">{p.text}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          <Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card className="shadow-sm">
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm">Pop-up tools (right column buttons)</CardTitle>
             </CardHeader>
@@ -188,25 +213,26 @@ export default function Documentation() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm">Top filters</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0 space-y-2">
               {FILTERS.map((f) => (
-                <div key={f.label} className="text-xs">
+                <div key={f.label} className="text-xs sm:text-sm">
                   <span className="font-semibold text-foreground">{f.label}</span>
                   <span className="text-muted-foreground"> — {f.meaning}</span>
                 </div>
               ))}
             </CardContent>
           </Card>
+          </div>
         </section>
 
         {/* Status & sectors */}
         <section className="space-y-3">
           <SectionTitle icon={Palette}>Colours, badges, and sectors</SectionTitle>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {STATUS_CODES.map((s) => {
               const meta = STATUS_ICONS[s.code as keyof typeof STATUS_ICONS] ?? STATUS_ICONS.Unknown;
               const Icon = meta.icon;
@@ -222,13 +248,14 @@ export default function Documentation() {
             })}
           </div>
 
-          <Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card className="shadow-sm">
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm">Target card badges</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0 space-y-2">
               {TARGET_BADGES.map((b) => (
-                <div key={b.badge} className="text-xs">
+                <div key={b.badge} className="text-xs sm:text-sm">
                   <Badge variant="outline" className="text-[9px] h-5 mr-1.5">
                     {b.badge}
                   </Badge>
@@ -238,14 +265,14 @@ export default function Documentation() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm">Sector dropdown</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0">
-              <dl className="space-y-2">
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
                 {SECTORS.map((s) => (
-                  <div key={s.abbr} className="text-xs grid grid-cols-1 sm:grid-cols-[7rem_1fr] gap-0.5">
+                  <div key={s.abbr} className="text-xs sm:text-sm">
                     <dt className="font-semibold text-foreground">{s.abbr}</dt>
                     <dd className="text-muted-foreground">{s.full}</dd>
                   </div>
@@ -253,6 +280,7 @@ export default function Documentation() {
               </dl>
             </CardContent>
           </Card>
+          </div>
         </section>
 
         {/* Data sources table */}
@@ -325,7 +353,7 @@ export default function Documentation() {
         </section>
 
         {/* Glossary + FAQ */}
-        <section className="grid grid-cols-1 gap-6">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-3">
             <SectionTitle icon={BookOpen}>Abbreviations & terms</SectionTitle>
             <Card>
@@ -370,6 +398,19 @@ export default function Documentation() {
         <footer className="text-center text-[10px] text-muted-foreground border-t border-border pt-6">
           Uganda NDC Data Explorer · Decision-support only · Not an official UN or government submission system
         </footer>
+          </TabsContent>
+
+          <TabsContent value="system-design" className="mt-0 pb-12">
+            <Suspense
+              fallback={
+                <p className="text-sm text-muted-foreground py-8 text-center">Loading system design…</p>
+              }
+            >
+              <SystemDesignDoc />
+            </Suspense>
+          </TabsContent>
+        </Tabs>
+        </div>
       </div>
     </ScrollArea>
   );
@@ -383,8 +424,8 @@ function SectionTitle({
   icon?: typeof BookOpen;
 }) {
   return (
-    <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-      {Icon && <Icon className="h-4 w-4 text-primary shrink-0" />}
+    <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
+      {Icon && <Icon className="h-5 w-5 text-primary shrink-0" />}
       {children}
     </h2>
   );
@@ -392,57 +433,66 @@ function SectionTitle({
 
 function FeatureGuideCard({ guide }: { guide: FeatureGuide }) {
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <div className="flex items-start justify-between gap-2 border-b border-border/60 bg-muted/30 px-3 py-2.5">
-          <div>
-            <p className="text-sm font-bold text-foreground">{guide.title}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
-              <Users className="h-3 w-3 inline mr-1 -mt-0.5" />
+    <Card className="overflow-hidden shadow-sm h-full flex flex-col">
+      <CardContent className="p-0 flex flex-col h-full">
+        <div className="flex items-start justify-between gap-3 border-b border-border/60 bg-muted/30 px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-base font-bold text-foreground">{guide.title}</p>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              <Users className="h-3.5 w-3.5 inline mr-1 -mt-0.5" />
               {guide.who}
             </p>
           </div>
           <Link
             to={guide.to}
-            className="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+            className="shrink-0 inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/10"
           >
-            Open <ArrowRight className="h-3 w-3" />
+            Open <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
-        <div className="px-3 py-3 space-y-3">
+        <div className="px-4 py-3 border-b border-border/40">
           <GuideBlock icon={Flag} label="What it is for" text={guide.purpose} />
-
-          <div>
-            <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
-              <ListOrdered className="h-3 w-3" />
-              How to use it (steps)
-            </p>
-            <ol className="list-decimal list-inside space-y-1 text-xs text-foreground/90 leading-relaxed">
-              {guide.steps.map((step, i) => (
-                <li key={i}>{step}</li>
-              ))}
-            </ol>
-          </div>
-
-          <GuideBlock icon={Cog} label="How the app implements it" text={guide.howItWorks} />
-          <GuideBlock icon={CheckCircle2} label="What result you should expect" text={guide.result} tone="text-on-track" />
-          <GuideBlock icon={AlertCircle} label="What it is not / limitations" text={guide.limitations} tone="text-amber-700 dark:text-amber-500" />
-
-          <div>
-            <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground mb-1">
-              On screen you will see
-            </p>
-            <ul className="space-y-0.5">
-              {guide.youWillSee.map((line) => (
-                <li key={line} className="flex gap-1.5 text-[11px] text-muted-foreground">
-                  <span className="text-primary mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
-                  {line}
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
+
+        <Accordion type="single" collapsible className="px-1 flex-1">
+          <AccordionItem value="details" className="border-0">
+            <AccordionTrigger className="px-3 py-2.5 text-xs font-semibold text-primary hover:no-underline">
+              Steps, implementation & limitations
+            </AccordionTrigger>
+            <AccordionContent className="px-3 pb-4 pt-0 space-y-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
+                  <ListOrdered className="h-3 w-3" />
+                  How to use it (steps)
+                </p>
+                <ol className="list-decimal list-inside space-y-1.5 text-xs sm:text-sm text-foreground/90 leading-relaxed">
+                  {guide.steps.map((step, i) => (
+                    <li key={i}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+
+              <GuideBlock icon={Cog} label="How the app implements it" text={guide.howItWorks} />
+              <GuideBlock icon={CheckCircle2} label="What result you should expect" text={guide.result} tone="text-on-track" />
+              <GuideBlock icon={AlertCircle} label="What it is not / limitations" text={guide.limitations} tone="text-amber-700 dark:text-amber-500" />
+
+              <div>
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground mb-1.5">
+                  On screen you will see
+                </p>
+                <ul className="grid grid-cols-1 gap-1">
+                  {guide.youWillSee.map((line) => (
+                    <li key={line} className="flex gap-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                      <span className="text-primary mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </CardContent>
     </Card>
   );
@@ -465,7 +515,7 @@ function GuideBlock({
         <Icon className="h-3 w-3" />
         {label}
       </p>
-      <p className={cn("text-xs leading-relaxed", tone ?? "text-foreground/90")}>{text}</p>
+      <p className={cn("text-xs sm:text-sm leading-relaxed", tone ?? "text-foreground/90")}>{text}</p>
     </div>
   );
 }

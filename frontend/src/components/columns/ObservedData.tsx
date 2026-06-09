@@ -1,4 +1,4 @@
-import { type NDCTarget, type TimeMode, type ObservedDataSet, type QAQCStatus, getObservedDataForTarget } from "@/data/uganda-ndc-data";
+import { type NDCTarget, type TimeMode, type ObservedDataSet, type QAQCStatus, getObservedDataForTarget, bau2030ForTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import {
   buildLiveObservedDataSet,
@@ -13,8 +13,6 @@ import {
 import { DataProvenanceBadge } from "@/components/DataProvenanceBadge";
 import { useTargetObservations } from "@/hooks/use-target-observations";
 import { reconciliationDeltaPercent } from "@/lib/progress";
-import { DataLineageChip } from "@/components/DataLineageChip";
-import { buildTargetLineage } from "@/lib/lineage";
 import {
   ChartHatchPatternDef,
   ObservedProjectedLegend,
@@ -29,7 +27,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { AlertTriangle, CheckCircle2, HelpCircle, XCircle, Database, Satellite, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Line, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip as RTooltip, ResponsiveContainer, Area, ComposedChart,
 } from "recharts";
 
@@ -117,6 +115,7 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
           emissions.reconciliation?.sector_sum_mt,
         ),
       },
+      pr.bau_2030 ?? bau2030ForTarget(selectedTarget),
     );
   } else if (
     selectedTarget.sectorId === "economy-wide" &&
@@ -132,6 +131,7 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
       selectedTarget.targetYear,
       selectedTarget.targetValue,
       { dataStale: emissions.dashboard?.data_stale },
+      bau2030ForTarget(selectedTarget),
     );
   } else if (usingProxyData && proxyTs && proxyPr) {
     // District view + indicator-panel target: use the parent sector's CT district
@@ -144,6 +144,7 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
       proxyPr.target_year,
       proxyPr.target_value,
       { dataStale: emissions.dashboard?.data_stale },
+      proxyPr.bau_2030 ?? bau2030ForTarget(selectedTarget),
     );
   } else if (hasIngestedObs && isIndicatorPanelTarget(selectedTarget) && observedMode === "live") {
     observedData =
@@ -198,6 +199,13 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
 
   const slugBreakdown = apiSector ? emissions.slugBreakdownBySector[apiSector] : undefined;
   const liveProgress = apiSector ? emissions.progressBySector[apiSector] : undefined;
+  const isDistrictView = emissions.isDistrictView;
+  const bauRef = liveProgress?.bau_2030 ?? bau2030ForTarget(selectedTarget);
+  const isCapChart =
+    !isDistrictView &&
+    selectedTarget.metricType === "emissions-reduction" &&
+    bauRef != null &&
+    selectedTarget.targetValue > selectedTarget.baselineValue;
   const hasNullGaps =
     (apiSector || usingProxyData) &&
     observedData.historicalData.some((p) => p.value == null);
@@ -209,21 +217,16 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
         ? "Indicators API observed"
         : "Observed data";
 
-  const { source: progressSource } = emissions.getProgressForTarget(selectedTarget);
-  const lineage = buildTargetLineage(selectedTarget, emissions, progressSource);
   const latestObserved = [...observedData.historicalData].reverse().find((p) => p.value != null);
   // Proxy data is always in MtCO2e regardless of the indicator's native unit
   const yUnit = usingProxyData ? "MtCO₂e" : chartYAxisUnit(selectedTarget.unit);
-
-  const isDistrictView = emissions.isDistrictView;
 
   const historicalChartData = observedData.historicalData.map((p) => ({
     year: p.year,
     observedValue: p.value,
     projectedValue: null as number | null,
-    // Omit target line in district view (district data vs national NDC target is not comparable)
-    // Also omit for non-CT targets in district view (national indicator data, target already national)
-    target: isDistrictView ? null : p.target,
+    target: isDistrictView ? null : p.target ?? null,
+    bauPath: isDistrictView ? null : p.bauPath ?? null,
   }));
 
   const projectionChartData = buildObservedProjectedRows(
@@ -277,9 +280,8 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
               </Badge>
             ))}
             {latestObserved && latestObserved.value != null && (
-              <span className="text-[10px] text-muted-foreground flex flex-wrap items-center gap-1">
+              <span className="text-[10px] text-muted-foreground">
                 Latest: {latestObserved.value} ({latestObserved.year})
-                <DataLineageChip lineage={lineage} />
               </span>
             )}
           </div>
@@ -333,8 +335,18 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
             <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs leading-snug">
               <p className="text-foreground font-medium">What you&apos;re seeing</p>
               <p className="text-muted-foreground mt-0.5">
-                Solid bars are observed emissions from Climate TRACE. The dashed line is Uganda&apos;s official NDC
-                target path — the two can differ because they are measured differently.
+                {isCapChart ? (
+                  <>
+                    Bars are observed emissions. Yellow dashed = 2030 NDC ceiling ({selectedTarget.targetValue}{" "}
+                    Mt); orange dashed = no-policy level in 2030 ({bauRef} Mt). Compare bars to those flat
+                    reference lines — lower bars mean more progress toward the ceiling.
+                  </>
+                ) : (
+                  <>
+                    Solid bars are observed emissions from Climate TRACE. The dashed line is Uganda&apos;s official
+                    NDC target path.
+                  </>
+                )}
               </p>
               {liveProgress.scope_note && (
                 <p className="text-muted-foreground mt-1 text-[10px]">{liveProgress.scope_note}</p>
@@ -365,7 +377,7 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
             <CardContent className="p-2 pt-3">
               <ResponsiveContainer width="100%" height={180}>
                 {timeMode === "historical" ? (
-                  <BarChart data={chartData}>
+                  <ComposedChart data={chartData}>
                     <ChartHatchPatternDef id={HATCH_ID} />
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
@@ -387,15 +399,25 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
                       fill="hsl(var(--chart-4))"
                       radius={[2, 2, 0, 0]}
                     />
+                    {isCapChart && (
+                      <Line
+                        dataKey="bauPath"
+                        name="2030 no-policy level"
+                        stroke="hsl(var(--chart-3))"
+                        strokeWidth={2}
+                        strokeDasharray="6 3"
+                        dot={false}
+                      />
+                    )}
                     <Line
                       dataKey="target"
-                      name="NDC target path"
+                      name={isCapChart ? "2030 NDC ceiling" : "NDC target path"}
                       stroke="hsl(var(--chart-2))"
                       strokeWidth={2}
                       strokeDasharray="4 4"
                       dot={false}
                     />
-                  </BarChart>
+                  </ComposedChart>
                 ) : (
                   <ComposedChart data={chartData}>
                     <ChartHatchPatternDef id={HATCH_ID} />
@@ -428,9 +450,19 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
                       strokeDasharray="5 5"
                       connectNulls
                     />
+                    {isCapChart && (
+                      <Line
+                        dataKey="bauPath"
+                        name="2030 no-policy level"
+                        stroke="hsl(var(--chart-3))"
+                        strokeWidth={2}
+                        strokeDasharray="6 3"
+                        dot={false}
+                      />
+                    )}
                     <Line
                       dataKey="target"
-                      name="NDC target path"
+                      name={isCapChart ? "2030 NDC ceiling" : "NDC target path"}
                       stroke="hsl(var(--chart-2))"
                       strokeWidth={2}
                       dot={false}
@@ -439,7 +471,13 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
                   </ComposedChart>
                 )}
               </ResponsiveContainer>
-              <ObservedProjectedLegend className="mt-2 px-1" />
+              <ObservedProjectedLegend
+                className="mt-2 px-1"
+                showTarget={!isDistrictView}
+                showBauPath={isCapChart}
+                showProjected={timeMode === "projection" && !isDistrictView}
+                capTarget={isCapChart}
+              />
             </CardContent>
           </Card>
 
@@ -484,9 +522,8 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
                     {Object.entries(slugBreakdown.values_mt).map(([slug, mt]) => (
                       <div key={slug} className="flex items-start justify-between gap-2">
                         <span className="text-[10px] text-muted-foreground shrink-0">{slug}</span>
-                        <span className="text-[10px] text-foreground font-medium text-right flex flex-wrap items-center justify-end gap-1">
+                        <span className="text-[10px] text-foreground font-medium text-right">
                           {mt != null ? `${mt} Mt` : "missing"}
-                          {mt != null && <DataLineageChip lineage={lineage} />}
                         </span>
                       </div>
                     ))}

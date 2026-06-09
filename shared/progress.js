@@ -1,12 +1,35 @@
 /**
  * Unified NDC progress calculation (shared by Express API + Vite frontend).
- * Replaces separate 80/50, time-linear, and 70/35 threshold paths.
+ *
+ * BAU-cap targets (Uganda NDC 2022): progress aligns with the FAO NDC Tracking Tool —
+ * achieved reduction vs required reduction relative to the 2030 BAU level:
+ *   progress % = (BAU_2030 − latest) / (BAU_2030 − NDC_cap) × 100
+ * See: FAO NDC Tracking Tool, Module 3 (progress toward BAU-relative targets).
  */
 
 const DECREASE_METRICS = new Set(["emissions-reduction"]);
 
+/** @param {{ baselineValue: number, targetValue: number, bau2030?: number | null, bau_2030?: number | null }} t */
+export function isBauCapEmissionsTarget(t) {
+  const bau = t.bau2030 ?? t.bau_2030 ?? null;
+  return bau != null && t.targetValue > t.baselineValue && bau > t.targetValue;
+}
+
 /**
- * @param {{ baselineValue: number, targetValue: number, metricType: string }} target
+ * Where observed emissions sit on a BAU-cap scale (lower is better).
+ * @param {number} latest
+ * @param {number} cap NDC 2030 ceiling
+ * @param {number} bau 2030 no-policy level
+ * @returns {'below_cap' | 'between_cap_and_bau' | 'above_bau'}
+ */
+export function capTargetPosition(latest, cap, bau) {
+  if (latest <= cap) return "below_cap";
+  if (latest <= bau) return "between_cap_and_bau";
+  return "above_bau";
+}
+
+/**
+ * @param {{ baselineValue: number, targetValue: number, metricType: string, bau2030?: number | null, bau_2030?: number | null }} target
  * @param {{ latestValue: number | null | undefined }} observations
  * @returns {number | null}
  */
@@ -15,11 +38,30 @@ export function calculateProgressPercent(target, observations) {
   if (latestValue == null || Number.isNaN(latestValue)) return null;
 
   const { baselineValue, targetValue, metricType } = target;
+  const bau2030 = target.bau2030 ?? target.bau_2030 ?? null;
 
   if (DECREASE_METRICS.has(metricType)) {
-    const denom = baselineValue - targetValue;
+    // True reduction: 2030 target is below the base-year inventory (e.g. cut from 2015 level).
+    if (targetValue < baselineValue) {
+      const denom = baselineValue - targetValue;
+      if (!Number.isFinite(denom) || denom === 0) return null;
+      const pct = ((baselineValue - latestValue) / denom) * 100;
+      return Math.min(100, Math.max(0, Math.round(pct)));
+    }
+
+    // Cap target: 2030 ceiling is above 2015 baseline but below BAU — compare observed to BAU trajectory.
+    if (bau2030 != null && bau2030 > targetValue) {
+      const denom = bau2030 - targetValue;
+      if (!Number.isFinite(denom) || denom === 0) return null;
+      const pct = ((bau2030 - latestValue) / denom) * 100;
+      return Math.min(100, Math.max(0, Math.round(pct)));
+    }
+
+    // Cap without BAU metadata: at or below the ceiling counts as complete.
+    if (latestValue <= targetValue) return 100;
+    const denom = targetValue - baselineValue;
     if (!Number.isFinite(denom) || denom === 0) return null;
-    const pct = ((baselineValue - latestValue) / denom) * 100;
+    const pct = ((targetValue - latestValue) / denom) * 100;
     return Math.min(100, Math.max(0, Math.round(pct)));
   }
 
@@ -97,6 +139,9 @@ export function uiStatusFromApiStatus(s) {
 export function computeSectorProgress(latestValue, sectorConfig, latestYear = null) {
   if (!sectorConfig || latestValue == null) return null;
 
+  const usesBauCap =
+    sectorConfig.bau_2030 != null && sectorConfig.target > sectorConfig.baseline;
+
   const result = calculateProgress(
     {
       baselineYear: sectorConfig.baseline_year,
@@ -104,6 +149,7 @@ export function computeSectorProgress(latestValue, sectorConfig, latestYear = nu
       targetYear: sectorConfig.target_year,
       targetValue: sectorConfig.target,
       metricType: "emissions-reduction",
+      bau2030: sectorConfig.bau_2030 ?? null,
     },
     { latestValue, latestYear, qaqcStatus: "ok" },
   );
@@ -115,8 +161,10 @@ export function computeSectorProgress(latestValue, sectorConfig, latestYear = nu
     baseline_value: sectorConfig.baseline,
     target_year: sectorConfig.target_year,
     target_value: sectorConfig.target,
+    bau_2030: sectorConfig.bau_2030 ?? null,
     latest_value: latestValue,
     progress_pct: result.percent,
     status: apiStatusFromUiStatus(result.status),
+    progress_method: usesBauCap ? "bau_cap" : "baseline_reduction",
   };
 }

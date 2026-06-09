@@ -17,13 +17,13 @@ import { TopEmittingSources } from "@/components/TopEmittingSources";
 import { DataTrackabilityPanel } from "@/components/DataTrackabilityPanel";
 import { SpatialConfidencePanel } from "@/components/SpatialConfidencePanel";
 import { OfficialSourcesPanel } from "@/components/OfficialSourcesPanel";
-import { ndcTargets, sectorDefinitions, getDataCompleteness, getLastRefreshTimestamp } from "@/data/uganda-ndc-data";
+import { ndcTargets, sectorDefinitions } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Download, FileSpreadsheet, FileText, Database, Clock } from "lucide-react";
+import { RefreshCw, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { exportNdcDashboardExcel, exportNdcDashboardPdf, exportCrtBtrCsv } from "@/lib/ndc-export";
 import { toast } from "sonner";
@@ -134,12 +134,6 @@ export default function NDCLayer() {
     }
   }, [queryClient]);
 
-  const completeness = emissions.isApiReachable
-    ? emissions.dashboardCompleteness
-    : getDataCompleteness();
-  const lastRefresh = emissions.isApiReachable
-    ? emissions.dashboardLastRefreshIso
-    : getLastRefreshTimestamp();
   const exportGeographyLabel =
     emissions.geography === "district" && emissions.districtName
       ? emissions.districtName
@@ -175,11 +169,6 @@ export default function NDCLayer() {
       {dashboardMode === "briefing" && (
         <div className="px-3 py-1.5 border-b border-border bg-muted/40 text-[10px] text-muted-foreground">
           <span className="font-semibold text-foreground">Briefing view:</span> national geography locked; PDF export only; mitigation edits disabled.
-        </div>
-      )}
-      {dashboardMode === "delivery" && (
-        <div className="px-3 py-1.5 border-b border-amber-500/20 bg-amber-500/5 text-[10px] text-muted-foreground">
-          <span className="font-semibold text-foreground">Delivery view:</span> focus on implementation gaps and activity approval — check My Work for pending approvals.
         </div>
       )}
       {dashboardMode === "field" && (
@@ -275,8 +264,6 @@ export default function NDCLayer() {
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
-          <Badge variant="outline" className="gap-1 text-[10px] h-5"><Database className="h-2.5 w-2.5" />{completeness}%</Badge>
-          <Badge variant="outline" className="gap-1 text-[10px] h-5"><Clock className="h-2.5 w-2.5" />{new Date(lastRefresh).toLocaleDateString("en-UG", { day: "numeric", month: "short" })}</Badge>
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="gap-1 h-7 text-xs">
             <RefreshCw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />Refresh
           </Button>

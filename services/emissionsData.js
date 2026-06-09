@@ -205,7 +205,12 @@ export async function getEmissionsDashboard(since, to, options = {}) {
         progress_pct: progressPct,
         status: progressStatus,
         data_source: "Climate TRACE",
-        methodology: "ndc_baseline_vs_trace_observed",
+        methodology:
+          prog?.progress_method === "bau_cap"
+            ? "ndc_bau_cap_vs_trace_observed"
+            : "ndc_baseline_vs_trace_observed",
+        progress_method: prog?.progress_method ?? null,
+        bau_2030: t.bau_2030 ?? null,
         scope_note: SECTOR_SCOPE_NOTES[sector] ?? null,
         trace_yoy_pct,
         baseline_vs_trace_delta_mt:

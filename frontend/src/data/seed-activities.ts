@@ -1,4 +1,4 @@
-// Seed ActivityOrProject records — minimal but real enough to drive the Delivery view.
+// Seed ActivityOrProject records — minimal but real enough to drive activity workflows.
 import type { ActivityOrProject } from "./indicator-registry";
 
 export const seedActivities: ActivityOrProject[] = [

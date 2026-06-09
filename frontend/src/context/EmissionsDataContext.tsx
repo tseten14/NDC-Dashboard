@@ -26,11 +26,14 @@ import {
   CLIMATE_TRACE_API_SECTORS,
   type ClimatetraceApiSector,
   getClimateTraceSectorForTarget,
-  apiStatusToProgressStatus,
   isIndicatorPanelTarget,
   buildIndicatorPanelObservedDataSet,
+  progressFromLiveApiFields,
+  progressFromEconomyWideTimeseries,
+  isDistrictProgressBlocked,
   type IndicatorPanelEntry,
 } from "@/lib/emissions-integration";
+import { reconciliationDeltaPercent } from "@/lib/progress";
 import { ndcTargets, getObservedDataForTarget, calculateProgress, type NDCTarget, type NDCActivity, type MitigationOption } from "@/data/uganda-ndc-data";
 import type { ProgressStatus } from "@/data/uganda-ndc-data";
 import { validateDashboardTimeseries, reportIssues } from "@/lib/data-validation";
@@ -303,22 +306,32 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
 
   const getProgressForTarget = useCallback(
     (target: NDCTarget): { percent: number | null; status: ProgressStatus; source: "api" | "catalog" | "mock" } => {
+      if (isDistrictProgressBlocked(target, isDistrictView)) {
+        return { percent: null, status: "unknown", source: "api" };
+      }
+
       const sector = getClimateTraceSectorForTarget(target);
       const pr = sector ? progressBySector[sector] : undefined;
       const err = sector ? sectorError[sector] : null;
       if (sector && pr && !err) {
-        if (pr.progress_pct == null) {
-          return {
-            percent: null,
-            status: "unknown",
-            source: "api",
-          };
-        }
-        return {
-          percent: pr.progress_pct,
-          status: apiStatusToProgressStatus(pr.status),
-          source: "api",
-        };
+        const live = progressFromLiveApiFields(pr, target, {
+          dataStale: dashboard?.data_stale,
+          reconciliationDeltaPct: reconciliationDeltaPercent(
+            reconciliation?.delta_mt,
+            reconciliation?.sector_sum_mt,
+          ),
+        });
+        return { ...live, source: "api" };
+      }
+
+      if (
+        target.sectorId === "economy-wide" &&
+        economyWideTimeseries.length > 0 &&
+        isApiReachable &&
+        !dashboardQuery.isError
+      ) {
+        const live = progressFromEconomyWideTimeseries(target, economyWideTimeseries);
+        return { ...live, source: "api" };
       }
 
       const ind = isIndicatorPanelTarget(target) ? indicatorPanelQuery.data?.targets?.[target.id] : undefined;
@@ -330,7 +343,18 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
       const obs = getObservedDataForTarget(target.id);
       return { ...calculateProgress(target, obs), source: "mock" };
     },
-    [progressBySector, sectorError, indicatorPanelQuery.data, indicatorPanelQuery.error],
+    [
+      progressBySector,
+      sectorError,
+      indicatorPanelQuery.data,
+      indicatorPanelQuery.error,
+      economyWideTimeseries,
+      isApiReachable,
+      isDistrictView,
+      dashboardQuery.isError,
+      dashboard,
+      reconciliation,
+    ],
   );
 
   const getObservedMode = useCallback(
@@ -342,12 +366,28 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
         if (ts && ts.some((p) => p.value != null) && pr) return "live";
       }
 
+      if (
+        target.sectorId === "economy-wide" &&
+        economyWideTimeseries.some((p) => p.value != null) &&
+        isApiReachable
+      ) {
+        return "live";
+      }
+
       const ind = isIndicatorPanelTarget(target) ? indicatorPanelQuery.data?.targets?.[target.id] : undefined;
       if (ind?.timeseries?.length && !indicatorPanelQuery.error) return "live";
 
       return "mock";
     },
-    [timeseriesBySector, progressBySector, sectorError, indicatorPanelQuery.data, indicatorPanelQuery.error],
+    [
+      timeseriesBySector,
+      progressBySector,
+      sectorError,
+      indicatorPanelQuery.data,
+      indicatorPanelQuery.error,
+      economyWideTimeseries,
+      isApiReachable,
+    ],
   );
 
   const value = useMemo(

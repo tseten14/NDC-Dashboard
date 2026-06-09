@@ -3,6 +3,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { calculateProgress as calculateProgressUnified } from "@/lib/progress";
+import { NDC_TARGETS } from "../../../config/ndcTargets.js";
 
 /* ── Enums & types ── */
 
@@ -63,7 +64,10 @@ export interface ObservedDataPoint {
   year: number;
   /** null = no observation for that year (chart gap; not interpolated). */
   value: number | null;
+  /** NDC target path (ceiling or reduction line). */
   target?: number;
+  /** 2030 no-policy trend (BAU), when target is a BAU-relative cap. */
+  bauPath?: number;
 }
 
 export interface ObservedDataSet {
@@ -463,7 +467,7 @@ export const observedDataSets: ObservedDataSet[] = [
     dataProviders: ["Emissions Tracing (Climate TRACE)", "Ministry of Works and Transport MRV"],
     historicalData: makeHistorical(4.2, 2015, 2024, 0.35),
     projectionBaseline: makeProjection(7.35, 6.8, 2025, 2030),
-    provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Works and Transport", qaqcStatus: "missing", lastUpdated: "2023-12-01T09:00:00Z", isValidated: false },
+    provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Works and Transport", qaqcStatus: "warning", lastUpdated: "2023-12-01T09:00:00Z", isValidated: false },
   },
   // t6: Waste emissions (2.08 MtCO2e 2015, target 2.09 MtCO2e — constrain at BAU)
   {
@@ -557,6 +561,23 @@ function latestObservedValue(historicalData: ObservedDataPoint[]): number | null
   return null;
 }
 
+const NDC_SECTOR_BAU: Partial<Record<SectorId, number>> = {
+  afolu: NDC_TARGETS.afolu.bau_2030,
+  energy: NDC_TARGETS.energy.bau_2030,
+  transport: NDC_TARGETS.transport.bau_2030,
+  waste: NDC_TARGETS.waste.bau_2030,
+  ippu: NDC_TARGETS.ippu.bau_2030,
+};
+
+/** Economy-wide and other targets not keyed by CT sector. */
+const NDC_TARGET_BAU_2030: Partial<Record<string, number>> = {
+  t0: 148.8,
+};
+
+export function bau2030ForTarget(target: NDCTarget): number | null {
+  return NDC_TARGET_BAU_2030[target.id] ?? NDC_SECTOR_BAU[target.sectorId] ?? null;
+}
+
 function latestObservedYear(historicalData: ObservedDataPoint[]): number | null {
   for (let i = historicalData.length - 1; i >= 0; i--) {
     if (historicalData[i].value != null) return historicalData[i].year;
@@ -584,6 +605,7 @@ export function calculateProgress(target: NDCTarget, observedData?: ObservedData
       targetYear: target.targetYear,
       targetValue: target.targetValue,
       metricType: target.metricType,
+      bau2030: bau2030ForTarget(target),
     },
     {
       latestValue,

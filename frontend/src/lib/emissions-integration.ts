@@ -4,8 +4,18 @@ import type {
   ObservedDataSet,
   DataProvenance,
   ProgressStatus,
+  QAQCStatus,
 } from "@/data/uganda-ndc-data";
-import { deriveTraceDataQuality, reconciliationDeltaPercent, uiStatusFromApiStatus } from "@/lib/progress";
+import {
+  calculateProgress,
+  deriveTraceDataQuality,
+  reconciliationDeltaPercent,
+  uiStatusFromApiStatus,
+} from "@/lib/progress";
+import { bau2030ForTarget, getObservedDataForTarget } from "@/data/uganda-ndc-data";
+import type { ProgressResponse } from "@/lib/api";
+
+export type { ProgressResponse };
 
 export const CLIMATE_TRACE_API_SECTORS = ["afolu", "energy", "transport", "ippu", "agriculture", "waste"] as const;
 export type ClimatetraceApiSector = (typeof CLIMATE_TRACE_API_SECTORS)[number];
@@ -88,7 +98,7 @@ function linearTargetValue(year: number, by: number, bv: number, ty: number, tv:
 /**
  * Build an ObservedDataSet from Climate TRACE timeseries + NDC baseline/target used by the API.
  */
-function latestNonNullPoint(timeseries: { year: number; value: number | null }[]) {
+export function latestNonNullPoint(timeseries: { year: number; value: number | null }[]) {
   for (let i = timeseries.length - 1; i >= 0; i--) {
     const { year, value } = timeseries[i];
     if (value != null && !Number.isNaN(value)) {
@@ -96,6 +106,96 @@ function latestNonNullPoint(timeseries: { year: number; value: number | null }[]
     }
   }
   return null;
+}
+
+/** Unified progress from NDC metadata + latest observed point (all target types). */
+export function progressFromTargetAndLatest(
+  target: NDCTarget,
+  latestValue: number | null | undefined,
+  latestYear: number | null | undefined,
+  options: { bau2030?: number | null; qaqcStatus?: string } = {},
+): { percent: number | null; status: ProgressStatus } {
+  if (latestValue == null || Number.isNaN(latestValue)) {
+    return { percent: null, status: "unknown" };
+  }
+  return calculateProgress(
+    {
+      baselineYear: target.baselineYear,
+      baselineValue: target.baselineValue,
+      targetYear: target.targetYear,
+      targetValue: target.targetValue,
+      metricType: target.metricType,
+      bau2030: options.bau2030 ?? bau2030ForTarget(target),
+    },
+    {
+      latestValue,
+      latestYear,
+      qaqcStatus: options.qaqcStatus ?? "ok",
+    },
+  );
+}
+
+export function progressFromEconomyWideTimeseries(
+  target: NDCTarget,
+  series: { year: number; value: number | null }[],
+): { percent: number | null; status: ProgressStatus } {
+  const latest = latestNonNullPoint(series);
+  if (!latest) return { percent: null, status: "unknown" };
+  return progressFromTargetAndLatest(target, latest.value, latest.year);
+}
+
+/** Latest observed point for progress display (API sector, economy-wide sum, or indicators). */
+export function getLiveLatestForTarget(
+  target: NDCTarget,
+  ctx: {
+    progressBySector: Partial<Record<ClimatetraceApiSector, ProgressResponse>>;
+    economyWideTimeseries: { year: number; value: number | null }[];
+    indicatorTargets?: Record<string, IndicatorPanelEntry>;
+  },
+): { year: number; value: number } | null {
+  const sector = getClimateTraceSectorForTarget(target);
+  if (sector) {
+    const pr = ctx.progressBySector[sector];
+    if (pr?.latest_value != null && pr.latest_year != null) {
+      return { year: pr.latest_year, value: pr.latest_value };
+    }
+  }
+  if (target.sectorId === "economy-wide" && ctx.economyWideTimeseries.length > 0) {
+    const latest = latestNonNullPoint(ctx.economyWideTimeseries);
+    if (latest) return { year: latest.year, value: latest.value };
+  }
+  const ind = isIndicatorPanelTarget(target) ? ctx.indicatorTargets?.[target.id] : undefined;
+  if (ind?.timeseries?.length) {
+    const latest = latestNonNullPoint(ind.timeseries);
+    if (latest) return { year: latest.year, value: latest.value };
+  }
+  return null;
+}
+
+/**
+ * Reference lines for charts.
+ * BAU-cap targets (Uganda NDC 2022): the ceiling and no-policy level are 2030 absolutes —
+ * show them as flat horizontal references, not a rising path from the 2015 inventory.
+ * True reduction targets still use a linear baseline → 2030 goal path.
+ */
+function referencePathsForYear(
+  year: number,
+  baselineYear: number,
+  baselineValue: number,
+  targetYear: number,
+  targetValue: number,
+  bau2030: number | null | undefined,
+): { target: number; bauPath?: number } {
+  const isCap = bau2030 != null && targetValue > baselineValue && bau2030 > targetValue;
+  if (isCap) {
+    return {
+      target: Math.round(targetValue * 100) / 100,
+      bauPath: Math.round(bau2030 * 100) / 100,
+    };
+  }
+  return {
+    target: Math.round(linearTargetValue(year, baselineYear, baselineValue, targetYear, targetValue) * 100) / 100,
+  };
 }
 
 export function buildLiveObservedDataSet(
@@ -106,13 +206,17 @@ export function buildLiveObservedDataSet(
   targetYear: number,
   targetValue: number,
   qualityHints: LiveObservedQualityHints = {},
+  bau2030?: number | null,
 ): ObservedDataSet {
-  const historicalData: ObservedDataPoint[] = timeseries.map(({ year, value }) => ({
-    year,
-    value:
-      value == null || Number.isNaN(value) ? null : Math.round(value * 100) / 100,
-    target: Math.round(linearTargetValue(year, baselineYear, baselineValue, targetYear, targetValue) * 100) / 100,
-  }));
+  const historicalData: ObservedDataPoint[] = timeseries.map(({ year, value }) => {
+    const paths = referencePathsForYear(year, baselineYear, baselineValue, targetYear, targetValue, bau2030);
+    return {
+      year,
+      value: value == null || Number.isNaN(value) ? null : Math.round(value * 100) / 100,
+      target: paths.target,
+      ...(paths.bauPath != null ? { bauPath: paths.bauPath } : {}),
+    };
+  });
 
   const latest = latestNonNullPoint(timeseries);
   const lastY = latest?.year ?? baselineYear;
@@ -123,10 +227,12 @@ export function buildLiveObservedDataSet(
   for (let y = lastY + 1; y <= targetYear; y++) {
     const elapsed = y - lastY;
     const interp = lastV + (targetValue - lastV) * (elapsed / span);
+    const paths = referencePathsForYear(y, baselineYear, baselineValue, targetYear, targetValue, bau2030);
     projectionBaseline.push({
       year: y,
       value: Math.round(interp * 100) / 100,
-      target: Math.round(linearTargetValue(y, baselineYear, baselineValue, targetYear, targetValue) * 100) / 100,
+      target: paths.target,
+      ...(paths.bauPath != null ? { bauPath: paths.bauPath } : {}),
     });
   }
 
@@ -317,4 +423,106 @@ export function buildIngestedObservedDataSet(
     dataset.dataProviders = [...dataset.dataProviders, "File ingest"];
   }
   return dataset;
+}
+
+/** QA/QC flags derived from a live Climate TRACE sector row. */
+export function qaqcFromLiveProgress(
+  pr: ProgressResponse,
+  hints: { dataStale?: boolean; reconciliationDeltaPct?: number | null } = {},
+): QAQCStatus {
+  return deriveTraceDataQuality({
+    missingSlugs: pr.missing_slugs,
+    dataStale: hints.dataStale,
+    reconciliationDeltaPct: hints.reconciliationDeltaPct,
+  }).qaqcStatus;
+}
+
+/**
+ * Observed dataset for progress / provenance — prefers live API over bundled mock fallbacks.
+ */
+export function resolveObservedDataSetForTarget(
+  target: NDCTarget,
+  ctx: {
+    timeseriesBySector: Partial<
+      Record<ClimatetraceApiSector, { timeseries: { year: number; value: number | null }[] }>
+    >;
+    progressBySector: Partial<Record<ClimatetraceApiSector, ProgressResponse>>;
+    economyWideTimeseries: { year: number; value: number | null }[];
+    isApiReachable: boolean;
+    dashboard?: { data_stale?: boolean };
+    reconciliation?: { delta_mt?: number | null; sector_sum_mt?: number | null };
+    getObservedMode: (t: NDCTarget) => "live" | "mock";
+    indicatorTargets?: Record<string, IndicatorPanelEntry>;
+  },
+): ObservedDataSet | null {
+  const indEntry = isIndicatorPanelTarget(target) ? ctx.indicatorTargets?.[target.id] : undefined;
+  if (indEntry?.timeseries?.length && ctx.getObservedMode(target) === "live") {
+    return buildIndicatorPanelObservedDataSet(target, indEntry);
+  }
+
+  const apiSector = getClimateTraceSectorForTarget(target);
+  const ts = apiSector ? ctx.timeseriesBySector[apiSector] : undefined;
+  const pr = apiSector ? ctx.progressBySector[apiSector] : undefined;
+  const observedMode = ctx.getObservedMode(target);
+
+  if (apiSector && ts && pr && observedMode === "live") {
+    return buildLiveObservedDataSet(
+      target,
+      ts.timeseries,
+      pr.baseline_year,
+      pr.baseline_value,
+      pr.target_year,
+      pr.target_value,
+      {
+        missingSlugs: pr.missing_slugs,
+        dataStale: ctx.dashboard?.data_stale,
+        reconciliationDeltaPct: reconciliationDeltaPercent(
+          ctx.reconciliation?.delta_mt,
+          ctx.reconciliation?.sector_sum_mt,
+        ),
+      },
+      pr.bau_2030 ?? bau2030ForTarget(target),
+    );
+  }
+
+  if (
+    target.sectorId === "economy-wide" &&
+    ctx.economyWideTimeseries.length > 0 &&
+    ctx.isApiReachable
+  ) {
+    return buildLiveObservedDataSet(
+      target,
+      ctx.economyWideTimeseries,
+      target.baselineYear,
+      target.baselineValue,
+      target.targetYear,
+      target.targetValue,
+      { dataStale: ctx.dashboard?.data_stale },
+      bau2030ForTarget(target),
+    );
+  }
+
+  return getObservedDataForTarget(target.id) ?? null;
+}
+
+/**
+ * Recompute progress from live API fields (latest value + NDC metadata).
+ * Avoids stale `progress_pct` when the API process has not picked up shared formula updates.
+ */
+export function progressFromLiveApiFields(
+  pr: ProgressResponse,
+  target: NDCTarget,
+  qaqcHints: { dataStale?: boolean; reconciliationDeltaPct?: number | null } = {},
+): { percent: number | null; status: ProgressStatus } {
+  return progressFromTargetAndLatest(target, pr.latest_value, pr.latest_year, {
+    bau2030: pr.bau_2030 ?? bau2030ForTarget(target),
+    qaqcStatus: qaqcFromLiveProgress(pr, qaqcHints),
+  });
+}
+
+/** National NDC progress is not scored against district-only TRACE slices. */
+export function isDistrictProgressBlocked(target: NDCTarget, isDistrictView: boolean): boolean {
+  if (!isDistrictView) return false;
+  if (isIndicatorPanelTarget(target) || target.sectorId === "economy-wide") return false;
+  return getClimateTraceSectorForTarget(target) != null;
 }

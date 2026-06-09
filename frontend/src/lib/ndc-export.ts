@@ -11,6 +11,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { ndcTargets, sectorDefinitions, type NDCTarget } from "@/data/uganda-ndc-data";
 import { listAllActivities } from "@/lib/activities-store";
+import { getTargetPlainLanguage } from "@/lib/target-plain-language";
 import type { EmissionsDataContextValue } from "@/context/EmissionsDataContext";
 
 /** Minimal slice of the emissions context the exporters need. */
@@ -26,8 +27,52 @@ const STATUS_LABEL: Record<string, string> = {
   unknown: "Unknown",
 };
 
+/** jsPDF Helvetica lacks subscripts/arrows — normalize to ASCII for readable PDF text. */
+export function asciiSafeForPdf(text: string): string {
+  return text
+    .replace(/→/g, " to ")
+    .replace(/₂/g, "2")
+    .replace(/₃/g, "3")
+    .replace(/CO₂e/gi, "CO2e")
+    .replace(/CO₂/gi, "CO2")
+    .replace(/[—–]/g, "-")
+    .replace(/['']/g, "'")
+    .replace(/[""]/g, '"')
+    .replace(/…/g, "...")
+    .replace(/\u00a0/g, " ");
+}
+
 function sectorName(sectorId: string): string {
   return sectorDefinitions.find((s) => s.id === sectorId)?.name ?? sectorId;
+}
+
+function formatUnit(unit: string): string {
+  return asciiSafeForPdf(unit);
+}
+
+function formatDataSource(mode: "live" | "mock"): string {
+  return mode === "live" ? "Climate TRACE (live)" : "Illustrative reference data";
+}
+
+function truncateText(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  return `${text.slice(0, maxLen - 3).trimEnd()}...`;
+}
+
+function formatBaselineToTarget(
+  baseline: string,
+  baselineYear: number,
+  target: string,
+  targetYear: number,
+  unit: string,
+): string {
+  const u = formatUnit(unit);
+  return `${baseline} to ${target} ${u} (${baselineYear}-${targetYear})`;
+}
+
+function formatProgressPct(percent: number | null): string {
+  if (percent == null) return "n/a";
+  return `${Math.round(percent)}%`;
 }
 
 function geographyLabel(ctx: NdcExportContext): string {
@@ -44,34 +89,46 @@ function fileSlug(ctx: NdcExportContext): string {
 interface TargetRow {
   targetId: string;
   sector: string;
+  commitment: string;
   targetText: string;
   baseline: string;
   baselineYear: number;
   target: string;
   targetYear: number;
   unit: string;
+  baselineToTarget: string;
   latestObserved: number | null;
   progressPct: number | null;
   status: string;
-  observedMode: "live" | "mock";
+  dataSource: string;
 }
 
 function buildTargetRows(ctx: NdcExportContext): TargetRow[] {
   return ndcTargets.map((t: NDCTarget) => {
     const { percent, status } = ctx.getProgressForTarget(t);
+    const observedMode = ctx.getObservedMode(t);
+    const commitment = asciiSafeForPdf(getTargetPlainLanguage(t).summary);
     return {
       targetId: t.id,
       sector: sectorName(t.sectorId),
+      commitment,
       targetText: t.targetText,
       baseline: String(t.baselineValue),
       baselineYear: t.baselineYear,
       target: String(t.targetValue),
       targetYear: t.targetYear,
       unit: t.unit,
+      baselineToTarget: formatBaselineToTarget(
+        String(t.baselineValue),
+        t.baselineYear,
+        String(t.targetValue),
+        t.targetYear,
+        t.unit,
+      ),
       latestObserved: null,
       progressPct: percent,
       status: STATUS_LABEL[status] ?? status,
-      observedMode: ctx.getObservedMode(t),
+      dataSource: formatDataSource(observedMode),
     };
   });
 }
@@ -92,9 +149,9 @@ export function exportNdcDashboardExcel(ctx: NdcExportContext) {
     "Target Value": r.target,
     "Target Year": r.targetYear,
     Unit: r.unit,
-    "Progress (%)": r.progressPct ?? "—",
+    "Progress (%)": r.progressPct ?? "n/a",
     Status: r.status,
-    "Observed Source": r.observedMode === "live" ? "Climate TRACE (live)" : "Bundled (mock)",
+    "Data Source": r.dataSource,
   }));
   const wsTargets = XLSX.utils.json_to_sheet(targetRows);
   wsTargets["!cols"] = [
@@ -149,47 +206,65 @@ export function exportNdcDashboardExcel(ctx: NdcExportContext) {
 export function exportNdcDashboardPdf(ctx: NdcExportContext) {
   const doc = new jsPDF();
   const geo = geographyLabel(ctx);
+  const generated = new Date().toLocaleDateString();
+  const inventoryYear = ctx.dashboard?.inventory_year;
 
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text("Uganda NDC Dashboard", 14, 18);
+  doc.text("Uganda NDC Progress Summary", 14, 18);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.text(`Geography: ${geo}`, 14, 25);
   doc.text(
-    `Source: ${ctx.dashboard?.data_source ?? "Climate TRACE"} · Generated ${new Date().toLocaleDateString()}`,
+    asciiSafeForPdf(
+      `Observed emissions: ${ctx.dashboard?.data_source ?? "Climate TRACE"}${
+        inventoryYear ? ` (${inventoryYear})` : ""
+      } | Generated ${generated}`,
+    ),
     14,
     31,
   );
 
   const rows = buildTargetRows(ctx).map((r) => [
     r.sector,
-    r.targetId,
-    `${r.baseline} → ${r.target} ${r.unit}`,
-    r.progressPct != null ? `${r.progressPct}%` : "—",
+    truncateText(r.commitment, 110),
+    r.baselineToTarget,
+    formatProgressPct(r.progressPct),
     r.status,
-    r.observedMode === "live" ? "Live" : "Mock",
+    r.dataSource,
   ]);
 
   autoTable(doc, {
     startY: 38,
-    head: [["Sector", "Target", "Baseline → Target", "Progress", "Status", "Obs."]],
+    head: [["Sector", "Commitment", "Baseline to target", "Progress", "Status", "Data source"]],
     body: rows,
-    styles: { fontSize: 8, cellPadding: 3 },
+    styles: {
+      fontSize: 8,
+      cellPadding: 3,
+      overflow: "linebreak",
+      valign: "top",
+    },
     headStyles: { fillColor: [30, 60, 50], textColor: 255, fontStyle: "bold" },
     alternateRowStyles: { fillColor: [245, 248, 245] },
+    columnStyles: {
+      0: { cellWidth: 22 },
+      1: { cellWidth: 52 },
+      2: { cellWidth: 38 },
+      3: { cellWidth: 16, halign: "right" },
+      4: { cellWidth: 18 },
+      5: { cellWidth: 34 },
+    },
+    margin: { left: 14, right: 14 },
   });
 
   const afterTable = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
   doc.setFontSize(8);
   doc.setTextColor(110, 110, 110);
-  doc.text(
+  const footnote =
     ctx.geography === "district"
-      ? "District observed emissions shown for context. NDC progress is scored nationally only."
-      : "Progress compares Climate TRACE observed emissions to national NDC baselines/targets.",
-    14,
-    afterTable,
-  );
+      ? "District views show local observed emissions for context. NDC targets and progress scores apply nationally."
+      : "Progress uses the same calculation as the dashboard: observed emissions compared with national NDC baselines and targets.";
+  doc.text(asciiSafeForPdf(footnote), 14, afterTable, { maxWidth: 182 });
 
   doc.save(`NDC_Dashboard_${fileSlug(ctx)}.pdf`);
 }
@@ -242,7 +317,7 @@ export function exportCrtBtrCsv(ctx: NdcExportContext) {
     r.latestObserved ?? "",
     r.progressPct ?? "",
     r.status,
-    r.observedMode === "live" ? "Climate TRACE (live)" : "Bundled (mock)",
+    r.dataSource,
     dataSource,
     generated,
   ]);

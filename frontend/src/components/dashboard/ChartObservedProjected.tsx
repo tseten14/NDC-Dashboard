@@ -17,20 +17,56 @@ export function ChartHatchPatternDef({ id = "chart-hatch-projected" }: { id?: st
   );
 }
 
-export function ObservedProjectedLegend({ className }: { className?: string }) {
+export function ObservedProjectedLegend({
+  className,
+  showTarget = true,
+  showBauPath = false,
+  showProjected = true,
+  capTarget = false,
+}: {
+  className?: string;
+  /** When false, hide the NDC target line (e.g. district view with no national target overlay). */
+  showTarget?: boolean;
+  /** When true, show the 2030 no-policy (BAU) reference line. */
+  showBauPath?: boolean;
+  /** When false, hide projected series (historical-only charts). */
+  showProjected?: boolean;
+  /** When true, label the target line as a ceiling cap rather than a reduction path. */
+  capTarget?: boolean;
+}) {
   return (
     <div className={cn("flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground", className)}>
       <span className="inline-flex items-center gap-1">
         <span className="inline-block h-2 w-2 rounded-full bg-[hsl(var(--chart-4))]" aria-hidden />
         Observed
       </span>
-      <span className="inline-flex items-center gap-1">
-        <span
-          className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-1))]"
-          aria-hidden
-        />
-        Projected
-      </span>
+      {showProjected && (
+        <span className="inline-flex items-center gap-1">
+          <span
+            className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-1))]"
+            aria-hidden
+          />
+          Projected
+        </span>
+      )}
+      {showBauPath && (
+        <span className="inline-flex items-center gap-1">
+          <span
+            className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-3))]"
+            aria-hidden
+          />
+          2030 no-policy level
+        </span>
+      )}
+      {showTarget && (
+        <span className="inline-flex items-center gap-1">
+          <span
+            className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-2))]"
+            aria-hidden
+          />
+          {capTarget ? "2030 NDC ceiling" : "NDC target path"}
+        </span>
+      )}
     </div>
   );
 }
@@ -48,12 +84,13 @@ export type ObservedProjectedRow = {
   observedValue: number | null;
   projectedValue: number | null;
   target: number | null;
+  bauPath?: number | null;
 };
 
 /** Split historical + projection bridge rows for dual-style charts. */
 export function buildObservedProjectedRows(
-  historical: { year: number; value: number | null; target?: number | null }[],
-  projection: { year: number; value: number | null; target?: number | null }[],
+  historical: { year: number; value: number | null; target?: number | null; bauPath?: number | null }[],
+  projection: { year: number; value: number | null; target?: number | null; bauPath?: number | null }[],
 ): ObservedProjectedRow[] {
   const observedOnly = historical.filter((p) => p.value != null);
   const lastObservedYear = observedOnly[observedOnly.length - 1]?.year ?? null;
@@ -68,5 +105,6 @@ export function buildObservedProjectedRows(
     observedValue: lastObservedYear != null && p.year <= lastObservedYear ? p.value : null,
     projectedValue: lastObservedYear != null && p.year >= lastObservedYear ? p.value : null,
     target: p.target ?? null,
+    bauPath: p.bauPath ?? null,
   }));
 }

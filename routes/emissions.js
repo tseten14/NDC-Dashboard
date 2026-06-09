@@ -257,6 +257,8 @@ router.get("/emissions/progress", async (req, res) => {
       latest_value: latest?.value != null ? +latest.value : null,
       progress_pct: isDistrict ? null : progress?.progress_pct ?? null,
       status: isDistrict ? "unknown" : progress?.status ?? "unknown",
+      progress_method: progress?.progress_method ?? null,
+      bau_2030: target.bau_2030 ?? null,
       data_source: "Climate TRACE",
       geography: isDistrict ? "district" : "national",
       gadm_id: geo.gadmId,

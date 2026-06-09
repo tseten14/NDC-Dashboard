@@ -1,12 +1,11 @@
 import type { AppRole } from "@/hooks/use-current-role";
 
-export type DashboardMode = "briefing" | "mrv" | "delivery" | "field" | "standard" | "admin";
+export type DashboardMode = "briefing" | "mrv" | "field" | "standard" | "admin";
 export type ExportFormat = "excel" | "pdf" | "csv";
 
 export const DASHBOARD_MODE_LABELS: Record<DashboardMode, string> = {
   briefing: "Briefing",
   mrv: "MRV",
-  delivery: "Delivery",
   field: "Field",
   standard: "Standard",
   admin: "Admin",
@@ -77,8 +76,6 @@ export function getDashboardMode(role: AppRole | null): DashboardMode {
       return "briefing";
     case "MRVOfficer":
       return "mrv";
-    case "MinistryDeliveryOfficer":
-      return "delivery";
     case "FieldOfficer":
       return "field";
     case "Admin":
@@ -95,7 +92,7 @@ export function getRoleContextMessage(role: AppRole | null): string {
     case "MRVOfficer":
       return "MRV mode — verification tools emphasized; full export formats.";
     case "MinistryDeliveryOfficer":
-      return "Delivery mode — create and approve activities; check approvals queue in My Work.";
+      return "Programme mode — create and approve activities; check approvals queue in My Work.";
     case "FieldOfficer":
       return "Field mode — district geography default; map and local sources emphasized.";
     case "ProjectDeveloper":

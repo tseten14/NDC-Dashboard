@@ -23,12 +23,12 @@ export interface FundingWindow {
 }
 
 export const UGANDA_FINANCE_CONTEXT = {
-  classification: "Least Developed Country (LDC)",
-  ndcAnchor: "Uganda Updated NDC (September 2022)",
+  classification: "Least developed country",
+  ndcAnchor: "Uganda's 2022 climate pledge (NDC)",
   gcfNote:
-    "GCF NDA no-objection required for GCF proposals. Accredited Entity or Direct Access Entity needed for full projects.",
+    "Major international climate funds need government sign-off and an accredited partner to submit a full proposal.",
   sequencingPrinciple:
-    "Match measure scale to fund ceiling first, then prepare the fund-specific package (readiness → concept note → full proposal).",
+    "Choose a funding channel that fits the project size, then prepare documents for that funder from the start.",
 };
 
 /** Mitigation-relevant windows (NAPX fund-matching adapted for NDC delivery). */
@@ -176,43 +176,43 @@ export function matchFundingWindows(econ: ProjectEconomics): FundMatch[] {
 
   const matches: FundMatch[] = FUNDING_WINDOWS.map((window) => {
     let fit = fitFromScale(usd, window);
-    let rationale = `Indicative need ${formatScale(usd)} vs window ${formatScale(window.scaleMinUSD)}–${formatScale(window.scaleMaxUSD)}.`;
+    let rationale = `Project need (~${formatScale(usd)}) fits this fund's typical range (${formatScale(window.scaleMinUSD)}–${formatScale(window.scaleMaxUSD)}).`;
 
     if (window.id === "carbon-market") {
       if (econ.carbonCoversCost) {
         fit = "high";
-        rationale = "Levelised cost to abate is at or below the carbon price — results-based finance may cover marginal cost.";
+        rationale = "Selling carbon credits at your price could cover the cost of cutting emissions.";
       } else if (econ.costToAbateUSDPerT != null && econ.costToAbateUSDPerT < 80) {
         fit = "medium";
-        rationale = "Moderate cost to abate — may pair grant/co-finance with partial carbon revenue.";
+        rationale = "Credits may cover part of the cost — grants or cheaper loans would likely be needed too.";
       } else {
         fit = "low";
-        rationale = "Carbon price alone unlikely to cover costs; grants or concessional finance needed first.";
+        rationale = "Credit income alone is unlikely to cover costs — look for grants or concessional finance first.";
       }
     }
 
     if (
       window.id === "gcf-readiness" &&
       econ.confidence === "low" &&
-      usd <= w.scaleMaxUSD &&
+      usd <= window.scaleMaxUSD &&
       fit !== "high"
     ) {
       fit = fit === "low" ? "medium" : fit;
       rationale =
-        "Low confidence cost data — readiness funds can finance feasibility before a full proposal (if scale fits).";
+        "Cost figures are uncertain — preparation grants can fund a feasibility study before a full application.";
     } else if (window.id === "gcf-readiness" && usd > 15_000_000 && fit === "low") {
       rationale =
-        "Large programme — readiness may help prepare feasibility, but scale likely needs a larger window after preparation.";
+        "Large programme — preparation funding can help with design, but a bigger fund will be needed later.";
     }
 
     if (preferred.includes(window.id) && fit === "high") {
-      rationale += ` Sector (${sector}) commonly financed through this channel in comparable LDC programmes.`;
+      rationale += ` Similar ${sector} projects have used this channel before.`;
     } else if (preferred.includes(window.id) && fit === "medium") {
-      rationale += ` Sector (${sector}) has used this channel before — verify scale and eligibility.`;
+      rationale += ` This sector has used this channel before — check size and eligibility.`;
     }
 
     if (window.id === "national-budget" && usd < 50_000_000 && fit !== "low") {
-      rationale += " Many NDC measures expect domestic co-finance or line-ministry delivery.";
+      rationale += " Many climate measures also rely on government budget or ministry delivery.";
     }
 
     return { window, fit, rationale };
@@ -233,31 +233,31 @@ export function buildProjectRecommendation(
 
   const nextSteps: string[] = [];
   if (econ.confidence === "low") {
-    nextSteps.push("Commission a feasibility study — NDC cost figures for this measure are low-confidence.");
+    nextSteps.push("Commission a feasibility study — cost figures for this project are rough estimates only.");
   }
   if (econ.fundingNeedUSD >= 10_000_000) {
-    nextSteps.push("Engage GCF National Designated Authority (NDA) for no-objection pathway and accredited entity.");
+    nextSteps.push("Contact Uganda's climate fund focal point for government approval and an accredited delivery partner.");
   } else if (econ.fundingNeedUSD >= 3_000_000) {
-    nextSteps.push("Scope a GCF SAP or GEF PIF — match documentation to fund template from concept stage.");
+    nextSteps.push("Draft a concept note for a mid-size climate fund (e.g. GCF simplified process or GEF).");
   } else {
-    nextSteps.push("Consider bilateral TA or GCF readiness to mature the concept before a full proposal.");
+    nextSteps.push("Start with a small preparation grant or bilateral technical assistance to develop the idea.");
   }
   if (econ.carbonCoversCost) {
     nextSteps.push(
-      `Develop MRV and certification pathway for carbon credits at ≥ $${carbonPrice}/tCO₂e (Article 6 or voluntary, subject to national rules).`,
+      `Set up monitoring and certification so carbon credits can be sold at about $${carbonPrice} per tonne.`,
     );
   } else {
-    nextSteps.push("Identify grant or concessional co-finance — carbon revenue alone is unlikely to close the gap at this price.");
+    nextSteps.push("Look for grants or low-cost loans — credit sales alone may not cover the full cost at this price.");
   }
-  nextSteps.push("Link to Uganda Updated NDC target and sector MRV in the investment note (BTR / transparency).");
+  nextSteps.push("Show clearly how the project supports Uganda's official 2030 climate goals.");
   if (primaryWindow) {
-    nextSteps.push(`Primary packaging target: ${primaryWindow.window.name} — ${primaryWindow.window.proposalPath}`);
+    nextSteps.push(`Best-fit funding channel: ${primaryWindow.window.name}.`);
   }
 
   const coFinanceNote =
     econ.fundingNeedUSD >= 20_000_000
-      ? "GCF and MDB windows typically require 20–50% co-finance (public or private). Map MoFPED / sector budgets early."
-      : "Smaller measures can blend national budget lines with a single external grant window.";
+      ? "Large programmes usually need 20–50% matching funds from government or private partners — plan this early."
+      : "Smaller projects can combine a government budget line with one external grant.";
 
   return {
     projectId: econ.id,
@@ -268,21 +268,21 @@ export function buildProjectRecommendation(
     ndcAlignment: `Trace to NDC sector "${econ.sectorId}" and Uganda's 2030 mitigation target; do not double-count abatement across measures.`,
     dataCaveat:
       econ.confidence === "high"
-        ? "Cost and abatement from NDC text — still indicative, not audited."
+        ? "Costs and emissions cuts come from Uganda's NDC plans — rough estimates, not audited figures."
         : econ.confidence === "medium"
-          ? "Treat cost to abate as a screening range (±~20%), not a bid price."
-          : "Low confidence — use for prioritisation only; do not use in financial close.",
+          ? "Treat the cost per tonne as a ballpark range (about ±20%), not a final bid price."
+          : "Low confidence — use only to compare projects, not for final investment decisions.",
   };
 }
 
 export function getUgandaSequencingGuidance(): string[] {
   return [
-    "Align the measure to NDC target and sector MRV before choosing a fund (NAPX principle: design for the window, not retrofit).",
-    "Under USD 3M: GCF Readiness, bilateral TA, or national pilot → feasibility & safeguards.",
-    "USD 3–25M: GCF SAP or GEF PIF with GEF Operational Focal Point / NDA coordination.",
-    "Above USD 25M: GCF Full Project or World Bank/AfDB programme — plan co-finance and accredited entity early.",
-    "Where cost to abate ≤ carbon price: layer results-based finance (credits) on top of any grant, not instead of upfront capex.",
-    "Measures with adaptation co-benefits (agriculture, cities): screen LDCF/NAP alignment in parallel — do not merge budgets.",
+    "Link the project to Uganda's official climate goals before choosing where to apply.",
+    "Under ~$3M: start with preparation grants, bilateral help, or a government pilot to test the idea.",
+    "$3–25M: apply through mid-size climate funds (e.g. GCF simplified process or GEF).",
+    "Above ~$25M: plan early for World Bank or African Development Bank programmes and matching government funds.",
+    "If credits cover the cost: treat carbon sales as extra income — you may still need upfront grant funding.",
+    "Projects that help farmers or cities adapt may also qualify for separate adaptation funds.",
   ];
 }
 
@@ -303,14 +303,14 @@ export function assessPortfolioDataQuality(
     id: "indicative",
     severity: "info",
     message:
-      "Abatement potentials and costs are indicative figures from the Uganda Updated NDC mitigation analysis — not measured emissions reductions or tendered costs.",
+      "Emissions cuts and costs shown here come from Uganda's climate plans — they are planning estimates, not measured results or final tender prices.",
   });
 
   if (gapMt > 0 && catalogMt > gapMt * 1.2) {
     warnings.push({
       id: "overlap",
       severity: "warn",
-      message: `Catalogue abatement (${catalogMt.toFixed(1)} Mt/yr) exceeds the modelled 2030 gap (${gapMt.toFixed(1)} Mt). Measures overlap — do not sum potentials as if additive.`,
+      message: `Listed projects could cut more emissions (${catalogMt.toFixed(1)} Mt/yr) than the gap still to close (${gapMt.toFixed(1)} Mt) — many measures overlap, so don't add them all up.`,
     });
   }
 
@@ -318,7 +318,7 @@ export function assessPortfolioDataQuality(
     id: "gap-method",
     severity: "info",
     message:
-      "2030 gap uses Climate TRACE observed trends vs NDC targets. Sector gap closure stacks cheapest projects greedily — a screening exercise, not a national investment plan.",
+      "The 2030 gap compares live satellite trends to Uganda's official goals. We stack the cheapest projects first — a quick screening tool, not a national investment plan.",
   });
 
   return warnings;

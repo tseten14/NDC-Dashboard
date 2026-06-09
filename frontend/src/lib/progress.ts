@@ -5,7 +5,12 @@ import {
   calculateProgressStatus as calculateProgressStatusCore,
   apiStatusFromUiStatus,
   uiStatusFromApiStatus,
+  isBauCapEmissionsTarget,
+  capTargetPosition,
 } from "../../../shared/progress.js";
+
+export { isBauCapEmissionsTarget, capTargetPosition };
+export type CapTargetPosition = "below_cap" | "between_cap_and_bau" | "above_bau";
 
 export type ProgressTargetInput = {
   baselineYear: number;
@@ -13,6 +18,8 @@ export type ProgressTargetInput = {
   targetYear: number;
   targetValue: number;
   metricType: MetricType | string;
+  /** 2030 business-as-usual level for cap-style emissions targets (target > baseline). */
+  bau2030?: number | null;
 };
 
 export type ProgressObservationsInput = {

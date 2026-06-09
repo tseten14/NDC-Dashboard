@@ -273,7 +273,9 @@ export interface ProgressResponse {
   progress_pct: number | null;
   status: SectorStatus;
   data_source: string;
-  methodology?: "ndc_baseline_vs_trace_observed";
+  methodology?: "ndc_baseline_vs_trace_observed" | "ndc_bau_cap_vs_trace_observed";
+  progress_method?: "bau_cap" | "baseline_reduction" | null;
+  bau_2030?: number | null;
   scope_note?: string | null;
   trace_yoy_pct?: number | null;
   baseline_vs_trace_delta_mt?: number | null;
