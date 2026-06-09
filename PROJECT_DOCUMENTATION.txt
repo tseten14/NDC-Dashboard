@@ -92,17 +92,56 @@ A5b. TOP EMITTING SOURCES (asset-level drill-down)
 
 A6a. MAIN SCREENS AND ROUTES (2026)
 
-  Basic sidebar:
-    /              Home — landing, links only (no live charts)
-    /dashboard     NDC cockpit — targets vs observed emissions (core workspace)
-    /ingest        Data ingestion — Quick Scan live; mapped import WIP
-    /ai-2030       2030 sector trend forecast (indicative, with uncertainty)
-    /climate-finance  MAC-style screening + fund pathways + MCF document links
-    /documents     Policy corpus + intervention pathway diagram
-    /map           Geolocated emission sources on Uganda map
-    /docs          In-app user guide (React UI; see A7 for repository text copy)
+  The sidebar is organised around five decision questions, each a collapsible group:
 
-  Advanced sidebar (expand in UI): Strategy Library, My Work, Climate Risk, legacy cockpit pages.
+  Always visible (top):
+    /              Home — landing + Decision Cockpit quick-links
+    /ingest        Data ingestion — Quick Scan live; mapped import WIP
+    /documents     Policy corpus + intervention pathway diagram
+    /my-work       Personal activity drafts (localStorage)
+    /executive     Executive overview briefing
+
+  Q1 — Are we on track?
+    /dashboard     NDC cockpit — targets vs observed emissions (core workspace)
+    /indicators    Indicator registry + KPI tracking
+    /evidence      Evidence & MRV — provenance, QA flags, confidence, export
+    /projections   Scenario projections and growth path sliders
+    /map           Geolocated emission sources on Uganda map
+
+  Q2 — Which interventions work?
+    /project-check       Project registry and output tracking
+    /delivery            Delivery & Accountability — activity → district → indicator chain
+    /causal-chains       Causal chain diagrams
+    /interlinkages       Cross-sector interlinkages
+    /kpis                KPIs & proxies
+    /cost-effectiveness  Intervention cost per tCO2e ranking [NEW — illustrative]
+
+  Q3 — Where are the bottlenecks?
+    /delivery            Delivery & Accountability (shared with Q2)
+    /finance             Finance & Investment — conditionality, instruments, investment notes
+    /climate-finance     MAC-style screening + fund pathways + MCF document links
+    /ownership           Ownership & focal points roster
+    /financial-flow      Committed → Disbursed → Spent waterfall by project [NEW — illustrative]
+
+  Q4 — Where do we invest next?
+    /ai-2030             2030 sector trend forecast (indicative, with uncertainty)
+    /investment          Investment note templates
+    /tenfold             Tenfold Growth Strategy layer
+    /policy-impact       Policy impact engine
+
+  Q5 — Are we aligned?
+    /ownership           Ownership & focal points (shared with Q3)
+    /ndp-iv              NDP IV strategy alignment
+    /vision-2040         Vision 2040 layer
+    /interlinkages       Cross-sector interlinkages (shared with Q2)
+    /institutional-map   Visual institutional map — who owns what across government [NEW — illustrative]
+
+  Admin section (role-gated):
+    /admin               System configuration
+    /exports             Exports & API
+    /afolu-mrv           AFOLU MRV detail
+    /library             Strategy Library
+    /risk                Climate Risk (illustrative hazard screening)
 
 A6b. INTENDED VS MEASURED OUTCOMES (important for briefings)
 
@@ -148,10 +187,31 @@ A7. FEATURE GUIDE — PURPOSE, HOW IT WORKS, RESULT (non-technical)
   For each feature: what it is for → what you do → how the app implements it → what you get.
 
   HOME (/)
-    For: Orientation.
-    Steps: Read cards; click through to Dashboard or other tools.
-    How: Static page; ?target= URLs redirect to /dashboard.
+    For: Orientation and decision routing.
+    Steps: Read "Decision Cockpit" quick-links (Q1/Q3/Q5 entry points); scroll to feature cards.
+    How: Static page; ?target= URLs redirect to /dashboard. Decision Cockpit section added (Jun 2026).
     Result: Navigation only — no emissions tables.
+
+  FINANCIAL FLOWS (/financial-flow) [NEW — Jun 2026, illustrative data]
+    For: Q3 "Where are the bottlenecks?" — see committed vs disbursed vs spent per project.
+    Steps: Read table; sort by disbursement %; colour coding shows projects at risk.
+    How: Synthesised from seed-activities data; illustrative numbers, not live financial system.
+    Result: Bottleneck identification by project and district.
+    Not: Connected to live treasury/IFMS data (requires integration).
+
+  COST EFFECTIVENESS (/cost-effectiveness) [NEW — Jun 2026, illustrative data]
+    For: Q2 "Which interventions work?" — rank by cost per tCO2e avoided.
+    Steps: Sort table by cost/tCO2e; identify top-3 "best value" interventions; review co-benefits.
+    How: Illustrative cost and impact estimates synthesised from seed-activities and indicator data.
+    Result: Prioritisation input for investment decisions.
+    Not: Audited cost data; replace illustrative numbers with real project accounts when available.
+
+  INSTITUTIONAL MAP (/institutional-map) [NEW — Jun 2026, illustrative data]
+    For: Q5 "Are we aligned?" — see who owns what across government and partners.
+    Steps: Read institution cards grouped by type; check mandate overlap alerts at top.
+    How: Built from actors roster in uganda-strategy-data.ts; overlap detection across activity ownership.
+    Result: Visual alignment check across MWE, STI, Finance, sector ministries, donors, UN agencies.
+    Not: Live org chart; update actors data to reflect current institutional arrangements.
 
   DASHBOARD (/dashboard)
     For: Compare NDC 2022 pledges to observed emissions; executive and MRV briefings.
