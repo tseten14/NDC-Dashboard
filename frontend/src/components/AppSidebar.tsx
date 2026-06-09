@@ -48,6 +48,7 @@ const questionGroups: { label: string; items: NavItem[] }[] = [
       { title: "Causal Chains", url: "/causal-chains", icon: Workflow },
       { title: "Interlinkages", url: "/interlinkages", icon: GitBranch },
       { title: "KPIs & Proxies", url: "/kpis", icon: BarChart3 },
+      { title: "Cost Effectiveness", url: "/cost-effectiveness", icon: BarChart3 },
     ],
   },
   {
@@ -57,6 +58,7 @@ const questionGroups: { label: string; items: NavItem[] }[] = [
       { title: "Finance & Investment", url: "/finance", icon: Wallet },
       { title: "Climate Finance", url: "/climate-finance", icon: Coins },
       { title: "Ownership & Focals", url: "/ownership", icon: Users },
+      { title: "Financial Flows", url: "/financial-flow", icon: Coins },
     ],
   },
   {
@@ -75,6 +77,7 @@ const questionGroups: { label: string; items: NavItem[] }[] = [
       { title: "NDP IV", url: "/ndp-iv", icon: Building2 },
       { title: "Vision 2040", url: "/vision-2040", icon: Eye },
       { title: "Interlinkages", url: "/interlinkages", icon: GitBranch },
+      { title: "Institutional Map", url: "/institutional-map", icon: Building2 },
     ],
   },
 ];

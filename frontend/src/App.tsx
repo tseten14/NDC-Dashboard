@@ -59,6 +59,9 @@ const Indicators = lazy(() => import("./pages/Indicators.tsx"));
 const Interlinkages = lazy(() => import("./pages/Interlinkages.tsx"));
 const CausalChains = lazy(() => import("./pages/CausalChains.tsx"));
 const ProjectCheck = lazy(() => import("./pages/ProjectCheck.tsx"));
+const FinancialFlow = lazy(() => import("./pages/FinancialFlow.tsx"));
+const CostEffectiveness = lazy(() => import("./pages/CostEffectiveness.tsx"));
+const InstitutionalMap = lazy(() => import("./pages/InstitutionalMap.tsx"));
 import { DemoModeProvider } from "@/hooks/use-demo-mode";
 import { DemoModePanel, DemoModeToggle, DemoPresenterController } from "@/components/DemoModePanel";
 import { useDemoMode } from "@/hooks/use-demo-mode";
@@ -174,6 +177,9 @@ function ProtectedShell() {
                   <Route path="/investment" element={<LazyPage><InvestmentTemplates /></LazyPage>} />
                   <Route path="/exports" element={<LazyPage><ExportsAPI /></LazyPage>} />
                   <Route path="/admin" element={<LazyPage><Admin /></LazyPage>} />
+                  <Route path="/financial-flow" element={<LazyPage><FinancialFlow /></LazyPage>} />
+                  <Route path="/cost-effectiveness" element={<LazyPage><CostEffectiveness /></LazyPage>} />
+                  <Route path="/institutional-map" element={<LazyPage><InstitutionalMap /></LazyPage>} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>
