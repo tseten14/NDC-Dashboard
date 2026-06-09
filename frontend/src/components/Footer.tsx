@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { Leaf, Satellite } from "lucide-react";
 
 export function Footer() {
@@ -15,14 +14,6 @@ export function Footer() {
               <p className="text-sm font-bold text-white tracking-tight font-brand">NDC Data Explorer</p>
               <p className="text-[11px] text-slate-400 mt-0.5">Uganda · Decision-support cockpit</p>
             </div>
-          </div>
-
-          {/* Center links */}
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px]">
-            <Link to="/docs" className="text-slate-400 hover:text-white transition-colors">Documentation</Link>
-            <Link to="/dashboard" className="text-slate-400 hover:text-white transition-colors">Dashboard</Link>
-            <Link to="/map" className="text-slate-400 hover:text-white transition-colors">Emissions Map</Link>
-            <Link to="/documents" className="text-slate-400 hover:text-white transition-colors">Policy Documents</Link>
           </div>
 
           {/* Right: data attribution */}
