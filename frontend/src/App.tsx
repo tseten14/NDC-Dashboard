@@ -1,22 +1,18 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
-import { Globe2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { EmissionsDataProvider } from "@/context/EmissionsDataContext";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { TopNav } from "@/components/TopNav";
 import { useAppState, AppStateContext } from "@/hooks/use-app-state";
 import { CockpitProvider } from "@/hooks/use-cockpit";
 import { CurrentRoleProvider } from "@/hooks/use-current-role";
 import { AuthGate } from "@/components/AuthGate";
 import { CountryGate } from "@/components/CountryGate";
-import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { RoleContextStrip } from "@/components/RoleContextStrip";
-import { CountryProvider, useCountry } from "@/context/CountryContext";
+import { CountryProvider } from "@/context/CountryContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "./pages/NotFound.tsx";
 import CountrySelect from "./pages/CountrySelect.tsx";
@@ -77,50 +73,16 @@ function LazyPage({ children }: { children: ReactNode }) {
   return <Suspense fallback={<RouteFallback />}>{children}</Suspense>;
 }
 
-function ShellHeader() {
-  const { country, clearCountry } = useCountry();
-  const navigate = useNavigate();
-  return (
-    <div className="flex items-center justify-between border-b border-border bg-card px-2 h-10 gap-2">
-      <SidebarTrigger />
-      <div className="flex items-center gap-2 min-w-0">
-        {country && (
-          <span className="hidden sm:inline text-xs text-muted-foreground truncate">
-            {country.flag} {country.name}
-          </span>
-        )}
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-7 text-xs gap-1 shrink-0"
-          onClick={() => {
-            clearCountry();
-            navigate("/select-country");
-          }}
-        >
-          <Globe2 className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">Change country</span>
-        </Button>
-        <RoleSwitcher />
-      </div>
-    </div>
-  );
-}
-
 function ProtectedShell() {
   const state = useAppState();
   return (
     <AppStateContext.Provider value={state}>
       <EmissionsDataProvider>
       <CockpitProvider>
-        <SidebarProvider>
-          <div className="min-h-screen flex w-full">
-            <AppSidebar />
-            <div className="flex-1 flex flex-col min-w-0 min-h-0">
-              <ShellHeader />
-              <RoleContextStrip />
-              <main className="flex-1 min-h-0 overflow-hidden relative">
+          <div className="min-h-screen flex flex-col w-full">
+            <TopNav />
+            <RoleContextStrip />
+            <main className="flex-1 min-h-0 overflow-hidden relative">
                 <ErrorBoundary label="Page">
                 <Routes>
                   {/* Main */}
@@ -177,9 +139,7 @@ function ProtectedShell() {
                 </Routes>
                 </ErrorBoundary>
               </main>
-            </div>
           </div>
-        </SidebarProvider>
       </CockpitProvider>
       </EmissionsDataProvider>
     </AppStateContext.Provider>
