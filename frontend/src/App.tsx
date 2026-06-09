@@ -6,12 +6,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TopNav } from "@/components/TopNav";
+import { Footer } from "@/components/Footer";
 import { useAppState, AppStateContext } from "@/hooks/use-app-state";
 import { CockpitProvider } from "@/hooks/use-cockpit";
 import { CurrentRoleProvider } from "@/hooks/use-current-role";
 import { AuthGate } from "@/components/AuthGate";
 import { CountryGate } from "@/components/CountryGate";
-import { RoleContextStrip } from "@/components/RoleContextStrip";
 import { CountryProvider } from "@/context/CountryContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "./pages/NotFound.tsx";
@@ -81,7 +81,6 @@ function ProtectedShell() {
       <CockpitProvider>
           <div className="min-h-screen flex flex-col w-full">
             <TopNav />
-            <RoleContextStrip />
             <main className="flex-1 min-h-0 overflow-hidden relative">
                 <ErrorBoundary label="Page">
                 <Routes>
@@ -139,6 +138,7 @@ function ProtectedShell() {
                 </Routes>
                 </ErrorBoundary>
               </main>
+            <Footer />
           </div>
       </CockpitProvider>
       </EmissionsDataProvider>
