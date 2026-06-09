@@ -27,15 +27,15 @@ End-to-end architecture and workflows for the application. For file-level layout
 flowchart TB
   U[Browser users]
 
-  subgraph App["NDC Data Explorer"]
-    FE[React SPA · Vite]
-    API[Express API · server.js]
-    CFG[NDC config & catalog]
-    LS[localStorage · My Work]
+  subgraph App[NDC Data Explorer]
+    FE[React SPA]
+    API[Express API]
+    CFG[NDC config]
+    LS[localStorage]
   end
 
-  CT[Climate TRACE API v7]
-  PG[(Postgres optional)]
+  CT[Climate TRACE]
+  PG[(Postgres)]
 
   U --> FE
   FE -->|/api/v1| API
@@ -55,13 +55,13 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-  subgraph DevMachine["Local dev machine"]
-    Vite["Vite :8080 · frontend"]
-    Express["Express :8787 · API"]
+  subgraph DevMachine[Local dev machine]
+    Vite[Vite :8080]
+    Express[Express :8787]
   end
 
-  CT[Climate TRACE API v7]
-  PGlocal[(Postgres optional)]
+  CT[Climate TRACE]
+  PGlocal[(Postgres)]
 
   Vite -->|proxy /api| Express
   Express --> CT
@@ -81,11 +81,11 @@ Environment: copy `.env.example` → `.env`. Key flags: `USE_MOCK_DATA`, `DATABA
 ```mermaid
 flowchart TB
   Browser[Browser]
-  CDN[Vercel CDN · static SPA]
-  Fn[Vercel Serverless · API]
-  CT[Climate TRACE API v7]
+  CDN[Vercel CDN]
+  Fn[Vercel API]
+  CT[Climate TRACE]
   PG[(Postgres)]
-  Boot[bootstrap DB · migrate/seed]
+  Boot[bootstrap DB]
 
   Browser --> CDN
   Browser --> Fn
@@ -105,32 +105,32 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-  subgraph UI["Presentation · frontend/src"]
+  subgraph UI[Presentation layer]
     Pages[pages]
     Cols[columns]
     Ctx[EmissionsDataContext]
-    Hooks[hooks · state & role]
-    Lib[lib · progress & finance]
+    Hooks[hooks]
+    Lib[lib]
   end
 
-  subgraph SRV["API · routes + services"]
+  subgraph SRV[API layer]
     REm[emissions]
     RIn[ingest]
     RPi[policyImpact]
     RCk[ndcCockpit]
-    SCT[Climate TRACE client]
+    SCT[TRACE client]
     SPers[persistence]
   end
 
-  subgraph SH["Shared · repo root"]
-    Progress[shared/progress.js]
-    NDC[config/ndcTargets.js]
+  subgraph SH[Shared logic]
+    Progress[progress.js]
+    NDC[ndcTargets.js]
   end
 
-  subgraph DST["Data stores"]
+  subgraph DST[Data stores]
     CT[(Climate TRACE)]
     PG[(Postgres)]
-    Bundle[(config & catalog)]
+    Bundle[(catalog)]
     LS[(localStorage)]
   end
 
@@ -229,14 +229,21 @@ sequenceDiagram
 
 ```mermaid
 flowchart TB
-  User --> Wizard[Policy Impact wizard]
-  Wizard --> API[forecast API]
-  API --> Engine[policyImpactEngine]
-  Engine --> Cases[policy cases JSON]
-  Engine --> KCI[KCI matching rules]
-  Cases --> Results[Outcomes + trade-offs]
+  User[User]
+  Wizard[Policy Impact]
+  API[forecast API]
+  Engine[policyImpactEngine]
+  Cases[policy cases]
+  KCI[KCI rules]
+  Results[outcomes]
+  CF[Climate Finance]
+
+  User --> Wizard --> API --> Engine
+  Engine --> Cases
+  Engine --> KCI
+  Cases --> Results
   Results --> User
-  Results -.-> CF[Climate Finance]
+  Results -.-> CF
 ```
 
 Rule-based **analogies** from curated KCI cases — indicative, not official government projections.
@@ -262,9 +269,9 @@ flowchart TB
   SPA[AI 2030 page]
   API[predictions API]
   Engine[predictionEngine]
-  CT[CT historical data]
-  ML[GRU / OLS model]
-  Gap[2030 gap vs NDC]
+  CT[TRACE history]
+  ML[GRU / OLS]
+  Gap[2030 NDC gap]
 
   SPA --> API --> Engine
   Engine --> CT
@@ -357,13 +364,13 @@ Postgres host (Supabase, Neon, etc.) is **only** a connection string — no Supa
 
 ```mermaid
 flowchart TB
-  subgraph Global
+  subgraph Global[Global context]
     Country[CountryContext]
     Role[CurrentRoleProvider]
-    QC[React Query cache]
+    QC[React Query]
   end
 
-  subgraph Dashboard
+  subgraph Dash[Dashboard state]
     AppState[useAppState]
     Emissions[EmissionsDataProvider]
     Pages[route pages]

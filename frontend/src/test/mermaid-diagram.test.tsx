@@ -9,12 +9,12 @@ import {
 
 const LOCAL_DEV_CHART = `flowchart TB
   subgraph DevMachine["Local dev machine"]
-    Vite["Vite :8080 · frontend"]
-    Express["Express :8787 · API"]
+    Vite["Vite :8080\\nfrontend"]
+    Express["Express :8787\\nAPI"]
   end
 
-  CT[Climate TRACE API v7]
-  PGlocal[(Postgres optional)]
+  CT["Climate TRACE\\nAPI v7"]
+  PGlocal[("Postgres\\noptional")]
 
   Vite -->|proxy /api| Express
   Express --> CT
@@ -50,10 +50,10 @@ describe("Mermaid diagrams in system design", () => {
     });
   });
 
-  it("bundled SYSTEM_DESIGN.md uses short labels for state and layers diagrams", () => {
-    expect(systemDesignMarkdown).toContain("CT[Climate TRACE API v7]");
+  it("bundled SYSTEM_DESIGN.md uses compact in-box flowchart labels", () => {
+    expect(systemDesignMarkdown).toContain("CT[Climate TRACE]");
     expect(systemDesignMarkdown).toContain("[*] --> Check");
-    expect(systemDesignMarkdown).toContain('subgraph UI["Presentation · frontend/src"]');
+    expect(systemDesignMarkdown).toContain("subgraph UI[Presentation layer]");
     const stateDiagram = systemDesignMarkdown.match(/```mermaid\nstateDiagram[\s\S]*?```/)?.[0] ?? "";
     expect(stateDiagram).not.toMatch(/Check --> \w+:/);
   });

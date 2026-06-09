@@ -16,7 +16,14 @@ function ensureMermaid() {
     themeVariables: {
       fontSize: "13px",
     },
-    flowchart: { useMaxWidth: true, htmlLabels: true, padding: 14, nodeSpacing: 28, rankSpacing: 40 },
+    flowchart: {
+      useMaxWidth: true,
+      htmlLabels: false,
+      padding: 18,
+      nodeSpacing: 40,
+      rankSpacing: 50,
+      wrappingWidth: 200,
+    },
     sequence: { useMaxWidth: true, wrap: true, width: 280 },
     state: { useMaxWidth: true, nodeSpacing: 36, rankSpacing: 40 },
   });
@@ -46,8 +53,59 @@ export function normalizeMermaidSvg(container: HTMLElement) {
   svg.style.display = "block";
   svg.style.overflow = "visible";
 
-  svg.querySelectorAll("foreignObject").forEach((fo) => {
-    fo.setAttribute("overflow", "visible");
+  expandFlowchartNodeBoxes(svg);
+}
+
+/** Widen node rects when label text exceeds the default Mermaid box (htmlLabels off). */
+export function expandFlowchartNodeBoxes(svg: SVGSVGElement) {
+  const padX = 24;
+  const padY = 16;
+
+  svg.querySelectorAll("g.node").forEach((nodeG) => {
+    const label = nodeG.querySelector(".nodeLabel");
+    const rect = nodeG.querySelector("rect");
+    if (!label || !rect) return;
+
+    let labelW = 0;
+    let labelH = 0;
+    try {
+      const bbox = (label as SVGGraphicsElement).getBBox();
+      labelW = bbox.width;
+      labelH = bbox.height;
+    } catch {
+      return;
+    }
+
+    if (labelW < 1 || labelH < 1) {
+      const text = label.textContent?.trim() ?? "";
+      const lines = text.split("\n").filter(Boolean);
+      labelW = Math.max(labelW, text.length * 7);
+      labelH = Math.max(labelH, (lines.length || 1) * 14);
+    }
+
+    const neededW = labelW + padX * 2;
+    const neededH = labelH + padY * 2;
+    const curW = Number(rect.getAttribute("width")) || 0;
+    const curH = Number(rect.getAttribute("height")) || 0;
+    if (neededW <= curW && neededH <= curH) return;
+
+    const x = Number(rect.getAttribute("x")) || 0;
+    const y = Number(rect.getAttribute("y")) || 0;
+    const dw = Math.max(0, neededW - curW);
+    const dh = Math.max(0, neededH - curH);
+
+    rect.setAttribute("x", String(x - dw / 2));
+    rect.setAttribute("y", String(y - dh / 2));
+    rect.setAttribute("width", String(curW + dw));
+    rect.setAttribute("height", String(curH + dh));
+
+    const fo = nodeG.querySelector("foreignObject");
+    if (fo) {
+      fo.setAttribute("x", String((Number(fo.getAttribute("x")) || 0) - dw / 2));
+      fo.setAttribute("y", String((Number(fo.getAttribute("y")) || 0) - dh / 2));
+      fo.setAttribute("width", String((Number(fo.getAttribute("width")) || 0) + dw));
+      fo.setAttribute("height", String((Number(fo.getAttribute("height")) || 0) + dh));
+    }
   });
 }
 
@@ -100,7 +158,8 @@ export function MermaidDiagram({ chart }: { chart: string }) {
         className={cn(
           "w-full min-w-0 mermaid-host",
           "[&_svg]:overflow-visible [&_svg]:max-w-full [&_svg]:h-auto",
-          "[&_foreignObject]:overflow-visible [&_.nodeLabel]:overflow-visible",
+          "[&_.nodeLabel]:overflow-hidden [&_.nodeLabel_p]:m-0 [&_.nodeLabel_p]:leading-snug",
+          "[&_.node rect]:rx-[4px]",
           "[&_.edgeLabel]:text-[11px] [&_.edgeLabel_p]:text-[11px] [&_.edgeLabel]:leading-tight",
           "[&_.messageText]:text-[11px] [&_.actor]:text-[12px]",
           "[&_.state-title]:text-[12px]",
