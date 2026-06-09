@@ -39,8 +39,6 @@ export function Footer() {
           </p>
           <p className="text-[11px] text-slate-500">
             Emissions data: <a href="https://climatetrace.org" target="_blank" rel="noreferrer" className="hover:text-slate-300 transition-colors underline underline-offset-2">climatetrace.org</a>
-            {" · "}
-            NDC targets: Uganda Updated NDC, September 2022
           </p>
         </div>
       </div>
