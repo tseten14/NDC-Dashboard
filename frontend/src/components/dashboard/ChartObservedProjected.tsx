@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Info } from "lucide-react";
 
 /** SVG hatch pattern for projected series (45°, 4px spacing). */
@@ -52,18 +52,21 @@ export function ObservedProjectedLegend({
         </span>
       )}
       {showBauPath && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex items-center gap-1 cursor-help">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:border-border transition-colors"
+            >
               <span
-                className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-3))]"
+                className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-3))] shrink-0"
                 aria-hidden
               />
               2030 no-policy level
-              <Info className="h-2.5 w-2.5 text-muted-foreground/50" aria-hidden />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-[260px] p-3 space-y-1">
+              <Info className="h-2.5 w-2.5 shrink-0" aria-hidden />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="top" className="max-w-[260px] p-3 space-y-1">
             <p className="text-xs font-semibold">Business-As-Usual (BAU) Baseline</p>
             <p className="text-xs text-muted-foreground leading-relaxed">
               The projected emissions trajectory if no additional climate policies or
@@ -71,22 +74,25 @@ export function ObservedProjectedLegend({
               counterfactual "no-extra-policy" path shows what unconstrained emissions
               growth looks like by 2030, and is the reference point for measuring NDC ambition.
             </p>
-          </TooltipContent>
-        </Tooltip>
+          </PopoverContent>
+        </Popover>
       )}
       {showTarget && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex items-center gap-1 cursor-help">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:border-border transition-colors"
+            >
               <span
-                className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-2))]"
+                className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-2))] shrink-0"
                 aria-hidden
               />
               {capTarget ? "2030 NDC ceiling" : "NDC target path"}
-              <Info className="h-2.5 w-2.5 text-muted-foreground/50" aria-hidden />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-[260px] p-3 space-y-1">
+              <Info className="h-2.5 w-2.5 shrink-0" aria-hidden />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="top" className="max-w-[260px] p-3 space-y-1">
             {capTarget ? (
               <>
                 <p className="text-xs font-semibold">NDC Emissions Ceiling</p>
@@ -107,8 +113,8 @@ export function ObservedProjectedLegend({
                 </p>
               </>
             )}
-          </TooltipContent>
-        </Tooltip>
+          </PopoverContent>
+        </Popover>
       )}
     </div>
   );

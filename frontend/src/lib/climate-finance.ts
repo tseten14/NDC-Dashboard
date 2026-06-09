@@ -16,7 +16,7 @@ export const DEFAULT_ASSUMPTIONS: FinanceAssumptions = {
 };
 
 export const ASSUMPTION_BOUNDS = {
-  carbonPrice: { min: 0, max: 100, step: 1 },
+  carbonPrice: { min: 0, max: 50, step: 1 },
   lifetimeYears: { min: 5, max: 25, step: 1 },
   discountRate: { min: 0, max: 0.2, step: 0.005 },
 };

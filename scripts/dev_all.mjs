@@ -87,7 +87,21 @@ async function runVerifications() {
   console.log("");
 }
 
+async function freePort(port) {
+  const { execSync } = await import("node:child_process");
+  try {
+    const pids = execSync(`lsof -ti :${port} 2>/dev/null`, { encoding: "utf8" }).trim();
+    if (pids) {
+      execSync(`kill -9 ${pids.split("\n").join(" ")} 2>/dev/null`);
+      console.log(`→ Freed port ${port}\n`);
+    }
+  } catch {
+    // port already free
+  }
+}
+
 async function startDevServers() {
+  await freePort(8787);
   console.log("→ Starting frontend + API…\n");
   await run("npx", [
     "concurrently",

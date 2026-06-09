@@ -222,15 +222,30 @@ export function buildLiveObservedDataSet(
   const lastY = latest?.year ?? baselineYear;
   const lastV = latest?.value ?? baselineValue;
 
+  // Compute recent trend slope from observed data (last 5 non-null points).
+  // This projects "where current trajectory leads" rather than forcing a line
+  // toward the static BAU or NDC target — BAU was set in 2015 and may diverge
+  // significantly from the actual observed trajectory.
+  const recentPoints = timeseries
+    .filter((p): p is { year: number; value: number } => p.value != null)
+    .slice(-5);
+  let trendSlope = 0;
+  if (recentPoints.length >= 2) {
+    const fp = recentPoints[0];
+    const lp = recentPoints[recentPoints.length - 1];
+    const dy = lp.year - fp.year;
+    if (dy > 0) trendSlope = (lp.value - fp.value) / dy;
+  }
+
   const projectionBaseline: ObservedDataPoint[] = [];
-  const span = Math.max(1, targetYear - lastY);
   for (let y = lastY + 1; y <= targetYear; y++) {
     const elapsed = y - lastY;
-    const interp = lastV + (targetValue - lastV) * (elapsed / span);
+    // Clamp to zero — emissions can't be negative
+    const trended = Math.max(0, Math.round((lastV + trendSlope * elapsed) * 100) / 100);
     const paths = referencePathsForYear(y, baselineYear, baselineValue, targetYear, targetValue, bau2030);
     projectionBaseline.push({
       year: y,
-      value: Math.round(interp * 100) / 100,
+      value: trended,
       target: paths.target,
       ...(paths.bauPath != null ? { bauPath: paths.bauPath } : {}),
     });

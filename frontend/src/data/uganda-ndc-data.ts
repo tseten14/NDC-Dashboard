@@ -398,15 +398,18 @@ function makeHistorical(baseline: number, start: number, end: number, annualChan
   return data;
 }
 
-function makeProjection(lastValue: number, target: number, start: number, end: number): ObservedDataPoint[] {
+// bauValue is the BAU 2030 value (for cap targets); ndcTarget is the NDC ceiling.
+// The value field projects toward BAU (showing no-policy trajectory), while target
+// stays flat at the NDC ceiling so the reference line renders correctly.
+function makeProjection(lastValue: number, bauValue: number, ndcTarget: number, start: number, end: number): ObservedDataPoint[] {
   const data: ObservedDataPoint[] = [];
   const totalYears = end - start;
   for (let y = start; y <= end; y++) {
     const elapsed = y - start;
     data.push({
       year: y,
-      value: Math.round((lastValue + (target - lastValue) * (elapsed / totalYears)) * 100) / 100,
-      target: Math.round((lastValue + (target * 0.95 - lastValue) * (elapsed / totalYears)) * 100) / 100,
+      value: Math.round((lastValue + (bauValue - lastValue) * (elapsed / totalYears)) * 100) / 100,
+      target: Math.round(ndcTarget * 100) / 100,
     });
   }
   return data;
@@ -418,7 +421,7 @@ export const observedDataSets: ObservedDataSet[] = [
     targetId: "t0",
     dataProviders: ["Uganda GHG National Inventory", "Climate TRACE"],
     historicalData: makeHistorical(90.1, 2015, 2024, 2.2),
-    projectionBaseline: makeProjection(109.9, 112.1, 2025, 2030),
+    projectionBaseline: makeProjection(109.9, 148.8, 112.1, 2025, 2030),
     provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "warning", lastUpdated: "2024-11-01T00:00:00Z", isValidated: false },
   },
   // t1: AFOLU emissions (NDC 2022 scale: 77.6 MtCO2e 2015, growing toward 91.8 NDC target)
@@ -426,7 +429,7 @@ export const observedDataSets: ObservedDataSet[] = [
     targetId: "t1",
     dataProviders: ["Earth Observation (Global Forest Watch)", "National Forestry Authority MRV"],
     historicalData: makeHistorical(77.6, 2015, 2024, 1.2),
-    projectionBaseline: makeProjection(89.2, 91.8, 2025, 2030),
+    projectionBaseline: makeProjection(89.2, 122.2, 91.8, 2025, 2030),
     provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "warning", lastUpdated: "2024-11-15T08:30:00Z", isValidated: false },
   },
   // t2: Forest cover (12.5% in 2020, target 21% by 2030)
@@ -434,7 +437,7 @@ export const observedDataSets: ObservedDataSet[] = [
     targetId: "t2",
     dataProviders: ["Earth Observation (Copernicus)", "National Forestry Authority"],
     historicalData: makeHistorical(12.5, 2020, 2024, 0.6),
-    projectionBaseline: makeProjection(14.9, 21, 2025, 2030),
+    projectionBaseline: makeProjection(14.9, 21, 21, 2025, 2030),
     provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2024-10-20T14:00:00Z", isValidated: true },
   },
   // t9: Wetlands coverage (8.9% in 2020, target 12% by 2030)
@@ -442,7 +445,7 @@ export const observedDataSets: ObservedDataSet[] = [
     targetId: "t9",
     dataProviders: ["National Wetlands Atlas", "Ministry of Water and Environment"],
     historicalData: makeHistorical(8.9, 2020, 2024, 0.12),
-    projectionBaseline: makeProjection(9.38, 12, 2025, 2030),
+    projectionBaseline: makeProjection(9.38, 12, 12, 2025, 2030),
     provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "missing", lastUpdated: "2023-12-01T00:00:00Z", isValidated: false },
   },
   // t4: Energy stationary (5.66 MtCO2e 2015, growing toward 10.10 NDC target)
@@ -450,7 +453,7 @@ export const observedDataSets: ObservedDataSet[] = [
     targetId: "t4",
     dataProviders: ["Emissions Tracing (Climate TRACE)", "Ministry MRV"],
     historicalData: makeHistorical(5.66, 2015, 2024, 0.42),
-    projectionBaseline: makeProjection(9.44, 10.10, 2025, 2030),
+    projectionBaseline: makeProjection(9.44, 12.44, 10.10, 2025, 2030),
     provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "warning", lastUpdated: "2024-08-15T12:00:00Z", isValidated: false },
   },
   // t3: Electricity generation capacity (1,276 MW in 2020, target 4,200 MW)
@@ -458,7 +461,7 @@ export const observedDataSets: ObservedDataSet[] = [
     targetId: "t3",
     dataProviders: ["Uganda Electricity Regulatory Authority", "Ministry MRV"],
     historicalData: makeHistorical(1276.2, 2020, 2024, 180),
-    projectionBaseline: makeProjection(1996.2, 4200, 2025, 2030),
+    projectionBaseline: makeProjection(1996.2, 4200, 4200, 2025, 2030),
     provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "ok", lastUpdated: "2024-09-01T10:00:00Z", isValidated: true },
   },
   // t5: Transport emissions (4.2 MtCO2e 2015, growing toward 6.8 NDC target)
@@ -466,7 +469,7 @@ export const observedDataSets: ObservedDataSet[] = [
     targetId: "t5",
     dataProviders: ["Emissions Tracing (Climate TRACE)", "Ministry of Works and Transport MRV"],
     historicalData: makeHistorical(4.2, 2015, 2024, 0.35),
-    projectionBaseline: makeProjection(7.35, 6.8, 2025, 2030),
+    projectionBaseline: makeProjection(7.35, 9.6, 6.8, 2025, 2030),
     provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Works and Transport", qaqcStatus: "warning", lastUpdated: "2023-12-01T09:00:00Z", isValidated: false },
   },
   // t6: Waste emissions (2.08 MtCO2e 2015, target 2.09 MtCO2e — constrain at BAU)
@@ -474,7 +477,7 @@ export const observedDataSets: ObservedDataSet[] = [
     targetId: "t6",
     dataProviders: ["Emissions Tracing", "NEMA"],
     historicalData: makeHistorical(2.08, 2015, 2024, 0.07),
-    projectionBaseline: makeProjection(2.71, 2.09, 2025, 2030),
+    projectionBaseline: makeProjection(2.71, 3.19, 2.09, 2025, 2030),
     provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2024-07-01T11:00:00Z", isValidated: true },
   },
   // t7: IPPU (0.57 MtCO2e 2015, target 0.86 MtCO2e — constrain at BAU)
@@ -482,7 +485,7 @@ export const observedDataSets: ObservedDataSet[] = [
     targetId: "t7",
     dataProviders: ["Ministry MRV", "Uganda Bureau of Statistics"],
     historicalData: makeHistorical(0.57, 2015, 2024, 0.024),
-    projectionBaseline: makeProjection(0.786, 0.86, 2025, 2030),
+    projectionBaseline: makeProjection(0.786, 1.0, 0.86, 2025, 2030),
     provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "inconsistent", lastUpdated: "2024-03-15T10:00:00Z", isValidated: false },
   },
   // t8: CSA adoption (31.7% 2020 → 70.7% 2030 estimate)
@@ -490,7 +493,7 @@ export const observedDataSets: ObservedDataSet[] = [
     targetId: "t8",
     dataProviders: ["Ministry MRV", "FAO"],
     historicalData: makeHistorical(31.7, 2020, 2024, 2.0),
-    projectionBaseline: makeProjection(39.7, 70.7, 2025, 2030),
+    projectionBaseline: makeProjection(39.7, 70.7, 70.7, 2025, 2030),
     provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Agriculture, Animal Industry and Fisheries", qaqcStatus: "warning", lastUpdated: "2024-06-01T08:00:00Z", isValidated: false },
   },
   // t10: Electricity access (24% 2020, target 75% by 2030)
@@ -498,7 +501,7 @@ export const observedDataSets: ObservedDataSet[] = [
     targetId: "t10",
     dataProviders: ["Uganda Bureau of Statistics", "ERA"],
     historicalData: makeHistorical(24, 2020, 2024, 4.0),
-    projectionBaseline: makeProjection(40, 75, 2025, 2030),
+    projectionBaseline: makeProjection(40, 75, 75, 2025, 2030),
     provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "ok", lastUpdated: "2024-09-01T10:00:00Z", isValidated: true },
   },
 ];
