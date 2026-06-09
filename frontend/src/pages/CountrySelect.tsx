@@ -53,7 +53,7 @@ function LandingBackdrop() {
 export default function CountrySelect() {
   const navigate = useNavigate();
   const { country, selectCountry } = useCountry();
-  const { getDefaultRoute } = useCurrentRole();
+  const { setActiveRole } = useCurrentRole();
 
   if (country) {
     return <Navigate to="/" replace />;
@@ -67,7 +67,8 @@ export default function CountrySelect() {
       return;
     }
     selectCountry(code);
-    navigate(getDefaultRoute(), { replace: true });
+    setActiveRole("Admin");
+    navigate("/", { replace: true });
   };
 
   return (
