@@ -181,7 +181,7 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
   const noDataHint =
     emissions.isDistrictView && apiSector && ts && !emissions.sectorLoading[apiSector]
       ? `No Climate TRACE data available for ${emissions.districtName ?? "this district"} in this sector.`
-      : "Try another target or refresh the dashboard when new MRV data is available.";
+      : "Try another target or check back when new data is published.";
 
   if (!observedData || !hasObservedValues) {
     return (
@@ -331,20 +331,20 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
 
           {apiSector && observedMode === "live" && !isDistrictView && liveProgress && (
             <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs leading-snug">
-              <p className="text-foreground font-medium">NDC policy lines vs Climate TRACE observed</p>
+              <p className="text-foreground font-medium">What you&apos;re seeing</p>
               <p className="text-muted-foreground mt-0.5">
-                Bars/lines show TRACE satellite-model totals. Dashed target path uses Uganda NDC baselines — these
-                differ from TRACE by design (not an API error).
+                Solid bars are observed emissions from Climate TRACE. The dashed line is Uganda&apos;s official NDC
+                target path — the two can differ because they are measured differently.
               </p>
               {liveProgress.scope_note && (
-                <p className="text-muted-foreground mt-1 italic">{liveProgress.scope_note}</p>
+                <p className="text-muted-foreground mt-1 text-[10px]">{liveProgress.scope_note}</p>
               )}
             </div>
           )}
 
           {hasNullGaps && (
-            <p className="text-xs text-at-risk">
-              Some years have no TRACE data (strict aggregation — missing sector slug). Chart gaps are not interpolated.
+            <p className="text-[11px] text-at-risk leading-relaxed">
+              Some years have no observed data — gaps are shown as empty, not estimated.
             </p>
           )}
 
@@ -353,9 +353,9 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
               <AlertTriangle className="h-3.5 w-3.5 text-at-risk shrink-0 mt-0.5" />
               <div>
                 <p className="text-[10px] font-medium text-at-risk">
-                  {observedData.provenance.qaqcStatus === "warning" && "QA/QC Warning: Data quality check flagged issues."}
-                  {observedData.provenance.qaqcStatus === "missing" && "QA/QC Missing: No quality assurance has been performed."}
-                  {observedData.provenance.qaqcStatus === "inconsistent" && "QA/QC Inconsistent: Data shows inconsistencies across sources."}
+                  {observedData.provenance.qaqcStatus === "warning" && "Data quality check flagged possible issues."}
+                  {observedData.provenance.qaqcStatus === "missing" && "No quality review has been completed yet."}
+                  {observedData.provenance.qaqcStatus === "inconsistent" && "Data from different sources does not fully agree."}
                 </p>
               </div>
             </div>
@@ -445,13 +445,13 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
 
           <Card>
             <CardContent className="p-3">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Data Provenance & Validation</h4>
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Where this data comes from</h4>
 
               <div className="space-y-1.5">
-                <ProvenanceRow label="Source type" value={sourceTypeLabel(observedData.provenance.sourceType)} />
-                <ProvenanceRow label="MRV owner" value={observedData.provenance.mrvOwnerMinistry} />
+                <ProvenanceRow label="Source" value={sourceTypeLabel(observedData.provenance.sourceType)} />
+                <ProvenanceRow label="Responsible ministry" value={observedData.provenance.mrvOwnerMinistry} />
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground">QA/QC status</span>
+                  <span className="text-[10px] text-muted-foreground">Quality check</span>
                   <QAQCBadge status={observedData.provenance.qaqcStatus} />
                 </div>
                 <div className="flex items-center justify-between">
@@ -469,7 +469,7 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
                           </Badge>
                         </TooltipTrigger>
                         <TooltipContent className="max-w-[220px]">
-                          <p className="text-xs">Data has not yet been validated by the responsible sector MRV authority.</p>
+                          <p className="text-xs">This data has not yet been officially verified by the responsible ministry.</p>
                         </TooltipContent>
                       </Tooltip>
                     )}
@@ -479,7 +479,7 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
                 {slugBreakdown && Object.keys(slugBreakdown.values_mt).length > 0 && (
                   <div className="pt-1 border-t border-border mt-1">
                     <p className="text-xs text-muted-foreground mb-1">
-                      TRACE slug breakdown ({slugBreakdown.reference_year})
+                      Emissions breakdown ({slugBreakdown.reference_year})
                     </p>
                     {Object.entries(slugBreakdown.values_mt).map(([slug, mt]) => (
                       <div key={slug} className="flex items-start justify-between gap-2">

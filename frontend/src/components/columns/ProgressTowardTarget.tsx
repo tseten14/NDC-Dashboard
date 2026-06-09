@@ -101,10 +101,10 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
 
   const dataUsedLabel =
     source === "api"
-      ? "Climate TRACE (live API) + NDC baseline/target"
+      ? "Live satellite estimates + official NDC goals"
       : source === "catalog"
-        ? "Indicators API + NDC baseline/target"
-        : "Latest observed value from MRV data sources";
+        ? "National indicators + official NDC goals"
+        : "Latest reported observations";
 
   const baselineMismatch =
     source === "api" &&
@@ -147,11 +147,11 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
           {districtNote}
           {baselineMismatch && pr && (
             <div className="p-2 rounded-md bg-at-risk/10 border border-at-risk/30 text-xs">
-              <p className="font-medium text-at-risk">NDC baseline differs from TRACE observed</p>
-              <p className="text-muted-foreground mt-0.5">
-                Policy baseline ({pr.baseline_value} Mt) vs TRACE latest ({pr.latest_value} Mt, {pr.latest_year}): Δ{" "}
-                {pr.baseline_vs_trace_delta_mt! >= 0 ? "+" : ""}
-                {pr.baseline_vs_trace_delta_mt} Mt. Progress % uses NDC targets, not TRACE-aligned baselines.
+              <p className="font-medium text-at-risk">Note: two different ways of counting emissions</p>
+              <p className="text-muted-foreground mt-0.5 leading-relaxed">
+                Uganda&apos;s official NDC baseline ({pr.baseline_value} Mt) and Climate TRACE&apos;s satellite-based
+                estimate ({pr.latest_value} Mt in {pr.latest_year}) use different methods — that is expected, not a
+                data error. The progress % above follows the NDC pledge, not TRACE&apos;s baseline.
               </p>
             </div>
           )}
@@ -183,18 +183,19 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                 {cfg.label}
               </Badge>
               {displayPercent === 0 && (
-                <p className="mt-1 text-[11px] text-muted-foreground">0% toward target — no reduction recorded yet</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">No measurable progress toward this goal yet</p>
               )}
 
               {source === "api" && (
-                <p className="mt-2 text-xs text-muted-foreground max-w-[220px]">
-                  % toward NDC target using Climate TRACE observed emissions — not official national MRV.
+                <p className="mt-2 text-[11px] text-muted-foreground max-w-[240px] leading-relaxed">
+                  Based on live Climate TRACE data compared to Uganda&apos;s NDC goal — indicative, not an official
+                  government report.
                 </p>
               )}
 
               {source === "api" && pr?.trace_yoy_pct != null && (
-                <p className="text-xs text-muted-foreground">
-                  TRACE YoY ({pr.latest_year}): {pr.trace_yoy_pct >= 0 ? "+" : ""}
+                <p className="text-[11px] text-muted-foreground">
+                  Year-on-year change ({pr.latest_year}): {pr.trace_yoy_pct >= 0 ? "+" : ""}
                   {pr.trace_yoy_pct}%
                 </p>
               )}
@@ -238,18 +239,18 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-[260px] p-3">
                     <div className="text-xs space-y-1.5">
-                      <p className="font-semibold">Progress Methodology</p>
-                      <p><strong>Data used:</strong> {dataUsedLabel}</p>
-                      <p><strong>Baseline:</strong> {baselineDisplay}</p>
-                      <p><strong>Target:</strong> {targetDisplay}</p>
-                      <p><strong>Method:</strong> {selectedTarget.metricType === "emissions-reduction" ? "Emissions-based" : "Activity-proxy-based"} progress calculation</p>
-                      {pr?.methodology === "ndc_baseline_vs_trace_observed" && (
-                        <p>
-                          <strong>Formula:</strong> (NDC baseline − TRACE latest) / (NDC baseline − NDC target)
-                        </p>
-                      )}
-                      {pr?.scope_note && <p className="italic">{pr.scope_note}</p>}
-                      <p className="text-muted-foreground italic">QA/QC warnings degrade status. Insufficient data yields &quot;Unknown.&quot;</p>
+                      <p className="font-semibold">How progress is calculated</p>
+                      <p><strong>Data:</strong> {dataUsedLabel}</p>
+                      <p><strong>Starting point:</strong> {baselineDisplay}</p>
+                      <p><strong>Goal:</strong> {targetDisplay}</p>
+                      <p>
+                        <strong>Approach:</strong>{" "}
+                        {selectedTarget.metricType === "emissions-reduction"
+                          ? "Compare observed emissions to the NDC pledge"
+                          : "Use a related activity measure as a proxy"}
+                      </p>
+                      {pr?.scope_note && <p className="text-muted-foreground">{pr.scope_note}</p>}
+                      <p className="text-muted-foreground">Data quality issues can lower the status. Missing data shows as &quot;Unknown.&quot;</p>
                     </div>
                   </TooltipContent>
                 </Tooltip>
@@ -261,7 +262,7 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
             <Card className="border-at-risk/30">
               <CardContent className="p-3">
                 <p className="text-[10px] text-at-risk font-medium">
-                  ⚠ Progress status may be degraded due to data quality issues ({observedForData.provenance.qaqcStatus}).
+                  Progress status may be lowered because of data quality concerns ({observedForData.provenance.qaqcStatus}).
                 </p>
               </CardContent>
             </Card>

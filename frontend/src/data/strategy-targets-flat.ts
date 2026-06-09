@@ -2,6 +2,7 @@
 // Keeps ID conventions stable across the app.
 
 import { ndcTargets } from "./uganda-ndc-data";
+import { getTargetPlainLanguage } from "@/lib/target-plain-language";
 
 export interface FlatTarget {
   id: string;
@@ -33,7 +34,7 @@ const tenfoldTargets: FlatTarget[] = [
 export const allFlatTargets: FlatTarget[] = [
   ...ndcTargets.map(t => ({
     id: t.id, strategy: "NDC" as const,
-    title: t.targetText.substring(0, 80) + (t.targetText.length > 80 ? "…" : ""),
+    title: getTargetPlainLanguage(t).summary,
     sector: t.sectorId,
   })),
   ...ndpIVTargets,

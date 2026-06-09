@@ -10,6 +10,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronDown, ChevronRight, Link2 } from "lucide-react";
+import { getTargetPlainLanguage } from "@/lib/target-plain-language";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { toast } from "sonner";
 
 interface NDCTargetsProps {
@@ -25,14 +31,17 @@ const conditionalityColors: Record<string, string> = {
 };
 
 const metricLabels: Record<string, string> = {
-  "emissions-reduction": "Emissions Reduction",
-  "forest-cover": "Forest Cover",
-  "renewable-energy": "Renewable Energy",
-  "waste-diversion": "Waste Diversion",
-  "energy-efficiency": "Energy Efficiency",
-  "transport-modal-shift": "Modal Shift",
-  "climate-resilience": "Climate Resilience",
-  "activity-share": "Activity Share",
+  "emissions-reduction": "Emissions",
+  "forest-cover": "Forest cover",
+  "renewable-energy": "Renewable energy",
+  "waste-diversion": "Waste",
+  "energy-efficiency": "Energy efficiency",
+  "transport-modal-shift": "Transport",
+  "climate-resilience": "Resilience",
+  "activity-share": "Farm practices",
+  "electricity-access": "Electricity access",
+  "wetlands-coverage": "Wetlands",
+  "electricity-capacity": "Power capacity",
 };
 
 export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTarget }: NDCTargetsProps) {
@@ -139,6 +148,7 @@ function TargetCard({
   const emissions = useEmissionsData();
   const { source } = emissions.getProgressForTarget(target);
   const lineage = buildTargetLineage(target, emissions, source);
+  const plain = getTargetPlainLanguage(target);
 
   const sparkPoints = useMemo(() => {
     const apiSector = getClimateTraceSectorForTarget(target);
@@ -176,9 +186,9 @@ function TargetCard({
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
             )}
           </button>
-          <blockquote className="text-xs leading-relaxed text-foreground italic border-l-2 border-accent pl-2 mb-2 flex-1 line-clamp-2">
-            &ldquo;{target.targetText}&rdquo;
-          </blockquote>
+          <p className="text-xs leading-relaxed text-foreground flex-1 line-clamp-3 font-medium">
+            {plain.summary}
+          </p>
         </div>
         <div className="flex items-center gap-1.5 flex-wrap mt-2">
           <Badge variant="outline" className="text-[9px] h-4 px-1.5">
@@ -198,10 +208,30 @@ function TargetCard({
 
         {isExpanded && (
           <div
-            className="mt-3 pt-3 border-t border-border space-y-2"
+            className="mt-3 pt-3 border-t border-border space-y-2.5"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-xs text-foreground leading-relaxed">{target.targetText}</p>
+            {plain.measures && plain.measures.length > 0 && (
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-1">
+                  Key actions
+                </p>
+                <ul className="text-[11px] text-foreground space-y-0.5 list-disc pl-4 leading-snug">
+                  {plain.measures.map((m) => (
+                    <li key={m}>{m}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <Collapsible>
+              <CollapsibleTrigger className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                Official NDC wording
+                <ChevronRight className="h-3 w-3" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-1.5 text-[10px] text-muted-foreground leading-relaxed border-l-2 border-muted pl-2">
+                {target.targetText}
+              </CollapsibleContent>
+            </Collapsible>
             <div className="flex items-center justify-between gap-2">
               <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Historical trend</span>
               <TargetSparkline points={sparkPoints} />

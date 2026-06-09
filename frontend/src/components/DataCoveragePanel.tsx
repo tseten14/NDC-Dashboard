@@ -5,6 +5,7 @@ import { ndcTargets } from "@/data/uganda-ndc-data";
 import { getClimateTraceSectorForTarget } from "@/lib/emissions-integration";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { getTargetPlainLanguage } from "@/lib/target-plain-language";
 
 const SECTOR_LABEL: Record<string, string> = {
   afolu: "AFOLU",
@@ -76,9 +77,9 @@ export function DataCoveragePanel() {
                 const delta = pr?.baseline_vs_trace_delta_mt;
                 return (
                   <div key={t.id} className="rounded-md border border-border bg-card p-2 space-y-1 text-[11px]">
-                    <p className="font-semibold text-foreground text-xs line-clamp-2">{t.targetText}</p>
+                    <p className="font-semibold text-foreground text-xs line-clamp-2">{getTargetPlainLanguage(t).summary}</p>
                     <p>
-                      <span className="text-muted-foreground">NDC baseline: </span>
+                      <span className="text-muted-foreground">Official baseline: </span>
                       <span className="font-mono text-foreground">
                         {pr?.baseline_value ?? t.baselineValue} Mt ({pr?.baseline_year ?? t.baselineYear})
                       </span>
@@ -90,7 +91,7 @@ export function DataCoveragePanel() {
                       </span>
                     </p>
                     <p className={cn(delta != null && Math.abs(delta) > 5 && "text-at-risk font-medium")}>
-                      <span className="text-muted-foreground">Δ (obs − policy): </span>
+                      <span className="text-muted-foreground">Difference: </span>
                       <span className="font-mono">
                         {delta != null ? `${delta >= 0 ? "+" : ""}${delta} Mt` : "—"}
                       </span>

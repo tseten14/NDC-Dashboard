@@ -140,17 +140,17 @@ export const ALL_TRACE_SLUGS = [...ALL_SECTOR_SLUGS, ...UNMAPPED_SECTOR_SLUGS];
 /** Per-dashboard-sector scope notes for UI / API provenance. */
 export const SECTOR_SCOPE_NOTES = {
   afolu:
-    "Climate TRACE forestry-and-land-use slug vs full NDC AFOLU target (which covers forestry + agriculture + land use + wetlands/peatlands in the national inventory). CT scale differs from NDC national inventory; Agriculture slug tracked separately.",
+    "Observed data covers forests and land use; Uganda's full land-sector pledge also includes farms and wetlands, so totals may not match exactly.",
   energy:
-    "Climate TRACE power + buildings + fossil-fuel-operations (energy stationary, excl. transport per NDC 2022). NDC target: 18.8% below 2030 BAU of 12.44 MtCO2e.",
+    "Observed data covers power, buildings, and fossil fuel use (not transport). NDC goal: about 19% below the expected 2030 level.",
   transport:
-    "Climate TRACE transportation slug. NDC 2022 target: 29% below 2030 BAU of 9.6 MtCO2e → 6.8 MtCO2e. Key measures: road fuel efficiency, BRT, NMT corridors, rail rehabilitation.",
+    "Observed transport emissions compared to Uganda's 2030 cap of 6.8 million tonnes CO₂e.",
   ippu:
-    "Climate TRACE manufacturing + fluorinated-gases slugs. NDC 2022 target: 14% below 2030 BAU of 1.0 MtCO2e → 0.86 MtCO2e. Main measure: clinker substitution in cement.",
+    "Observed industrial and refrigerant emissions compared to Uganda's 2030 cap of 0.86 million tonnes CO₂e.",
   agriculture:
-    "Climate TRACE agriculture slug (enteric fermentation, soils, manure). Part of NDC AFOLU sector — no standalone mitigation target in NDC 2022.",
+    "Farm emissions are tracked separately; they count toward the broader land-sector goal, not a standalone target.",
   waste:
-    "Climate TRACE waste slug. NDC 2022 target: 34.8% below 2030 BAU of 3.19 MtCO2e → 2.09 MtCO2e.",
+    "Observed waste emissions compared to Uganda's 2030 cap of 2.1 million tonnes CO₂e.",
 };
 
 /** Years requested from Climate TRACE v7 (aligned with defaultInventoryRange). */

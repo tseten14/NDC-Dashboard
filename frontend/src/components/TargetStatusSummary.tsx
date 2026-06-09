@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, Library, AlertTriangle, CheckCircle2, Database, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getTargetPlainLanguage } from "@/lib/target-plain-language";
 
 interface TargetStatusSummaryProps {
   onSelectTarget: (targetId: string, sectorId: string) => void;
@@ -105,8 +106,8 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
         <div className="flex items-center gap-2">
           <Stat icon={<CheckCircle2 className="h-3 w-3 text-on-track" />} label="On-track" value={onTrack} />
           <Stat icon={<AlertTriangle className="h-3 w-3 text-off-track" />} label="Off-track" value={offTrack} />
-          <Stat icon={<Database className="h-3 w-3 text-at-risk" />} label="Impl. gaps" value={implGaps} hint="Targets with 0 mapped activities" />
-          <Stat icon={<Database className="h-3 w-3 text-muted-foreground" />} label="MRV gaps" value={mrvGaps} hint="Targets missing observed data" />
+          <Stat icon={<Database className="h-3 w-3 text-at-risk" />} label="Activity gaps" value={implGaps} hint="Targets with no linked activities" />
+          <Stat icon={<Database className="h-3 w-3 text-muted-foreground" />} label="Data gaps" value={mrvGaps} hint="Targets missing observed data" />
         </div>
 
         <div className="flex items-center gap-1.5 flex-1 min-w-0 touch-scroll-x">
@@ -114,20 +115,23 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
           {topGaps.length === 0 && (
             <span className="text-[10px] text-muted-foreground">No gaps detected</span>
           )}
-          {topGaps.map(s => (
+          {topGaps.map(s => {
+            const plain = getTargetPlainLanguage(s.target);
+            return (
             <button
               key={s.target.id}
               onClick={() => onSelectTarget(s.target.id, s.target.sectorId)}
               className="group flex items-center gap-1 px-1.5 py-0.5 rounded border border-border hover:border-primary hover:bg-primary/5 transition-colors shrink-0"
-              title={s.target.targetText}
+              title={plain.summary}
             >
               <GapBadge kind={s.gap} />
               <span className="text-[10px] font-medium truncate max-w-[180px]">
-                {s.target.sectorId.toUpperCase()} · {s.target.targetText.slice(0, 40)}…
+                {s.target.sectorId.toUpperCase()} · {plain.summary.slice(0, 48)}…
               </span>
               <ChevronRight className="h-2.5 w-2.5 text-muted-foreground group-hover:text-primary" />
             </button>
-          ))}
+          );
+          })}
         </div>
 
         <Button asChild size="sm" variant="outline" className="h-6 text-[10px] gap-1 shrink-0">
