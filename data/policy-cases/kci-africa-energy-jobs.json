@@ -57,7 +57,7 @@
       "category": "jobs",
       "direction": "increase",
       "description": "Direct and indirect jobs in solar/wind installation, grid works, and O&M",
-      "magnitude": { "value": 250000, "unit": "jobs per 10 GW scenario", "low": 150000, "high": 400000 },
+      "magnitude": { "value": 2.5, "unit": "% increase in energy sector employment", "low": 1, "high": 5 },
       "confidence": 0.7,
       "evidence_refs": ["kci-africa-energy-jobs"]
     },
