@@ -10,11 +10,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
-const DEFAULT_CSV = join(
-  process.env.HOME || "",
-  "Downloads",
-  "Uganda documents - Uganda documents.csv",
-);
+const DEFAULT_CSV = join(ROOT, "data", "sources", "uganda-policy-documents-2026-06-09.csv");
 
 const HEADERS = [
   "Collection Name",
