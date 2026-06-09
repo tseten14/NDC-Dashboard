@@ -5,31 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useCountry } from "@/context/CountryContext";
-import { useCurrentRole } from "@/hooks/use-current-role";
-import { NdcGapSummary } from "@/components/NdcGapSummary";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight, BarChart3, Globe2, LayoutDashboard, Sparkles, Target,
-  TrendingUp, Upload, Leaf, Satellite, ChevronRight, Scale, Presentation,
+  TrendingUp, Upload, Leaf, Satellite, ChevronRight, Scale,
 } from "lucide-react";
-import { useDemoMode } from "@/hooks/use-demo-mode";
-import { DataHonestyBadge, type DataHonestyKind } from "@/components/DataHonestyBadge";
 
-const FEATURES: {
-  icon: typeof Target;
-  title: string;
-  blurb: string;
-  to: string;
-  accent: string;
-  honesty: DataHonestyKind;
-}[] = [
+const FEATURES = [
   {
     icon: Target,
     title: "Explore NDCs",
     blurb: "Browse sector targets, pledges and linked measures.",
     to: "/dashboard",
     accent: "from-emerald-500/20 to-emerald-500/5",
-    honesty: "live",
   },
   {
     icon: TrendingUp,
@@ -37,7 +25,6 @@ const FEATURES: {
     blurb: "Compare live Climate TRACE data against NDC goals.",
     to: "/dashboard",
     accent: "from-sky-500/20 to-sky-500/5",
-    honesty: "live",
   },
   {
     icon: BarChart3,
@@ -45,7 +32,6 @@ const FEATURES: {
     blurb: "Drill into districts, sources and spatial certainty.",
     to: "/dashboard",
     accent: "from-violet-500/20 to-violet-500/5",
-    honesty: "live",
   },
   {
     icon: Leaf,
@@ -53,7 +39,6 @@ const FEATURES: {
     blurb: "Review activities and options tied to each target.",
     to: "/dashboard",
     accent: "from-teal-500/20 to-teal-500/5",
-    honesty: "indicative",
   },
   {
     icon: Upload,
@@ -61,7 +46,6 @@ const FEATURES: {
     blurb: "Import your own files and publish trusted observations.",
     to: "/ingest",
     accent: "from-amber-500/20 to-amber-500/5",
-    honesty: "live",
   },
   {
     icon: Sparkles,
@@ -69,7 +53,6 @@ const FEATURES: {
     blurb: "Forecast 2030 trajectories and spot emerging gaps.",
     to: "/ai-2030",
     accent: "from-fuchsia-500/20 to-fuchsia-500/5",
-    honesty: "indicative",
   },
   {
     icon: Scale,
@@ -77,17 +60,13 @@ const FEATURES: {
     blurb: "Browse national documents and see how interventions link to intended outcomes.",
     to: "/documents",
     accent: "from-slate-500/20 to-slate-500/5",
-    honesty: "live",
   },
 ];
 
 export default function Home() {
   const { country, clearCountry } = useCountry();
-  const { activeRole, getHomeRoleStartHere } = useCurrentRole();
-  const { startDemoPresentation } = useDemoMode();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const roleStart = getHomeRoleStartHere();
 
   // Legacy deep-links: /?target=... → /dashboard?target=...
   useEffect(() => {
@@ -128,16 +107,7 @@ export default function Home() {
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2.5">
-              <Button
-                type="button"
-                size="default"
-                className="gap-1.5 shadow-sm"
-                onClick={startDemoPresentation}
-              >
-                <Presentation className="h-4 w-4" />
-                Start 3-minute demo
-              </Button>
-              <Button asChild size="default" variant="outline" className="gap-1.5">
+              <Button asChild size="default" className="gap-1.5 shadow-sm">
                 <Link to="/dashboard">
                   <LayoutDashboard className="h-4 w-4" />
                   Open Dashboard
@@ -165,57 +135,6 @@ export default function Home() {
           </div>
         </section>
 
-        {activeRole === "SeniorDecisionMaker" && (
-          <section className="mx-auto max-w-5xl px-4 sm:px-6 py-2 sm:py-4">
-            <NdcGapSummary />
-          </section>
-        )}
-
-        <section className="mx-auto max-w-5xl px-4 sm:px-6 py-6">
-          <Card className="border-primary/25 bg-primary/[0.04]">
-            <CardContent className="p-4 sm:p-5">
-              <h2 className="font-brand text-sm font-semibold text-foreground">{roleStart.title}</h2>
-              <ul className="mt-2 space-y-1">
-                {roleStart.bullets.map((b) => (
-                  <li key={b} className="text-xs text-muted-foreground flex gap-2">
-                    <span className="text-primary mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
-                    {b}
-                  </li>
-                ))}
-              </ul>
-              <Button asChild size="sm" className="mt-3 h-8 text-xs gap-1">
-                <Link to={roleStart.to}>
-                  {roleStart.cta}
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Decision Cockpit */}
-        <section className="mx-auto max-w-5xl px-4 sm:px-6 py-6 sm:py-8">
-          <h2 className="font-brand text-base sm:text-lg font-semibold text-foreground mb-3">Decision Cockpit</h2>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              { question: "Are we on track?", cta: "Check NDC progress", to: "/dashboard" },
-              { question: "Where are the bottlenecks?", cta: "Find delayed projects", to: "/delivery" },
-              { question: "Are we aligned?", cta: "Review ownership", to: "/ownership" },
-            ].map((item) => (
-              <Link key={item.to} to={item.to} className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
-                <Card className="h-full border-primary/20 bg-primary/[0.03] transition-all duration-200 group-hover:border-primary/40 group-hover:shadow-md group-hover:-translate-y-0.5">
-                  <CardContent className="p-3 flex flex-col justify-between gap-2">
-                    <p className="text-xs font-medium text-foreground/80 leading-snug">{item.question}</p>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
-                      {item.cta} <ArrowRight className="h-3 w-3" />
-                    </span>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </section>
-
         {/* What you can do */}
         <section className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-10">
           <div className="mb-6 max-w-xl">
@@ -239,12 +158,9 @@ export default function Home() {
                     >
                       <f.icon className="h-5 w-5 text-foreground/80" />
                     </div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                        {f.title}
-                      </h3>
-                      <DataHonestyBadge kind={f.honesty} />
-                    </div>
+                    <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                      {f.title}
+                    </h3>
                     <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{f.blurb}</p>
                     <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                       Open <ChevronRight className="h-3 w-3" />
