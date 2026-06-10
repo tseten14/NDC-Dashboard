@@ -380,7 +380,16 @@ export default function PolicyImpact() {
           <Card>
             <CardContent className="p-4 space-y-4">
               <div>
-                <Label className="text-xs">Programme size ({scale.toFixed(1)}× typical)</Label>
+                <Label className="text-xs">
+                  Coverage: <span className="font-semibold text-foreground">{
+                    scale <= 0.25 ? "Small pilot (1–2 districts)" :
+                    scale <= 0.5  ? "District level" :
+                    scale <= 0.75 ? "Regional (several districts)" :
+                    scale <= 1.0  ? "National programme" :
+                    scale <= 1.5  ? "Scaled-up national" :
+                                    "Maximum ambition"
+                  }</span>
+                </Label>
                 <Slider
                   className="mt-2"
                   min={0.25}
@@ -389,6 +398,9 @@ export default function PolicyImpact() {
                   value={[scale]}
                   onValueChange={([v]) => setScale(v)}
                 />
+                <div className="flex justify-between text-[9px] text-muted-foreground mt-1 px-0.5">
+                  <span>Pilot</span><span>District</span><span>Regional</span><span>National</span><span>Scaled</span><span>Maximum</span>
+                </div>
               </div>
               <div>
                 <Label className="text-xs">Over how many years? ({timelineYears})</Label>
