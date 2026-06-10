@@ -110,7 +110,7 @@ async function startDevServers() {
     "web,api",
     "-c",
     "cyan,magenta",
-    "npm run dev",
+    "npm run dev:frontend",
     "npm run start:api",
   ]);
 }
