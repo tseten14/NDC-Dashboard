@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { type NDCTarget, type TimeMode, type ObservedDataSet, type QAQCStatus, getObservedDataForTarget, bau2030ForTarget } from "@/data/uganda-ndc-data";
+import { type NDCTarget, type ObservedDataSet, type QAQCStatus, getObservedDataForTarget, bau2030ForTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import {
   buildLiveObservedDataSet,
@@ -15,9 +15,8 @@ import { DataProvenanceBadge } from "@/components/DataProvenanceBadge";
 import { useTargetObservations } from "@/hooks/use-target-observations";
 import { reconciliationDeltaPercent } from "@/lib/progress";
 import {
-  ChartHatchPatternDef,
+  ObservedProjectedComposedChart,
   ObservedProjectedLegend,
-  buildObservedProjectedRows,
   chartYAxisUnit,
 } from "@/components/dashboard/ChartObservedProjected";
 import { ColumnLoadingState, NoDataPlaceholder, SelectTargetPlaceholder } from "@/components/dashboard/DashboardStates";
@@ -29,20 +28,13 @@ import { AlertTriangle, CheckCircle2, XCircle, Database, Satellite, MapPin, Code
 import { DataProvenancePanel } from "@/components/DataProvenancePanel";
 import { ViewSourceModal } from "@/components/ViewSourceModal";
 import { cn } from "@/lib/utils";
-import {
-  Line, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip as RTooltip, ResponsiveContainer, Area, ComposedChart,
-} from "recharts";
-
-const HATCH_ID = "observed-data-hatch";
 
 interface ObservedDataProps {
   selectedTarget: NDCTarget | null;
-  timeMode: TimeMode;
   selectedMitigationOptions: string[];
 }
 
-export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigationOptions: _omit }: ObservedDataProps) {
+export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: _omit }: ObservedDataProps) {
   const emissions = useEmissionsData();
   const [clickedPoint, setClickedPoint] = useState<{ year: number; value: number } | null>(null);
   const [viewSourceOpen, setViewSourceOpen] = useState(false);
@@ -225,21 +217,13 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
   // Proxy data is always in MtCO2e regardless of the indicator's native unit
   const yUnit = usingProxyData ? "MtCO₂e" : chartYAxisUnit(selectedTarget.unit);
 
-  const historicalChartData = observedData.historicalData.map((p) => ({
+  const chartData = observedData.historicalData.map((p) => ({
     year: p.year,
     observedValue: p.value,
     projectedValue: null as number | null,
     target: isDistrictView ? null : p.target ?? null,
     bauPath: isDistrictView ? null : p.bauPath ?? null,
   }));
-
-  const projectionChartData = buildObservedProjectedRows(
-    observedData.historicalData,
-    observedData.projectionBaseline,
-  );
-
-  const chartData =
-    timeMode === "historical" || isDistrictView ? historicalChartData : projectionChartData;
 
   return (
     <div className="flex flex-col h-full">
@@ -352,15 +336,11 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
               <p className="text-muted-foreground mt-0.5">
                 {isCapChart ? (
                   <>
-                    Bars are observed emissions. Yellow dashed = 2030 NDC ceiling ({selectedTarget.targetValue}{" "}
-                    Mt); orange dashed = no-policy level in 2030 ({bauRef} Mt). Compare bars to those flat
-                    reference lines — lower bars mean more progress toward the ceiling.
+                    Bars are observed emissions from Climate TRACE. The 2030 NDC ceiling is{" "}
+                    {selectedTarget.targetValue} Mt and the no-policy level in 2030 is {bauRef} Mt.
                   </>
                 ) : (
-                  <>
-                    Solid bars are observed emissions from Climate TRACE. The dashed line is Uganda&apos;s official
-                    NDC target path.
-                  </>
+                  <>Solid bars are observed emissions from Climate TRACE.</>
                 )}
               </p>
               {liveProgress.scope_note && (
@@ -390,121 +370,17 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
 
           <Card>
             <CardContent className="p-2 pt-3">
-              <ResponsiveContainer width="100%" height={180}>
-                {timeMode === "historical" ? (
-                  <ComposedChart data={chartData}>
-                    <ChartHatchPatternDef id={HATCH_ID} />
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis
-                      tick={{ fontSize: 11 }}
-                      stroke="hsl(var(--muted-foreground))"
-                      label={{
-                        value: yUnit,
-                        angle: -90,
-                        position: "insideLeft",
-                        offset: 10,
-                        style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
-                      }}
-                    />
-                    <RTooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "6px", fontSize: 11 }} />
-                    <Bar
-                      dataKey="observedValue"
-                      name={observedSeriesLabel}
-                      fill="hsl(var(--chart-4))"
-                      radius={[2, 2, 0, 0]}
-                      cursor="pointer"
-                      onClick={(data: { year?: number; observedValue?: number | null }) => {
-                        if (data?.observedValue != null && data?.year != null) {
-                          setClickedPoint({ year: data.year, value: data.observedValue });
-                        }
-                      }}
-                    />
-                    {isCapChart && (
-                      <Line
-                        dataKey="bauPath"
-                        name="2030 no-policy level"
-                        stroke="hsl(var(--chart-3))"
-                        strokeWidth={2}
-                        strokeDasharray="6 3"
-                        dot={false}
-                      />
-                    )}
-                    <Line
-                      dataKey="target"
-                      name={isCapChart ? "2030 NDC ceiling" : "NDC target path"}
-                      stroke="hsl(var(--chart-2))"
-                      strokeWidth={2}
-                      strokeDasharray="4 4"
-                      dot={false}
-                    />
-                  </ComposedChart>
-                ) : (
-                  <ComposedChart data={chartData}>
-                    <ChartHatchPatternDef id={HATCH_ID} />
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis
-                      tick={{ fontSize: 11 }}
-                      stroke="hsl(var(--muted-foreground))"
-                      label={{
-                        value: yUnit,
-                        angle: -90,
-                        position: "insideLeft",
-                        offset: 10,
-                        style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
-                      }}
-                    />
-                    <RTooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "6px", fontSize: 11 }} />
-                    <Bar
-                      dataKey="observedValue"
-                      name={observedSeriesLabel}
-                      fill="hsl(var(--chart-4))"
-                      radius={[2, 2, 0, 0]}
-                      cursor="pointer"
-                      onClick={(data: { year?: number; observedValue?: number | null }) => {
-                        if (data?.observedValue != null && data?.year != null) {
-                          setClickedPoint({ year: data.year, value: data.observedValue });
-                        }
-                      }}
-                    />
-                    <Area
-                      dataKey="projectedValue"
-                      name="NDC linear bridge (projected)"
-                      fill={`url(#${HATCH_ID})`}
-                      stroke="hsl(var(--chart-1))"
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                      connectNulls
-                    />
-                    {isCapChart && (
-                      <Line
-                        dataKey="bauPath"
-                        name="2030 no-policy level"
-                        stroke="hsl(var(--chart-3))"
-                        strokeWidth={2}
-                        strokeDasharray="6 3"
-                        dot={false}
-                      />
-                    )}
-                    <Line
-                      dataKey="target"
-                      name={isCapChart ? "2030 NDC ceiling" : "NDC target path"}
-                      stroke="hsl(var(--chart-2))"
-                      strokeWidth={2}
-                      dot={false}
-                      strokeDasharray="5 5"
-                    />
-                  </ComposedChart>
-                )}
-              </ResponsiveContainer>
-              <ObservedProjectedLegend
-                className="mt-2 px-1"
-                showTarget={!isDistrictView}
-                showBauPath={isCapChart}
-                showProjected={timeMode === "projection" && !isDistrictView}
-                capTarget={isCapChart}
+              <ObservedProjectedComposedChart
+                data={chartData}
+                yUnit={yUnit}
+                observedSeriesLabel={observedSeriesLabel}
+                onBarClick={
+                  apiSector || usingProxyData
+                    ? (point) => setClickedPoint(point)
+                    : undefined
+                }
               />
+              <ObservedProjectedLegend className="mt-2 px-1" showTarget={false} showProjected={false} />
               {(apiSector || usingProxyData) && !clickedPoint && (
                 <p className="text-[9px] text-muted-foreground/60 mt-1 px-1">
                   Click any bar to trace its data source

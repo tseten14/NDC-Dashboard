@@ -35,8 +35,6 @@ const Index = () => {
         onGeographyChange={state.setGeographyLevel}
         selectedDistrictId={state.selectedDistrictId}
         onDistrictChange={state.setSelectedDistrictId}
-        timeMode={state.timeMode}
-        onTimeModeChange={state.setTimeMode}
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
       />
@@ -60,7 +58,6 @@ const Index = () => {
         <div className="overflow-hidden">
           <ObservedDataColumn
             selectedTarget={selectedTarget}
-            timeMode={state.timeMode}
             selectedMitigationOptions={state.selectedMitigationOptions}
           />
         </div>

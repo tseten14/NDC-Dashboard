@@ -108,6 +108,32 @@ export function latestNonNullPoint(timeseries: { year: number; value: number | n
   return null;
 }
 
+/** Linear path from the latest observation to a 2030 terminal value (BAU or NDC target). */
+export function buildProjectionPoints(
+  timeseries: { year: number; value: number | null }[],
+  targetYear: number,
+  terminalValue?: number | null,
+): { year: number; value: number }[] {
+  const latest = latestNonNullPoint(timeseries);
+  if (!latest) return [];
+
+  const endValue =
+    terminalValue != null && Number.isFinite(terminalValue) ? terminalValue : latest.value;
+  const span = Math.max(1, targetYear - latest.year);
+  const points: { year: number; value: number }[] = [];
+
+  for (let y = latest.year + 1; y <= targetYear; y++) {
+    const elapsed = y - latest.year;
+    const value = latest.value + (endValue - latest.value) * (elapsed / span);
+    points.push({
+      year: y,
+      value: Math.max(0, Math.round(value * 100) / 100),
+    });
+  }
+
+  return points;
+}
+
 /** Unified progress from NDC metadata + latest observed point (all target types). */
 export function progressFromTargetAndLatest(
   target: NDCTarget,
@@ -218,38 +244,17 @@ export function buildLiveObservedDataSet(
     };
   });
 
-  const latest = latestNonNullPoint(timeseries);
-  const lastY = latest?.year ?? baselineYear;
-  const lastV = latest?.value ?? baselineValue;
-
-  // Compute recent trend slope from observed data (last 5 non-null points).
-  // This projects "where current trajectory leads" rather than forcing a line
-  // toward the static BAU or NDC target — BAU was set in 2015 and may diverge
-  // significantly from the actual observed trajectory.
-  const recentPoints = timeseries
-    .filter((p): p is { year: number; value: number } => p.value != null)
-    .slice(-5);
-  let trendSlope = 0;
-  if (recentPoints.length >= 2) {
-    const fp = recentPoints[0];
-    const lp = recentPoints[recentPoints.length - 1];
-    const dy = lp.year - fp.year;
-    if (dy > 0) trendSlope = (lp.value - fp.value) / dy;
-  }
-
-  const projectionBaseline: ObservedDataPoint[] = [];
-  for (let y = lastY + 1; y <= targetYear; y++) {
-    const elapsed = y - lastY;
-    // Clamp to zero — emissions can't be negative
-    const trended = Math.max(0, Math.round((lastV + trendSlope * elapsed) * 100) / 100);
-    const paths = referencePathsForYear(y, baselineYear, baselineValue, targetYear, targetValue, bau2030);
-    projectionBaseline.push({
-      year: y,
-      value: trended,
+  const terminal2030 = bau2030 ?? targetValue;
+  const projectionPoints = buildProjectionPoints(timeseries, targetYear, terminal2030);
+  const projectionBaseline: ObservedDataPoint[] = projectionPoints.map(({ year, value }) => {
+    const paths = referencePathsForYear(year, baselineYear, baselineValue, targetYear, targetValue, bau2030);
+    return {
+      year,
+      value,
       target: paths.target,
       ...(paths.bauPath != null ? { bauPath: paths.bauPath } : {}),
-    });
-  }
+    };
+  });
 
   const derived = deriveTraceDataQuality({
     missingSlugs: qualityHints.missingSlugs,
@@ -338,21 +343,13 @@ export function buildIndicatorPanelObservedDataSet(target: NDCTarget, entry: Ind
     target: Math.round(linearTargetValue(year, by, bv, ty, tv) * 100) / 100,
   }));
 
-  const latest = latestNonNullPoint(entry.timeseries);
-  const lastY = latest?.year ?? ty;
-  const lastV = latest?.value ?? (typeof bv === "number" ? bv : target.baselineValue);
-
-  const projectionBaseline: ObservedDataPoint[] = [];
-  const span = Math.max(1, ty - lastY);
-  for (let y = lastY + 1; y <= ty; y++) {
-    const elapsed = y - lastY;
-    const interp = lastV + (tv - lastV) * (elapsed / span);
-    projectionBaseline.push({
-      year: y,
-      value: Math.round(interp * 100) / 100,
-      target: Math.round(linearTargetValue(y, by, bv, ty, tv) * 100) / 100,
-    });
-  }
+  const terminal2030 = tv ?? target.targetValue;
+  const projectionPoints = buildProjectionPoints(entry.timeseries, ty, terminal2030);
+  const projectionBaseline: ObservedDataPoint[] = projectionPoints.map(({ year, value }) => ({
+    year,
+    value,
+    target: Math.round(linearTargetValue(year, by, bv, ty, tv) * 100) / 100,
+  }));
 
   const provenance: DataProvenance = {
     sourceType: mapSourceType(m.sourceType),

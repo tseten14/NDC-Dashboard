@@ -251,18 +251,6 @@ export default function NDCLayer() {
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Time</span>
-          <div className="flex rounded-md border border-input overflow-hidden">
-            {(["historical", "projection"] as const).map(m => (
-              <button key={m} onClick={() => state.setTimeMode(m)}
-                className={cn("px-2 py-0.5 text-xs font-medium transition-colors border-r border-input last:border-r-0",
-                  state.timeMode === m ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"
-                )}>{m === "historical" ? "Historical" : "Projection"}</button>
-            ))}
-          </div>
-        </div>
-
         <div className="flex items-center gap-2 ml-auto">
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="gap-1 h-7 text-xs">
             <RefreshCw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />Refresh
@@ -322,7 +310,7 @@ export default function NDCLayer() {
           <NDCTargetsColumn selectedSector={state.selectedSector as SectorId} selectedTargetId={state.selectedTargetId} onSelectTarget={handleSelectTarget} />
         </div>
         <div className="overflow-hidden">
-          <ObservedDataColumn selectedTarget={selectedTarget} timeMode={state.timeMode as TimeMode} selectedMitigationOptions={state.selectedMitigationOptions} />
+          <ObservedDataColumn selectedTarget={selectedTarget} selectedMitigationOptions={state.selectedMitigationOptions} />
         </div>
         <div className="overflow-hidden flex flex-col">
           <div className="overflow-hidden">

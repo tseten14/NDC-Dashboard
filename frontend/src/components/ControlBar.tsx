@@ -1,4 +1,4 @@
-import { type SectorId, type TimeMode, type GeographyLevel, sectorDefinitions, getDataCompleteness, getLastRefreshTimestamp } from "@/data/uganda-ndc-data";
+import { type SectorId, type GeographyLevel, sectorDefinitions, getDataCompleteness, getLastRefreshTimestamp } from "@/data/uganda-ndc-data";
 import { ugandaDistricts } from "@/data/uganda-districts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,6 @@ interface ControlBarProps {
   onGeographyChange: (level: GeographyLevel) => void;
   selectedDistrictId: string | null;
   onDistrictChange: (district: string | null) => void;
-  timeMode: TimeMode;
-  onTimeModeChange: (mode: TimeMode) => void;
   isRefreshing: boolean;
   onRefresh: () => void;
 }
@@ -26,7 +24,6 @@ export function ControlBar({
   selectedSector, onSectorChange,
   geographyLevel, onGeographyChange,
   selectedDistrictId, onDistrictChange,
-  timeMode, onTimeModeChange,
   isRefreshing, onRefresh,
 }: ControlBarProps) {
   const completeness = getDataCompleteness();
@@ -102,35 +99,6 @@ export function ControlBar({
               </SelectContent>
             </Select>
           )}
-        </div>
-
-        {/* Time mode toggle */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Time</span>
-          <div className="flex rounded-md border border-input overflow-hidden">
-            <button
-              onClick={() => onTimeModeChange("historical")}
-              className={cn(
-                "px-3 py-1 text-xs font-medium transition-colors",
-                timeMode === "historical"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:bg-muted"
-              )}
-            >
-              Historical
-            </button>
-            <button
-              onClick={() => onTimeModeChange("projection")}
-              className={cn(
-                "px-3 py-1 text-xs font-medium transition-colors border-l border-input",
-                timeMode === "projection"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:bg-muted"
-              )}
-            >
-              Projection
-            </button>
-          </div>
         </div>
 
         {/* Status indicators */}

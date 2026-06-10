@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveObservedDataSetForTarget } from "@/lib/emissions-integration";
+import { buildProjectionPoints, resolveObservedDataSetForTarget } from "@/lib/emissions-integration";
 import { ndcTargets } from "@/data/uganda-ndc-data";
 
 describe("resolveObservedDataSetForTarget", () => {
@@ -39,5 +39,22 @@ describe("resolveObservedDataSetForTarget", () => {
     });
     expect(dataset?.provenance.qaqcStatus).toBe("ok");
     expect(dataset?.dataProviders).toContain("Climate TRACE");
+  });
+});
+
+describe("buildProjectionPoints", () => {
+  it("projects toward BAU 2030 without collapsing to zero on a declining series", () => {
+    const timeseries = [
+      { year: 2023, value: 28 },
+      { year: 2024, value: 24 },
+      { year: 2025, value: 18 },
+    ];
+    const points = buildProjectionPoints(timeseries, 2030, 122.2);
+
+    expect(points).toHaveLength(5);
+    expect(points[0]?.year).toBe(2026);
+    expect(points[0]?.value).toBeGreaterThan(18);
+    expect(points[points.length - 1]?.value).toBeCloseTo(122.2, 1);
+    expect(points.every((p) => p.value > 0)).toBe(true);
   });
 });
