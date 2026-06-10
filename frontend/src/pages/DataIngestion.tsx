@@ -1,11 +1,8 @@
-// Data Ingestion — three modes: Files, GIS, Connections (client-side).
+// Data Ingestion — two modes: Files (Mapped import) and Quick scan.
 import { useState } from "react";
 import { CockpitBar } from "@/components/CockpitBar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Zap, ShieldCheck } from "lucide-react";
-import { GisIngest } from "@/components/ingest/GisIngest";
-import { ConnectionsIngest } from "@/components/ingest/ConnectionsIngest";
 import { FilesIngest } from "@/components/ingest/FilesIngest";
 import { ScanReportIngest } from "@/components/ingest/ScanReportIngest";
 import { useCurrentRole } from "@/hooks/use-current-role";
@@ -76,26 +73,14 @@ export default function DataIngestion() {
             </button>
           </div>
 
-          <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="h-8">
-              <TabsTrigger value="files" className="text-[11px]">Mapped import</TabsTrigger>
-              <TabsTrigger value="scan" className="text-[11px]">Quick scan (triage)</TabsTrigger>
-              <TabsTrigger value="gis" className="text-[11px]">Upload GIS</TabsTrigger>
-              <TabsTrigger value="conn" className="text-[11px]">Connect data sources</TabsTrigger>
-            </TabsList>
-            <TabsContent value="files" className="mt-3">
+          <div className="mt-1">
+            {tab === "files" && (
               <Card><CardContent className="p-3"><FilesIngest /></CardContent></Card>
-            </TabsContent>
-            <TabsContent value="scan" className="mt-3">
+            )}
+            {tab === "scan" && (
               <Card><CardContent className="p-3"><ScanReportIngest /></CardContent></Card>
-            </TabsContent>
-            <TabsContent value="gis" className="mt-3">
-              <Card><CardContent className="p-3"><GisIngest /></CardContent></Card>
-            </TabsContent>
-            <TabsContent value="conn" className="mt-3">
-              <Card><CardContent className="p-3"><ConnectionsIngest /></CardContent></Card>
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
         </div>
       </div>
     </div>

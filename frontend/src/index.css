@@ -96,6 +96,9 @@
     outline: 2px solid hsl(var(--primary));
     outline-offset: 2px;
   }
+  html, body, #root {
+    height: 100%;
+  }
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

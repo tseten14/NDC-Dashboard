@@ -31,6 +31,127 @@ import { logIngestEvent } from "../server/logger.js";
 
 const router = express.Router();
 
+// ── OpenAI scan insights ──────────────────────────────────────────────────────
+
+const INGEST_AI_SOURCES = [
+  { id: "unfccc_ndc", label: "Uganda NDC Registry (UNFCCC)", url: "https://unfccc.int/NDCREG" },
+  { id: "climate_trace", label: "Climate TRACE — Uganda emissions", url: "https://climatetrace.org/inventory?country=UGA" },
+  { id: "cpr_uganda", label: "Climate Policy Radar — Uganda", url: "https://app.climatepolicyradar.org/geographies/uganda" },
+  { id: "ubos", label: "Uganda Bureau of Statistics", url: "https://www.ubos.org" },
+  { id: "mwe", label: "Ministry of Water and Environment", url: "https://www.mwe.go.ug" },
+  { id: "wb_uganda", label: "World Bank Open Data — Uganda", url: "https://data.worldbank.org/country/uganda" },
+  { id: "faostat", label: "FAOSTAT (agriculture & land use)", url: "https://www.fao.org/faostat" },
+  { id: "iea_uganda", label: "IEA — Uganda energy profile", url: "https://www.iea.org/countries/uganda" },
+];
+
+const INGEST_AI_SYSTEM = `You are a data-quality analyst helping Uganda government staff assess uploaded climate/NDC data files.
+
+Given a file profiling report, respond ONLY with valid JSON:
+{
+  "verdict": "ready" | "needs_work" | "not_ndc_relevant",
+  "file_description": "<full paragraph: 4–5 plain sentences, at least 80 words, describing the uploaded file — what kind of file it is, what data or content it contains, its structure (rows/columns or pages/sections), what the main columns or sections represent, example values if visible, and where it most likely comes from>",
+  "summary": "<2–3 plain sentences: what this data/document tells us and why it matters for Uganda's NDC>",
+  "quality": "<2 sentences: data quality or document completeness assessment, naming the specific columns or sections that are strong or weak>",
+  "ndc_targets": ["<target IDs from t0–t10 this data could update, if any>"],
+  "policy_value": "<2–3 sentences: concretely how a policy maker or MRV officer could use this file — name the decision or report it could feed>",
+  "policy_uses": ["<3–4 concrete policy-planning uses — each item must be 2 full sentences naming a specific Uganda process, report, or decision (e.g. BTR/BUR submission, NDP IV sector M&E, district budget allocation, NDC progress review, donor proposal, national inventory QA)>"],
+  "risks": ["<short specific risk or concern — max 4>"],
+  "next_step": "<1 sentence: the single most important action the user should take>",
+  "key_findings": ["<plain-language finding grounded in the actual data shown — write 4–6 items, each 2 sentences, citing concrete column names, values, or document passages where possible>"],
+  "sources": [{"id": "<source id from the list below>", "why": "<half-sentence: how this source helps verify or extend this file>"}]
+}
+
+Writing rules:
+- file_description must read like a clear paragraph for a non-technical officer — never a bullet list or fragment.
+- policy_uses must be actionable planning suggestions tied to THIS file's content — not generic data-cleaning advice (those belong elsewhere).
+- Each policy_uses item must name who would use the data, for which official process, and what decision it informs.
+- key_findings must cite real column names, years, sectors, or values from the sample data shown.
+
+For "sources": pick 2–4 entries ONLY from this vetted list (use the exact id). Never invent other URLs or sources.
+${INGEST_AI_SOURCES.map((s) => `- ${s.id}: ${s.label}`).join("\n")}
+
+Uganda NDC targets: t0=AFOLU/forestry emissions, t1=Energy/power emissions, t4=Transport emissions, t5=Waste emissions, t7=IPPU/industry, t8=CSA adoption (%), t2=Forest cover (%), t3=Electricity capacity (MW), t9=Wetlands coverage (%), t10=Electricity access (%).
+Plain language, no jargon. Be specific to THIS file — never generic. Return JSON only — no markdown fences, no preamble.`;
+
+function buildIngestAIPrompt(report) {
+  if (!report || report.error) return null;
+
+  if (report.kind === "pdf") {
+    const preview = (report.preview ?? "").slice(0, 4500);
+    if (!preview) return null;
+    return [
+      `FILE TYPE: PDF document`,
+      `FILENAME: ${report.filename}`,
+      `PAGES: ${report.pages ?? "unknown"}`,
+      `NDC KEYWORDS FOUND: ${Object.entries(report.keywords ?? {}).map(([b, w]) => `${b}:[${w.join(",")}]`).join(" ") || "none"}`,
+      ``,
+      `DOCUMENT PREVIEW (first 4500 chars):`,
+      preview,
+    ].join("\n");
+  }
+
+  const about = report.about;
+  const analysis = report.analysis;
+  const validation = report.validation;
+  if (!about && !analysis) return null;
+
+  const sampleRows = Array.isArray(report.sample) ? report.sample.slice(0, 6) : [];
+
+  return [
+    `FILE TYPE: ${report.kind ?? "tabular"} | ENGINE: ${report.analysis_engine ?? "unknown"}`,
+    `FILENAME: ${report.filename} (${report.rows ?? "?"} rows, ${report.columns?.length ?? "?"} columns)`,
+    `DOC TYPE: ${about?.doc_type ?? "unknown"}`,
+    `COLUMNS: ${report.columns?.map((c) => `${c.name}(${c.type},${Math.round((c.null_ratio ?? 0) * 100)}%null)`).join(", ") ?? "none"}`,
+    `DETECTED: year="${validation?.year_column ?? "?"}" value="${validation?.value_column ?? "?"}" sector="${validation?.sector_column ?? "?"}" unit="${validation?.value_unit ?? "?"}"`,
+    `WARNINGS: ${(report.warnings ?? []).join(" | ") || "none"}`,
+    `INSIGHTS: ${(analysis?.insights ?? []).slice(0, 6).join(" | ")}`,
+    `KEYWORDS: ${Object.entries(report.keywords ?? {}).map(([b, w]) => `${b}:[${w.join(",")}]`).join(" ") || "none"}`,
+    `SAMPLE (6 rows): ${JSON.stringify(sampleRows)}`,
+  ].join("\n");
+}
+
+async function callOpenAIIngestInsights(apiKey, report) {
+  const prompt = buildIngestAIPrompt(report);
+  if (!prompt) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20_000);
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: INGEST_AI_SYSTEM },
+          { role: "user", content: prompt },
+        ],
+        max_tokens: 2800,
+        temperature: 0.15,
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const raw = (data.choices?.[0]?.message?.content ?? "").trim();
+    const stripped = raw.replace(/^```json?\s*/i, "").replace(/```\s*$/, "").trim();
+    const parsed = JSON.parse(stripped);
+    // Resolve vetted source ids to labelled links; drop anything not on the list.
+    if (Array.isArray(parsed.sources)) {
+      parsed.sources = parsed.sources
+        .map((s) => {
+          const match = INGEST_AI_SOURCES.find((v) => v.id === s?.id);
+          return match ? { label: match.label, url: match.url, why: typeof s.why === "string" ? s.why : "" } : null;
+        })
+        .filter(Boolean);
+    }
+    return parsed;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Vercel serverless body limits — keep uploads smaller in production. */
 const ON_VERCEL = Boolean(process.env.VERCEL);
 const MAX_BYTES = ON_VERCEL ? 4 * 1024 * 1024 : 20 * 1024 * 1024;
@@ -689,6 +810,30 @@ router.post("/ingest/scan", requireWriteApiKey, uploadMiddleware, async (req, re
       String(req.query.json_mode ?? "").toLowerCase() === "repair";
     const results = await Promise.all(files.map((f) => analyzeFile(f, { allowRepair: allowJsonRepair })));
 
+    // AI insights — run in parallel for all analyzable files if OPENAI_API_KEY is set
+    const openAIKey = process.env.OPENAI_API_KEY;
+    if (openAIKey) {
+      const aiResults = await Promise.all(
+        results.map((r) => callOpenAIIngestInsights(openAIKey, r).catch(() => null)),
+      );
+      for (let i = 0; i < results.length; i++) {
+        const ai = aiResults[i];
+        if (!ai) continue;
+        results[i].ai_insights = ai;
+        // Surface the AI file description inside "About this document"
+        if (typeof ai.file_description === "string" && ai.file_description.trim()) {
+          results[i].about = { ...(results[i].about ?? {}), ai_description: ai.file_description.trim() };
+        }
+        // Normalise policy-planning suggestions (kept in ai_insights, not mixed with data-quality recs)
+        if (Array.isArray(ai.policy_uses)) {
+          ai.policy_uses = ai.policy_uses
+            .filter((u) => typeof u === "string" && u.trim().length > 40)
+            .map((u) => u.trim())
+            .slice(0, 4);
+        }
+      }
+    }
+
     const files_failed = results.filter((r) => r.error).length;
     const files_ok = results.length - files_failed;
     const total_warnings = results.reduce((a, r) => a + (r.warnings?.length ?? 0), 0);
@@ -708,6 +853,7 @@ router.post("/ingest/scan", requireWriteApiKey, uploadMiddleware, async (req, re
         keyword_buckets,
         json_mode: allowJsonRepair ? "repair" : "strict",
         qc,
+        ai_enhanced: Boolean(openAIKey),
       },
       files: results,
     };

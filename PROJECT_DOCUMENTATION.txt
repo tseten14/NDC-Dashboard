@@ -174,12 +174,15 @@ A6c. POLICY DOCUMENTS (/documents)
     • Link to Dashboard Transport sector for measured emissions
 
   Policy Document View (/documents/view):
-    • Split-pane layout: left = document metadata preview (cover, summary, details — mock pages);
-      right = AI Policy Assistant
-    • Quick-action buttons (2×2 grid): Executive Summary (strictly 5 lines), Key Items, Targets, Actions
-    • "Ask the document" free-form chat: keyword-matched responses with section/page refs [p.N], [§N.N]
-    • Document context passed via React Router location state (no new API endpoint needed)
-    • AI responses are template-driven from document metadata — not a live LLM
+    • Stacked vertical layout: document metadata preview on top; AI Policy Assistant below (draggable divider)
+    • Metadata panel shows title, date, source, category, summary — "Type" field removed
+    • AI Policy Assistant uses OpenAI GPT-4o-mini via REST (routes/policyAi.js): fetches and parses the
+      actual PDF, smart-truncates to 8,000 chars (first 70% + last 20%), calls GPT-4o-mini, returns
+      structured JSON analysis with real page citations [p.N]
+    • Each AI bullet = 2 sentences: key fact + plain-language explanation for non-specialists
+    • Quick-action buttons (2×2 grid): Executive Summary, Key Items, Targets, Actions
+    • "Ask the document" free-form chat: PDF text sent to OpenAI; responses grounded in the real document
+    • Requires OPENAI_API_KEY in .env (loaded with dotenv override:true)
 
   Dashboard "Official sources" panel (right column): small curated list per sector from
   data/uganda-policy-curated.json (NDC, BUR, flagship GCF projects, sector plans).
@@ -514,7 +517,7 @@ B2c. POLICY DOCUMENT CORPUS
   • routes/documents.js — REST under /api/v1/documents*
   • UI: frontend/src/pages/PolicyDocuments.tsx (library + pathway tabs)
         frontend/src/pages/PolicyDocumentView.tsx (split-pane viewer + AI panel)
-        frontend/src/data/policy-ai-mock.ts (template-driven analysis engine)
+        routes/policyAi.js (OpenAI GPT-4o-mini PDF analysis — real LLM; OPENAI_API_KEY required)
   • Sector keyword match for MCF panel: frontend/src/lib/policy-document-match.ts
 
 B2d. DATA TRACEABILITY LAYER
@@ -536,7 +539,7 @@ B2e. BRAZIL DEMO LAYER
 
 B4. NPM SCRIPTS
 
-  npm run dev:all          — frontend + API
+  npm run dev              — frontend + API (runs scripts/dev_all.mjs: env, deps, verifications, then servers)
   npm run start:api        — API only
   npm run build            — production frontend build
   npm run build:documents  — regenerate policy JSON from CPR CSV export

@@ -182,9 +182,6 @@ function TargetCard({
             {metricLabels[target.metricType]}
           </Badge>
         </div>
-        <p className="mt-2 text-[10px] text-muted-foreground">
-          {target.baselineValue} → {target.targetValue} {target.unit}
-        </p>
 
         {isExpanded && (
           <div

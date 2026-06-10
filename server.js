@@ -2,7 +2,8 @@
  * API server: local dev (listen) + Vercel (default export).
  * Routes: /api/v1/* and /api/health
  */
-import "dotenv/config";
+import { config as loadDotEnv } from "dotenv";
+loadDotEnv({ override: true });
 import express from "express";
 import { createApp } from "./server/createApp.js";
 import { bootstrapDatabase, getPersistenceMode } from "./db/bootstrap.ts";

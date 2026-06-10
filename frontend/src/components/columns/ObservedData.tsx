@@ -25,7 +25,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, CheckCircle2, HelpCircle, XCircle, Database, Satellite, MapPin, CodeXml } from "lucide-react";
+import { AlertTriangle, CheckCircle2, XCircle, Database, Satellite, MapPin, CodeXml } from "lucide-react";
 import { DataProvenancePanel } from "@/components/DataProvenancePanel";
 import { ViewSourceModal } from "@/components/ViewSourceModal";
 import { cn } from "@/lib/utils";
@@ -202,7 +202,6 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
     );
   }
 
-  const slugBreakdown = apiSector ? emissions.slugBreakdownBySector[apiSector] : undefined;
   const liveProgress = apiSector ? emissions.progressBySector[apiSector] : undefined;
   const isDistrictView = emissions.isDistrictView;
   const bauRef = liveProgress?.bau_2030 ?? bau2030ForTarget(selectedTarget);
@@ -527,57 +526,24 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
 
           <Card>
             <CardContent className="p-3">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Where this data comes from</h4>
-
-              <div className="space-y-1.5">
-                <ProvenanceRow label="Source" value={sourceTypeLabel(observedData.provenance.sourceType)} />
-                <ProvenanceRow label="Responsible ministry" value={observedData.provenance.mrvOwnerMinistry} />
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground">Quality check</span>
-                  <QAQCBadge status={observedData.provenance.qaqcStatus} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground">Validated</span>
-                  <div className="flex items-center gap-1">
-                    {observedData.provenance.isValidated ? (
-                      <Badge variant="outline" className="text-[9px] h-4 bg-on-track/10 text-on-track border-on-track/30">
-                        <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />Yes
-                      </Badge>
-                    ) : (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-[9px] h-4 bg-at-risk/10 text-at-risk border-at-risk/30 cursor-help">
-                            <HelpCircle className="h-2.5 w-2.5 mr-0.5" />Not validated
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-[220px]">
-                          <p className="text-xs">This data has not yet been officially verified by the responsible ministry.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </div>
-                </div>
-                <ProvenanceRow label="Last updated" value={new Date(observedData.provenance.lastUpdated).toLocaleDateString("en-UG", { day: "numeric", month: "short", year: "numeric" })} />
-                {slugBreakdown && Object.keys(slugBreakdown.values_mt).length > 0 && (
-                  <div className="pt-1 border-t border-border mt-1">
-                    <p className="text-xs text-muted-foreground mb-1">
-                      Emissions breakdown ({slugBreakdown.reference_year})
-                    </p>
-                    {Object.entries(slugBreakdown.values_mt).map(([slug, mt]) => (
-                      <div key={slug} className="flex items-start justify-between gap-2">
-                        <span className="text-[10px] text-muted-foreground shrink-0">{slug}</span>
-                        <span className="text-[10px] text-foreground font-medium text-right">
-                          {mt != null ? `${mt} Mt` : "missing"}
-                        </span>
-                      </div>
-                    ))}
-                    {slugBreakdown.missing_slugs.length > 0 && (
-                      <p className="text-xs text-at-risk mt-1">
-                        Missing: {slugBreakdown.missing_slugs.join(", ")}
-                      </p>
-                    )}
-                  </div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Where this data comes from</p>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
+                <span className="text-foreground font-medium">{sourceTypeLabel(observedData.provenance.sourceType)}</span>
+                {observedData.provenance.mrvOwnerMinistry && (
+                  <>
+                    <span className="text-muted-foreground/40">·</span>
+                    <span className="text-muted-foreground">{observedData.provenance.mrvOwnerMinistry}</span>
+                  </>
                 )}
+                {observedData.provenance.lastUpdated && (
+                  <>
+                    <span className="text-muted-foreground/40">·</span>
+                    <span className="text-muted-foreground">
+                      Updated {new Date(observedData.provenance.lastUpdated).toLocaleDateString("en-UG", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                  </>
+                )}
+                <QAQCBadge status={observedData.provenance.qaqcStatus} />
               </div>
             </CardContent>
           </Card>
@@ -589,15 +555,6 @@ export function ObservedDataColumn({ selectedTarget, timeMode, selectedMitigatio
         onOpenChange={setViewSourceOpen}
         sector={usingProxyData ? null : (apiSector ?? (selectedTarget?.sectorId === "economy-wide" ? "economy-wide" : null))}
       />
-    </div>
-  );
-}
-
-function ProvenanceRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start justify-between gap-2">
-      <span className="text-[10px] text-muted-foreground shrink-0">{label}</span>
-      <span className="text-[10px] text-foreground font-medium text-right">{value}</span>
     </div>
   );
 }

@@ -206,16 +206,16 @@ export const BASIC_FEATURES: FeatureGuide[] = [
       "Click Related documents on an intervention to jump back to the library with a search.",
     ],
     howItWorks:
-      "A CPR export (216 Uganda documents) is served as a searchable list. Clicking Analyse navigates to a split-pane view: left shows a metadata preview of the document; right is the AI Policy Assistant, which generates structured analysis from document metadata and category using template-driven responses (not a live LLM). Quick-action buttons produce Executive Summary (5 lines), Key Items, Targets, or Recommendations. The Ask the document box matches keywords to pre-built response blocks with section/page references like [p.4] or [§3.2].",
+      "A CPR export (~207 Uganda documents) is served as a searchable list. Clicking Analyse navigates to a stacked view: document preview on top and AI Policy Assistant below (draggable divider). The AI fetches and parses the actual PDF, sends up to 8,000 characters to OpenAI GPT-4o-mini, and returns structured analysis with real page citations [p.N]. Each bullet is 2 sentences — the key fact, then a plain-language explanation. Quick-action buttons produce Executive Summary, Key Items, Targets, or Recommendations. The Ask the document box sends your question alongside the PDF text for a genuine AI answer.",
     result:
-      "Fast access to 200+ document titles with official links, plus instant AI-generated structured briefs that help government users digest dense policy documents in minutes.",
-    limitations: "AI analysis uses document metadata and templates — not full PDF text. Responses include illustrative section references; always verify against the original document. Pathway is illustrative, not attribution of reductions.",
+      "Fast access to 200+ document titles with official links, plus AI-generated structured briefs grounded in the real PDF — helping users digest dense policy documents in minutes.",
+    limitations: "AI reads up to 8,000 characters of the PDF (first 70% + last 20% — very long documents may miss the middle). Always verify AI responses against the original document. Intervention pathway is illustrative, not attribution of CO₂ reductions.",
     youWillSee: [
       "Category chips and search bar",
       "Document rows with Analyse, CPR, and PDF buttons",
-      "Split-pane view: document metadata preview (left) and AI Policy Assistant (right)",
+      "Stacked view: document metadata preview on top, AI Policy Assistant below with draggable divider",
       "Four quick-action buttons: Executive Summary, Key Items, Targets, Actions",
-      "Ask the document chat input with section/page reference chips",
+      "Ask the document chat input — responses grounded in the actual PDF",
       "Six-column intervention pathway diagram",
     ],
   },

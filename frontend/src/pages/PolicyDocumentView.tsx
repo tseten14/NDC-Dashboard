@@ -5,9 +5,6 @@ import {
   QUICK_ACTIONS,
   type AiAnalysisResponse, type QuickActionType,
 } from "@/data/policy-ai-mock";
-import {
-  ResizableHandle, ResizablePanel, ResizablePanelGroup,
-} from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +15,7 @@ import { cn } from "@/lib/utils";
 import {
   ArrowLeft, FileText, List, Target, Zap, ExternalLink,
   Loader2, Send, ChevronDown, ChevronUp, AlertCircle,
-  BookOpen, Scale, Info,
+  BookOpen,
 } from "lucide-react";
 
 // ── Icon map ──────────────────────────────────────────────────────────────────
@@ -26,130 +23,6 @@ import {
 const ICON_MAP: Record<string, React.ElementType> = {
   FileText, List, Target, Zap,
 };
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatDate(iso: string | null) {
-  if (!iso) return "—";
-  try { return new Date(iso).toLocaleDateString("en-GB", { year: "numeric", month: "long" }); }
-  catch { return iso; }
-}
-
-// ── Mock PDF viewer ───────────────────────────────────────────────────────────
-
-function DocumentPanel({ doc }: { doc: PolicyDocument }) {
-  const pages = [1, 2, 3]; // Mock page indicators
-
-  return (
-    <div className="flex flex-col h-full">
-      {/* Document header */}
-      <div className="shrink-0 px-4 py-3 border-b border-border bg-card">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-sm font-bold text-foreground leading-snug">{doc.title}</h2>
-            {doc.familyName && doc.familyName !== doc.title && (
-              <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{doc.familyName}</p>
-            )}
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {doc.documentType && <Badge variant="secondary" className="text-[9px] h-4 font-normal">{doc.documentType}</Badge>}
-              <span className="text-[9px] text-muted-foreground self-center">{formatDate(doc.familyDate)}</span>
-            </div>
-          </div>
-          <div className="flex gap-1 shrink-0">
-            {doc.documentUrl && (
-              <Button size="sm" variant="outline" className="h-7 text-[10px]" asChild>
-                <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-3 w-3 mr-1" />CPR
-                </a>
-              </Button>
-            )}
-            {doc.contentUrl && (
-              <Button size="sm" variant="default" className="h-7 text-[10px]" asChild>
-                <a href={doc.contentUrl} target="_blank" rel="noopener noreferrer">
-                  <FileText className="h-3 w-3 mr-1" />PDF
-                </a>
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Mock page viewer */}
-      <ScrollArea className="flex-1 bg-muted/30">
-        <div className="p-4 space-y-4 max-w-2xl mx-auto">
-          {/* Page 1 — cover */}
-          <MockPage page={1}>
-            <div className="flex flex-col items-center justify-center min-h-[220px] text-center space-y-3 p-6">
-              <Scale className="h-10 w-10 text-muted-foreground/30" />
-              <h3 className="text-base font-bold text-foreground leading-snug max-w-sm">{doc.title}</h3>
-              <div className="flex flex-wrap gap-1 justify-center">
-                <Badge variant="outline" className="text-[9px]">{doc.category}</Badge>
-                {doc.source && <Badge variant="secondary" className="text-[9px]">{doc.source}</Badge>}
-              </div>
-              <p className="text-xs text-muted-foreground">{formatDate(doc.familyDate)}</p>
-              <p className="text-[10px] text-muted-foreground/60">
-                Climate Policy Radar · Republic of Uganda
-              </p>
-            </div>
-          </MockPage>
-
-          {/* Page 2 — summary */}
-          {doc.familySummary && (
-            <MockPage page={2}>
-              <div className="p-6 space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Document Summary</p>
-                <p className="text-xs text-foreground leading-relaxed">{doc.familySummary}</p>
-              </div>
-            </MockPage>
-          )}
-
-          {/* Page 3 — context info */}
-          <MockPage page={3}>
-            <div className="p-6 space-y-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Document Details</p>
-              <div className="space-y-2">
-                <MetaRow label="Source" value={doc.source ?? "—"} />
-                <MetaRow label="Type" value={doc.documentType ?? "—"} />
-                <MetaRow label="Category" value={doc.category} />
-                <MetaRow label="Date" value={formatDate(doc.familyDate)} />
-                <MetaRow label="Geographies" value={doc.geographies?.join(", ") ?? "UGA"} />
-                <MetaRow label="Language" value={doc.languages ?? "English"} />
-              </div>
-            </div>
-          </MockPage>
-
-          <div className="flex items-center gap-2 py-2 px-1">
-            <Info className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-            <p className="text-[9px] text-muted-foreground/60 leading-relaxed">
-              This is a metadata preview. Use the PDF or CPR buttons above to view the full document text.
-              The AI panel analyses available metadata and document context.
-            </p>
-          </div>
-        </div>
-      </ScrollArea>
-    </div>
-  );
-}
-
-function MockPage({ page, children }: { page: number; children: React.ReactNode }) {
-  return (
-    <div className="relative bg-card border border-border rounded shadow-sm overflow-hidden">
-      <div className="absolute top-2 right-2.5 text-[9px] text-muted-foreground/40 font-mono tabular-nums">
-        {page}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function MetaRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start gap-3">
-      <span className="text-[10px] text-muted-foreground w-20 shrink-0">{label}</span>
-      <span className="text-[10px] text-foreground font-medium">{value}</span>
-    </div>
-  );
-}
 
 // ── AI response renderer ──────────────────────────────────────────────────────
 
@@ -557,19 +430,29 @@ export default function PolicyDocumentView() {
           Documents
         </Button>
         <Separator orientation="vertical" className="h-4" />
-        <p className="text-xs text-muted-foreground truncate">{doc.title}</p>
+        <p className="text-xs text-muted-foreground truncate flex-1">{doc.title}</p>
+        <div className="flex gap-1 shrink-0">
+          {doc.documentUrl && (
+            <Button size="sm" variant="outline" className="h-7 text-[10px]" asChild>
+              <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-3 w-3 mr-1" />CPR
+              </a>
+            </Button>
+          )}
+          {doc.contentUrl && (
+            <Button size="sm" variant="default" className="h-7 text-[10px]" asChild>
+              <a href={doc.contentUrl} target="_blank" rel="noopener noreferrer">
+                <FileText className="h-3 w-3 mr-1" />PDF
+              </a>
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Split pane */}
-      <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
-        <ResizablePanel defaultSize={55} minSize={30}>
-          <DocumentPanel doc={doc} />
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={45} minSize={30}>
-          <AiPanel doc={doc} />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+      {/* AI panel fills full height */}
+      <div className="flex-1 min-h-0">
+        <AiPanel doc={doc} />
+      </div>
     </div>
   );
 }

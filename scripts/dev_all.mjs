@@ -5,7 +5,8 @@
  * Usage: npm run dev:all
  * Skip verifications (e.g. offline): SKIP_DEV_VERIFY=true npm run dev:all
  */
-import "dotenv/config";
+import { config as loadDotEnv } from "dotenv";
+loadDotEnv({ override: true });
 import { copyFileSync, existsSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";

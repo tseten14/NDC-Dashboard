@@ -20,6 +20,13 @@ import {
   Info,
   BarChart3,
   Lightbulb,
+  Sparkles,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldX,
+  TrendingUp,
+  ExternalLink,
+  Target,
 } from "lucide-react";
 import {
   BarChart,
@@ -64,6 +71,7 @@ interface AboutSection {
   title?: string;
   doc_type?: string;
   doc_type_plain?: string;
+  ai_description?: string;
   presentation?: "paragraph" | "bullets";
   paragraphs?: string[];
   description?: string;
@@ -127,6 +135,20 @@ interface AnalysisSection {
   };
 }
 
+interface AiInsights {
+  verdict: "ready" | "needs_work" | "not_ndc_relevant";
+  file_description?: string;
+  summary: string;
+  quality: string;
+  ndc_targets?: string[];
+  policy_value?: string;
+  policy_uses?: string[];
+  risks?: string[];
+  next_step?: string;
+  key_findings?: string[];
+  sources?: { label: string; url: string; why?: string }[];
+}
+
 interface FileReport {
   filename: string;
   size_bytes?: number;
@@ -154,6 +176,7 @@ interface FileReport {
   about?: AboutSection;
   analysis?: AnalysisSection;
   recommendations?: string[];
+  ai_insights?: AiInsights;
   qc?: {
     rows_input?: number;
     rows_used_for_charts?: number;
@@ -175,6 +198,7 @@ interface ScanReport {
     total_warnings: number;
     keyword_buckets: Record<string, string[]>;
     json_mode?: "strict" | "repair";
+    ai_enhanced?: boolean;
     qc?: {
       rows_input: number;
       rows_used_for_charts: number;
@@ -473,7 +497,7 @@ export function ScanReportIngest() {
           <Progress value={phase === "scanning" ? 100 : progress} className="h-1.5" />
           <p className="text-[10px] text-muted-foreground">
             {phase === "scanning"
-              ? "Parsing, profiling columns, and matching NDC keywords."
+              ? "Profiling columns, matching NDC keywords, and generating AI insights…"
               : `${files.length} file(s) in flight.`}
           </p>
         </div>
@@ -512,6 +536,11 @@ function ReportView({ report, onReset }: { report: ScanReport; onReset: () => vo
             {new Date(report.generated_at).toLocaleString()}
           </span>
           <span className="text-[10px] text-muted-foreground">· {report.duration_ms} ms</span>
+          {summary.ai_enhanced && (
+            <Badge variant="outline" className="text-[9px] bg-primary/8 text-primary border-primary/30 gap-1">
+              <Sparkles className="h-2.5 w-2.5" />AI enhanced
+            </Badge>
+          )}
         </div>
         <div className="flex gap-2">
           <Button
@@ -686,6 +715,8 @@ function FileCard({ file }: { file: FileReport }) {
 
       {file.about && <AboutCard about={file.about} />}
 
+      {file.ai_insights && <AiInsightsCard insights={file.ai_insights} />}
+
       {file.analysis && (
         <AnalysisCard
           analysis={file.analysis}
@@ -721,6 +752,139 @@ function FileCard({ file }: { file: FileReport }) {
   );
 }
 
+function AiInsightsCard({ insights }: { insights: AiInsights }) {
+  const verdictConfig = {
+    ready: { icon: ShieldCheck, color: "text-on-track", bg: "bg-on-track/5 border-on-track/25", label: "Ready to use" },
+    needs_work: { icon: ShieldAlert, color: "text-at-risk", bg: "bg-at-risk/5 border-at-risk/25", label: "Needs work" },
+    not_ndc_relevant: { icon: ShieldX, color: "text-muted-foreground", bg: "bg-muted/30 border-border", label: "Not NDC relevant" },
+  };
+  const cfg = verdictConfig[insights.verdict] ?? verdictConfig.needs_work;
+  const VerdictIcon = cfg.icon;
+
+  return (
+    <div className={cn("rounded-md border p-3 space-y-3", cfg.bg)}>
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+        <span className="text-[10px] uppercase tracking-wider font-bold text-primary">AI Analysis</span>
+        <div className="flex-1" />
+        <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-semibold", cfg.bg, cfg.color)}>
+          <VerdictIcon className="h-3 w-3" />
+          {cfg.label}
+        </div>
+      </div>
+
+      {/* Summary */}
+      <div className="space-y-1">
+        <p className="text-xs font-semibold text-foreground leading-snug">{insights.summary}</p>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">{insights.quality}</p>
+      </div>
+
+      {/* Key findings */}
+      {insights.key_findings && insights.key_findings.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Key findings</p>
+          <ul className="space-y-1">
+            {insights.key_findings.map((f, i) => (
+              <li key={i} className="flex gap-1.5 text-[11px] text-foreground leading-snug">
+                <TrendingUp className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Policy value */}
+      {insights.policy_value && (
+        <div className="rounded border border-border bg-card/60 p-2.5">
+          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">For policy makers</p>
+          <p className="text-[11px] text-foreground leading-relaxed">{insights.policy_value}</p>
+        </div>
+      )}
+
+      {/* Policy planning uses */}
+      {insights.policy_uses && insights.policy_uses.length > 0 && (
+        <div className="rounded border border-primary/20 bg-primary/[0.03] p-2.5 space-y-1.5">
+          <p className="text-[9px] uppercase tracking-wider text-primary font-semibold">How to use for policy planning</p>
+          <ul className="space-y-2">
+            {insights.policy_uses.map((use, i) => (
+              <li key={i} className="flex gap-1.5 text-[11px] text-foreground leading-relaxed">
+                <Target className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                <span>{use}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* NDC targets + risks in a row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {insights.ndc_targets && insights.ndc_targets.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">NDC targets this could update</p>
+            <div className="flex flex-wrap gap-1">
+              {insights.ndc_targets.map((t) => (
+                <Badge key={t} variant="outline" className="text-[9px] bg-primary/8 text-primary border-primary/30">
+                  {t}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+        {insights.risks && insights.risks.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Risks / concerns</p>
+            <ul className="space-y-0.5">
+              {insights.risks.map((r, i) => (
+                <li key={i} className="flex gap-1 text-[10px] text-at-risk leading-snug">
+                  <AlertTriangle className="h-2.5 w-2.5 shrink-0 mt-0.5" />
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Next step */}
+      {insights.next_step && (
+        <div className="flex items-start gap-2 pt-1 border-t border-border/40">
+          <Lightbulb className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-[11px] text-foreground font-medium leading-snug">
+            <span className="text-muted-foreground font-normal">Next step: </span>{insights.next_step}
+          </p>
+        </div>
+      )}
+
+      {/* Verified sources */}
+      {insights.sources && insights.sources.length > 0 && (
+        <div className="pt-2 border-t border-border/40 space-y-1">
+          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Sources to verify & extend</p>
+          <ul className="space-y-1">
+            {insights.sources.map((s) => (
+              <li key={s.url} className="flex items-start gap-1.5 text-[11px] leading-snug">
+                <ExternalLink className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                <span>
+                  <a
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary font-medium hover:underline underline-offset-2"
+                  >
+                    {s.label}
+                  </a>
+                  {s.why && <span className="text-muted-foreground"> — {s.why}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SectionHeader({ icon, title, accent }: { icon: React.ReactNode; title: string; accent: string }) {
   return (
     <div className={cn("flex items-center gap-1.5 mb-2 pb-1.5 border-b", accent)}>
@@ -734,16 +898,20 @@ export function AboutCard({ about }: { about: AboutSection }) {
   const topics = about.topics_plain?.length ? about.topics_plain : about.topics;
   const docLabel = about.doc_type_plain ?? about.doc_type;
   const paragraphMode = about.presentation === "paragraph" && (about.paragraphs?.length ?? 0) > 0;
+  const hasAiDescription = Boolean(about.ai_description?.trim());
 
   return (
     <div className="rounded-md border border-border bg-muted/20 p-3">
       <SectionHeader
         icon={<Info className="h-3.5 w-3.5 text-primary" />}
-        title="About this document"
+        title={hasAiDescription ? "About this file" : "About this document"}
         accent="border-primary/30 text-primary"
       />
       <div className="space-y-2">
-        {paragraphMode ? (
+        {hasAiDescription && (
+          <p className="text-xs text-foreground leading-relaxed">{about.ai_description}</p>
+        )}
+        {paragraphMode && !hasAiDescription ? (
           <div className="space-y-3">
             {about.paragraphs!.map((para, i) => (
               <p key={i} className="text-[11px] text-foreground/90 leading-relaxed">
@@ -751,7 +919,7 @@ export function AboutCard({ about }: { about: AboutSection }) {
               </p>
             ))}
           </div>
-        ) : (
+        ) : !hasAiDescription ? (
           <>
             {about.title && (
               <p className="text-xs font-semibold text-foreground leading-snug">{about.title}</p>
@@ -766,6 +934,20 @@ export function AboutCard({ about }: { about: AboutSection }) {
             )}
             {!about.description && about.summary && (
               <p className="text-[11px] text-foreground/80 leading-relaxed">{about.summary}</p>
+            )}
+            {about.purpose && (
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <span className="font-semibold text-foreground/80">Why it matters: </span>
+                {about.purpose}
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            {docLabel && (
+              <Badge variant="outline" className="text-[9px] bg-primary/5">
+                {docLabel}
+              </Badge>
             )}
             {about.purpose && (
               <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -1153,7 +1335,7 @@ export function RecommendationsCard({ items }: { items: string[] }) {
     <div className="rounded-md border border-at-risk/30 bg-at-risk/5 p-3">
       <SectionHeader
         icon={<Lightbulb className="h-3.5 w-3.5 text-at-risk" />}
-        title="Suggested next steps"
+        title="Data quality fixes"
         accent="border-at-risk/30 text-at-risk"
       />
       {paragraphStyle ? (
