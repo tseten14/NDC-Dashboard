@@ -147,15 +147,14 @@ router.post("/policy/analyze", async (req, res) => {
       systemInstruction: SYSTEM_PROMPT,
       generationConfig: { responseMimeType: "application/json", maxOutputTokens: 1500 },
     });
-    const result = await model.generateContent(
+    const geminiResult = await model.generateContent(
       buildUserMessage(title ?? "Policy Document", action, question, pdfText),
     );
-    const raw = result.response.text();
+    const raw = geminiResult.response.text();
     let parsed;
     try {
       parsed = JSON.parse(raw);
     } catch {
-      // Strip any accidental markdown fences
       const stripped = raw.replace(/^```json?\s*/i, "").replace(/```\s*$/, "").trim();
       parsed = JSON.parse(stripped);
     }
