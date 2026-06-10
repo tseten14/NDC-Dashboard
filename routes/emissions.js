@@ -12,6 +12,12 @@ import {
   getProvenancePayload,
 } from "../services/emissionsData.js";
 import { defaultInventoryRange, latestInventoryYear } from "../config/climateTrace.js";
+import {
+  parseInventoryRange,
+  parseOptionalInventoryYear,
+  parsePositiveInt,
+} from "../shared/queryParams.js";
+import { SUBNATIONAL_INVENTORY_YEAR_MIN } from "../config/ugandaDistrictGadm.js";
 import { checkApiHealth, getSources, getSpatialConfidence, getEmissionSourcesForMap } from "../services/climatetrace.js";
 import { getSectorPredictions } from "../services/predictionEngine.js";
 import { NDC_TARGETS } from "../config/ndcTargets.js";
@@ -25,12 +31,17 @@ import { COUNTRY_NDC_TARGETS, MEASURABLE_VARIABLES, listMeasurementTypes } from 
 
 const router = express.Router();
 
-function parseRange(query) {
+function parseRange(query, gadmId = UGANDA_NATIONAL_GADM) {
   const { since, to } = defaultInventoryRange();
-  return {
-    since: query.since != null ? parseInt(query.since, 10) : since,
-    to: query.to != null ? parseInt(query.to, 10) : to,
-  };
+  const minYear =
+    gadmId !== UGANDA_NATIONAL_GADM ? SUBNATIONAL_INVENTORY_YEAR_MIN : since;
+  return parseInventoryRange(query, { defaultSince: minYear, defaultTo: to });
+}
+
+function parseYearQuery(query, gadmId = UGANDA_NATIONAL_GADM) {
+  const minYear =
+    gadmId !== UGANDA_NATIONAL_GADM ? SUBNATIONAL_INVENTORY_YEAR_MIN : undefined;
+  return parseOptionalInventoryYear(query.year, latestInventoryYear(), { minYear });
 }
 
 /**
@@ -97,9 +108,14 @@ router.get("/emissions/sources", async (req, res) => {
     const geo = resolveGeography(req.query);
     if (geo.error) return res.status(geo.status).json({ error: geo.error });
 
-    const year = req.query.year != null ? parseInt(req.query.year, 10) : latestInventoryYear();
-    const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : 25;
-    const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : 0;
+    const yearResult = parseYearQuery(req.query, geo.gadmId);
+    if (yearResult.error) return res.status(400).json({ error: yearResult.error });
+    const year = yearResult.value;
+    const limit = parsePositiveInt(req.query.limit, 25, { max: 200 });
+    const offset = parsePositiveInt(req.query.offset, 0);
+    if (limit == null || offset == null) {
+      return res.status(400).json({ error: "limit and offset must be non-negative integers" });
+    }
     const subsectors = typeof req.query.subsectors === "string" ? req.query.subsectors : "";
 
     const result = await getSources({ gadmId: geo.gadmId, year, subsectors, limit, offset });
@@ -123,7 +139,9 @@ router.get("/emissions/spatial-confidence", async (req, res) => {
   try {
     const geo = resolveGeography(req.query);
     if (geo.error) return res.status(geo.status).json({ error: geo.error });
-    const year = req.query.year != null ? parseInt(req.query.year, 10) : latestInventoryYear();
+    const yearResult = parseYearQuery(req.query, geo.gadmId);
+    if (yearResult.error) return res.status(400).json({ error: yearResult.error });
+    const year = yearResult.value;
     const result = await getSpatialConfidence({ gadmId: geo.gadmId, year });
     const isDistrict = geo.gadmId !== UGANDA_NATIONAL_GADM;
     return res.json({
@@ -149,7 +167,9 @@ router.get("/emissions/map", async (req, res) => {
   try {
     const geo = resolveGeography(req.query);
     if (geo.error) return res.status(geo.status).json({ error: geo.error });
-    const year = req.query.year != null ? parseInt(req.query.year, 10) : latestInventoryYear();
+    const yearResult = parseYearQuery(req.query, geo.gadmId);
+    if (yearResult.error) return res.status(400).json({ error: yearResult.error });
+    const year = yearResult.value;
     const result = await getEmissionSourcesForMap({ gadmId: geo.gadmId, year });
     const isDistrict = geo.gadmId !== UGANDA_NATIONAL_GADM;
     return res.json({
@@ -183,10 +203,11 @@ router.get("/emissions/predictions", async (req, res) => {
 
 router.get("/emissions/dashboard", async (req, res) => {
   try {
-    const { since, to } = parseRange(req.query);
     const geo = resolveGeography(req.query);
     if (geo.error) return res.status(geo.status).json({ error: geo.error });
-    const dashboard = await getEmissionsDashboard(since, to, {
+    const range = parseRange(req.query, geo.gadmId);
+    if (range.error) return res.status(400).json({ error: range.error });
+    const dashboard = await getEmissionsDashboard(range.since, range.to, {
       gadmId: geo.gadmId,
       districtName: geo.districtName,
     });
@@ -199,15 +220,16 @@ router.get("/emissions/dashboard", async (req, res) => {
 
 router.get("/emissions/timeseries", async (req, res) => {
   try {
-    const { since, to } = parseRange(req.query);
     const { sector } = req.query;
     if (!sector) return res.status(400).json({ error: "sector is required" });
     if (!NDC_TARGETS[sector]) return res.status(400).json({ error: `Unknown sector: ${sector}` });
 
     const geo = resolveGeography(req.query);
     if (geo.error) return res.status(geo.status).json({ error: geo.error });
+    const range = parseRange(req.query, geo.gadmId);
+    if (range.error) return res.status(400).json({ error: range.error });
 
-    const timeseries = await getTimeseries(sector, since, to, geo.gadmId);
+    const timeseries = await getTimeseries(sector, range.since, range.to, geo.gadmId);
     const isDistrict = geo.gadmId !== UGANDA_NATIONAL_GADM;
 
     return res.json({
@@ -229,15 +251,16 @@ router.get("/emissions/timeseries", async (req, res) => {
 router.get("/emissions/progress", async (req, res) => {
   try {
     const { sector } = req.query;
-    const { since, to } = parseRange(req.query);
     if (!sector) return res.status(400).json({ error: "sector is required" });
     if (!NDC_TARGETS[sector]) return res.status(400).json({ error: `Unknown sector: ${sector}` });
 
     const geo = resolveGeography(req.query);
     if (geo.error) return res.status(geo.status).json({ error: geo.error });
+    const range = parseRange(req.query, geo.gadmId);
+    if (range.error) return res.status(400).json({ error: range.error });
     const isDistrict = geo.gadmId !== UGANDA_NATIONAL_GADM;
 
-    const series = await getTimeseries(sector, since, to, geo.gadmId);
+    const series = await getTimeseries(sector, range.since, range.to, geo.gadmId);
     const progress = progressFromTimeseries(series, sector);
     const latest = series.length
       ? [...series].reverse().find((p) => p.value != null) ?? null
