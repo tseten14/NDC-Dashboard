@@ -27,13 +27,14 @@ import { computeSectorProgress } from "../shared/progress.js";
 import { safeParseOrLog } from "../shared/validate.js";
 import { emissionsDashboardSchema } from "../shared/schemas/emissionsDashboard.schema.js";
 import { logReconciliationDelta } from "../server/logger.js";
+import { roundMtco2e } from "../shared/emissionsUnits.js";
 
 const SECTOR_KEYS = Object.keys(NDC_TARGETS);
 
 function num(v) {
   if (v == null) return null;
   const n = typeof v === "string" ? parseFloat(v) : Number(v);
-  return Number.isFinite(n) ? +n.toFixed(2) : null;
+  return Number.isFinite(n) ? roundMtco2e(n) : null;
 }
 
 export function latestFromSeries(series) {

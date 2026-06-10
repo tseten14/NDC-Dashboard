@@ -11,6 +11,7 @@ import {
 } from "../config/ugandaDistrictGadm.js";
 import { recordCacheAccess, setRegisteredCacheSize } from "./cacheMetrics.js";
 import { logCacheAccess, logSlugFetch } from "../server/logger.js";
+import { roundMtco2e } from "../shared/emissionsUnits.js";
 
 const SLUG_FETCH_RETRIES = 2;
 const SLUG_NULL_CACHE_SEC = 300;
@@ -132,8 +133,9 @@ async function sumSectorYear(sector, year, gadmId = UGANDA_NATIONAL_GADM) {
   if (!slugs?.length) return null;
 
   const values = await Promise.all(slugs.map((slug) => fetchYearSlugMt(year, slug, gadmId)));
-  if (values.some((v) => v == null)) return null;
-  return +(values.reduce((a, b) => a + b, 0).toFixed(2));
+  const present = values.filter((v) => v != null);
+  if (present.length === 0) return null;
+  return roundMtco2e(present.reduce((a, b) => a + b, 0));
 }
 
 /**

@@ -18,6 +18,8 @@ import {
   isIndicatorPanelTarget,
 } from "../lib/emissions-integration";
 import { ndcTargets } from "../data/uganda-ndc-data";
+import { emissionsChartDisplay, roundMtco2e } from "../lib/emissions-units";
+import { toMtco2e } from "../../../config/climateTrace.js";
 
 // ── Cache-key uniqueness ──────────────────────────────────────────────────────
 
@@ -153,5 +155,19 @@ describe("t0 economy-wide uses CT aggregate, not mock fallback", () => {
 describe("District list has no duplicates (prevents silent cache collision)", () => {
   it("CLIMATE_TRACE_API_SECTORS has no duplicate entries", () => {
     expect(new Set(CLIMATE_TRACE_API_SECTORS).size).toBe(CLIMATE_TRACE_API_SECTORS.length);
+  });
+});
+
+describe("District emissions display precision", () => {
+  it("does not round small district AFOLU totals to zero", () => {
+    expect(toMtco2e(61.036)).toBeGreaterThan(0);
+    expect(roundMtco2e(0.000061)).toBe(0.000061);
+  });
+
+  it("switches chart units to tCO2e when district totals are below 0.01 Mt", () => {
+    const display = emissionsChartDisplay([0.000061, 0.000058, 0.000055], "MtCO₂e");
+    expect(display.unitLabel).toBe("tCO₂e");
+    expect(display.scale).toBe(1_000_000);
+    expect(display.formatValue(0.000061)).toBe("61.0");
   });
 });

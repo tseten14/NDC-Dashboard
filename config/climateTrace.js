@@ -9,6 +9,7 @@ import {
   climateTraceSourcesResponseSchema,
 } from "../shared/schemas/climateTrace.schema.js";
 import { safeParseOrLog } from "../shared/validate.js";
+import { toMtco2eFromTonnes } from "../shared/emissionsUnits.js";
 
 export const CLIMATE_TRACE_API_VERSION = "v7";
 export const CLIMATE_TRACE_BASE_URL = `https://api.climatetrace.org/${CLIMATE_TRACE_API_VERSION}`;
@@ -34,8 +35,7 @@ export function defaultInventoryRange() {
 
 /** v7 aggregate emissions are reported in tonnes (co2e_100yr). */
 export function toMtco2e(tonnes) {
-  if (tonnes == null || Number.isNaN(Number(tonnes))) return null;
-  return +(+tonnes / 1_000_000).toFixed(2);
+  return toMtco2eFromTonnes(tonnes);
 }
 
 export function climateTraceUrl(path, params = {}) {

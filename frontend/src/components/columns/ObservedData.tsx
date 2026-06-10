@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { type NDCTarget, type ObservedDataSet, type QAQCStatus, getObservedDataForTarget, bau2030ForTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import {
@@ -14,6 +14,7 @@ import {
 import { DataProvenanceBadge } from "@/components/DataProvenanceBadge";
 import { useTargetObservations } from "@/hooks/use-target-observations";
 import { reconciliationDeltaPercent } from "@/lib/progress";
+import { emissionsChartDisplay } from "@/lib/emissions-units";
 import {
   ObservedProjectedComposedChart,
   ObservedProjectedLegend,
@@ -213,7 +214,9 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
         ? "Indicators API observed"
         : "Observed data";
 
-  const latestObserved = [...observedData.historicalData].reverse().find((p) => p.value != null);
+  const latestObserved =
+    [...observedData.historicalData].reverse().find((p) => p.value != null && p.value > 0) ??
+    [...observedData.historicalData].reverse().find((p) => p.value != null);
   // Proxy data is always in MtCO2e regardless of the indicator's native unit
   const yUnit = usingProxyData ? "MtCO₂e" : chartYAxisUnit(selectedTarget.unit);
 
@@ -224,6 +227,20 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
     target: isDistrictView ? null : p.target ?? null,
     bauPath: isDistrictView ? null : p.bauPath ?? null,
   }));
+
+  const chartDisplay = useMemo(
+    () => emissionsChartDisplay(chartData.map((d) => d.observedValue), yUnit),
+    [chartData, yUnit],
+  );
+
+  const scaledChartData = useMemo(
+    () =>
+      chartData.map((d) => ({
+        ...d,
+        observedValue: d.observedValue != null ? d.observedValue * chartDisplay.scale : null,
+      })),
+    [chartData, chartDisplay.scale],
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -280,7 +297,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             ))}
             {latestObserved && latestObserved.value != null && (
               <span className="text-[10px] text-muted-foreground">
-                Latest: {latestObserved.value} ({latestObserved.year})
+                Latest: {chartDisplay.formatValue(latestObserved.value)} {chartDisplay.unitLabel} ({latestObserved.year})
               </span>
             )}
           </div>
@@ -304,8 +321,8 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
               </p>
               <p className="text-muted-foreground mt-0.5">
                 The target metric ({selectedTarget.unit}) is tracked at national level only. Showing this
-                district's {getProxySectorLabel(selectedTarget).toLowerCase()} emissions (MtCO₂e) from
-                Climate TRACE as the best available district-specific data. Values differ per district.
+                district&apos;s {getProxySectorLabel(selectedTarget).toLowerCase()} emissions from Climate TRACE
+                as the best available district-specific data (chart units may switch to tCO₂e for small totals).
               </p>
             </div>
           )}
@@ -369,18 +386,23 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
           )}
 
           <Card>
-            <CardContent className="p-2 pt-3">
+            <CardContent className="p-2 pt-3 pb-2">
               <ObservedProjectedComposedChart
-                data={chartData}
-                yUnit={yUnit}
+                data={scaledChartData}
+                yUnit={chartDisplay.unitLabel}
+                formatTick={chartDisplay.formatValue}
                 observedSeriesLabel={observedSeriesLabel}
                 onBarClick={
                   apiSector || usingProxyData
-                    ? (point) => setClickedPoint(point)
+                    ? (point) =>
+                        setClickedPoint({
+                          year: point.year,
+                          value: point.value / chartDisplay.scale,
+                        })
                     : undefined
                 }
               />
-              <ObservedProjectedLegend className="mt-2 px-1" showTarget={false} showProjected={false} />
+              <ObservedProjectedLegend className="mt-1 px-1" showTarget={false} showProjected={false} />
               {(apiSector || usingProxyData) && !clickedPoint && (
                 <p className="text-[9px] text-muted-foreground/60 mt-1 px-1">
                   Click any bar to trace its data source
@@ -393,7 +415,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             <DataProvenancePanel
               year={clickedPoint.year}
               value={clickedPoint.value}
-              unit={yUnit}
+              unit={chartDisplay.unitLabel}
               sector={usingProxyData ? null : (apiSector ?? null)}
               sectorLabel={observedSeriesLabel}
               onDismiss={() => setClickedPoint(null)}

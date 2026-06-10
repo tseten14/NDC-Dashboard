@@ -14,6 +14,7 @@ import {
 } from "@/lib/progress";
 import { bau2030ForTarget, getObservedDataForTarget } from "@/data/uganda-ndc-data";
 import type { ProgressResponse } from "@/lib/api";
+import { roundMtco2e } from "@/lib/emissions-units";
 
 export type { ProgressResponse };
 
@@ -102,7 +103,7 @@ export function latestNonNullPoint(timeseries: { year: number; value: number | n
   for (let i = timeseries.length - 1; i >= 0; i--) {
     const { year, value } = timeseries[i];
     if (value != null && !Number.isNaN(value)) {
-      return { year, value: Math.round(value * 100) / 100 };
+      return { year, value: roundMtco2e(value)! };
     }
   }
   return null;
@@ -127,7 +128,7 @@ export function buildProjectionPoints(
     const value = latest.value + (endValue - latest.value) * (elapsed / span);
     points.push({
       year: y,
-      value: Math.max(0, Math.round(value * 100) / 100),
+      value: Math.max(0, roundMtco2e(value) ?? 0),
     });
   }
 
@@ -238,7 +239,7 @@ export function buildLiveObservedDataSet(
     const paths = referencePathsForYear(year, baselineYear, baselineValue, targetYear, targetValue, bau2030);
     return {
       year,
-      value: value == null || Number.isNaN(value) ? null : Math.round(value * 100) / 100,
+      value: value == null || Number.isNaN(value) ? null : roundMtco2e(value),
       target: paths.target,
       ...(paths.bauPath != null ? { bauPath: paths.bauPath } : {}),
     };
@@ -339,7 +340,7 @@ export function buildIndicatorPanelObservedDataSet(target: NDCTarget, entry: Ind
     value:
       value == null || Number.isNaN(value)
         ? null
-        : Math.round(value * 100) / 100,
+        : roundMtco2e(value),
     target: Math.round(linearTargetValue(year, by, bv, ty, tv) * 100) / 100,
   }));
 

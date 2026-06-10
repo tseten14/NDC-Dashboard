@@ -46,10 +46,15 @@ describe("Climate TRACE sector mapping reconciliation", () => {
 });
 
 describe("Unit conversion (tonnes -> MtCO2e)", () => {
-  it("converts and rounds to 2 decimals", () => {
+  it("converts and rounds large national totals to 2 decimals", () => {
     expect(toMtco2e(1_000_000)).toBe(1);
     expect(toMtco2e(1_594_783.79)).toBe(1.59);
     expect(toMtco2e(0)).toBe(0);
+  });
+
+  it("preserves small district-level totals that would round to zero at 2 dp", () => {
+    expect(toMtco2e(61.036)).toBe(0.000061);
+    expect(toMtco2e(6469.7)).toBe(0.0065);
   });
 
   it("returns null for nullish/NaN input", () => {
