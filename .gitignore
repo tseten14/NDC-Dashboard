@@ -36,3 +36,9 @@ data/ingest-observations.json
 # Python bytecode cache (ingest analysis scripts)
 __pycache__/
 *.pyc
+
+# Local SQLite databases (dev/test)
+backend/*.db
+
+# Playwright / test runner output
+test-results/
