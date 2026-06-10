@@ -18,7 +18,7 @@ const pdfTextCache = new NodeCache({ stdTTL: 6 * 3600 });
 /** Cached analysis results keyed by `${contentUrl}:${action}` (1h TTL). */
 const analysisCache = new NodeCache({ stdTTL: 3600 });
 
-const MAX_PDF_CHARS = 90_000;
+const MAX_PDF_CHARS = 20_000; // ~5k tokens — stays within Gemini free-tier quota
 const FETCH_TIMEOUT_MS = 20_000;
 
 // ── PDF fetch + extract ────────────────────────────────────────────────────────
