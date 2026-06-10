@@ -12,13 +12,13 @@ Input:
 
 Primary model (deep learning): a single *global* GRU (PyTorch) trained jointly
 across every sector's observed series with a learned per-sector embedding. It
-forecasts each sector autoregressively to the NDC target year, and an 80%
+forecasts each sector autoregressively to the NDC target year, and a 95%
 prediction interval is estimated via Monte-Carlo dropout. The predicted target-year
 value is compared to the NDC target to produce a gap and an on-track / at-risk /
 off-track status.
 
 Fallback model: if PyTorch is unavailable (or training fails), each sector falls
-back to a numpy OLS trend (linear / log-linear, best in-sample fit) with an 80%
+back to a numpy OLS trend (linear / log-linear, best in-sample fit) with a 95%
 prediction interval.
 
 Dependencies: numpy (required); torch (optional, enables the deep model).
@@ -31,8 +31,8 @@ from typing import Any
 
 import numpy as np
 
-# 80% prediction interval z-multiplier (normal approximation).
-Z_80 = 1.2816
+# 95% prediction interval z-multiplier (normal approximation).
+Z_95 = 1.96
 # Status thresholds: predicted/target ratio (lower emissions = better).
 ON_TRACK_RATIO = 1.02
 AT_RISK_RATIO = 1.15
@@ -57,10 +57,10 @@ def _ols(x: np.ndarray, y: np.ndarray) -> dict[str, Any]:
 
 
 def _pi_halfwidth(fit: dict[str, Any], x0: float) -> float:
-    """80% prediction-interval half-width for a new observation at x0."""
+    """95% prediction-interval half-width for a new observation at x0."""
     n = fit["n"]
     se = fit["s"] * np.sqrt(1.0 + 1.0 / n + ((x0 - fit["xbar"]) ** 2) / fit["sxx"])
-    return float(Z_80 * se)
+    return float(Z_95 * se)
 
 
 def _forecast_linear(years: np.ndarray, values: np.ndarray, future: list[int]):
@@ -195,7 +195,7 @@ def predict_sector(points: list[dict], meta: dict, target_year: int) -> dict:
 # ── Deep-learning forecaster (PyTorch) ──────────────────────────────────────────
 # A single *global* GRU is trained jointly over every sector's observed series
 # (with a learned per-sector embedding) so the small annual histories share
-# temporal structure. Forecasts are produced autoregressively and an 80%
+# temporal structure. Forecasts are produced autoregressively and a 95%
 # prediction interval is estimated with Monte-Carlo dropout (dropout kept active
 # at inference, sampled many times). This is a genuine deep model rather than a
 # closed-form trend; the numpy OLS path above remains the fallback when torch is
@@ -338,8 +338,8 @@ def run_torch(series: dict, ndc_targets: dict, target_year: int):
         samples = samples * sd + mu  # denormalize
 
         yhat = samples.mean(axis=0)
-        lower = np.percentile(samples, 10, axis=0)
-        upper = np.percentile(samples, 90, axis=0)
+        lower = np.percentile(samples, 2.5, axis=0)
+        upper = np.percentile(samples, 97.5, axis=0)
 
         history = [{"year": yr, "value": _round(v)} for yr, v in clean]
         forecast = [

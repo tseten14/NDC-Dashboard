@@ -385,14 +385,28 @@ export const ndcActivities: NDCActivity[] = [
 
 /* ── Mock Observed Data ── */
 
-function makeHistorical(baseline: number, start: number, end: number, annualChange: number): ObservedDataPoint[] {
+// targetYear/targetValue define the NDC reference line; flatTarget=true for emission
+// cap targets (ceiling stays constant); linear interpolation for coverage/access targets.
+function makeHistorical(
+  baseline: number,
+  start: number,
+  end: number,
+  annualChange: number,
+  targetYear = 2030,
+  targetValue = baseline,
+  flatTarget = true,
+): ObservedDataPoint[] {
   const data: ObservedDataPoint[] = [];
+  const span = targetYear - start;
   for (let y = start; y <= end; y++) {
     const elapsed = y - start;
+    const tgt = flatTarget
+      ? targetValue
+      : Math.round((baseline + (targetValue - baseline) * (elapsed / span)) * 100) / 100;
     data.push({
       year: y,
       value: Math.round((baseline + annualChange * elapsed) * 100) / 100,
-      target: Math.round((baseline - (baseline * 0.03 * elapsed / (end - start + 1))) * 100) / 100,
+      target: tgt,
     });
   }
   return data;
@@ -420,7 +434,7 @@ export const observedDataSets: ObservedDataSet[] = [
   {
     targetId: "t0",
     dataProviders: ["Uganda GHG National Inventory", "Climate TRACE"],
-    historicalData: makeHistorical(90.1, 2015, 2024, 2.2),
+    historicalData: makeHistorical(90.1, 2015, 2024, 2.2, 2030, 112.1, true),
     projectionBaseline: makeProjection(109.9, 148.8, 112.1, 2025, 2030),
     provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "warning", lastUpdated: "2024-11-01T00:00:00Z", isValidated: false },
   },
@@ -428,7 +442,7 @@ export const observedDataSets: ObservedDataSet[] = [
   {
     targetId: "t1",
     dataProviders: ["Earth Observation (Global Forest Watch)", "National Forestry Authority MRV"],
-    historicalData: makeHistorical(77.6, 2015, 2024, 1.2),
+    historicalData: makeHistorical(77.6, 2015, 2024, 1.2, 2030, 91.8, true),
     projectionBaseline: makeProjection(89.2, 122.2, 91.8, 2025, 2030),
     provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "warning", lastUpdated: "2024-11-15T08:30:00Z", isValidated: false },
   },
@@ -436,7 +450,7 @@ export const observedDataSets: ObservedDataSet[] = [
   {
     targetId: "t2",
     dataProviders: ["Earth Observation (Copernicus)", "National Forestry Authority"],
-    historicalData: makeHistorical(12.5, 2020, 2024, 0.6),
+    historicalData: makeHistorical(12.5, 2020, 2024, 0.6, 2030, 21, false),
     projectionBaseline: makeProjection(14.9, 21, 21, 2025, 2030),
     provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2024-10-20T14:00:00Z", isValidated: true },
   },
@@ -444,7 +458,7 @@ export const observedDataSets: ObservedDataSet[] = [
   {
     targetId: "t9",
     dataProviders: ["National Wetlands Atlas", "Ministry of Water and Environment"],
-    historicalData: makeHistorical(8.9, 2020, 2024, 0.12),
+    historicalData: makeHistorical(8.9, 2020, 2024, 0.12, 2030, 12, false),
     projectionBaseline: makeProjection(9.38, 12, 12, 2025, 2030),
     provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "missing", lastUpdated: "2023-12-01T00:00:00Z", isValidated: false },
   },
@@ -452,7 +466,7 @@ export const observedDataSets: ObservedDataSet[] = [
   {
     targetId: "t4",
     dataProviders: ["Emissions Tracing (Climate TRACE)", "Ministry MRV"],
-    historicalData: makeHistorical(5.66, 2015, 2024, 0.42),
+    historicalData: makeHistorical(5.66, 2015, 2024, 0.42, 2030, 10.10, true),
     projectionBaseline: makeProjection(9.44, 12.44, 10.10, 2025, 2030),
     provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "warning", lastUpdated: "2024-08-15T12:00:00Z", isValidated: false },
   },
@@ -460,7 +474,7 @@ export const observedDataSets: ObservedDataSet[] = [
   {
     targetId: "t3",
     dataProviders: ["Uganda Electricity Regulatory Authority", "Ministry MRV"],
-    historicalData: makeHistorical(1276.2, 2020, 2024, 180),
+    historicalData: makeHistorical(1276.2, 2020, 2024, 180, 2030, 4200, false),
     projectionBaseline: makeProjection(1996.2, 4200, 4200, 2025, 2030),
     provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "ok", lastUpdated: "2024-09-01T10:00:00Z", isValidated: true },
   },
@@ -468,7 +482,7 @@ export const observedDataSets: ObservedDataSet[] = [
   {
     targetId: "t5",
     dataProviders: ["Emissions Tracing (Climate TRACE)", "Ministry of Works and Transport MRV"],
-    historicalData: makeHistorical(4.2, 2015, 2024, 0.35),
+    historicalData: makeHistorical(4.2, 2015, 2024, 0.35, 2030, 6.8, true),
     projectionBaseline: makeProjection(7.35, 9.6, 6.8, 2025, 2030),
     provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Works and Transport", qaqcStatus: "warning", lastUpdated: "2023-12-01T09:00:00Z", isValidated: false },
   },
@@ -476,7 +490,7 @@ export const observedDataSets: ObservedDataSet[] = [
   {
     targetId: "t6",
     dataProviders: ["Emissions Tracing", "NEMA"],
-    historicalData: makeHistorical(2.08, 2015, 2024, 0.07),
+    historicalData: makeHistorical(2.08, 2015, 2024, 0.07, 2030, 2.09, true),
     projectionBaseline: makeProjection(2.71, 3.19, 2.09, 2025, 2030),
     provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2024-07-01T11:00:00Z", isValidated: true },
   },
@@ -484,7 +498,7 @@ export const observedDataSets: ObservedDataSet[] = [
   {
     targetId: "t7",
     dataProviders: ["Ministry MRV", "Uganda Bureau of Statistics"],
-    historicalData: makeHistorical(0.57, 2015, 2024, 0.024),
+    historicalData: makeHistorical(0.57, 2015, 2024, 0.024, 2030, 0.86, true),
     projectionBaseline: makeProjection(0.786, 1.0, 0.86, 2025, 2030),
     provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "inconsistent", lastUpdated: "2024-03-15T10:00:00Z", isValidated: false },
   },
@@ -492,7 +506,7 @@ export const observedDataSets: ObservedDataSet[] = [
   {
     targetId: "t8",
     dataProviders: ["Ministry MRV", "FAO"],
-    historicalData: makeHistorical(31.7, 2020, 2024, 2.0),
+    historicalData: makeHistorical(31.7, 2020, 2024, 2.0, 2030, 70.7, false),
     projectionBaseline: makeProjection(39.7, 70.7, 70.7, 2025, 2030),
     provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Agriculture, Animal Industry and Fisheries", qaqcStatus: "warning", lastUpdated: "2024-06-01T08:00:00Z", isValidated: false },
   },
@@ -500,7 +514,7 @@ export const observedDataSets: ObservedDataSet[] = [
   {
     targetId: "t10",
     dataProviders: ["Uganda Bureau of Statistics", "ERA"],
-    historicalData: makeHistorical(24, 2020, 2024, 4.0),
+    historicalData: makeHistorical(24, 2020, 2024, 4.0, 2030, 75, false),
     projectionBaseline: makeProjection(40, 75, 75, 2025, 2030),
     provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "ok", lastUpdated: "2024-09-01T10:00:00Z", isValidated: true },
   },

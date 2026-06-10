@@ -26,7 +26,7 @@ const TARGET_YEAR = 2030;
 
 const cache = new NodeCache({ stdTTL: 86_400 }); // 24h — CT data updates monthly
 
-const Z_80 = 1.2816;
+const Z_95 = 1.96;
 const ON_TRACK_RATIO = 1.02;
 const AT_RISK_RATIO = 1.15;
 
@@ -92,7 +92,7 @@ function jsForecastSector(points, meta, targetYear) {
     );
     return { a, b, xbar, sxx, se };
   };
-  const hw = (f, x0) => Z_80 * f.se * Math.sqrt(1 + 1 / n + (x0 - f.xbar) ** 2 / f.sxx);
+  const hw = (f, x0) => Z_95 * f.se * Math.sqrt(1 + 1 / n + (x0 - f.xbar) ** 2 / f.sxx);
 
   const candidates = [];
   const linFit = fitOls(ys);
@@ -287,7 +287,7 @@ export async function getSectorPredictions(options = {}) {
     observed_to: dashboard.inventory_year ?? to,
     data_source: "Climate TRACE",
     methodology:
-      "Deep-learning forecast: a global GRU (PyTorch) trained jointly across sectors on Climate TRACE observed emissions, with an 80% prediction interval from Monte-Carlo dropout (numpy OLS fallback if torch is unavailable). Compared to Uganda NDC 2030 targets. Indicative planning projection, not official MRV.",
+      "Deep-learning forecast: a global GRU (PyTorch) trained jointly across sectors on Climate TRACE observed emissions, with a 95% prediction interval from Monte-Carlo dropout (numpy OLS fallback if torch is unavailable). Compared to Uganda NDC 2030 targets. Indicative planning projection, not official MRV.",
     target_scope: "national",
     from_cache: false,
   };

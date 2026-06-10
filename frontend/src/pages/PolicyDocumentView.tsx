@@ -156,7 +156,7 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 
 // ── AI response renderer ──────────────────────────────────────────────────────
 
-function AnalysisCard({ response, onFollowUp }: { response: AiAnalysisResponse; onFollowUp: (q: string) => void }) {
+function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisResponse; onFollowUp: (q: string) => void; doc?: PolicyDocument }) {
   const [openSections, setOpenSections] = useState<Set<number>>(new Set([0, 1, 2, 3]));
 
   const toggleSection = (i: number) => {
@@ -204,25 +204,70 @@ function AnalysisCard({ response, onFollowUp }: { response: AiAnalysisResponse; 
                 {section.lines.map((line, li) => (
                   <li key={li} className="flex items-start gap-2 text-xs text-foreground leading-relaxed">
                     <span className="mt-1.5 h-1 w-1 rounded-full bg-muted-foreground/40 shrink-0" />
-                    <RichLine line={line} />
+                    <RichLine line={line} documentUrl={doc?.documentUrl} />
                   </li>
                 ))}
               </ul>
             )}
             {section.page_refs.length > 0 && (
               <div className="flex flex-wrap gap-1 pl-3">
-                {section.page_refs.map((ref) => (
-                  <span key={ref} className="text-[9px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
-                    {ref}
-                  </span>
-                ))}
+                {section.page_refs.map((ref) => {
+                  const pageNum = ref.match(/p\.?\s*(\d+)/i)?.[1];
+                  const href = pageNum && doc?.documentUrl ? `${doc.documentUrl}#page=${pageNum}` : null;
+                  return href ? (
+                    <a
+                      key={ref}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[9px] font-mono text-primary/80 bg-primary/8 px-1.5 py-0.5 rounded hover:bg-primary/15 hover:text-primary transition-colors underline-offset-2 hover:underline"
+                    >
+                      {ref}
+                    </a>
+                  ) : (
+                    <span key={ref} className="text-[9px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                      {ref}
+                    </span>
+                  );
+                })}
               </div>
             )}
           </div>
         ))}
 
+        {/* Verified source */}
+        {doc && (
+          <div className="flex items-center gap-2 pt-1 border-t border-border">
+            <span className="text-[9px] text-muted-foreground uppercase tracking-wide font-semibold shrink-0">Source</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              {doc.documentUrl ? (
+                <a
+                  href={doc.documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-primary hover:underline truncate font-medium"
+                >
+                  {doc.title ?? doc.id}
+                </a>
+              ) : (
+                <span className="text-[10px] text-muted-foreground truncate">{doc.title ?? doc.id}</span>
+              )}
+              {doc.contentUrl && (
+                <a
+                  href={doc.contentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[9px] text-muted-foreground hover:text-foreground shrink-0 underline"
+                >
+                  CPR ↗
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Disclaimer */}
-        <div className="flex items-start gap-1.5 pt-1 border-t border-border">
+        <div className="flex items-start gap-1.5 border-t border-border pt-1">
           <AlertCircle className="h-3 w-3 text-muted-foreground/60 shrink-0 mt-0.5" />
           <p className="text-[10px] text-muted-foreground leading-relaxed">{response.disclaimer}</p>
         </div>
@@ -250,13 +295,27 @@ function AnalysisCard({ response, onFollowUp }: { response: AiAnalysisResponse; 
   );
 }
 
-function RichLine({ line }: { line: string }) {
-  // Highlight [p.N] and [§N.N] page references
+function RichLine({ line, documentUrl }: { line: string; documentUrl?: string }) {
   const parts = line.split(/(\[(?:p\.|§)[\w.]+\])/g);
   return (
     <span>
       {parts.map((part, i) => {
         if (/^\[(?:p\.|§)[\w.]+\]$/.test(part)) {
+          const pageNum = part.match(/p\.?\s*(\d+)/i)?.[1];
+          const href = pageNum && documentUrl ? `${documentUrl}#page=${pageNum}` : null;
+          if (href) {
+            return (
+              <a
+                key={i}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline font-mono text-[9px] text-primary bg-primary/10 px-0.5 rounded ml-0.5 hover:bg-primary/20 underline underline-offset-2"
+              >
+                {part}
+              </a>
+            );
+          }
           return (
             <span key={i} className="inline font-mono text-[9px] text-primary/80 bg-primary/8 px-0.5 rounded ml-0.5">
               {part}
@@ -330,7 +389,6 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
         <div className="flex items-center gap-2">
           <BookOpen className="h-3.5 w-3.5 text-primary" />
           <h3 className="text-sm font-bold text-foreground">AI Policy Assistant</h3>
-          <Badge variant="outline" className="text-[9px] h-4 text-muted-foreground">Demo · Mock AI</Badge>
         </div>
         <p className="text-[10px] text-muted-foreground mt-0.5">
           Quick-action analysis of the active CPR document. Powered by document metadata and structured templates.
@@ -393,12 +451,12 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
                       {entry.question}
                     </div>
                   </div>
-                  <AnalysisCard response={entry.response} onFollowUp={runChat} />
+                  <AnalysisCard response={entry.response} onFollowUp={runChat} doc={doc} />
                 </div>
               );
             }
             return (
-              <AnalysisCard key={i} response={entry.response} onFollowUp={runChat} />
+              <AnalysisCard key={i} response={entry.response} onFollowUp={runChat} doc={doc} />
             );
           })}
 

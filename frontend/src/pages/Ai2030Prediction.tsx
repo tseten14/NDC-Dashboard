@@ -213,7 +213,7 @@ export default function Ai2030Prediction() {
                       <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                         Where is this sector heading?
                       </h3>
-                      <p className="text-[9px] text-muted-foreground">Solid line = measured · Dashed = forecast · Shaded = likely range</p>
+                      <p className="text-[9px] text-muted-foreground">Solid line = measured · Dashed = forecast · Shaded = 95% likely range</p>
                     </div>
                     <Select value={focusKey ?? undefined} onValueChange={setFocus}>
                       <SelectTrigger className="w-[180px] h-7 text-xs"><SelectValue /></SelectTrigger>
@@ -242,7 +242,7 @@ export default function Ai2030Prediction() {
                           return [fmt(value as number, 2), name];
                         }}
                       />
-                      <Area dataKey="band" name="80% interval" stroke="none" fill="hsl(var(--chart-1))" fillOpacity={0.15} connectNulls isAnimationActive={false} />
+                      <Area dataKey="band" name="95% interval" stroke="none" fill="hsl(var(--chart-1))" fillOpacity={0.15} connectNulls isAnimationActive={false} />
                       <Line dataKey="observed" name="Observed (Climate TRACE)" stroke="hsl(var(--chart-4))" strokeWidth={2} dot={{ r: 2 }} connectNulls={false} />
                       <Line dataKey="forecast" name="Forecast" stroke="hsl(var(--chart-1))" strokeWidth={2} strokeDasharray="5 5" dot={false} connectNulls />
                       {focusPred.target_value != null && (

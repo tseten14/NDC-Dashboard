@@ -86,6 +86,12 @@ export function TopEmittingSources() {
     [allSources, sectorFilter],
   );
 
+  const duplicateNames = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const s of allSources) if (s.name) counts.set(s.name, (counts.get(s.name) ?? 0) + 1);
+    return counts;
+  }, [allSources]);
+
   const canLoadMore = allSources.length >= limit && limit < MAX_LIMIT;
 
   const handleCsv = () => {
@@ -184,8 +190,13 @@ export function TopEmittingSources() {
                 <tr key={`${s.id ?? i}-${i}`} className="border-t border-border/60 hover:bg-muted/30">
                   <td className="px-3 py-1.5 text-muted-foreground tabular-nums">{i + 1}</td>
                   <td className="px-3 py-1.5">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="font-medium">{s.name ?? "Unnamed source"}</span>
+                      {s.subsector && (duplicateNames.get(s.name ?? "") ?? 0) > 1 && (
+                        <span className="text-[9px] font-medium text-muted-foreground border border-border/60 px-1.5 py-0.5 rounded-full bg-muted/30 shrink-0">
+                          {titleize(s.subsector)}
+                        </span>
+                      )}
                       {s.is_asset ? (
                         <Tooltip>
                           <TooltipTrigger asChild>

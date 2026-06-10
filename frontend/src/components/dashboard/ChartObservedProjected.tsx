@@ -67,12 +67,11 @@ export function ObservedProjectedLegend({
             </button>
           </PopoverTrigger>
           <PopoverContent side="top" className="max-w-[260px] p-3 space-y-1">
-            <p className="text-xs font-semibold">Business-As-Usual (BAU) Baseline</p>
+            <p className="text-xs font-semibold">No New Policies Scenario</p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              The projected emissions trajectory if no additional climate policies or
-              interventions are implemented beyond those already in place. This
-              counterfactual "no-extra-policy" path shows what unconstrained emissions
-              growth looks like by 2030, and is the reference point for measuring NDC ambition.
+              How much this country would emit by 2030 if no new climate actions are taken.
+              It's a "what if nothing changes" reference line, useful for seeing how much
+              difference climate policies actually make.
             </p>
           </PopoverContent>
         </Popover>
@@ -97,10 +96,8 @@ export function ObservedProjectedLegend({
               <>
                 <p className="text-xs font-semibold">NDC Emissions Ceiling</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  The maximum allowable emissions level under the country's Nationally
-                  Determined Contributions (NDC) commitment. This is an absolute cap —
-                  emissions must stay at or below this value by 2030 to be considered
-                  on track with the national climate pledge.
+                  The highest amount of greenhouse gases this country is allowed to produce.
+                  To meet its climate promise, emissions must stay at or below this level by 2030.
                 </p>
               </>
             ) : (

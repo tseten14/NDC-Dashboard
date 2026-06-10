@@ -129,24 +129,24 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
   const baselineDisplay =
     source === "api" && pr
       ? isEmissionsCapTarget
-        ? `2015 inventory (${pr.baseline_year}): ${pr.baseline_value} ${selectedTarget.unit}`
-        : `Baseline (${pr.baseline_year}): ${pr.baseline_value} ${selectedTarget.unit}`
+        ? `Starting point (${pr.baseline_year}): ${pr.baseline_value} ${selectedTarget.unit}`
+        : `Starting point (${pr.baseline_year}): ${pr.baseline_value} ${selectedTarget.unit}`
       : isEmissionsCapTarget
-        ? `2015 inventory (${selectedTarget.baselineYear}): ${selectedTarget.baselineValue} ${selectedTarget.unit}`
-        : `Baseline (${selectedTarget.baselineYear}): ${selectedTarget.baselineValue} ${selectedTarget.unit}`;
+        ? `Starting point (${selectedTarget.baselineYear}): ${selectedTarget.baselineValue} ${selectedTarget.unit}`
+        : `Starting point (${selectedTarget.baselineYear}): ${selectedTarget.baselineValue} ${selectedTarget.unit}`;
 
   const targetDisplay =
     source === "api" && pr
       ? isEmissionsCapTarget
-        ? `2030 ceiling (${pr.target_year}): ${pr.target_value} ${selectedTarget.unit}`
-        : `Target (${pr.target_year}): ${pr.target_value} ${selectedTarget.unit}`
+        ? `Emissions limit by ${pr.target_year}: ${pr.target_value} ${selectedTarget.unit}`
+        : `Goal by ${pr.target_year}: ${pr.target_value} ${selectedTarget.unit}`
       : isEmissionsCapTarget
-        ? `2030 ceiling (${selectedTarget.targetYear}): ${selectedTarget.targetValue} ${selectedTarget.unit}`
-        : `Target (${selectedTarget.targetYear}): ${selectedTarget.targetValue} ${selectedTarget.unit}`;
+        ? `Emissions limit by ${selectedTarget.targetYear}: ${selectedTarget.targetValue} ${selectedTarget.unit}`
+        : `Goal by ${selectedTarget.targetYear}: ${selectedTarget.targetValue} ${selectedTarget.unit}`;
 
   const bauDisplay =
     isEmissionsCapTarget && bau2030 != null
-      ? `No-policy trend (2030): ${bau2030} ${selectedTarget.unit}`
+      ? `Without new policies (2030): ${bau2030} ${selectedTarget.unit}`
       : null;
 
   const progressFormulaNote =
@@ -176,18 +176,18 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
 
   const capExplainerText =
     capPosition === "below_cap"
-      ? `Observed emissions (${liveLatest?.value} Mt) are at or below the ${selectedTarget.targetValue} Mt ceiling — that counts as full progress on this cap target, even if emissions rose slightly year-on-year.`
+      ? `Current emissions (${liveLatest?.value} Mt) are within the allowed limit of ${selectedTarget.targetValue} Mt — this counts as full progress, even if emissions ticked up slightly last year.`
       : capPosition === "between_cap_and_bau"
-        ? `Observed emissions are above the ${selectedTarget.targetValue} Mt ceiling but still below the no-policy trend (${bau2030} Mt) — partial progress.`
+        ? `Current emissions are above the allowed limit (${selectedTarget.targetValue} Mt) but still lower than they would be without new policies (${bau2030} Mt) — partial progress.`
         : capPosition === "above_bau"
-          ? `Observed emissions (${liveLatest?.value} Mt) are above both the ${selectedTarget.targetValue} Mt ceiling and the no-policy trend (${bau2030} Mt) — so progress is 0% until emissions fall back toward those levels.`
+          ? `Current emissions (${liveLatest?.value} Mt) are above both the allowed limit (${selectedTarget.targetValue} Mt) and the no-new-policies level (${bau2030} Mt) — progress is 0% until emissions come back down.`
           : null;
 
   const zeroProgressNote =
     capPosition === "above_bau"
-      ? "Well above the 2030 ceiling and the no-policy trend"
+      ? "Emissions are too high — above both the limit and the no-new-policies level"
       : capPosition === "between_cap_and_bau"
-        ? "Above the 2030 ceiling — more reduction needed"
+        ? "Above the allowed limit — more reductions needed"
         : "Not yet moving toward this goal";
 
   const capProgressBar =
@@ -300,14 +300,13 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
 
               {source === "api" && (
                 <p className="mt-2 text-[11px] text-muted-foreground max-w-[240px] leading-relaxed">
-                  Based on live Climate TRACE data compared to Uganda&apos;s NDC goal — indicative, not an official
-                  government report.
+                  Using satellite data to track progress against Uganda&apos;s climate goal. These are estimates, not official government figures.
                 </p>
               )}
 
               {source === "api" && apiSector && pr?.trace_yoy_pct != null && (
                 <p className="text-[11px] text-muted-foreground">
-                  Year-on-year change ({pr.latest_year}): {pr.trace_yoy_pct >= 0 ? "+" : ""}
+                  Emissions change from last year ({pr.latest_year}): {pr.trace_yoy_pct >= 0 ? "+" : ""}
                   {pr.trace_yoy_pct}%
                 </p>
               )}
@@ -348,21 +347,21 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                       <p className="font-semibold">How progress is calculated</p>
                       <p><strong>Data:</strong> {dataUsedLabel}</p>
                       <p><strong>Starting point:</strong> {baselineDisplay}</p>
-                      {bauDisplay && <p><strong>No-policy trend:</strong> {bauDisplay}</p>}
+                      {bauDisplay && <p><strong>Without new policies:</strong> {bauDisplay}</p>}
                       <p><strong>Goal:</strong> {targetDisplay}</p>
                       <p>
-                        <strong>Approach:</strong>{" "}
+                        <strong>Method:</strong>{" "}
                         {selectedTarget.metricType === "emissions-reduction"
                           ? isEmissionsCapTarget
-                            ? "Compare observed emissions to the 'no extra policy' trend and the 2030 ceiling in the NDC"
-                            : "Compare observed emissions to the reduction pledged in the NDC"
-                          : "Use a related activity measure as a proxy"}
+                            ? "Compare current emissions to what they would be without new policies, and to the 2030 emissions limit"
+                            : "Compare current emissions to the reduction promised in the climate pledge"
+                          : "Use a related measure as a stand-in for progress"}
                       </p>
                       {progressFormulaNote && (
                         <p className="text-muted-foreground font-mono text-[10px]">{progressFormulaNote}</p>
                       )}
                       {pr?.scope_note && <p className="text-muted-foreground">{pr.scope_note}</p>}
-                      <p className="text-muted-foreground">Data quality issues can lower the status. Missing data shows as &quot;Unknown.&quot;</p>
+                      <p className="text-muted-foreground">Poor data quality can lower the status. Missing data shows as &quot;Unknown.&quot;</p>
                     </div>
                   </TooltipContent>
                 </Tooltip>
