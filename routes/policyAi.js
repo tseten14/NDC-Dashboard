@@ -20,6 +20,27 @@ const analysisCache = new NodeCache({ stdTTL: 3600 });
 const MAX_PDF_CHARS = 8_000;  // ~2k tokens — well within free-tier limits
 const FETCH_TIMEOUT_MS = 20_000;
 
+/** Hosts permitted for server-side PDF fetch (SSRF guard). */
+const ALLOWED_PDF_HOSTS = new Set([
+  "cdn.climatepolicyradar.org",
+]);
+
+function assertAllowedPdfUrl(rawUrl) {
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error("contentUrl must be a valid HTTPS URL");
+  }
+  if (parsed.protocol !== "https:") {
+    throw new Error("contentUrl must use HTTPS");
+  }
+  if (!ALLOWED_PDF_HOSTS.has(parsed.hostname)) {
+    throw new Error(`contentUrl host not allowed: ${parsed.hostname}`);
+  }
+  return parsed.toString();
+}
+
 // ── OpenAI REST API ────────────────────────────────────────────────────────────
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
@@ -200,6 +221,12 @@ router.post("/policy/analyze", async (req, res) => {
   if (!contentUrl || typeof contentUrl !== "string") {
     return res.status(400).json({ error: "contentUrl is required" });
   }
+  let safeContentUrl;
+  try {
+    safeContentUrl = assertAllowedPdfUrl(contentUrl);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
   if (!process.env.OPENAI_API_KEY) {
     return res
       .status(503)
@@ -207,14 +234,14 @@ router.post("/policy/analyze", async (req, res) => {
   }
 
   const cacheKey = question
-    ? `${contentUrl}:chat:${question.slice(0, 80)}`
-    : `${contentUrl}:${action ?? "exec_summary"}`;
+    ? `${safeContentUrl}:chat:${question.slice(0, 80)}`
+    : `${safeContentUrl}:${action ?? "exec_summary"}`;
 
   const cached = analysisCache.get(cacheKey);
   if (cached) return res.json({ ...cached, from_cache: true });
 
   try {
-    const { text: pdfText } = await getPdfText(contentUrl);
+    const { text: pdfText } = await getPdfText(safeContentUrl);
     const userMessage = buildUserMessage(title ?? "Policy Document", action, question, pdfText);
 
     const raw = await callOpenAI(process.env.OPENAI_API_KEY, SYSTEM_PROMPT, userMessage);

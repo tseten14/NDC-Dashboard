@@ -4,15 +4,21 @@ import {
   getCatalogActivities,
   getCatalogMitigation,
 } from "../services/indicatorCatalogData.js";
+import { latestInventoryYear } from "../config/climateTrace.js";
 import { safeParseOrLog } from "../shared/validate.js";
 import { indicatorPanelResponseSchema } from "../shared/schemas/indicatorPanel.schema.js";
+import { parseInventoryRange } from "../shared/queryParams.js";
 
 const router = express.Router();
 
 router.get("/indicators/panel", async (req, res) => {
   try {
-    const since = parseInt(req.query.since ?? "2015", 10);
-    const to = parseInt(req.query.to ?? "2024", 10);
+    const range = parseInventoryRange(req.query, {
+      defaultSince: 2015,
+      defaultTo: latestInventoryYear(),
+    });
+    if (range.error) return res.status(400).json({ error: range.error });
+    const { since, to } = range;
     const panel = await getIndicatorPanel(since, to);
     const payload = { since, to, targets: panel, data_source: "bundled catalog" };
     safeParseOrLog(indicatorPanelResponseSchema, payload, "indicators.panel");

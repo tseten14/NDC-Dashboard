@@ -77,7 +77,8 @@ describe("computeProjectEconomics", () => {
     const pes = mitigationOptions.find((o) => o.id === "m1")!;
     const econ = computeProjectEconomics(pes, DEFAULT_ASSUMPTIONS);
     expect(econ.costType).toBe("annual");
-    expect(econ.costToAbateUSDPerT).toBeCloseTo(6, 0);
+    // m1: USD 15M/yr ÷ 1.2 MtCO₂e/yr ≈ USD 12.5/t (NDC-derived abatement estimate)
+    expect(econ.costToAbateUSDPerT).toBeCloseTo(12.5, 0);
     expect(econ.abatementSource).toContain("NDC");
   });
 

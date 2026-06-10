@@ -8,7 +8,9 @@ import {
 import {
   CLIMATE_TRACE_DOCS_URL,
   defaultInventoryRange,
+  fetchUgandaCountryRanking,
   latestInventoryYear,
+  toMtco2e,
 } from "../config/climateTrace.js";
 import {
   UGANDA_NATIONAL_GADM,
@@ -85,7 +87,7 @@ export function progressFromTimeseries(series, sector) {
   return computeProgress(latest?.value ?? null, sector, latest?.year ?? null);
 }
 
-async function buildReconciliation(refYear, countryTotalMt) {
+async function buildReconciliation(refYear) {
   const { breakdown, missing_slugs } = await getSlugBreakdownForYear(refYear);
   const slugValues = ALL_TRACE_SLUGS.map((s) => breakdown[s]).filter((v) => v != null);
   const allSlugsPresent = slugValues.length === ALL_TRACE_SLUGS.length;
@@ -104,7 +106,13 @@ async function buildReconciliation(refYear, countryTotalMt) {
       ? +uiValues.reduce((a, b) => a + b, 0).toFixed(2)
       : null;
 
-  const country_total_mt = countryTotalMt != null ? num(countryTotalMt) : null;
+  let country_total_mt = null;
+  try {
+    const ranking = await fetchUgandaCountryRanking(refYear);
+    country_total_mt = num(toMtco2e(ranking.emissionsQuantity));
+  } catch {
+    /* rankings may be unavailable for some years */
+  }
   let delta_mt = null;
   if (country_total_mt != null && sector_sum_mt != null) {
     delta_mt = +(country_total_mt - sector_sum_mt).toFixed(2);
@@ -266,7 +274,7 @@ export async function getEmissionsDashboard(since, to, options = {}) {
     } catch (e) {
       live = { co2e_mtco2e: null, rank: null, yoy_change_mtco2e: null, stale: true, error: e.message };
     }
-    reconciliation = await buildReconciliation(refYear, live.co2e_mtco2e);
+    reconciliation = await buildReconciliation(refYear);
     total_co2e_mtco2e = live.co2e_mtco2e;
     yoy_change_mtco2e = live.yoy_change_mtco2e;
     global_rank = live.rank;
