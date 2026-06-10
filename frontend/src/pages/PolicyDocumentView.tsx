@@ -52,8 +52,6 @@ function DocumentPanel({ doc }: { doc: PolicyDocument }) {
               <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{doc.familyName}</p>
             )}
             <div className="flex flex-wrap gap-1 mt-1.5">
-              <Badge variant="outline" className="text-[9px] h-4">{doc.category}</Badge>
-              {doc.source && <Badge variant="secondary" className="text-[9px] h-4">{doc.source}</Badge>}
               {doc.documentType && <Badge variant="secondary" className="text-[9px] h-4 font-normal">{doc.documentType}</Badge>}
               <span className="text-[9px] text-muted-foreground self-center">{formatDate(doc.familyDate)}</span>
             </div>
