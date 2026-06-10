@@ -8,7 +8,7 @@
  * Requires: ANTHROPIC_API_KEY environment variable.
  */
 import express from "express";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import NodeCache from "node-cache";
 
 const router = express.Router();
@@ -127,8 +127,8 @@ router.post("/policy/analyze", async (req, res) => {
   if (!contentUrl || typeof contentUrl !== "string") {
     return res.status(400).json({ error: "contentUrl is required" });
   }
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return res.status(503).json({ error: "ANTHROPIC_API_KEY not configured on this server." });
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(503).json({ error: "GEMINI_API_KEY not configured on this server." });
   }
 
   const cacheKey = question
@@ -141,15 +141,16 @@ router.post("/policy/analyze", async (req, res) => {
   try {
     const { text: pdfText } = await getPdfText(contentUrl);
 
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const message = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 1500,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildUserMessage(title ?? "Policy Document", action, question, pdfText) }],
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      systemInstruction: SYSTEM_PROMPT,
+      generationConfig: { responseMimeType: "application/json", maxOutputTokens: 1500 },
     });
-
-    const raw = message.content[0]?.type === "text" ? message.content[0].text : "";
+    const result = await model.generateContent(
+      buildUserMessage(title ?? "Policy Document", action, question, pdfText),
+    );
+    const raw = result.response.text();
     let parsed;
     try {
       parsed = JSON.parse(raw);
