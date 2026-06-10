@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --config frontend/vite.config.ts",
-    "dev:all": "node scripts/dev_all.mjs",
+    "dev": "node scripts/dev_all.mjs",
+    "dev:frontend": "vite --config frontend/vite.config.ts",
     "dev:servers": "concurrently -k -n web,api -c cyan,magenta \"npm run dev\" \"npm run start:api\"",
     "verify:all": "npm run verify:climatetrace && npm run verify:predictions",
     "build": "vite build --config frontend/vite.config.ts",
