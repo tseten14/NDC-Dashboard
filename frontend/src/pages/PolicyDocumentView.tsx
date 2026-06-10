@@ -2,8 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { PolicyDocument } from "@/lib/policy-documents";
 import {
-  generateAnalysis, askPdf, QUICK_ACTIONS,
-  ANALYSIS_DELAY_MS,
+  QUICK_ACTIONS,
   type AiAnalysisResponse, type QuickActionType,
 } from "@/data/policy-ai-mock";
 import {
@@ -346,23 +345,46 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [entries]);
 
+  const callAnalyzeApi = useCallback(async (action?: QuickActionType, question?: string): Promise<AiAnalysisResponse> => {
+    const res = await fetch("/api/v1/policy/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contentUrl: doc.contentUrl,
+        documentUrl: doc.documentUrl,
+        title: doc.title,
+        action,
+        question,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Analysis failed (${res.status})`);
+    }
+    return res.json();
+  }, [doc]);
+
   const runAction = useCallback((type: QuickActionType, label: string) => {
     if (isLoading) return;
     setIsLoading(true);
     setEntries((prev) => [...prev, { kind: "loading", label }]);
-    setTimeout(() => {
-      const response = generateAnalysis(doc, type);
+    callAnalyzeApi(type).then((response) => {
       setEntries((prev) => {
         const next = [...prev];
-        // Replace the last loading entry
         for (let i = next.length - 1; i >= 0; i--) {
           if (next[i].kind === "loading") { next[i] = { kind: "action", type, response }; break; }
         }
         return next;
       });
-      setIsLoading(false);
-    }, ANALYSIS_DELAY_MS);
-  }, [doc, isLoading]);
+    }).catch((err) => {
+      setEntries((prev) => prev.filter((e) => e.kind !== "loading"));
+      setEntries((prev) => [...prev, { kind: "action", type, response: {
+        type, title: "Analysis unavailable",
+        sections: [{ lines: [err.message || "Could not reach the AI service. Check ANTHROPIC_API_KEY is set."], page_refs: [] }],
+        confidence: "low", disclaimer: "", suggested_follow_ups: [],
+      }}]);
+    }).finally(() => setIsLoading(false));
+  }, [doc, isLoading, callAnalyzeApi]);
 
   const runChat = useCallback((question: string) => {
     const q = question.trim();
@@ -370,8 +392,7 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
     setChatInput("");
     setIsLoading(true);
     setEntries((prev) => [...prev, { kind: "loading", label: `"${q}"` }]);
-    setTimeout(() => {
-      const response = askPdf(doc, q);
+    callAnalyzeApi(undefined, q).then((response) => {
       setEntries((prev) => {
         const next = [...prev];
         for (let i = next.length - 1; i >= 0; i--) {
@@ -379,9 +400,15 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
         }
         return next;
       });
-      setIsLoading(false);
-    }, ANALYSIS_DELAY_MS);
-  }, [doc, isLoading]);
+    }).catch((err) => {
+      setEntries((prev) => prev.filter((e) => e.kind !== "loading"));
+      setEntries((prev) => [...prev, { kind: "chat", question: q, response: {
+        type: "chat", title: "Error",
+        sections: [{ lines: [err.message || "Could not reach the AI service."], page_refs: [] }],
+        confidence: "low", disclaimer: "", suggested_follow_ups: [],
+      }}]);
+    }).finally(() => setIsLoading(false));
+  }, [doc, isLoading, callAnalyzeApi]);
 
   return (
     <div className="flex flex-col h-full">
@@ -392,7 +419,7 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
           <h3 className="text-sm font-bold text-foreground">AI Policy Assistant</h3>
         </div>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          Quick-action analysis of the active CPR document. Powered by document metadata and structured templates.
+          Reads the full PDF and answers using Claude AI. Citations link to the source page.
         </p>
       </div>
 
