@@ -214,19 +214,20 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
                 {section.page_refs.map((ref) => {
                   const pageNum = ref.match(/p\.?\s*(\d+)/i)?.[1];
                   const href = pageNum && doc?.documentUrl ? `${doc.documentUrl}#page=${pageNum}` : null;
+                  const label = pageNum ? `page ${pageNum} ↗` : ref;
                   return href ? (
                     <a
                       key={ref}
                       href={href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[9px] font-mono text-primary/80 bg-primary/8 px-1.5 py-0.5 rounded hover:bg-primary/15 hover:text-primary transition-colors underline-offset-2 hover:underline"
+                      className="text-[9px] text-primary/80 bg-primary/8 px-1.5 py-0.5 rounded hover:bg-primary/15 hover:text-primary transition-colors underline-offset-2 hover:underline"
                     >
-                      {ref}
+                      {label}
                     </a>
                   ) : (
-                    <span key={ref} className="text-[9px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
-                      {ref}
+                    <span key={ref} className="text-[9px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                      {label}
                     </span>
                   );
                 })}
@@ -303,6 +304,7 @@ function RichLine({ line, documentUrl }: { line: string; documentUrl?: string })
         if (/^\[(?:p\.|§)[\w.]+\]$/.test(part)) {
           const pageNum = part.match(/p\.?\s*(\d+)/i)?.[1];
           const href = pageNum && documentUrl ? `${documentUrl}#page=${pageNum}` : null;
+          const label = pageNum ? `page ${pageNum} ↗` : part;
           if (href) {
             return (
               <a
@@ -310,15 +312,15 @@ function RichLine({ line, documentUrl }: { line: string; documentUrl?: string })
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline font-mono text-[9px] text-primary bg-primary/10 px-0.5 rounded ml-0.5 hover:bg-primary/20 underline underline-offset-2"
+                className="inline text-[9px] text-primary bg-primary/10 px-1 py-0.5 rounded ml-0.5 hover:bg-primary/20 underline underline-offset-2"
               >
-                {part}
+                {label}
               </a>
             );
           }
           return (
-            <span key={i} className="inline font-mono text-[9px] text-primary/80 bg-primary/8 px-0.5 rounded ml-0.5">
-              {part}
+            <span key={i} className="inline text-[9px] text-primary/80 bg-primary/8 px-1 py-0.5 rounded ml-0.5">
+              {label}
             </span>
           );
         }
