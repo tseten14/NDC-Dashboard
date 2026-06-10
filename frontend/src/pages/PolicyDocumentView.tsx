@@ -209,7 +209,7 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
             )}
             {section.page_refs.length > 0 && (
               <div className="flex flex-wrap gap-1 pl-3">
-                {section.page_refs.filter((ref) => /p\.?\s*\d+/i.test(ref)).map((ref) => {
+                {section.page_refs.filter((ref) => /p\.?\s*\d+/i.test(ref) && !/^§/.test(ref)).map((ref) => {
                   const pageNum = ref.match(/p\.?\s*(\d+)/i)?.[1];
                   const href = pageNum && doc?.documentUrl ? `${doc.documentUrl}#page=${pageNum}` : null;
                   const label = pageNum ? `page ${pageNum} ↗` : ref;
@@ -295,11 +295,11 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
 }
 
 function RichLine({ line, documentUrl }: { line: string; documentUrl?: string }) {
-  const parts = line.split(/(\[(?:p\.|§)[\w.]+\])/g);
+  const parts = line.split(/(\[(?:p\.?\s*\d+|§[\w.]+)\])/g);
   return (
     <span>
       {parts.map((part, i) => {
-        if (/^\[(?:p\.|§)[\w.]+\]$/.test(part)) {
+        if (/^\[(?:p\.?\s*\d+|§[\w.]+)\]$/.test(part)) {
           const pageNum = part.match(/p\.?\s*(\d+)/i)?.[1];
           // Section refs (§) have no linkable target — drop them silently.
           if (!pageNum) return null;
