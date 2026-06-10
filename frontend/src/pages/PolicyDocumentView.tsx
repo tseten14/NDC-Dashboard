@@ -211,7 +211,7 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
             )}
             {section.page_refs.length > 0 && (
               <div className="flex flex-wrap gap-1 pl-3">
-                {section.page_refs.map((ref) => {
+                {section.page_refs.filter((ref) => /p\.?\s*\d+/i.test(ref)).map((ref) => {
                   const pageNum = ref.match(/p\.?\s*(\d+)/i)?.[1];
                   const href = pageNum && doc?.documentUrl ? `${doc.documentUrl}#page=${pageNum}` : null;
                   const label = pageNum ? `page ${pageNum} ↗` : ref;
@@ -303,8 +303,9 @@ function RichLine({ line, documentUrl }: { line: string; documentUrl?: string })
       {parts.map((part, i) => {
         if (/^\[(?:p\.|§)[\w.]+\]$/.test(part)) {
           const pageNum = part.match(/p\.?\s*(\d+)/i)?.[1];
-          const href = pageNum && documentUrl ? `${documentUrl}#page=${pageNum}` : null;
-          const label = pageNum ? `page ${pageNum} ↗` : part;
+          // Section refs (§) have no linkable target — drop them silently.
+          if (!pageNum) return null;
+          const href = documentUrl ? `${documentUrl}#page=${pageNum}` : null;
           if (href) {
             return (
               <a
@@ -314,13 +315,13 @@ function RichLine({ line, documentUrl }: { line: string; documentUrl?: string })
                 rel="noopener noreferrer"
                 className="inline text-[9px] text-primary bg-primary/10 px-1 py-0.5 rounded ml-0.5 hover:bg-primary/20 underline underline-offset-2"
               >
-                {label}
+                {`page ${pageNum} ↗`}
               </a>
             );
           }
           return (
             <span key={i} className="inline text-[9px] text-primary/80 bg-primary/8 px-1 py-0.5 rounded ml-0.5">
-              {label}
+              {`page ${pageNum}`}
             </span>
           );
         }
