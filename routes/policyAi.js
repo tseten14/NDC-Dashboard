@@ -148,13 +148,13 @@ async function getPdfText(contentUrl) {
 
 const ACTION_PROMPTS = {
   exec_summary:
-    `Produce an executive summary in 4–6 bullet points. Cover: the problem addressed, key commitments, who is responsible, and the timeframe.`,
+    `Produce an executive summary in 4–6 bullets. Each bullet is one dense sentence covering the problem, a key commitment, who is responsible, and the timeframe.`,
   key_items:
-    `List the key commitments, deliverables, and obligations. Group by theme (implementation, finance, monitoring). For each item explain the full detail: what exactly is committed, who delivers it, the amount or scale, and what it achieves.`,
+    `List key commitments, deliverables, and obligations grouped by theme (implementation, finance, monitoring). One detailed sentence per item: what is committed, who delivers it, the amount or scale, and what it achieves.`,
   targets:
-    `Extract every specific, quantified target or milestone. Include the target value, year, and conditionality. Use the document's own numbers and explain what meeting each target would change on the ground.`,
+    `Extract every specific, quantified target or milestone. One detailed sentence per target with the value, year, conditionality, and what meeting it would change on the ground.`,
   recommendations:
-    `List the concrete next steps and actionable items. Focus on what decision-makers should do, by when, and what happens if the step is delayed or skipped.`,
+    `List concrete next steps for decision-makers. One detailed sentence per step: what to do, who should do it, by when, and why it matters.`,
 };
 
 const SYSTEM_PROMPT = `You are a plain-language climate policy analyst helping non-technical readers understand Uganda's NDC and CPR policy documents.
@@ -176,10 +176,11 @@ Analyse the provided document text and respond ONLY with a valid JSON object:
 }
 
 Rules for writing bullet points:
-- Each bullet must be 2–3 full sentences and at least 30 words. Never write a short fragment like "Conduct reflection workshops" — always spell out the what, who, how much, and why it matters.
-- Structure: the first sentence states the key fact with its concrete details (amounts, dates, responsible parties); the following sentence(s) explain what it means or why it matters in plain, everyday language.
+- Each bullet must be exactly ONE sentence — never two sentences, never a line break inside the bullet.
+- Make that single sentence rich and self-contained (about 25–45 words): include the what, who, how much or when, and why it matters so a non-specialist can understand without reading further.
+- Never write a bare fragment like "Conduct reflection workshops" — always spell out the full detail in one flowing sentence.
 - Avoid jargon. Write as if explaining to a government officer who is not a climate specialist.
-- Cite the source page as [p.N] at the end of the first sentence when referencing a specific page from the document.
+- Cite the source page as [p.N] at the end of the sentence when referencing a specific page from the document.
 - Only cite pages that appear in [Page N] markers in the document text — never invent page numbers.
 - Write 4–6 bullets per section.
 - Return JSON only — no markdown fences, no preamble.`;

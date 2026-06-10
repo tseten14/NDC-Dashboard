@@ -14,8 +14,16 @@ import { fileURLToPath } from "node:url";
 import { buildPdfTextSections, buildTabularSections } from "../services/ingestInsights.js";
 import { analyzeTabularWithPython, checkPythonIngest } from "../services/ingestPython.js";
 import { getPersistenceMode } from "../db/bootstrap.ts";
-import { createIngestJob, getRecentIngestJobs, inferIngestFileType, insertObservationsBatch, updateIngestJobStatus } from "../services/persistence.js";
-import { createUploadJob, deleteUploadJob, getUploadJob } from "../services/ingestUploadStore.js";
+import {
+  createIngestJob,
+  getRecentIngestJobs,
+  inferIngestFileType,
+  insertObservationsBatch,
+  updateIngestJobStatus,
+} from "../services/persistence.js";
+import { createUploadJob, deleteUploadJob, getUploadJob, setUploadJobCleaned } from "../services/ingestUploadStore.js";
+import { runPipelineClean } from "../lib/ingest/pipelineClean.ts";
+import { applyPipelineDefaults } from "../lib/ingest/pipelineDefaults.ts";
 import { parseCsvText } from "../lib/ingest/parsers/csv.ts";
 import { parseJsonText } from "../lib/ingest/parsers/json.ts";
 import { parsePdfBuffer } from "../lib/ingest/parsers/pdf.ts";
@@ -44,7 +52,11 @@ const INGEST_AI_SOURCES = [
   { id: "iea_uganda", label: "IEA — Uganda energy profile", url: "https://www.iea.org/countries/uganda" },
 ];
 
-const INGEST_AI_SYSTEM = `You are a data-quality analyst helping Uganda government staff assess uploaded climate/NDC data files.
+const INGEST_AI_SYSTEM = `You are helping Uganda government staff review uploaded climate files. Your reader is a policy officer or programme manager — not a data scientist. Use everyday language only.
+
+Never use technical terms like: null, coercion, schema, parse, JSON, dataframe, profiling, API, slug, or column profiling.
+Instead say: empty cells, spreadsheet columns, file format, numbers we could not read, climate targets, sectors, years.
+
 
 Given a file profiling report, respond ONLY with valid JSON:
 {
@@ -54,10 +66,10 @@ Given a file profiling report, respond ONLY with valid JSON:
   "quality": "<2 sentences: data quality or document completeness assessment, naming the specific columns or sections that are strong or weak>",
   "ndc_targets": ["<target IDs from t0–t10 this data could update, if any>"],
   "policy_value": "<2–3 sentences: concretely how a policy maker or MRV officer could use this file — name the decision or report it could feed>",
-  "policy_uses": ["<3–4 concrete policy-planning uses — each item must be 2 full sentences naming a specific Uganda process, report, or decision (e.g. BTR/BUR submission, NDP IV sector M&E, district budget allocation, NDC progress review, donor proposal, national inventory QA)>"],
-  "risks": ["<short specific risk or concern — max 4>"],
+  "policy_uses": ["<3–4 ways to use this data in planning — each item is one clear sentence naming a specific Uganda process or report (e.g. progress review, district budget, donor proposal)>"],
+  "risks": ["<plain-language concern — max 4, one sentence each>"],
   "next_step": "<1 sentence: the single most important action the user should take>",
-  "key_findings": ["<plain-language finding grounded in the actual data shown — write 4–6 items, each 2 sentences, citing concrete column names, values, or document passages where possible>"],
+  "key_findings": ["<plain-language finding grounded in the actual data — write 4–6 items, one sentence each, mentioning real column names, years, or values where possible>"],
   "sources": [{"id": "<source id from the list below>", "why": "<half-sentence: how this source helps verify or extend this file>"}]
 }
 
@@ -448,7 +460,7 @@ function warningsFromColumns(columns) {
   const warnings = [];
   for (const c of columns) {
     if (c.null_ratio >= 0.5) {
-      warnings.push(`Column "${c.name}" is ${Math.round(c.null_ratio * 100)}% empty`);
+      warnings.push(`The “${c.name}” column is mostly empty (${Math.round(c.null_ratio * 100)}% blank cells) — fill it in before using this in reports.`);
     }
   }
   return warnings;
@@ -474,7 +486,6 @@ async function analyzeCsv(buffer, filename) {
   const columns = profileColumns(rows, headers);
   const warnings = warningsFromColumns(columns);
   const sections = buildTabularSections(rows, columns, filename);
-  warnings.push("Charts used JavaScript fallback — install pandas for higher accuracy (pip install -r requirements-ingest.txt)");
 
   return {
     kind: "tabular",
@@ -990,7 +1001,12 @@ router.post("/ingest/upload", requireWriteApiKey, uploadSingle.single("file"), a
 
     const fileType = detectUploadFileType(file);
     const parsed = await parseUploadBuffer(file.buffer, fileType, file.originalname);
-    const columnMapping = suggestColumnMapping(parsed.headers);
+    const suggested = suggestColumnMapping(parsed.headers, parsed.inferredTypes);
+    const { mapping: columnMapping, filters: pipelineDefaults, fileKind } = applyPipelineDefaults(
+      parsed.headers,
+      suggested,
+      parsed.inferredTypes,
+    );
     const warnings = formatParseWarnings(parsed.warnings);
 
     const jobId = randomUUID();
@@ -1026,6 +1042,8 @@ router.post("/ingest/upload", requireWriteApiKey, uploadSingle.single("file"), a
       headers: parsed.headers,
       inferredTypes: parsed.inferredTypes,
       columnMapping,
+      pipelineDefaults,
+      fileKind,
       preview: parsed.rows.slice(0, 10),
       warnings,
       ...(parsed.pdfInsights ? { pdfInsights: parsed.pdfInsights } : {}),
@@ -1041,17 +1059,72 @@ router.post("/ingest/upload", requireWriteApiKey, uploadSingle.single("file"), a
   }
 });
 
+async function runStagedPipelineClean(jobId, columnMapping, filters = {}) {
+  const staged = getUploadJob(jobId);
+  if (!staged) {
+    return { error: "Upload job not found or expired. Re-upload the file.", status: 404 };
+  }
+  const pipelineResult = runPipelineClean(
+    staged.parseResult.rows,
+    staged.parseResult.headers,
+    columnMapping,
+    {
+      ugandaOnly: Boolean(filters?.ugandaOnly),
+      dropDuplicates: filters?.dropDuplicates !== false,
+      latestYearOnly: Boolean(filters?.latestYearOnly),
+      documentCountMode: Boolean(filters?.documentCountMode),
+    },
+  );
+  setUploadJobCleaned(jobId, pipelineResult);
+  return { staged, pipelineResult };
+}
+
+async function handlePipelineClean(req, res) {
+  try {
+    const { jobId, columnMapping, filters } = req.body ?? {};
+    if (!jobId || typeof jobId !== "string") {
+      return res.status(400).json({ error: "jobId is required" });
+    }
+    if (!columnMapping || typeof columnMapping !== "object") {
+      return res.status(400).json({ error: "columnMapping is required" });
+    }
+
+    const result = await runStagedPipelineClean(jobId, columnMapping, filters);
+    if (result.error) {
+      return res.status(result.status).json({ error: result.error });
+    }
+
+    return res.json({
+      jobId,
+      status: "cleaned",
+      ...result.pipelineResult,
+    });
+  } catch (err) {
+    req.log?.error({ err }, "ingest_pipeline_scan_failed");
+    return res.status(500).json({ error: err.message || "Pipeline scan failed" });
+  }
+}
+
+router.post("/ingest/pipeline/scan", requireWriteApiKey, handlePipelineClean);
+router.post("/ingest/clean", requireWriteApiKey, handlePipelineClean);
+
 router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
   try {
-    const { jobId, finalColumnMapping } = req.body ?? {};
+    const { jobId, finalColumnMapping, pipelineFilters } = req.body ?? {};
     if (!jobId || typeof jobId !== "string") {
       return res.status(400).json({ error: "jobId is required" });
     }
     if (!finalColumnMapping || typeof finalColumnMapping !== "object") {
       return res.status(400).json({ error: "finalColumnMapping is required" });
     }
-    if (!mappingIsValidForImport(finalColumnMapping)) {
+    const hasValue =
+      finalColumnMapping.value ||
+      pipelineFilters?.documentCountMode;
+    if (!finalColumnMapping.year || !hasValue) {
       return res.status(400).json({ error: "year and value columns must be mapped before import" });
+    }
+    if (!finalColumnMapping.target_id) {
+      return res.status(400).json({ error: "Category / indicator column must be mapped before import" });
     }
 
     const staged = getUploadJob(jobId);
@@ -1061,16 +1134,54 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
 
     await updateIngestJobStatus(jobId, { status: "processing" });
 
+    let sourceRows = staged.parseResult.rows;
+    if (pipelineFilters) {
+      const cleaned = runPipelineClean(
+        staged.parseResult.rows,
+        staged.parseResult.headers,
+        finalColumnMapping,
+        {
+          ugandaOnly: Boolean(pipelineFilters?.ugandaOnly),
+          dropDuplicates: pipelineFilters?.dropDuplicates !== false,
+          latestYearOnly: Boolean(pipelineFilters?.latestYearOnly),
+          documentCountMode: Boolean(pipelineFilters?.documentCountMode),
+        },
+      );
+      sourceRows = cleaned.cleanedRows;
+      setUploadJobCleaned(jobId, cleaned);
+    } else if (staged.pipelineResult?.cleanedRows?.length != null) {
+      sourceRows = staged.pipelineResult.cleanedRows;
+    }
+
     const { observations, errors, skipped } = mapRowsToObservations(
-      staged.parseResult.rows,
+      sourceRows,
       finalColumnMapping,
       resolveTargetId,
     );
 
+    const targetLabels = new Map();
+    const targetCol = finalColumnMapping.target_id;
+    if (targetCol) {
+      for (const row of sourceRows) {
+        const raw = row[targetCol];
+        if (raw == null || String(raw).trim() === "") continue;
+        const label = String(raw).trim();
+        targetLabels.set(resolveTargetId(label), label);
+      }
+    }
+
     let inserted = 0;
+    let storage = null;
+    let insertError = null;
     if (observations.length) {
-      const result = await insertObservationsBatch(observations);
-      inserted = result.inserted;
+      try {
+        const result = await insertObservationsBatch(observations, targetLabels);
+        inserted = result.inserted;
+        storage = result.storage;
+      } catch (err) {
+        insertError = err.message || "Database insert failed";
+        req.log?.error({ err }, "ingest_observations_insert_failed");
+      }
     }
 
     await mkdir(INGEST_STORE_DIR, { recursive: true });
@@ -1095,12 +1206,15 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
       "utf8",
     );
 
-    const failed = observations.length === 0 && staged.parseResult.rowCount > 0;
+    const failed =
+      insertError != null ||
+      (observations.length === 0 && sourceRows.length > 0) ||
+      (observations.length > 0 && inserted === 0);
     await updateIngestJobStatus(jobId, {
       status: failed ? "failed" : "complete",
       rowCount: inserted,
       errorMessage: failed
-        ? errors[0]?.message ?? "No rows could be imported"
+        ? insertError ?? errors[0]?.message ?? "No rows could be imported"
         : errors.length
           ? `${errors.length} row(s) skipped`
           : null,
@@ -1110,26 +1224,18 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
 
     const { mode: persistenceMode } = getPersistenceMode();
     const years = observations.map((o) => o.year);
-    const targetKeys = new Set();
-    const targetCol = finalColumnMapping.target_id;
-    if (targetCol) {
-      for (const row of staged.parseResult.rows) {
-        const raw = row[targetCol];
-        if (raw != null && String(raw).trim()) targetKeys.add(String(raw).trim());
-      }
-    }
+    const targetKeys = new Set(targetLabels.values());
 
-    let storage = null;
     let dashboardHint = null;
     if (inserted > 0) {
-      storage = "postgres.observations";
       dashboardHint =
-        "Open the Dashboard, select a matching indicator target (forest cover, electricity access, CSA adoption, wetlands, or capacity), and check the Observed Data column for ingested points.";
-    } else if (persistenceMode !== "postgres") {
-      dashboardHint =
-        "No database connection — rows were validated but not stored. Configure DATABASE_URL and re-import to see points on the Dashboard.";
+        persistenceMode === "postgres"
+          ? `Saved ${inserted} row(s). New categories were registered as targets automatically. Query observations via API: /api/v1/targets/{category}/observations`
+          : `Saved ${inserted} row(s) to local storage (${storage}). Data persists across restarts in data/ingest-observations.json.`;
+    } else if (insertError) {
+      dashboardHint = insertError;
     } else if (failed) {
-      dashboardHint = "No rows were stored. Fix mapping errors and try again.";
+      dashboardHint = errors[0]?.message ?? "No rows were stored. Check column mapping and try again.";
     }
 
     return res.json({
@@ -1137,7 +1243,9 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
       status: failed ? "failed" : "complete",
       rowsImported: inserted,
       rowsSkipped: skipped,
-      errors: errors.slice(0, 100),
+      errors: insertError
+        ? [{ row: 0, message: insertError }, ...errors.slice(0, 99)]
+        : errors.slice(0, 100),
       persisted: inserted > 0,
       persistenceMode,
       storage,

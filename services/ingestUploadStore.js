@@ -33,6 +33,15 @@ export function deleteUploadJob(jobId) {
   jobs.delete(jobId);
 }
 
+export function setUploadJobCleaned(jobId, pipelineResult) {
+  const job = getUploadJob(jobId);
+  if (!job) return null;
+  job.pipelineResult = pipelineResult;
+  job.cleanedAtMs = Date.now();
+  jobs.set(jobId, job);
+  return job;
+}
+
 export function upsertMemoryIngestJob(entry) {
   jobHistory.set(entry.id, entry);
 }

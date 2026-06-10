@@ -811,6 +811,69 @@ function buildChartGuides(mentions, mode, tabularMeta = {}) {
   return guides;
 }
 
+function buildTabularChartGuides({
+  sectorBar,
+  timeSeries,
+  districtBar,
+  sectorPie,
+  valueHistogram,
+  nullChart,
+  sectorNote,
+  timeNote,
+  districtNote,
+}) {
+  const guides = [];
+  if (timeSeries.length) {
+    guides.push({
+      id: "time_series",
+      title: "Trend over time",
+      what: "Each point sums all rows for that calendar year.",
+      how_to_read: timeNote || "Rising line = totals increased year on year; falling = decreased.",
+    });
+  }
+  if (sectorBar.length) {
+    guides.push({
+      id: "sector_bar",
+      title: "Totals by sector",
+      what: "Each bar is the summed amount for one sector.",
+      how_to_read: sectorNote || "Longer bars mean a larger total for that sector.",
+    });
+  }
+  if (districtBar.length) {
+    guides.push({
+      id: "district_bar",
+      title: "Top districts or regions",
+      what: "Shows the ten highest district totals in your file.",
+      how_to_read: districtNote || "Taller bars are districts with larger summed amounts.",
+    });
+  }
+  if (sectorPie.length) {
+    guides.push({
+      id: "sector_pie",
+      title: "Sector share",
+      what: "Each slice is one sector's percentage of the sector total.",
+      how_to_read: "Larger slices show which sectors dominate the file.",
+    });
+  }
+  if (valueHistogram.length && !districtBar.length) {
+    guides.push({
+      id: "value_histogram",
+      title: "How amounts are distributed",
+      what: "Counts how many rows fall in each numeric range.",
+      how_to_read: "Tall bars show the most common value ranges in your data.",
+    });
+  }
+  if (nullChart.length) {
+    guides.push({
+      id: "completeness",
+      title: "Data completeness",
+      what: "Shows how full each column is (filled cells vs empty).",
+      how_to_read: "Low completeness columns may need cleanup before official use.",
+    });
+  }
+  return guides;
+}
+
 function buildAboutNarrative({ title, doc_type, summary, mentions, filename }) {
   const plain = getDocTypePlain(doc_type);
   const topicsPlain = filterTopics(mentions.topics);
@@ -841,18 +904,18 @@ function buildTextRecommendations(mentions, kind) {
   if (kind === "pdf" || kind === "text") {
     if (!mentions.numbers.some((n) => n.unit === "MtCO2e"))
       recs.push(
-        "We did not find clear greenhouse gas totals (MtCO₂e). If the file is a policy note, attach a separate spreadsheet or table with emissions numbers.",
+        "We did not find clear emissions totals in this document. If it is mainly a policy note, attach a separate spreadsheet with the numbers.",
       );
     if (mentions.years.length === 0)
-      recs.push("No calendar years were detected. Add a clear reporting year or period (e.g. 2015 baseline, 2030 target) so progress can be tracked.");
+      recs.push("We could not find reporting years (e.g. 2015 baseline, 2030 target). Add them so progress can be tracked over time.");
     if (mentions.sectors.length === 0)
       recs.push(
-        "No standard NDC sectors were detected (forests, energy, industry, agriculture, waste). Tag the file or add a short sector label when you upload it.",
+        "We could not tell which climate sector this covers (forests, energy, agriculture, etc.). Add a short sector label when you upload.",
       );
     if (!mentions.numbers.some((n) => n.unit === "USD" || n.unit === "UGX"))
-      recs.push("No budget or cost figures were found. If finance is relevant, include investment amounts or link to a funding source.");
+      recs.push("No budget or cost figures were found. If funding matters, include amounts or link to a finance source.");
     recs.push(
-      "For charts and trend lines in the dashboard, export the same information as a CSV or Excel file with Year and Value columns.",
+      "To see charts in the dashboard, export the same information as a spreadsheet with Year and Amount columns.",
     );
   }
   return recs;
@@ -940,6 +1003,28 @@ function histogramByUnit(numbers) {
 
 /* ── Tabular (CSV / JSON array) ─────────────────────────────── */
 
+const YEAR_CANDIDATES = [
+  "year", "target_year", "base_year", "baseline_year", "reporting_year",
+  "period_end", "inventory_year", "calendar_year", "reference_year", "ndc_year", "fiscal_year",
+];
+const SECTOR_CANDIDATES = [
+  "sector", "main_sector", "sector_name", "sector_id", "category",
+  "ghg_sector", "ipcc_sector", "ghg_category", "subsector", "sub_sector", "sector_target",
+];
+const VALUE_CANDIDATES = [
+  "value_mtco2e", "value", "emissions", "emission", "mtco2e", "co2e",
+  "amount", "quantity", "total", "reduction", "target_value", "ndc_target",
+  "baseline_emissions", "baseline", "bau_emissions", "bau",
+  "projected_emissions", "mitigation", "ghg_reduction",
+  "unconditional", "conditional", "absolute_reduction",
+  "percent_reduction", "reduction_pct", "target_mtco2e",
+  "ghg_emissions", "net_emissions", "gross_emissions",
+];
+const DISTRICT_CANDIDATES = [
+  "district", "region", "subnational", "admin1", "location", "province", "county", "municipality",
+];
+const ID_LIKE_PATTERNS = ["_id", "_code", "iso", "fips", "gadm", "rank", "order", "index"];
+
 function detectColumn(headers, candidates) {
   const lc = headers.map((h) => h.toLowerCase());
   for (const c of candidates) {
@@ -951,6 +1036,118 @@ function detectColumn(headers, candidates) {
     if (i !== -1) return headers[i];
   }
   return null;
+}
+
+function isIdLikeColumn(name) {
+  const cl = String(name).toLowerCase();
+  return ID_LIKE_PATTERNS.some((p) => cl.includes(p));
+}
+
+function detectBestNumericColumn(headers, columns, usedCols) {
+  const used = new Set(usedCols.filter(Boolean));
+  let best = null;
+  let bestScore = 0;
+  for (const col of columns) {
+    if (used.has(col.name) || isIdLikeColumn(col.name) || col.type !== "number") continue;
+    const fill = 1 - (col.null_ratio ?? 0);
+    if (fill < 0.05) continue;
+    const score = fill + (col.stats?.max !== col.stats?.min ? 0.1 : 0);
+    if (score > bestScore) {
+      bestScore = score;
+      best = col.name;
+    }
+  }
+  return best;
+}
+
+function filterRowsToLatestYear(rows, yearCol) {
+  if (!yearCol) return { rows, latestYear: null, note: null };
+  let latestYear = null;
+  for (const r of rows) {
+    const y = safeNumber(r[yearCol]);
+    if (y != null) latestYear = latestYear == null ? y : Math.max(latestYear, y);
+  }
+  if (latestYear == null) return { rows, latestYear: null, note: null };
+  const years = new Set(rows.map((r) => safeNumber(r[yearCol])).filter((y) => y != null));
+  if (years.size <= 1) return { rows, latestYear, note: null };
+  const filtered = rows.filter((r) => safeNumber(r[yearCol]) === latestYear);
+  return {
+    rows: filtered.length ? filtered : rows,
+    latestYear,
+    note: `Uses ${latestYear} only (latest year in the file) so earlier years are not mixed in.`,
+  };
+}
+
+function buildCategoryBar(rows, categoryCol, valueCol, yearCol, labelFn, limit = 10) {
+  let work = rows;
+  let note = null;
+  if (yearCol) {
+    const filtered = filterRowsToLatestYear(rows, yearCol);
+    work = filtered.rows;
+    note = filtered.note;
+  }
+  const agg = new Map();
+  for (const r of work) {
+    const cat = r[categoryCol] == null ? null : String(r[categoryCol]).trim().toLowerCase();
+    const v = safeNumber(r[valueCol]);
+    if (!cat || v == null) continue;
+    agg.set(cat, (agg.get(cat) || 0) + v);
+  }
+  const bars = [...agg.entries()]
+    .map(([name, total]) => ({
+      name,
+      label: labelFn(name),
+      total: +total.toFixed(2),
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, limit);
+  return { bars, note };
+}
+
+function buildSectorPie(sectorBar) {
+  if (!sectorBar.length) return [];
+  const total = sectorBar.reduce((s, b) => s + (b.total ?? 0), 0);
+  if (total <= 0) return [];
+  return sectorBar
+    .filter((b) => (b.total ?? 0) > 0)
+    .map((b) => ({
+      name: b.label ?? b.name,
+      value: b.total,
+      pct: +((100 * b.total) / total).toFixed(1),
+    }));
+}
+
+function buildValueHistogram(rows, valueCol, bins = 8) {
+  const vals = rows.map((r) => safeNumber(r[valueCol])).filter((v) => v != null);
+  if (vals.length < 3) return [];
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  if (min === max) return [{ bin: String(min), count: vals.length }];
+  const step = (max - min) / bins;
+  const counts = Array(bins).fill(0);
+  for (const v of vals) {
+    let idx = Math.floor((v - min) / step);
+    if (idx >= bins) idx = bins - 1;
+    counts[idx] += 1;
+  }
+  return counts
+    .map((count, i) => {
+      if (!count) return null;
+      const lo = +(min + i * step).toFixed(2);
+      const hi = +(min + (i + 1) * step).toFixed(2);
+      return { bin: `${lo}–${hi}`, count };
+    })
+    .filter(Boolean);
+}
+
+function inferValueUnit(valueCol) {
+  if (!valueCol) return "";
+  const lc = valueCol.toLowerCase();
+  if (lc.includes("mtco2") || lc.includes("mt_co2")) return "Mt CO₂e";
+  if (lc.includes("tco2") || lc.includes("tonnes") || lc.includes("tons")) return "t CO₂e";
+  if (lc.includes("co2") || lc.includes("emission") || lc.includes("ghg")) return "CO₂e";
+  if (lc.includes("percent") || lc.endsWith("_pct") || lc === "pct") return "%";
+  return "";
 }
 
 function countDuplicateRows(rows, keys) {
@@ -977,17 +1174,14 @@ function countDuplicateRows(rows, keys) {
 export function buildTabularSections(rows, columns, filename) {
   const headers = columns.map((c) => c.name);
 
-  const yearCol = detectColumn(headers, ["year", "period_end", "reporting_year"]);
-  const sectorCol = detectColumn(headers, ["sector", "category", "sector_id"]);
-  const valueCol = detectColumn(headers, [
-    "value",
-    "value_mtco2e",
-    "emissions",
-    "mtco2e",
-    "amount",
-    "quantity",
-  ]);
-  const districtCol = detectColumn(headers, ["district", "region", "subnational"]);
+  const yearCol = detectColumn(headers, YEAR_CANDIDATES);
+  const sectorCol = detectColumn(headers, SECTOR_CANDIDATES);
+  let valueCol = detectColumn(headers, VALUE_CANDIDATES);
+  const districtCol = detectColumn(headers, DISTRICT_CANDIDATES);
+  if (!valueCol) {
+    valueCol = detectBestNumericColumn(headers, columns, [yearCol, sectorCol, districtCol]);
+  }
+  const valueUnit = inferValueUnit(valueCol);
 
   const numericCols = columns.filter((c) => c.type === "number");
   const incompleteCols = columns.filter((c) => c.null_ratio >= 0.5);
@@ -1017,35 +1211,40 @@ export function buildTabularSections(rows, columns, filename) {
     nationalNote = filtered.note;
   }
 
-  const sectorBar = [];
+  let sectorBar = [];
   let sectorBarNote = null;
   if (sectorCol && valueCol) {
-    const agg = new Map();
-    let latestYear = null;
-    if (yearCol) {
-      for (const r of chartRows) {
-        const y = safeNumber(r[yearCol]);
-        if (y != null) latestYear = latestYear == null ? y : Math.max(latestYear, y);
-      }
-    }
-    for (const r of chartRows) {
-      if (yearCol && latestYear != null) {
-        const y = safeNumber(r[yearCol]);
-        if (y == null || y !== latestYear) continue;
-      }
-      const s = r[sectorCol] == null ? null : String(r[sectorCol]).trim().toLowerCase();
-      const v = safeNumber(r[valueCol]);
-      if (!s || v == null) continue;
-      agg.set(s, (agg.get(s) || 0) + v);
-    }
-    if (yearCol && latestYear != null) {
-      sectorBarNote = `Sector chart shows the latest year in the file (${latestYear}) only, so sectors are not summed across multiple years.`;
-    }
-    for (const [name, total] of agg.entries()) {
-      sectorBar.push({ name, total: +total.toFixed(2) });
-    }
-    sectorBar.sort((a, b) => b.total - a.total);
+    const built = buildCategoryBar(chartRows, sectorCol, valueCol, yearCol, sectorLabel, 12);
+    sectorBar = built.bars;
+    sectorBarNote = built.note
+      ? `Sector chart ${built.note.charAt(0).toLowerCase()}${built.note.slice(1)}`
+      : null;
   }
+
+  let districtBar = [];
+  let districtBarNote = null;
+  if (districtCol && valueCol) {
+    const built = buildCategoryBar(
+      rows,
+      districtCol,
+      valueCol,
+      yearCol,
+      (name) => {
+        const s = String(name).trim();
+        return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+      },
+      10,
+    );
+    districtBar = built.bars;
+    districtBarNote = built.note
+      ? `District chart ${built.note.charAt(0).toLowerCase()}${built.note.slice(1)}`
+      : null;
+  }
+
+  const sectorPie = buildSectorPie(
+    sectorBar.map((s) => ({ ...s, label: sectorLabel(s.name) })),
+  );
+  const valueHistogram = valueCol ? buildValueHistogram(chartRows, valueCol) : [];
 
   const timeSeries = [];
   if (yearCol && valueCol) {
@@ -1092,6 +1291,7 @@ export function buildTabularSections(rows, columns, filename) {
   const validationNotes = [];
   if (nationalNote) validationNotes.push(nationalNote);
   if (sectorBarNote) validationNotes.push(sectorBarNote);
+  if (districtBarNote) validationNotes.push(districtBarNote);
 
   const valueCoercionFailures =
     valueCol == null
@@ -1106,23 +1306,23 @@ export function buildTabularSections(rows, columns, filename) {
   const recommendations = [];
   if (incompleteCols.length)
     recommendations.push(
-      `${incompleteCols.length} column(s) are more than half empty (${incompleteCols
+      `${incompleteCols.length} column${incompleteCols.length > 1 ? "s have" : " has"} too many blank cells (${incompleteCols
         .map((c) => c.name)
         .slice(0, 3)
-        .join(", ")}${incompleteCols.length > 3 ? ", …" : ""}). Fill gaps before using this in official reports.`,
+        .join(", ")}${incompleteCols.length > 3 ? ", …" : ""}) — complete these before sharing the file officially.`,
     );
   if (!yearCol)
-    recommendations.push('Add a column named "year" (or reporting_year) so we can show trends over time.');
+    recommendations.push("Add a Year column so we can show how figures change over time.");
   if (!valueCol)
-    recommendations.push('Add a numeric "value" or "emissions" column with the amounts you want to track.');
+    recommendations.push("Add a column with the amounts you want to track (emissions, hectares, budget, etc.).");
   if (!sectorCol)
-    recommendations.push("Add a sector column (e.g. energy, afolu, agriculture) to compare contributions by sector.");
+    recommendations.push("Add a Sector column (energy, forests, agriculture, transport, etc.) to compare different parts of the economy.");
   if (!districtCol)
-    recommendations.push("If this data is local, add a district or region column for maps and regional summaries.");
+    recommendations.push("If this is local data, add a District or Region column so it can appear on maps and regional summaries.");
   if (rows.length < 5)
-    recommendations.push("Only a few rows were found — check that you exported the full dataset from the source system.");
+    recommendations.push("This file has very few rows — check that you exported the full dataset from your source system.");
   if (recommendations.length === 0)
-    recommendations.push("The file structure looks good. You can map these columns to NDC indicators in the structured import tab.");
+    recommendations.push("This file looks well structured. You can import it using the Data Pipeline tab on this page.");
 
   const sectorBarLabeled = sectorBar.map((s) => ({
     ...s,
@@ -1137,21 +1337,21 @@ export function buildTabularSections(rows, columns, filename) {
     tabularHighlights.push({
       label: "Change over the period in your file",
       value: `${first.year} → ${last.year}: ${delta >= 0 ? "+" : ""}${delta}`,
-      note: valueCol ? `Based on adding all values in the “${valueCol}” column by year.` : "",
+      note: valueCol ? `We added up all figures in the “${valueCol}” column for each year.` : "",
     });
   }
   if (sectorBarLabeled[0]) {
     tabularHighlights.push({
       label: "Largest sector total in the file",
       value: `${sectorBarLabeled[0].label}: ${sectorBarLabeled[0].total}`,
-      note: sectorCol ? `Summed from the “${sectorCol}” column.` : "",
+      note: sectorCol ? `Total from the “${sectorCol}” column.` : "",
     });
   }
   if (rows.length) {
     tabularHighlights.push({
       label: "How much data is included",
-      value: `${rows.length} rows`,
-      note: `${columns.length} columns${colBits.length ? ` — including ${colBits.join(", ")}` : ""}.`,
+      value: `${rows.length} rows of data`,
+      note: `${columns.length} columns in total${colBits.length ? ` — including ${colBits.join(", ")}` : ""}.`,
     });
   }
 
@@ -1171,14 +1371,14 @@ export function buildTabularSections(rows, columns, filename) {
       title: filename.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "),
       doc_type,
       doc_type_plain: plain.label,
-      description: `${plain.description} ${colBits.length ? `We recognised: ${colBits.join("; ")}.` : "Some expected columns (year, value) were not found — see recommendations below."}`,
+      description: `${plain.description} ${colBits.length ? `We found: ${colBits.join("; ")}.` : "We could not find clear Year and Amount columns — see suggestions below."}`,
       purpose: plain.purpose,
       detected_columns: { year: yearCol, value: valueCol, sector: sectorCol, district: districtCol },
       detected_columns_plain: {
-        year: yearCol ? `Years are in “${yearCol}”` : "No year column found",
-        value: valueCol ? `Amounts are in “${valueCol}”` : "No value column found",
-        sector: sectorCol ? `Sectors are in “${sectorCol}”` : "No sector column",
-        district: districtCol ? `Locations are in “${districtCol}”` : "No district/region column",
+        year: yearCol ? `Year is listed in the “${yearCol}” column` : "We could not find a Year column",
+        value: valueCol ? `Amounts are in the “${valueCol}” column` : "We could not find an Amount column",
+        sector: sectorCol ? `Sector is listed in the “${sectorCol}” column` : "No Sector column — optional but helpful",
+        district: districtCol ? `District or region is in the “${districtCol}” column` : "No District column — optional for local data",
       },
       shape: { rows: rows.length, columns: columns.length },
     },
@@ -1186,19 +1386,87 @@ export function buildTabularSections(rows, columns, filename) {
       mode: "tabular",
       presentation: "bullets",
       overview:
-        "These charts summarise your spreadsheet — sector totals, trends by year, and any columns with many blank cells.",
+        "These charts summarise your spreadsheet — how sectors compare, how figures change by year, and where information is missing.",
       validation_notes: validationNotes.length ? validationNotes : undefined,
       insights,
       highlights: tabularHighlights,
-      chart_guides: buildChartGuides(
-        { sectors: sectorBar, years: timeSeries.map((t) => ({ year: t.year, count: t.total })), numbers: [] },
-        "tabular",
-        { hasTimeSeries: timeSeries.length > 0, hasNullChart: nullChart.length > 0 },
-      ),
+      value_unit: valueUnit,
+      chart_guides: buildTabularChartGuides({
+        sectorBar: sectorBarLabeled,
+        timeSeries,
+        districtBar,
+        sectorPie,
+        valueHistogram,
+        nullChart,
+        sectorNote: sectorBarNote,
+        timeNote: timeSeries.length >= 2 ? null : null,
+        districtNote: districtBarNote,
+      }),
       visuals: {
         sector_bar: sectorBarLabeled,
         time_series: timeSeries,
+        district_bar: districtBar,
+        sector_pie: sectorPie,
+        value_histogram: valueHistogram,
         null_chart: nullChart,
+      },
+      visuals_meta: {
+        time_series: timeSeries.length
+          ? {
+              chart: "line",
+              x_column: yearCol,
+              y_column: valueCol,
+              x_label: "Year",
+              y_label: valueUnit || "Amount",
+              rows_used: chartRows.length,
+              aggregation: "Sum of amount column grouped by year",
+            }
+          : null,
+        sector_bar: sectorBarLabeled.length
+          ? {
+              chart: "horizontal_bar",
+              category_column: sectorCol,
+              value_column: valueCol,
+              y_label: "Sector",
+              x_label: valueUnit || "Amount",
+              aggregation: "Sum by sector (latest year when multiple years present)",
+            }
+          : null,
+        district_bar: districtBar.length
+          ? {
+              chart: "vertical_bar",
+              category_column: districtCol,
+              value_column: valueCol,
+              x_label: "District / region",
+              y_label: valueUnit || "Amount",
+              aggregation: "Top 10 districts by summed amount",
+            }
+          : null,
+        sector_pie: sectorPie.length
+          ? {
+              chart: "pie",
+              category_column: sectorCol,
+              value_column: valueCol,
+              aggregation: "Each slice is that sector's share of the total",
+            }
+          : null,
+        value_histogram: valueHistogram.length && !districtBar.length
+          ? {
+              chart: "vertical_bar",
+              value_column: valueCol,
+              x_label: "Amount range",
+              y_label: "Row count",
+              aggregation: "How many rows fall in each numeric range",
+            }
+          : null,
+        completeness: nullChart.length
+          ? {
+              chart: "area",
+              metric: "Percent of filled cells per column",
+              rows_used: rows.length,
+              aggregation: "Filled cells per column",
+            }
+          : null,
       },
     },
     recommendations,

@@ -2,7 +2,7 @@
  * Auto-scan ingest: drag/drop multiple files (csv/json/txt/pdf), upload to
  * /api/v1/ingest/scan with live progress, render structured report from the backend.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -33,12 +33,17 @@ import {
   Bar,
   LineChart,
   Line,
+  PieChart,
+  Pie,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip as RTooltip,
   ResponsiveContainer,
   Cell,
+  Legend,
 } from "recharts";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -91,6 +96,22 @@ interface YearCount { year: number; count: number }
 interface YearTotal { year: number; total: number }
 interface NumberMention { unit: string; value: number; raw: string }
 interface NullChart { name: string; null_pct: number }
+interface DistrictTotal { name: string; total: number; label?: string }
+interface SectorPieSlice { name: string; value: number; pct?: number }
+interface ValueHistBin { bin: string; count: number }
+
+interface VisualMeta {
+  chart?: string;
+  x_column?: string | null;
+  y_column?: string | null;
+  category_column?: string | null;
+  value_column?: string | null;
+  x_label?: string;
+  y_label?: string;
+  metric?: string;
+  rows_used?: number;
+  aggregation?: string;
+}
 
 interface HighlightEntry {
   label: string;
@@ -130,8 +151,19 @@ interface AnalysisSection {
     sector_bar?: SectorMention[] | SectorTotal[];
     year_timeline?: YearCount[];
     time_series?: YearTotal[];
+    district_bar?: DistrictTotal[];
+    sector_pie?: SectorPieSlice[];
+    value_histogram?: ValueHistBin[];
     null_chart?: NullChart[];
     unit_histogram?: { unit: string; count: number }[];
+  };
+  visuals_meta?: {
+    time_series?: VisualMeta | null;
+    sector_bar?: VisualMeta | null;
+    district_bar?: VisualMeta | null;
+    sector_pie?: VisualMeta | null;
+    value_histogram?: VisualMeta | null;
+    completeness?: VisualMeta | null;
   };
 }
 
@@ -219,16 +251,8 @@ export function ScanReportIngest() {
   const [progress, setProgress] = useState(0);
   const [report, setReport] = useState<ScanReport | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [tabularEngine, setTabularEngine] = useState<"pandas" | "javascript_fallback" | null>(null);
   const [allowJsonRepair, setAllowJsonRepair] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    ingestApi
-      .health()
-      .then((h) => setTabularEngine(h.analysis.tabular_engine))
-      .catch(() => setTabularEngine(null));
-  }, []);
 
   const addFiles = useCallback(
     async (list: FileList | null) => {
@@ -348,7 +372,7 @@ export function ScanReportIngest() {
           setReport(validated.data);
           setPhase("done");
           toast.success(
-            `Scanned ${body.summary.files_ok}/${body.summary.files_received} file(s) in ${body.duration_ms} ms`,
+            `Review complete — ${body.summary.files_ok} of ${body.summary.files_received} file${body.summary.files_received !== 1 ? "s" : ""} read successfully`,
           );
         } else {
           const msg = "error" in body ? body.error : `HTTP ${xhr.status}`;
@@ -378,28 +402,6 @@ export function ScanReportIngest() {
 
   return (
     <div className="space-y-3">
-      {tabularEngine && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-muted-foreground">Tabular scan engine:</span>
-          <Badge
-            variant="outline"
-            className={cn(
-              "text-xs h-5",
-              tabularEngine === "pandas"
-                ? "border-[hsl(var(--on-track))]/40 text-[hsl(var(--on-track))]"
-                : "border-at-risk/40 text-at-risk",
-            )}
-          >
-            {tabularEngine === "pandas" ? "pandas (high accuracy)" : "JavaScript fallback (lower accuracy)"}
-          </Badge>
-          {tabularEngine === "javascript_fallback" && (
-            <span className="text-xs text-muted-foreground">
-              Run <code className="font-mono text-[10px]">npm run setup:ingest-python</code> locally for pandas parity.
-            </span>
-          )}
-        </div>
-      )}
-
       {phase !== "done" && (
         <div
           onDrop={onDrop}
@@ -412,14 +414,10 @@ export function ScanReportIngest() {
             Drop .csv, .json, .txt or .pdf here, or click to browse
           </p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            Up to {MAX_FILES} files · 20 MB each · auto-scanned for data shape, missing values, and NDC keywords
+            Up to {MAX_FILES} files · 20 MB each · we read the file and explain what it contains in plain language
           </p>
           <p className="text-[10px] text-muted-foreground mt-0.5">
-            For .json: save as <strong className="font-medium">plain UTF-8</strong> (not TextEdit Rich Text). Example:{" "}
-            <code className="text-[9px]">docs/samples/ingest-example.json</code>
-          </p>
-          <p className="text-[10px] text-muted-foreground mt-1">
-            JSON mode: <strong className="font-medium">{allowJsonRepair ? "Repair enabled" : "Strict (default)"}</strong>
+            Tip: save spreadsheets as CSV or Excel. For data files, use a simple table format — not Rich Text.
           </p>
           <input
             ref={inputRef}
@@ -444,10 +442,10 @@ export function ScanReportIngest() {
               className="h-7 text-xs"
               onClick={() => setAllowJsonRepair((v) => !v)}
             >
-              {allowJsonRepair ? "JSON repair mode: ON" : "JSON repair mode: OFF (strict)"}
+              {allowJsonRepair ? "Auto-fix messy files: ON" : "Auto-fix messy files: OFF"}
             </Button>
             <span className="text-[10px] text-muted-foreground">
-              Keep OFF for strict validation; turn ON only for messy legacy JSON.
+              Leave OFF for normal files. Turn ON only if a data file fails to open.
             </span>
           </div>
           <div className="space-y-1">
@@ -480,7 +478,7 @@ export function ScanReportIngest() {
               Clear
             </Button>
             <Button size="sm" className="h-7 text-xs" onClick={submit} disabled={!files.length}>
-              Scan &amp; generate report
+              Review my files
             </Button>
           </div>
         </div>
@@ -491,14 +489,14 @@ export function ScanReportIngest() {
           <div className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
             <span className="text-xs font-medium">
-              {phase === "uploading" ? `Uploading… ${progress}%` : "Scanning files on server…"}
+              {phase === "uploading" ? `Uploading… ${progress}%` : "Reading your files…"}
             </span>
           </div>
           <Progress value={phase === "scanning" ? 100 : progress} className="h-1.5" />
           <p className="text-[10px] text-muted-foreground">
             {phase === "scanning"
-              ? "Profiling columns, matching NDC keywords, and generating AI insights…"
-              : `${files.length} file(s) in flight.`}
+              ? "Checking the contents and preparing a plain-language summary…"
+              : `Sending ${files.length} file${files.length !== 1 ? "s" : ""}…`}
           </p>
         </div>
       )}
@@ -507,7 +505,7 @@ export function ScanReportIngest() {
         <div className="p-3 rounded border border-destructive/50 bg-destructive/5 flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-xs font-semibold text-destructive">Scan failed</p>
+            <p className="text-xs font-semibold text-destructive">Could not read your files</p>
             <p className="text-[10px] text-destructive/80 mt-0.5">{error}</p>
           </div>
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={reset}>
@@ -528,17 +526,13 @@ function ReportView({ report, onReset }: { report: ScanReport; onReset: () => vo
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <CheckCircle2 className="h-4 w-4 text-on-track" />
-          <span className="text-sm font-semibold">Scan report</span>
-          <Badge variant="outline" className="text-[10px] font-mono">
-            {report.report_id}
-          </Badge>
+          <span className="text-sm font-semibold">Your file review</span>
           <span className="text-[10px] text-muted-foreground">
             {new Date(report.generated_at).toLocaleString()}
           </span>
-          <span className="text-[10px] text-muted-foreground">· {report.duration_ms} ms</span>
           {summary.ai_enhanced && (
             <Badge variant="outline" className="text-[9px] bg-primary/8 text-primary border-primary/30 gap-1">
-              <Sparkles className="h-2.5 w-2.5" />AI enhanced
+              <Sparkles className="h-2.5 w-2.5" />Includes AI summary
             </Badge>
           )}
         </div>
@@ -550,59 +544,63 @@ function ReportView({ report, onReset }: { report: ScanReport; onReset: () => vo
             onClick={() => downloadJson(report)}
           >
             <Download className="h-3 w-3" />
-            JSON
+            Download report
           </Button>
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onReset}>
-            New scan
+            Review another file
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <Stat label="Files received" value={summary.files_received} />
-        <Stat label="Parsed OK" value={summary.files_ok} tone="ok" />
+        <Stat label="Files uploaded" value={summary.files_received} />
+        <Stat label="Read successfully" value={summary.files_ok} tone="ok" />
         <Stat
-          label="Failed"
+          label="Could not read"
           value={summary.files_failed}
           tone={summary.files_failed ? "bad" : "muted"}
         />
         <Stat
-          label="Warnings"
+          label="Things to check"
           value={summary.total_warnings}
           tone={summary.total_warnings ? "warn" : "muted"}
         />
       </div>
-      {(summary.json_mode || summary.qc) && (
-        <div className="space-y-2">
-          {summary.json_mode && (
-            <p className="text-[10px] text-muted-foreground">
-              JSON parse mode used for this scan:{" "}
-              <span className={cn("font-semibold", summary.json_mode === "repair" ? "text-at-risk" : "text-on-track")}>
-                {summary.json_mode}
-              </span>
-            </p>
-          )}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-          <Stat label="Rows input" value={summary.qc?.rows_input ?? 0} />
-          <Stat label="Rows charted" value={summary.qc?.rows_used_for_charts ?? 0} tone="ok" />
-          <Stat label="Rows dropped" value={summary.qc?.rows_dropped_non_national ?? 0} tone={summary.qc?.rows_dropped_non_national ? "warn" : "muted"} />
-          <Stat label="Duplicate rows" value={summary.qc?.duplicate_key_rows ?? 0} tone={summary.qc?.duplicate_key_rows ? "warn" : "muted"} />
-          <Stat label="Coercion fails" value={summary.qc?.value_coercion_failures ?? 0} tone={summary.qc?.value_coercion_failures ? "bad" : "muted"} />
-          <Stat label="Repaired JSON files" value={summary.qc?.files_repaired_non_strict ?? 0} tone={summary.qc?.files_repaired_non_strict ? "warn" : "muted"} />
+      {(summary.json_mode === "repair" || summary.qc) && (
+        <details className="rounded border border-border bg-muted/20 p-2">
+          <summary className="text-[10px] font-semibold text-muted-foreground cursor-pointer hover:text-foreground">
+            More detail for data officers
+          </summary>
+          <div className="mt-2 space-y-2">
+            {summary.json_mode === "repair" && (
+              <p className="text-[10px] text-at-risk">
+                One or more data files were auto-corrected to open them — please double-check the figures before publishing.
+              </p>
+            )}
+            {summary.qc && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <Stat label="Total rows" value={summary.qc.rows_input ?? 0} />
+                <Stat label="Rows in charts" value={summary.qc.rows_used_for_charts ?? 0} tone="ok" />
+                <Stat label="Rows left out" value={summary.qc.rows_dropped_non_national ?? 0} tone={summary.qc.rows_dropped_non_national ? "warn" : "muted"} />
+                <Stat label="Duplicate entries" value={summary.qc.duplicate_key_rows ?? 0} tone={summary.qc.duplicate_key_rows ? "warn" : "muted"} />
+                <Stat label="Unreadable numbers" value={summary.qc.value_coercion_failures ?? 0} tone={summary.qc.value_coercion_failures ? "bad" : "muted"} />
+                <Stat label="Auto-fixed files" value={summary.qc.files_repaired_non_strict ?? 0} tone={summary.qc.files_repaired_non_strict ? "warn" : "muted"} />
+              </div>
+            )}
           </div>
-        </div>
+        </details>
       )}
 
       {Object.keys(summary.keyword_buckets).length > 0 && (
         <div className="space-y-1 p-3 rounded border border-border bg-card">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-            NDC keywords detected across all files
+            Keywords
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-1">
             {Object.entries(summary.keyword_buckets).map(([bucket, words]) => (
               <div key={bucket} className="space-y-0.5">
-                <p className="text-[10px] font-semibold text-foreground capitalize">
-                  {bucket.replace(/_/g, " ")}
+                <p className="text-[10px] font-semibold text-foreground">
+                  {friendlyKeywordBucket(bucket)}
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {words.map((w) => (
@@ -650,9 +648,9 @@ function FileCard({ file }: { file: FileReport }) {
       <div className="flex items-center gap-2 flex-wrap">
         {iconFor(file.filename)}
         <span className="text-xs font-medium truncate flex-1">{file.filename}</span>
-        {file.kind && (
+        {friendlyFileKind(file.kind) && (
           <Badge variant="outline" className="text-[9px]">
-            {file.kind}
+            {friendlyFileKind(file.kind)}
           </Badge>
         )}
         {file.size_bytes != null && (
@@ -662,7 +660,7 @@ function FileCard({ file }: { file: FileReport }) {
         )}
         {file.parse_mode && file.parse_mode !== "strict" && (
           <Badge variant="outline" className="text-[9px] bg-at-risk/10 text-at-risk border-at-risk/30">
-            repaired
+            Auto-fixed
           </Badge>
         )}
         {file.rows != null && (
@@ -675,31 +673,11 @@ function FileCard({ file }: { file: FileReport }) {
             {file.pages} pages
           </Badge>
         )}
-        {file.analysis_engine === "pandas" && (
-          <Badge variant="outline" className="text-[9px] bg-on-track/10 text-on-track border-on-track/30">
-            pandas {file.pandas_version ?? ""}
-          </Badge>
-        )}
         {file.words != null && (
           <Badge variant="outline" className="text-[9px]">
             {file.words} words
           </Badge>
         )}
-        {file.qc?.rows_dropped_non_national ? (
-          <Badge variant="outline" className="text-[9px] bg-at-risk/10 text-at-risk border-at-risk/30">
-            dropped {file.qc.rows_dropped_non_national}
-          </Badge>
-        ) : null}
-        {file.qc?.duplicate_key_rows ? (
-          <Badge variant="outline" className="text-[9px] bg-at-risk/10 text-at-risk border-at-risk/30">
-            duplicates {file.qc.duplicate_key_rows}
-          </Badge>
-        ) : null}
-        {file.qc?.value_coercion_failures ? (
-          <Badge variant="outline" className="text-[9px] bg-destructive/10 text-destructive border-destructive/30">
-            coercion fails {file.qc.value_coercion_failures}
-          </Badge>
-        ) : null}
       </div>
 
       {file.warnings && file.warnings.length > 0 && (
@@ -726,7 +704,6 @@ function FileCard({ file }: { file: FileReport }) {
           kind={file.kind}
           keys={file.keys}
           validation={file.validation}
-          analysisEngine={file.analysis_engine}
         />
       )}
 
@@ -737,12 +714,12 @@ function FileCard({ file }: { file: FileReport }) {
       {file.parse_errors && file.parse_errors.length > 0 && (
         <div>
           <p className="text-[9px] uppercase tracking-wider text-at-risk font-semibold mb-1">
-            Parse errors ({file.parse_errors.length})
+            Problems reading this file ({file.parse_errors.length})
           </p>
           <ul className="text-[10px] text-at-risk space-y-0.5">
             {file.parse_errors.slice(0, 5).map((e, i) => (
               <li key={i}>
-                Row {e.row ?? "?"}: {e.message ?? e.code}
+                Line {e.row ?? "?"}: {e.message ?? e.code}
               </li>
             ))}
           </ul>
@@ -754,9 +731,9 @@ function FileCard({ file }: { file: FileReport }) {
 
 function AiInsightsCard({ insights }: { insights: AiInsights }) {
   const verdictConfig = {
-    ready: { icon: ShieldCheck, color: "text-on-track", bg: "bg-on-track/5 border-on-track/25", label: "Ready to use" },
-    needs_work: { icon: ShieldAlert, color: "text-at-risk", bg: "bg-at-risk/5 border-at-risk/25", label: "Needs work" },
-    not_ndc_relevant: { icon: ShieldX, color: "text-muted-foreground", bg: "bg-muted/30 border-border", label: "Not NDC relevant" },
+    ready: { icon: ShieldCheck, color: "text-on-track", bg: "bg-on-track/5 border-on-track/25", label: "Looks good to use" },
+    needs_work: { icon: ShieldAlert, color: "text-at-risk", bg: "bg-at-risk/5 border-at-risk/25", label: "Needs cleanup" },
+    not_ndc_relevant: { icon: ShieldX, color: "text-muted-foreground", bg: "bg-muted/30 border-border", label: "Not climate-related" },
   };
   const cfg = verdictConfig[insights.verdict] ?? verdictConfig.needs_work;
   const VerdictIcon = cfg.icon;
@@ -766,7 +743,7 @@ function AiInsightsCard({ insights }: { insights: AiInsights }) {
       {/* Header */}
       <div className="flex items-center gap-2">
         <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
-        <span className="text-[10px] uppercase tracking-wider font-bold text-primary">AI Analysis</span>
+        <span className="text-[10px] uppercase tracking-wider font-bold text-primary">Quick assessment</span>
         <div className="flex-1" />
         <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-semibold", cfg.bg, cfg.color)}>
           <VerdictIcon className="h-3 w-3" />
@@ -783,7 +760,7 @@ function AiInsightsCard({ insights }: { insights: AiInsights }) {
       {/* Key findings */}
       {insights.key_findings && insights.key_findings.length > 0 && (
         <div className="space-y-1">
-          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Key findings</p>
+          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">What stood out</p>
           <ul className="space-y-1">
             {insights.key_findings.map((f, i) => (
               <li key={i} className="flex gap-1.5 text-[11px] text-foreground leading-snug">
@@ -798,7 +775,7 @@ function AiInsightsCard({ insights }: { insights: AiInsights }) {
       {/* Policy value */}
       {insights.policy_value && (
         <div className="rounded border border-border bg-card/60 p-2.5">
-          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">For policy makers</p>
+          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Why this matters for planning</p>
           <p className="text-[11px] text-foreground leading-relaxed">{insights.policy_value}</p>
         </div>
       )}
@@ -806,7 +783,7 @@ function AiInsightsCard({ insights }: { insights: AiInsights }) {
       {/* Policy planning uses */}
       {insights.policy_uses && insights.policy_uses.length > 0 && (
         <div className="rounded border border-primary/20 bg-primary/[0.03] p-2.5 space-y-1.5">
-          <p className="text-[9px] uppercase tracking-wider text-primary font-semibold">How to use for policy planning</p>
+          <p className="text-[9px] uppercase tracking-wider text-primary font-semibold">Ways to use this in planning</p>
           <ul className="space-y-2">
             {insights.policy_uses.map((use, i) => (
               <li key={i} className="flex gap-1.5 text-[11px] text-foreground leading-relaxed">
@@ -822,7 +799,7 @@ function AiInsightsCard({ insights }: { insights: AiInsights }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {insights.ndc_targets && insights.ndc_targets.length > 0 && (
           <div className="space-y-1">
-            <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">NDC targets this could update</p>
+            <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Climate targets this may support</p>
             <div className="flex flex-wrap gap-1">
               {insights.ndc_targets.map((t) => (
                 <Badge key={t} variant="outline" className="text-[9px] bg-primary/8 text-primary border-primary/30">
@@ -834,7 +811,7 @@ function AiInsightsCard({ insights }: { insights: AiInsights }) {
         )}
         {insights.risks && insights.risks.length > 0 && (
           <div className="space-y-1">
-            <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Risks / concerns</p>
+            <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Watch out for</p>
             <ul className="space-y-0.5">
               {insights.risks.map((r, i) => (
                 <li key={i} className="flex gap-1 text-[10px] text-at-risk leading-snug">
@@ -860,7 +837,7 @@ function AiInsightsCard({ insights }: { insights: AiInsights }) {
       {/* Verified sources */}
       {insights.sources && insights.sources.length > 0 && (
         <div className="pt-2 border-t border-border/40 space-y-1">
-          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Sources to verify & extend</p>
+          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Official sources to check</p>
           <ul className="space-y-1">
             {insights.sources.map((s) => (
               <li key={s.url} className="flex items-start gap-1.5 text-[11px] leading-snug">
@@ -1023,7 +1000,7 @@ export function AboutCard({ about }: { about: AboutSection }) {
             <div>
               <p className="text-[9px] uppercase text-muted-foreground font-semibold mb-1">Size of file</p>
               <p className="text-[11px] text-foreground/80">
-                {about.shape.rows != null && `${about.shape.rows} rows`}
+                {about.shape.rows != null && `${about.shape.rows} rows of data`}
                 {about.shape.rows != null && about.shape.columns != null && " · "}
                 {about.shape.columns != null && `${about.shape.columns} columns`}
               </p>
@@ -1054,7 +1031,6 @@ export function AnalysisCard({
   kind,
   keys,
   validation,
-  analysisEngine,
 }: {
   analysis: AnalysisSection;
   columns?: ColumnSummary[];
@@ -1063,11 +1039,12 @@ export function AnalysisCard({
   kind?: string;
   keys?: string[];
   validation?: AnalysisValidation;
-  analysisEngine?: string;
 }) {
   const v = analysis.visuals ?? {};
+  const meta = analysis.visuals_meta ?? {};
   const guides = analysis.chart_guides ?? [];
   const guideFor = (id: string) => guides.find((g) => g.id === id);
+  const isTabular = analysis.mode === "tabular";
 
   const sectorData = (v.sector_bar ?? []).map((s, i) => ({
     name: ("label" in s && s.label) || s.name,
@@ -1075,39 +1052,53 @@ export function AnalysisCard({
     fill: CHART_COLORS[i % CHART_COLORS.length],
   }));
   const yearData = v.time_series ?? v.year_timeline?.map((y) => ({ year: y.year, total: y.count })) ?? [];
+  const districtData = (v.district_bar ?? []).map((d, i) => ({
+    name: d.label ?? d.name,
+    value: d.total,
+    fill: CHART_COLORS[i % CHART_COLORS.length],
+  }));
+  const pieData = v.sector_pie ?? [];
+  const histData = v.value_histogram ?? [];
   const nullChart = v.null_chart ?? [];
+  const completenessData = nullChart.map((row) => ({
+    name: row.name,
+    fill_pct: +(100 - row.null_pct).toFixed(1),
+  }));
   const unitHist = v.unit_histogram ?? [];
 
   const sectorGuide = guideFor("sector_bar");
-  const yearGuide = guideFor("year_timeline");
+  const yearGuide = guideFor(isTabular ? "time_series" : "year_timeline");
+  const districtGuide = guideFor("district_bar");
+  const pieGuide = guideFor("sector_pie");
+  const histGuide = guideFor("value_histogram");
+  const completenessGuide = guideFor("completeness");
   const nullGuide = guideFor("null_chart");
   const unitGuide = guideFor("unit_histogram");
 
   const paragraphMode =
     analysis.presentation === "paragraph" && (analysis.paragraphs?.length ?? 0) > 0;
-  const hasCharts =
-    sectorData.length > 0 || yearData.length > 0 || nullChart.length > 0 || unitHist.length > 0;
+  const hasTabularCharts = isTabular;
+  const hasNarrativeCharts =
+    !isTabular &&
+    (sectorData.length > 0 || yearData.length > 0 || nullChart.length > 0 || unitHist.length > 0);
+  const hasCharts = hasTabularCharts || hasNarrativeCharts;
   const valueUnit = analysis.value_unit || validation?.value_unit || "";
   const unitSuffix = valueUnit ? ` (${valueUnit})` : "";
+
+  const slot3Type = districtData.length > 0 ? "district" : histData.length > 0 ? "histogram" : null;
+  const slot4Type = pieData.length > 0 ? "pie" : completenessData.length > 0 ? "completeness" : null;
 
   return (
     <div className="rounded-md border border-border bg-muted/20 p-3">
       <SectionHeader
         icon={<BarChart3 className="h-3.5 w-3.5 text-on-track" />}
-        title="Data analysis"
+        title="What's in the numbers"
         accent="border-on-track/30 text-on-track"
       />
 
-      {analysisEngine === "pandas" && (
-        <p className="text-[10px] text-on-track mb-2 leading-snug">
-          Charts computed with pandas — numeric cleaning, correct year/sector grouping, and national-row
-          filtering when needed.
-        </p>
-      )}
-
       {validation?.notes && validation.notes.length > 0 && (
         <div className="mb-3 rounded border border-border bg-muted/30 p-2 space-y-1">
-          <p className="text-[9px] uppercase text-muted-foreground font-semibold">How totals were calculated</p>
+          <p className="text-[9px] uppercase text-muted-foreground font-semibold">How we added up the figures</p>
           {validation.notes.map((note, i) => (
             <p key={i} className="text-[10px] text-foreground/85 leading-relaxed">
               {note}
@@ -1132,7 +1123,7 @@ export function AnalysisCard({
 
       {!paragraphMode && analysis.highlights && analysis.highlights.length > 0 && (
         <div className="mb-3 rounded border border-on-track/20 bg-on-track/5 p-2.5 space-y-2">
-          <p className="text-[9px] uppercase text-on-track font-semibold tracking-wider">Key figures at a glance</p>
+          <p className="text-[9px] uppercase text-on-track font-semibold tracking-wider">Main figures at a glance</p>
           {analysis.highlights.map((h, i) => (
             <div key={i}>
               <p className="text-[11px] font-semibold text-foreground">{h.label}</p>
@@ -1161,92 +1152,270 @@ export function AnalysisCard({
         <p className="text-[9px] uppercase text-muted-foreground font-semibold mb-2">Charts</p>
       )}
 
-      {hasCharts && (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {sectorData.length > 0 && (
-          <Chart
-            title={(sectorGuide?.title ?? "Emissions or values by sector") + unitSuffix}
-            caption={sectorGuide ? chartCaption(sectorGuide) : undefined}
-          >
-            <BarChart data={sectorData} layout="vertical" margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis type="number" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
-              <YAxis dataKey="name" type="category" tick={{ fontSize: 8 }} width={100} stroke="hsl(var(--muted-foreground))" />
-              <RTooltip {...tooltipStyle()} />
-              <Bar dataKey="value" radius={[0, 3, 3, 0]}>
-                {sectorData.map((entry, i) => (
-                  <Cell key={i} fill={entry.fill} />
-                ))}
-              </Bar>
-            </BarChart>
-          </Chart>
-        )}
+      {hasTabularCharts && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {yearData.length > 0 ? (
+            <Chart
+              title={(yearGuide?.title ?? "Trend over time") + unitSuffix}
+              subtitle={metaSubtitle(meta.time_series)}
+              caption={yearGuide ? chartCaption(yearGuide) : undefined}
+            >
+              <LineChart data={yearData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="year"
+                  label={meta.time_series?.x_label ? { value: meta.time_series.x_label, position: "insideBottom", offset: -2, fontSize: 9 } : undefined}
+                  tick={{ fontSize: 9 }}
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <YAxis
+                  label={meta.time_series?.y_label ? { value: meta.time_series.y_label, angle: -90, position: "insideLeft", fontSize: 9 } : undefined}
+                  tick={{ fontSize: 9 }}
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <RTooltip {...tooltipStyle()} />
+                <Line type="monotone" dataKey="total" stroke={CHART_COLOR} strokeWidth={2} dot={{ r: 3 }} />
+              </LineChart>
+            </Chart>
+          ) : (
+            <ChartPlaceholder
+              title="Trend over time"
+              reason="Add a Year column and an Amount column to see how figures change over time."
+            />
+          )}
 
-        {yearData.length > 0 && (
-          <Chart
-            title={(yearGuide?.title ?? (analysis.mode === "tabular" ? "Change over time" : "Which years come up?")) + unitSuffix}
-            caption={yearGuide ? chartCaption(yearGuide) : undefined}
-          >
-            <LineChart data={yearData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="year" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
-              <YAxis tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
-              <RTooltip {...tooltipStyle()} />
-              <Line type="monotone" dataKey="total" stroke={CHART_COLOR} strokeWidth={2} dot={{ r: 3 }} />
-            </LineChart>
-          </Chart>
-        )}
+          {sectorData.length > 0 ? (
+            <Chart
+              title={(sectorGuide?.title ?? "Totals by sector") + unitSuffix}
+              subtitle={metaSubtitle(meta.sector_bar)}
+              caption={sectorGuide ? chartCaption(sectorGuide) : undefined}
+            >
+              <BarChart data={sectorData} layout="vertical" margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="number" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 8 }} width={100} stroke="hsl(var(--muted-foreground))" />
+                <RTooltip {...tooltipStyle()} />
+                <Bar dataKey="value" radius={[0, 3, 3, 0]}>
+                  {sectorData.map((entry, i) => (
+                    <Cell key={i} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </Chart>
+          ) : (
+            <ChartPlaceholder
+              title="Totals by sector"
+              reason="Add Sector and Amount columns to compare energy, forests, agriculture, and other parts of the economy."
+            />
+          )}
 
-        {nullChart.length > 0 && (
-          <Chart
-            title={nullGuide?.title ?? "Where is data missing?"}
-            caption={nullGuide ? chartCaption(nullGuide) : undefined}
-          >
-            <BarChart data={nullChart} margin={{ top: 4, right: 8, left: 0, bottom: 30 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis
-                dataKey="name"
-                tick={{ fontSize: 8 }}
-                stroke="hsl(var(--muted-foreground))"
-                angle={-30}
-                textAnchor="end"
-                interval={0}
-              />
-              <YAxis tick={{ fontSize: 9 }} domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
-              <RTooltip {...tooltipStyle()} />
-              <Bar dataKey="null_pct" radius={[3, 3, 0, 0]}>
-                {nullChart.map((row, i) => (
-                  <Cell key={i} fill={row.null_pct >= 50 ? "hsl(var(--at-risk))" : CHART_COLOR} />
-                ))}
-              </Bar>
-            </BarChart>
-          </Chart>
-        )}
+          {slot3Type === "district" ? (
+            <Chart
+              title={(districtGuide?.title ?? "Top districts or regions") + unitSuffix}
+              subtitle={metaSubtitle(meta.district_bar)}
+              caption={districtGuide ? chartCaption(districtGuide) : undefined}
+            >
+              <BarChart data={districtData} margin={{ top: 4, right: 8, left: 0, bottom: 30 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="name"
+                  label={meta.district_bar?.x_label ? { value: meta.district_bar.x_label, position: "insideBottom", offset: -18, fontSize: 9 } : undefined}
+                  tick={{ fontSize: 8 }}
+                  stroke="hsl(var(--muted-foreground))"
+                  angle={-30}
+                  textAnchor="end"
+                  interval={0}
+                />
+                <YAxis
+                  label={meta.district_bar?.y_label ? { value: meta.district_bar.y_label, angle: -90, position: "insideLeft", fontSize: 9 } : undefined}
+                  tick={{ fontSize: 9 }}
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <RTooltip {...tooltipStyle()} />
+                <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+                  {districtData.map((entry, i) => (
+                    <Cell key={i} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </Chart>
+          ) : slot3Type === "histogram" ? (
+            <Chart
+              title={histGuide?.title ?? "How amounts are distributed"}
+              subtitle={metaSubtitle(meta.value_histogram)}
+              caption={histGuide ? chartCaption(histGuide) : undefined}
+            >
+              <BarChart data={histData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="bin"
+                  label={meta.value_histogram?.x_label ? { value: meta.value_histogram.x_label, position: "insideBottom", offset: -2, fontSize: 9 } : undefined}
+                  tick={{ fontSize: 8 }}
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <YAxis
+                  label={meta.value_histogram?.y_label ? { value: meta.value_histogram.y_label, angle: -90, position: "insideLeft", fontSize: 9 } : undefined}
+                  tick={{ fontSize: 9 }}
+                  stroke="hsl(var(--muted-foreground))"
+                />
+                <RTooltip {...tooltipStyle()} />
+                <Bar dataKey="count" fill={CHART_COLOR} radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </Chart>
+          ) : (
+            <ChartPlaceholder
+              title="District or value spread"
+              reason="Add a District or Region column for regional totals, or ensure the Amount column has enough numeric rows for a distribution chart."
+            />
+          )}
 
-        {unitHist.length > 0 && (
-          <Chart
-            title={unitGuide?.title ?? "What kinds of numbers appear?"}
-            caption={unitGuide ? chartCaption(unitGuide) : undefined}
-          >
-            <BarChart data={unitHist} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="unit" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
-              <YAxis tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
-              <RTooltip {...tooltipStyle()} />
-              <Bar dataKey="count" fill={CHART_COLOR} radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </Chart>
-        )}
-      </div>
+          {slot4Type === "pie" ? (
+            <Chart
+              title={pieGuide?.title ?? "Sector share"}
+              subtitle={meta.sector_pie?.aggregation}
+              caption={pieGuide ? chartCaption(pieGuide) : undefined}
+            >
+              <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                <Pie
+                  data={pieData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="45%"
+                  outerRadius={52}
+                  label={({ name, pct }) => (pct != null && pct >= 8 ? `${name} ${pct}%` : "")}
+                  labelLine={false}
+                >
+                  {pieData.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <RTooltip
+                  {...tooltipStyle()}
+                  formatter={(value: number, _name: string, props: { payload?: SectorPieSlice }) => {
+                    const pct = props.payload?.pct;
+                    return pct != null ? [`${value} (${pct}%)`, "Total"] : [value, "Total"];
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 9 }} />
+              </PieChart>
+            </Chart>
+          ) : slot4Type === "completeness" ? (
+            <Chart
+              title={completenessGuide?.title ?? "Data completeness"}
+              subtitle={meta.completeness?.metric}
+              caption={completenessGuide ? chartCaption(completenessGuide) : undefined}
+            >
+              <AreaChart data={completenessData} margin={{ top: 4, right: 8, left: 0, bottom: 30 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 8 }}
+                  stroke="hsl(var(--muted-foreground))"
+                  angle={-30}
+                  textAnchor="end"
+                  interval={0}
+                />
+                <YAxis tick={{ fontSize: 9 }} domain={[0, 100]} stroke="hsl(var(--muted-foreground))" unit="%" />
+                <RTooltip {...tooltipStyle()} formatter={(v: number) => [`${v}% filled`, "Completeness"]} />
+                <Area type="monotone" dataKey="fill_pct" stroke={CHART_COLOR} fill={CHART_COLOR} fillOpacity={0.35} />
+              </AreaChart>
+            </Chart>
+          ) : (
+            <ChartPlaceholder
+              title="Sector share or completeness"
+              reason="Add Sector and Amount columns for a share chart, or include more columns so we can show how complete each field is."
+            />
+          )}
+        </div>
+      )}
+
+      {hasNarrativeCharts && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {sectorData.length > 0 && (
+            <Chart
+              title={(sectorGuide?.title ?? "Emissions or values by sector") + unitSuffix}
+              caption={sectorGuide ? chartCaption(sectorGuide) : undefined}
+            >
+              <BarChart data={sectorData} layout="vertical" margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="number" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 8 }} width={100} stroke="hsl(var(--muted-foreground))" />
+                <RTooltip {...tooltipStyle()} />
+                <Bar dataKey="value" radius={[0, 3, 3, 0]}>
+                  {sectorData.map((entry, i) => (
+                    <Cell key={i} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </Chart>
+          )}
+
+          {yearData.length > 0 && (
+            <Chart
+              title={(yearGuide?.title ?? "Which years come up?")}
+              caption={yearGuide ? chartCaption(yearGuide) : undefined}
+            >
+              <LineChart data={yearData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="year" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
+                <YAxis tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
+                <RTooltip {...tooltipStyle()} />
+                <Line type="monotone" dataKey="total" stroke={CHART_COLOR} strokeWidth={2} dot={{ r: 3 }} />
+              </LineChart>
+            </Chart>
+          )}
+
+          {nullChart.length > 0 && (
+            <Chart
+              title={nullGuide?.title ?? "Where is data missing?"}
+              caption={nullGuide ? chartCaption(nullGuide) : undefined}
+            >
+              <BarChart data={nullChart} margin={{ top: 4, right: 8, left: 0, bottom: 30 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 8 }}
+                  stroke="hsl(var(--muted-foreground))"
+                  angle={-30}
+                  textAnchor="end"
+                  interval={0}
+                />
+                <YAxis tick={{ fontSize: 9 }} domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
+                <RTooltip {...tooltipStyle()} />
+                <Bar dataKey="null_pct" radius={[3, 3, 0, 0]}>
+                  {nullChart.map((row, i) => (
+                    <Cell key={i} fill={row.null_pct >= 50 ? "hsl(var(--at-risk))" : CHART_COLOR} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </Chart>
+          )}
+
+          {unitHist.length > 0 && (
+            <Chart
+              title={unitGuide?.title ?? "What kinds of numbers appear?"}
+              caption={unitGuide ? chartCaption(unitGuide) : undefined}
+            >
+              <BarChart data={unitHist} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="unit" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
+                <YAxis tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
+                <RTooltip {...tooltipStyle()} />
+                <Bar dataKey="count" fill={CHART_COLOR} radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </Chart>
+          )}
+        </div>
       )}
 
       {!paragraphMode && analysis.numbers && analysis.numbers.length > 0 && (
         <details className="mt-3">
           <summary className="text-[9px] uppercase text-muted-foreground font-semibold cursor-pointer hover:text-foreground">
-            All numbers found in the text ({analysis.numbers.length})
+            All figures mentioned ({analysis.numbers.length})
           </summary>
           <p className="text-[10px] text-muted-foreground mt-1 mb-1">
-            Raw figures as they appear in the document — useful for auditors; the highlights above are the main ones.
+            Every number we spotted in the document. The highlights above are the most important ones.
           </p>
           <div className="flex flex-wrap gap-1 max-h-24 overflow-auto">
             {analysis.numbers.slice(0, 24).map((n, i) => (
@@ -1261,25 +1430,25 @@ export function AnalysisCard({
       {columns && columns.length > 0 && (
         <details className="mt-3">
           <summary className="text-[9px] uppercase text-muted-foreground font-semibold cursor-pointer hover:text-foreground">
-            Full column profile ({columns.length})
+            Column details ({columns.length})
           </summary>
           <div className="max-h-44 overflow-auto border border-border rounded mt-1">
             <table className="w-full text-[10px]">
               <thead className="bg-muted/30 sticky top-0">
                 <tr>
-                  <th className="text-left p-1.5">Name</th>
-                  <th className="text-left p-1.5">Type</th>
-                  <th className="text-right p-1.5">Nulls</th>
-                  <th className="text-right p-1.5">Min</th>
-                  <th className="text-right p-1.5">Max</th>
-                  <th className="text-right p-1.5">Mean</th>
+                  <th className="text-left p-1.5">Column</th>
+                  <th className="text-left p-1.5">Kind</th>
+                  <th className="text-right p-1.5">Empty</th>
+                  <th className="text-right p-1.5">Lowest</th>
+                  <th className="text-right p-1.5">Highest</th>
+                  <th className="text-right p-1.5">Average</th>
                 </tr>
               </thead>
               <tbody>
                 {columns.map((c) => (
                   <tr key={c.name} className="border-t border-border/30">
                     <td className="p-1.5 font-medium text-foreground">{c.name}</td>
-                    <td className="p-1.5">{c.type}</td>
+                    <td className="p-1.5">{friendlyColumnType(c.type)}</td>
                     <td
                       className={cn(
                         "p-1.5 text-right tabular-nums",
@@ -1302,7 +1471,7 @@ export function AnalysisCard({
       {keys && keys.length > 0 && (
         <div className="mt-3">
           <p className="text-[9px] uppercase text-muted-foreground font-semibold mb-1">
-            Top-level keys ({keys.length})
+            Data fields found ({keys.length})
           </p>
           <div className="flex flex-wrap gap-1">
             {keys.slice(0, 30).map((k) => (
@@ -1317,7 +1486,7 @@ export function AnalysisCard({
       {(preview || (kind === "json_object" && sample) || (Array.isArray(sample) && sample.length > 0)) && (
         <details className="mt-3">
           <summary className="text-[9px] uppercase text-muted-foreground font-semibold cursor-pointer hover:text-foreground">
-            Raw preview
+            Original file snippet
           </summary>
           <pre className="text-[10px] bg-muted/30 p-2 rounded max-h-40 overflow-auto whitespace-pre-wrap break-words mt-1">
             {preview ?? JSON.stringify(sample, null, 2).slice(0, 1200)}
@@ -1335,7 +1504,7 @@ export function RecommendationsCard({ items }: { items: string[] }) {
     <div className="rounded-md border border-at-risk/30 bg-at-risk/5 p-3">
       <SectionHeader
         icon={<Lightbulb className="h-3.5 w-3.5 text-at-risk" />}
-        title="Data quality fixes"
+        title="How to improve this file"
         accent="border-at-risk/30 text-at-risk"
       />
       {paragraphStyle ? (
@@ -1364,18 +1533,34 @@ function chartCaption(guide: ChartGuide) {
   return `${guide.what} ${guide.how_to_read}`;
 }
 
+function metaSubtitle(m?: VisualMeta | null): string | undefined {
+  if (!m) return undefined;
+  const parts: string[] = [];
+  if (m.x_label && m.y_label) parts.push(`${m.x_label} × ${m.y_label}`);
+  else if (m.x_label) parts.push(m.x_label);
+  else if (m.y_label) parts.push(m.y_label);
+  else if (m.metric) parts.push(m.metric);
+  if (m.aggregation) parts.push(m.aggregation);
+  return parts.length ? parts.join(" · ") : undefined;
+}
+
 function Chart({
   title,
+  subtitle,
   caption,
   children,
 }: {
   title: string;
+  subtitle?: string;
   caption?: string;
   children: React.ReactElement;
 }) {
   return (
     <div className="border border-border rounded bg-card p-2">
       <p className="text-[10px] font-semibold text-foreground mb-0.5 leading-snug">{title}</p>
+      {subtitle && (
+        <p className="text-[9px] text-muted-foreground leading-snug mb-1">{subtitle}</p>
+      )}
       <div style={{ width: "100%", height: 160 }}>
         <ResponsiveContainer width="100%" height="100%">
           {children}
@@ -1386,6 +1571,15 @@ function Chart({
           {caption}
         </p>
       )}
+    </div>
+  );
+}
+
+function ChartPlaceholder({ title, reason }: { title: string; reason: string }) {
+  return (
+    <div className="border border-dashed border-border rounded bg-muted/10 p-2 flex flex-col justify-center min-h-[200px]">
+      <p className="text-[10px] font-semibold text-muted-foreground mb-1">{title}</p>
+      <p className="text-[10px] text-muted-foreground leading-snug">{reason}</p>
     </div>
   );
 }
@@ -1446,6 +1640,40 @@ function formatBytes(b: number) {
   if (b < 1024) return `${b} B`;
   if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
   return `${(b / 1024 / 1024).toFixed(2)} MB`;
+}
+
+function friendlyFileKind(kind?: string): string | null {
+  if (!kind) return null;
+  const labels: Record<string, string> = {
+    tabular: "Spreadsheet",
+    json_array: "Data list",
+    json_object: "Structured data",
+    text: "Text document",
+    pdf: "PDF document",
+  };
+  return labels[kind] ?? kind.replace(/_/g, " ");
+}
+
+function friendlyColumnType(type: string): string {
+  const labels: Record<string, string> = {
+    string: "Text",
+    number: "Number",
+    date: "Date",
+    boolean: "Yes/No",
+  };
+  return labels[type] ?? type;
+}
+
+function friendlyKeywordBucket(bucket: string): string {
+  const labels: Record<string, string> = {
+    emissions: "Emissions",
+    sectors: "Sectors",
+    ndc_terms: "Climate targets & reporting",
+    uganda: "Uganda places",
+    finance: "Finance & budgets",
+    climate_trace: "Satellite data",
+  };
+  return labels[bucket] ?? bucket.replace(/_/g, " ");
 }
 
 function downloadJson(report: ScanReport) {

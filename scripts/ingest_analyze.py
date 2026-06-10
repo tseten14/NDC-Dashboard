@@ -262,40 +262,126 @@ def round_val(x: float) -> float:
     return round(x, 6)
 
 
+def _filter_latest_year(
+    work: pd.DataFrame,
+    year_col: str | None,
+) -> tuple[pd.DataFrame, int | None, str | None]:
+    if not year_col or year_col not in work.columns:
+        return work, None, None
+    work = work.copy()
+    work[year_col] = coerce_year(work[year_col])
+    work = work.dropna(subset=[year_col])
+    n_years = work[year_col].nunique()
+    if n_years <= 1:
+        latest = int(work[year_col].max()) if len(work) else None
+        return work, latest, None
+    latest = int(work[year_col].max())
+    filtered = work.loc[work[year_col] == latest]
+    note = (
+        f"Uses {latest} only (latest year in the file) so earlier years are not mixed in."
+    )
+    return filtered, latest, note
+
+
+def build_category_bar(
+    df: pd.DataFrame,
+    category_col: str,
+    value_col: str,
+    year_col: str | None,
+    label_fn,
+    limit: int = 10,
+) -> tuple[list[dict], str | None]:
+    work = df[[category_col, value_col] + ([year_col] if year_col else [])].copy()
+    work[value_col] = coerce_numeric(work[value_col])
+    work = work.dropna(subset=[category_col, value_col])
+    work[category_col] = work[category_col].astype(str).str.strip()
+
+    work, _latest, note = _filter_latest_year(work, year_col)
+    work[category_col] = work[category_col].str.lower()
+
+    agg = (
+        work.groupby(category_col, observed=True)[value_col]
+        .sum()
+        .sort_values(ascending=False)
+        .head(limit)
+    )
+    bars = [
+        {
+            "name": str(idx),
+            "label": label_fn(str(idx)),
+            "total": round_val(float(val)),
+        }
+        for idx, val in agg.items()
+    ]
+    return bars, note
+
+
 def build_sector_bar(
     df: pd.DataFrame,
     sector_col: str,
     value_col: str,
     year_col: str | None,
 ) -> tuple[list[dict], str | None]:
-    work = df[[sector_col, value_col] + ([year_col] if year_col else [])].copy()
-    work[value_col] = coerce_numeric(work[value_col])
-    work = work.dropna(subset=[sector_col, value_col])
-    work[sector_col] = work[sector_col].astype(str).str.strip().str.lower()
+    bars, note = build_category_bar(
+        df, sector_col, value_col, year_col, sector_label, limit=12
+    )
+    if note:
+        note = f"Sector chart {note[0].lower()}{note[1:]}"
+    return bars, note
 
-    note = None
-    if year_col and year_col in work.columns:
-        work[year_col] = coerce_year(work[year_col])
-        work = work.dropna(subset=[year_col])
-        n_years = work[year_col].nunique()
-        if n_years > 1:
-            latest = int(work[year_col].max())
-            work = work.loc[work[year_col] == latest]
-            note = (
-                f"Sector chart shows the latest year in the file ({latest}) only, "
-                "so sectors are not summed across multiple years."
-            )
 
-    agg = work.groupby(sector_col, observed=True)[value_col].sum().sort_values(ascending=False)
-    bars = [
+def build_district_bar(
+    df: pd.DataFrame,
+    district_col: str,
+    value_col: str,
+    year_col: str | None,
+) -> tuple[list[dict], str | None]:
+    def district_label(name: str) -> str:
+        cleaned = str(name).strip()
+        return cleaned[0].upper() + cleaned[1:] if cleaned else cleaned
+
+    bars, note = build_category_bar(
+        df, district_col, value_col, year_col, district_label, limit=10
+    )
+    if note:
+        note = f"District chart {note[0].lower()}{note[1:]}"
+    return bars, note
+
+
+def build_sector_pie(sector_bar: list[dict]) -> list[dict]:
+    if not sector_bar:
+        return []
+    total = sum(float(b["total"]) for b in sector_bar)
+    if total <= 0:
+        return []
+    return [
         {
-            "name": str(idx),
-            "label": sector_label(str(idx)),
-            "total": round_val(float(val)),
+            "name": b.get("label") or b["name"],
+            "value": float(b["total"]),
+            "pct": round(100 * float(b["total"]) / total, 1),
         }
-        for idx, val in agg.items()
+        for b in sector_bar
+        if float(b["total"]) > 0
     ]
-    return bars[:12], note
+
+
+def build_value_histogram(df: pd.DataFrame, value_col: str, bins: int = 8) -> list[dict]:
+    vals = coerce_numeric(df[value_col]).dropna()
+    if len(vals) < 3:
+        return []
+    vmin = float(vals.min())
+    vmax = float(vals.max())
+    if vmin == vmax:
+        return [{"bin": str(round_val(vmin)), "count": int(len(vals))}]
+    counts, edges = np.histogram(vals, bins=bins)
+    out = []
+    for i, count in enumerate(counts):
+        if count <= 0:
+            continue
+        lo = round_val(float(edges[i]))
+        hi = round_val(float(edges[i + 1]))
+        out.append({"bin": f"{lo}–{hi}", "count": int(count)})
+    return out
 
 
 def build_time_series(
@@ -589,38 +675,70 @@ def build_highlights(
 def build_chart_guides(
     sector_bar: list[dict],
     time_series: list[dict],
+    district_bar: list[dict],
+    sector_pie: list[dict],
+    value_histogram: list[dict],
     null_chart: list[dict],
     sector_note: str | None,
     time_note: str | None,
+    district_note: str | None,
 ) -> list[dict]:
     guides = []
+    if time_series:
+        guides.append(
+            {
+                "id": "time_series",
+                "title": "Trend over time",
+                "what": "Each point sums all rows for that calendar year.",
+                "how_to_read": time_note
+                or "Rising line = totals increased year on year; falling = decreased.",
+            }
+        )
     if sector_bar:
         guides.append(
             {
                 "id": "sector_bar",
-                "title": "Emissions or values by sector",
-                "what": "Each bar is the total of the value column for one sector.",
+                "title": "Totals by sector",
+                "what": "Each bar is the summed amount for one sector.",
                 "how_to_read": sector_note
-                or "Taller bars mean a larger share for that sector in the chosen scope.",
+                or "Longer bars mean a larger total for that sector.",
             }
         )
-    if time_series:
+    if district_bar:
         guides.append(
             {
-                "id": "year_timeline",
-                "title": "Change over time",
-                "what": "Each point is the sum of all rows for that calendar year.",
-                "how_to_read": time_note
-                or "An upward line means annual totals increased; downward means they decreased.",
+                "id": "district_bar",
+                "title": "Top districts or regions",
+                "what": "Shows the ten highest district totals in your file.",
+                "how_to_read": district_note
+                or "Taller bars are districts with larger summed amounts.",
+            }
+        )
+    if sector_pie:
+        guides.append(
+            {
+                "id": "sector_pie",
+                "title": "Sector share",
+                "what": "Each slice is one sector's percentage of the sector total.",
+                "how_to_read": "Larger slices show which sectors dominate the file.",
+            }
+        )
+    if value_histogram and not district_bar:
+        guides.append(
+            {
+                "id": "value_histogram",
+                "title": "How amounts are distributed",
+                "what": "Counts how many rows fall in each numeric range.",
+                "how_to_read": "Tall bars show the most common value ranges in your data.",
             }
         )
     if null_chart:
         guides.append(
             {
-                "id": "null_chart",
-                "title": "Missing data by column",
-                "what": "Shows the percentage of empty cells per column.",
-                "how_to_read": "Columns above 50% empty may need cleanup before official reporting.",
+                "id": "completeness",
+                "title": "Data completeness",
+                "what": "Shows how full each column is (filled cells vs empty).",
+                "how_to_read": "Low completeness columns may need cleanup before official use.",
             }
         )
     return guides
@@ -823,23 +941,30 @@ def analyze_dataframe(df: pd.DataFrame, filename: str) -> dict[str, Any]:
         if sector_col and chart_value_col
         else ([], None)
     )
+    district_bar, district_note = (
+        build_district_bar(chart_df, district_col, chart_value_col, year_col)
+        if district_col and chart_value_col
+        else ([], None)
+    )
     time_series, time_note = (
         build_time_series(chart_df, year_col, chart_value_col, sector_col, district_col)
         if year_col and chart_value_col
         else ([], None)
     )
+    sector_pie = build_sector_pie(sector_bar)
+    value_histogram = (
+        build_value_histogram(chart_df, chart_value_col)
+        if chart_value_col
+        else []
+    )
     if sector_note:
         validation_notes.append(sector_note)
+    if district_note:
+        validation_notes.append(district_note)
     if time_note:
         validation_notes.append(time_note)
 
     null_chart = build_null_chart(df)
-
-    # Only include null chart if there is meaningful missing-data signal
-    # (skip it when the main charts are present and null chart would just repeat what's obvious)
-    show_null_chart = not (sector_bar and time_series) or any(
-        r["null_pct"] >= 50 for r in null_chart
-    )
 
     insights = build_insights(
         df, columns, year_col, sector_col, chart_value_col or value_col,
@@ -850,10 +975,75 @@ def analyze_dataframe(df: pd.DataFrame, filename: str) -> dict[str, Any]:
         time_series, sector_bar, chart_value_col or value_col, unit, ndc_cols, df
     )
     chart_guides = build_chart_guides(
-        sector_bar, time_series,
-        null_chart if show_null_chart else [],
-        sector_note, time_note,
+        sector_bar,
+        time_series,
+        district_bar,
+        sector_pie,
+        value_histogram,
+        null_chart,
+        sector_note,
+        time_note,
+        district_note,
     )
+
+    visuals_meta = {
+        "time_series": {
+            "chart": "line",
+            "x_column": year_col,
+            "y_column": chart_value_col or value_col,
+            "x_label": "Year",
+            "y_label": unit or "Amount",
+            "rows_used": int(len(chart_df)),
+            "aggregation": "Sum of amount column grouped by year",
+        }
+        if time_series
+        else None,
+        "sector_bar": {
+            "chart": "horizontal_bar",
+            "category_column": sector_col,
+            "value_column": chart_value_col or value_col,
+            "y_label": "Sector",
+            "x_label": unit or "Amount",
+            "aggregation": "Sum by sector (latest year when multiple years present)",
+        }
+        if sector_bar
+        else None,
+        "district_bar": {
+            "chart": "vertical_bar",
+            "category_column": district_col,
+            "value_column": chart_value_col or value_col,
+            "x_label": "District / region",
+            "y_label": unit or "Amount",
+            "aggregation": "Top 10 districts by summed amount (latest year when applicable)",
+        }
+        if district_bar
+        else None,
+        "sector_pie": {
+            "chart": "pie",
+            "category_column": sector_col,
+            "value_column": chart_value_col or value_col,
+            "aggregation": "Each slice is that sector's share of the sector-bar total",
+        }
+        if sector_pie
+        else None,
+        "value_histogram": {
+            "chart": "vertical_bar",
+            "value_column": chart_value_col or value_col,
+            "x_label": "Amount range",
+            "y_label": "Row count",
+            "aggregation": "How many rows fall in each numeric range",
+        }
+        if value_histogram and not district_bar
+        else None,
+        "completeness": {
+            "chart": "area",
+            "metric": "Percent of filled cells per column",
+            "rows_used": int(len(df)),
+            "aggregation": "100% minus empty-cell percentage per column",
+        }
+        if null_chart
+        else None,
+    }
 
     doc_type, doc_type_plain = infer_ndc_doc_type(
         df, ndc_cols, year_col, sector_col, value_col
@@ -956,8 +1146,12 @@ def analyze_dataframe(df: pd.DataFrame, filename: str) -> dict[str, Any]:
             "visuals": {
                 "sector_bar": sector_bar,
                 "time_series": time_series,
-                "null_chart": null_chart if show_null_chart else [],
+                "district_bar": district_bar,
+                "sector_pie": sector_pie,
+                "value_histogram": value_histogram,
+                "null_chart": null_chart,
             },
+            "visuals_meta": visuals_meta,
         },
         "recommendations": recommendations,
     }

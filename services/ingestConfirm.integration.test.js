@@ -88,7 +88,7 @@ describe("ingest confirm flow", () => {
     const confirm = await confirmRes.json();
     expect(confirm.status).toBe("complete");
     expect(confirm.targetKeys).toContain("t2");
-    expect(confirm.dashboardHint).toMatch(/Dashboard/i);
+    expect(confirm.dashboardHint).toMatch(/Dashboard|local storage|Saved/i);
 
     if (confirm.persisted && confirm.rowsImported > 0) {
       const obsRes = await fetch(`${baseUrl}/targets/t2/observations`);

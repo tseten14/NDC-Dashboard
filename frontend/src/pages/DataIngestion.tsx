@@ -1,4 +1,4 @@
-// Data Ingestion — two modes: Files (Mapped import) and Quick scan.
+// Data Ingestion — two modes: Data Pipeline and Quick scan.
 import { useState } from "react";
 import { CockpitBar } from "@/components/CockpitBar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,11 +49,11 @@ export default function DataIngestion() {
               <div className="flex items-center gap-2 mb-1">
                 <Zap className="h-4 w-4 text-amber-500" />
                 <span className="text-sm font-semibold text-foreground">Quick scan</span>
-                <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">Instant · low-confidence</span>
+                <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">Fast · first look</span>
               </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Drop in any file to profile its structure and flag NDC-related keywords. Great for triage — but it
-                <span className="font-medium text-foreground"> cannot reliably interpret unformatted data</span>, so treat results as a first look, not a verified insight.
+                Drop in any file and get a plain-language summary of what it contains, what climate topics it touches,
+                and how you might use it. Good for a quick first review — not a final verified report.
               </p>
             </button>
             <button
@@ -63,12 +63,11 @@ export default function DataIngestion() {
             >
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <ShieldCheck className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">Mapped import</span>
-                <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">Mapped · DB-backed</span>
+                <span className="text-sm font-semibold text-foreground">Data Pipeline</span>
+                <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">Saved to database</span>
               </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Map year, value, source, and target columns, then confirm to write observation rows to the database.
-                Points appear on the Dashboard for indicator targets (forest, electricity, CSA, wetlands, capacity) — not Climate TRACE emissions sectors yet.
+                Upload a spreadsheet — policy catalogs get sensible defaults. Clean, download a filtered CSV, or save to the database.
               </p>
             </button>
           </div>

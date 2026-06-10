@@ -566,14 +566,48 @@ export interface IngestUploadResponse {
   headers: string[];
   inferredTypes: Record<string, InferredColumnType>;
   columnMapping: Partial<Record<ObservationField, string | null>>;
+  pipelineDefaults?: PipelineFilterOptions;
+  fileKind?: "policy_catalog" | "indicator";
   preview: Record<string, unknown>[];
   warnings: IngestParseWarning[];
   pdfInsights?: IngestPdfInsights;
 }
 
+export interface PipelineFilterOptions {
+  ugandaOnly?: boolean;
+  dropDuplicates?: boolean;
+  latestYearOnly?: boolean;
+  /** Catalog files without amounts: each row counts as 1 */
+  documentCountMode?: boolean;
+}
+
+export interface PipelineStep {
+  id: string;
+  label: string;
+  rowsBefore: number;
+  rowsAfter: number;
+  removed: number;
+  detail?: string;
+}
+
+export interface PipelineScanResponse {
+  jobId: string;
+  status: "cleaned";
+  rowsInput: number;
+  rowsOutput: number;
+  steps: PipelineStep[];
+  cleanedRows: Record<string, unknown>[];
+  preview: Record<string, unknown>[];
+  issues: Array<{ row: number; message: string }>;
+  geographyColumn: string | null;
+  engine: "javascript";
+  filtersApplied: PipelineFilterOptions;
+}
+
 export interface IngestConfirmPayload {
   jobId: string;
   finalColumnMapping: Partial<Record<ObservationField, string | null>>;
+  pipelineFilters?: PipelineFilterOptions;
 }
 
 export interface IngestConfirmResponse {
@@ -644,6 +678,30 @@ export const ingestApi = {
     const fd = new FormData();
     fd.append("file", file);
     return postFormData<IngestUploadResponse>("/api/v1/ingest/upload", fd, ingestWriteHeaders());
+  },
+  pipelineScan: async (payload: {
+    jobId: string;
+    columnMapping: Partial<Record<ObservationField, string | null>>;
+    filters?: PipelineFilterOptions;
+  }) => {
+    const headers = ingestWriteHeaders();
+    for (const path of ["/api/v1/ingest/clean", "/api/v1/ingest/pipeline/scan"]) {
+      const res = await fetch(`${BASE}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) return res.json() as Promise<PipelineScanResponse>;
+      if (res.status !== 404) {
+        const body = await res.json().catch(() => null);
+        throw new Error(
+          body && typeof body === "object" && "error" in body
+            ? String(body.error)
+            : `${res.status} ${res.statusText}`,
+        );
+      }
+    }
+    throw new Error("Clean endpoint not available — restart the API server (npm run start:api)");
   },
   confirmImport: (payload: IngestConfirmPayload) =>
     postJSON<IngestConfirmResponse>("/api/v1/ingest/confirm", payload, ingestWriteHeaders()),

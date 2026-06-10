@@ -1,13 +1,9 @@
-// Files Ingest — PDF/CSV/JSON upload, server-side parse, column mapping, confirm import.
+// Data Pipeline — upload → map columns → preview clean rows → save to database.
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   UploadCloud,
   FileSpreadsheet,
@@ -15,52 +11,40 @@ import {
   FileText,
   CheckCircle2,
   AlertTriangle,
-  ChevronDown,
   Loader2,
   History,
   Database,
   LayoutDashboard,
+  ArrowRight,
+  Download,
 } from "lucide-react";
+import { cleanedFilename, cleanedRowsToCsv, downloadCsv } from "@/lib/csvExport";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   ingestApi,
   type IngestJobRow,
-  type IngestParseWarning,
   type IngestConfirmResponse,
   type IngestUploadResponse,
   type ObservationField,
+  type PipelineScanResponse,
+  type PipelineFilterOptions,
 } from "@/lib/api";
-import { AboutCard, AnalysisCard, RecommendationsCard } from "@/components/ingest/ScanReportIngest";
 
 const ACCEPTED_EXT = [".pdf", ".csv", ".json"];
-const ACCEPTED_MIME = new Set([
-  "application/pdf",
-  "text/csv",
-  "application/json",
-  "text/plain",
-]);
+const ROW_COUNT_VALUE_COLUMN = "__row_count__";
 
-const OBS_FIELDS: { key: ObservationField; label: string; required?: boolean }[] = [
-  { key: "year", label: "Year", required: true },
-  { key: "value", label: "Value", required: true },
-  { key: "source", label: "Source" },
-  { key: "target_id", label: "Target / indicator" },
+const MAP_FIELDS: {
+  key: ObservationField;
+  label: string;
+  hint: string;
+  required?: boolean;
+}[] = [
+  { key: "year", label: "Year or date", hint: "Publication date or reporting year", required: true },
+  { key: "target_id", label: "Category / indicator", hint: "Sector, category, or target name", required: true },
+  { key: "source", label: "Source", hint: "Publisher or data provider" },
 ];
-
-const TYPE_BADGE: Record<string, string> = {
-  number: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30",
-  date: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30",
-  text: "bg-muted text-muted-foreground border-border",
-};
-
-const STATUS_BADGE: Record<string, string> = {
-  pending: "bg-at-risk/10 text-at-risk border-at-risk/30",
-  processing: "bg-primary/10 text-primary border-primary/30",
-  complete: "bg-on-track/10 text-on-track border-on-track/30",
-  failed: "bg-destructive/10 text-destructive border-destructive/30",
-};
 
 function extOf(name: string): string {
   const i = name.lastIndexOf(".");
@@ -80,53 +64,64 @@ function fileIcon(name: string) {
   return FileSpreadsheet;
 }
 
-function formatCell(value: unknown, type?: string): string {
+function formatCell(value: unknown): string {
   if (value == null || value === "") return "—";
-  if (type === "number") {
-    const n = Number(String(value).replace(/,/g, ""));
-    if (Number.isFinite(n)) return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  const s = String(value);
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const d = new Date(s);
+    if (!Number.isNaN(d.getTime())) return d.toLocaleDateString();
   }
-  if (type === "date") {
-    const s = String(value);
-    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
-      const d = new Date(s);
-      if (!Number.isNaN(d.getTime())) return d.toLocaleDateString();
-    }
-  }
-  return String(value);
+  return s.length > 48 ? `${s.slice(0, 48)}…` : s;
 }
 
-function mappingReady(mapping: Partial<Record<ObservationField, string | null>>): boolean {
-  return Boolean(mapping.year && mapping.value);
+function mappingReady(
+  mapping: Partial<Record<ObservationField, string | null>>,
+  documentCountMode?: boolean,
+): boolean {
+  return Boolean(mapping.year && mapping.target_id && (documentCountMode || mapping.value));
+}
+
+function amountModeLabel(
+  mapping: Partial<Record<ObservationField, string | null>>,
+  documentCountMode?: boolean,
+): string {
+  if (documentCountMode) return "1 per row (document count)";
+  if (mapping.value) return `from “${mapping.value}” column`;
+  return "not detected — re-upload or use an indicator CSV with a value column";
 }
 
 export function FilesIngest() {
   const [uploading, setUploading] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadResult, setUploadResult] = useState<IngestUploadResponse | null>(null);
-  const [columnMapping, setColumnMapping] = useState<
-    Partial<Record<ObservationField, string | null>>
-  >({});
+  const [columnMapping, setColumnMapping] = useState<Partial<Record<ObservationField, string | null>>>({});
+  const [pipelineResult, setPipelineResult] = useState<PipelineScanResponse | null>(null);
+  const [pipelineFilters, setPipelineFilters] = useState<PipelineFilterOptions>({
+    ugandaOnly: true,
+    dropDuplicates: true,
+    latestYearOnly: false,
+    documentCountMode: false,
+  });
   const [importDone, setImportDone] = useState(false);
   const [confirmResult, setConfirmResult] = useState<IngestConfirmResponse | null>(null);
   const [jobs, setJobs] = useState<IngestJobRow[]>([]);
-  const [jobsLoading, setJobsLoading] = useState(true);
+  const [fileKind, setFileKind] = useState<"policy_catalog" | "indicator" | null>(null);
 
-  useEffect(() => {
-    void import("papaparse");
-    void import("xlsx");
-  }, []);
+  const effectiveMapping = (): Partial<Record<ObservationField, string | null>> => {
+    if (pipelineFilters.documentCountMode) {
+      return { ...columnMapping, value: ROW_COUNT_VALUE_COLUMN };
+    }
+    return columnMapping;
+  };
 
   const loadJobs = useCallback(async () => {
-    setJobsLoading(true);
     try {
-      const res = await ingestApi.listJobs(10);
+      const res = await ingestApi.listJobs(8);
       setJobs(res.jobs);
     } catch {
       setJobs([]);
-    } finally {
-      setJobsLoading(false);
     }
   }, []);
 
@@ -134,26 +129,55 @@ export function FilesIngest() {
     void loadJobs();
   }, [loadJobs]);
 
-  const validateFile = (file: File): boolean => {
-    const ext = extOf(file.name);
-    if (!ACCEPTED_EXT.includes(ext) && !ACCEPTED_MIME.has(file.type)) {
-      toast.error(`Unsupported file type. Upload PDF, CSV, or JSON (got ${ext || file.type || "unknown"}).`);
-      return false;
+  const reset = () => {
+    setSelectedFile(null);
+    setUploadResult(null);
+    setColumnMapping({});
+    setPipelineResult(null);
+    setImportDone(false);
+    setConfirmResult(null);
+    setFileKind(null);
+  };
+
+  const applyCleanResult = (res: PipelineScanResponse, download = false) => {
+    setPipelineResult(res);
+    if (res.rowsOutput === 0) {
+      toast.warning("No rows passed the filters — check your column mapping.");
+      return;
     }
-    return true;
+    if (download && selectedFile && uploadResult) {
+      const csv = cleanedRowsToCsv(uploadResult.headers, res.cleanedRows);
+      downloadCsv(cleanedFilename(selectedFile.name), csv);
+      toast.success(`Downloaded ${res.rowsOutput.toLocaleString()} cleaned rows`);
+    }
   };
 
   const handleUpload = async (file: File) => {
-    if (!validateFile(file)) return;
-    setSelectedFile(file);
+    const ext = extOf(file.name);
+    if (!ACCEPTED_EXT.includes(ext)) {
+      toast.error("Upload a CSV, JSON, or PDF file.");
+      return;
+    }
     setUploading(true);
+    setUploadResult(null);
+    setColumnMapping({});
+    setPipelineResult(null);
     setImportDone(false);
     setConfirmResult(null);
-    setUploadResult(null);
+    setSelectedFile(file);
     try {
       const result = await ingestApi.uploadFile(file);
       setUploadResult(result);
       setColumnMapping(result.columnMapping);
+      setFileKind(result.fileKind ?? null);
+      setPipelineFilters(
+        result.pipelineDefaults ?? {
+          ugandaOnly: Boolean(result.headers.some((h) => /geograph|country|region/i.test(h))),
+          dropDuplicates: true,
+          latestYearOnly: false,
+          documentCountMode: !result.columnMapping.value,
+        },
+      );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
       setSelectedFile(null);
@@ -162,96 +186,107 @@ export function FilesIngest() {
     }
   };
 
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const f = e.dataTransfer.files[0];
-    if (f) void handleUpload(f);
+  const runClean = async () => {
+    if (!uploadResult || !mappingReady(columnMapping, pipelineFilters.documentCountMode)) return;
+    setScanning(true);
+    try {
+      const res = await ingestApi.pipelineScan({
+        jobId: uploadResult.jobId,
+        columnMapping: effectiveMapping(),
+        filters: pipelineFilters,
+      });
+      applyCleanResult(res, true);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Clean failed");
+    } finally {
+      setScanning(false);
+    }
   };
 
-  const onConfirm = async () => {
-    if (!uploadResult || !mappingReady(columnMapping)) return;
+  const onDownloadCleaned = () => {
+    if (pipelineResult?.cleanedRows?.length) {
+      const csv = cleanedRowsToCsv(headers, pipelineResult.cleanedRows);
+      downloadCsv(cleanedFilename(selectedFile!.name), csv);
+      return;
+    }
+    void runClean();
+  };
+
+  const onSave = async () => {
+    if (!uploadResult || !mappingReady(columnMapping, pipelineFilters.documentCountMode)) return;
     setConfirming(true);
     try {
       const res = await ingestApi.confirmImport({
         jobId: uploadResult.jobId,
-        finalColumnMapping: columnMapping,
+        finalColumnMapping: effectiveMapping(),
+        pipelineFilters,
       });
       setConfirmResult(res);
-      if (res.status === "complete" && res.persisted) {
-        toast.success(`Stored ${res.rowsImported} observation row(s) in the database`);
-      } else if (res.status === "complete" && !res.persisted) {
-        toast.warning("Import validated but nothing was stored — database not connected");
+      if (res.status === "complete" && (res.persisted || res.rowsImported > 0)) {
+        setImportDone(true);
+        toast.success(
+          res.storage
+            ? `Saved ${res.rowsImported} row(s) → ${res.storage}`
+            : `Saved ${res.rowsImported} row(s)`,
+        );
       } else {
-        toast.error(res.errors[0]?.message ?? "Import failed");
+        toast.error(res.errors[0]?.message ?? res.dashboardHint ?? "Save failed");
       }
-      setImportDone(true);
       await loadJobs();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Confirm failed");
+      toast.error(err instanceof Error ? err.message : "Save failed");
     } finally {
       setConfirming(false);
     }
   };
 
-  const reset = () => {
-    setSelectedFile(null);
-    setUploadResult(null);
-    setColumnMapping({});
-    setImportDone(false);
-    setConfirmResult(null);
-  };
+  const headers = uploadResult?.headers ?? [];
+  const usedColumns = new Set(
+    Object.values(columnMapping).filter((v): v is string => Boolean(v)),
+  );
+  const previewColumns = [
+    columnMapping.year,
+    pipelineFilters.documentCountMode ? "document_count" : columnMapping.value,
+    columnMapping.target_id,
+    columnMapping.source,
+    headers.find((h) => /geograph/i.test(h)),
+  ].filter((v, i, a) => v && a.indexOf(v) === i) as string[];
 
-  const previewRows = uploadResult?.preview ?? [];
-  const previewHeaders = uploadResult?.headers ?? [];
-  const inferredTypes = uploadResult?.inferredTypes ?? {};
-  const warnings = uploadResult?.warnings ?? [];
-
-  const downloadTemplate = () => {
-    const a = document.createElement("a");
-    a.href = "/samples/indicator-import-template.csv";
-    a.download = "indicator-import-template.csv";
-    a.click();
-  };
+  const step = !uploadResult ? 1 : importDone ? 3 : 2;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
-        <p className="text-[10px] text-muted-foreground">
-          Sample CSV for indicator targets (forest cover <code className="text-[9px]">t2</code>, electricity{" "}
-          <code className="text-[9px]">t3</code>, CSA <code className="text-[9px]">t8</code>).
-        </p>
-        <Button type="button" size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={downloadTemplate}>
-          <FileSpreadsheet className="h-3 w-3" />
-          Download template
-        </Button>
-      </div>
+    <div className="space-y-4 max-w-3xl">
+      <StepBar step={step} />
 
-      {/* Drop zone */}
       {!uploadResult && (
         <div
-          onDrop={onDrop}
+          onDrop={(e) => {
+            e.preventDefault();
+            const f = e.dataTransfer.files[0];
+            if (f) void handleUpload(f);
+          }}
           onDragOver={(e) => e.preventDefault()}
+          onClick={() => document.getElementById("pipeline-file-input")?.click()}
           className={cn(
-            "border-2 border-dashed border-border rounded-lg p-8 text-center transition cursor-pointer",
-            uploading ? "opacity-60 pointer-events-none" : "hover:border-primary",
+            "border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition",
+            uploading ? "opacity-60 pointer-events-none" : "border-border hover:border-primary",
           )}
-          onClick={() => !uploading && document.getElementById("ingest-file-input")?.click()}
         >
           {uploading ? (
-            <Loader2 className="h-8 w-8 mx-auto text-primary animate-spin mb-2" />
+            <Loader2 className="h-9 w-9 mx-auto text-primary animate-spin mb-2" />
           ) : (
-            <UploadCloud className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+            <UploadCloud className="h-9 w-9 mx-auto text-muted-foreground mb-2" />
           )}
-          <p className="text-xs text-foreground font-medium">
-            {uploading ? "Parsing on server…" : "Drop PDF, CSV, or JSON here, or click to browse"}
+          <p className="text-sm font-medium text-foreground">
+            {uploading ? "Reading file…" : "Drop your CSV or JSON here"}
           </p>
-          <p className="text-[10px] text-muted-foreground mt-1">
-            Structured observation import · auto column detection
+          <p className="text-xs text-muted-foreground mt-1">
+            Raw data is cleaned and filtered before it is saved
           </p>
           <input
-            id="ingest-file-input"
+            id="pipeline-file-input"
             type="file"
-            accept=".pdf,.csv,.json,application/pdf,text/csv,application/json"
+            accept=".csv,.json,.pdf"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
@@ -262,270 +297,307 @@ export function FilesIngest() {
         </div>
       )}
 
-      {selectedFile && uploadResult && (
-        <>
-          {/* Selected file chip */}
-          <div className="flex items-center gap-2 flex-wrap">
+      {selectedFile && uploadResult && !importDone && (
+        <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
             {(() => {
               const Icon = fileIcon(selectedFile.name);
-              return <Icon className="h-4 w-4 text-primary shrink-0" />;
+              return <Icon className="h-4 w-4 text-primary" />;
             })()}
-            <span className="text-xs font-medium text-foreground">{selectedFile.name}</span>
-            <Badge variant="outline" className="text-[10px] uppercase">
-              {uploadResult.fileType}
-            </Badge>
+            <span className="text-sm font-medium truncate max-w-[240px]">{selectedFile.name}</span>
             <Badge variant="outline" className="text-[10px]">
-              {formatBytes(selectedFile.size)}
+              {uploadResult.rowCount.toLocaleString()} rows
             </Badge>
-            {!importDone && (
-              <Button size="sm" variant="ghost" className="h-6 text-[10px] ml-auto" onClick={reset}>
-                Change file
-              </Button>
+            {fileKind === "policy_catalog" && (
+              <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
+                Policy catalog defaults applied
+              </Badge>
             )}
+            <Button size="sm" variant="ghost" className="h-6 text-[10px] ml-auto" onClick={reset}>
+              Change file
+            </Button>
           </div>
 
-          {/* Parse result panel */}
-          <div className="rounded-lg border border-border bg-card/50 p-3 space-y-3">
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="font-semibold text-foreground">Parse result</span>
-              <span className="text-muted-foreground">
-                {uploadResult.rowCount.toLocaleString()} rows · {previewHeaders.length} columns
-                {warnings.length > 0 && ` · ${warnings.length} warning${warnings.length === 1 ? "" : "s"}`}
-              </span>
-            </div>
-
-            {previewHeaders.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {previewHeaders.map((h) => (
-                  <Badge
-                    key={h}
-                    variant="outline"
-                    className={cn("text-[10px] font-normal gap-1", TYPE_BADGE[inferredTypes[h] ?? "text"])}
-                  >
-                    <span className="font-medium">{h}</span>
-                    <span className="opacity-70">{inferredTypes[h] ?? "text"}</span>
-                  </Badge>
-                ))}
-              </div>
-            )}
-
-            {/* Column mapping editor */}
-            {previewHeaders.length > 0 && (
-              <div className="space-y-1.5">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                  Column mapping
-                </p>
-                <div className="overflow-x-auto touch-scroll-x">
-                  <table className="w-full text-[10px] min-w-[320px]">
-                    <thead>
-                      <tr className="text-muted-foreground border-b border-border">
-                        <th className="text-left p-1.5 font-semibold">Field</th>
-                        <th className="text-left p-1.5 font-semibold">Source column</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {OBS_FIELDS.map(({ key, label, required }) => (
-                        <tr key={key} className="border-b border-border/30">
-                          <td className="p-1.5 align-middle">
-                            <span className="font-medium text-foreground">{label}</span>
-                            {required && <span className="text-destructive ml-0.5">*</span>}
-                          </td>
-                          <td className="p-1.5">
-                            <Select
-                              value={columnMapping[key] ?? "__none__"}
-                              onValueChange={(v) =>
-                                setColumnMapping((m) => ({
-                                  ...m,
-                                  [key]: v === "__none__" ? null : v,
-                                }))
-                              }
+          {uploadResult.fileType === "pdf" ? (
+            <p className="text-xs text-muted-foreground">
+              PDF files cannot be saved as dashboard observations. Use <strong>Quick scan</strong> for a
+              summary, or export as CSV.
+            </p>
+          ) : (
+            <>
+              <div>
+                <p className="text-xs font-semibold text-foreground mb-2">1. Map columns</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {MAP_FIELDS.map(({ key, label, hint, required }) => (
+                    <div key={key} className="space-y-1">
+                      <label className="text-[10px] font-medium text-foreground">
+                        {label}
+                        {required && <span className="text-destructive ml-0.5">*</span>}
+                      </label>
+                      <Select
+                        value={columnMapping[key] ?? "__none__"}
+                        onValueChange={(v) => {
+                          setPipelineResult(null);
+                          setColumnMapping((m) => ({
+                            ...m,
+                            [key]: v === "__none__" ? null : v,
+                          }));
+                        }}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Choose column" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— not mapped —</SelectItem>
+                          {headers.map((h) => (
+                            <SelectItem
+                              key={h}
+                              value={h}
+                              disabled={usedColumns.has(h) && columnMapping[key] !== h}
                             >
-                              <SelectTrigger className="h-7 text-xs">
-                                <SelectValue placeholder="— not mapped —" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="__none__">— not mapped —</SelectItem>
-                                {previewHeaders.map((h) => (
-                                  <SelectItem key={h} value={h}>
-                                    {h}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                              {h}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[9px] text-muted-foreground">{hint}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[9px] text-muted-foreground mt-2">
+                  Amount: {amountModeLabel(columnMapping, pipelineFilters.documentCountMode)}
+                  {fileKind === "policy_catalog" ? " — applied automatically for policy document lists." : ""}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-foreground mb-2">2. Cleaning filters</p>
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                  <FilterToggle
+                    label="Uganda only"
+                    checked={pipelineFilters.ugandaOnly}
+                    onChange={(ugandaOnly) => {
+                      setPipelineResult(null);
+                      setPipelineFilters((f) => ({ ...f, ugandaOnly }));
+                    }}
+                  />
+                  <FilterToggle
+                    label="Remove duplicates"
+                    checked={pipelineFilters.dropDuplicates}
+                    onChange={(dropDuplicates) => {
+                      setPipelineResult(null);
+                      setPipelineFilters((f) => ({ ...f, dropDuplicates }));
+                    }}
+                  />
+                  <FilterToggle
+                    label="Latest year only"
+                    checked={pipelineFilters.latestYearOnly}
+                    onChange={(latestYearOnly) => {
+                      setPipelineResult(null);
+                      setPipelineFilters((f) => ({ ...f, latestYearOnly }));
+                    }}
+                  />
                 </div>
               </div>
-            )}
 
-            {/* Data preview */}
-            {previewHeaders.length > 0 && (
-              <div className="space-y-1.5">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                  Preview (first {Math.min(10, uploadResult.rowCount)} rows)
-                </p>
-                <div className="max-h-56 overflow-auto touch-scroll-x border border-border rounded">
-                  <table className="w-full text-[10px]">
-                    <thead className="bg-muted/40 sticky top-0">
-                      <tr>
-                        {previewHeaders.map((h) => (
-                          <th
-                            key={h}
-                            className={cn(
-                              "text-left p-1.5 font-semibold whitespace-nowrap",
-                              inferredTypes[h] === "number" && "text-right",
-                            )}
-                          >
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {uploadResult.preview.slice(0, 10).map((row, i) => (
-                        <tr key={i} className="border-t border-border/30">
-                          {previewHeaders.map((h) => (
-                            <td
-                              key={h}
-                              className={cn(
-                                "p-1.5 whitespace-nowrap max-w-[140px] truncate",
-                                inferredTypes[h] === "number" && "text-right tabular-nums",
-                              )}
-                              title={String(row[h] ?? "")}
-                            >
-                              {formatCell(row[h], inferredTypes[h])}
-                            </td>
+              <div className="flex flex-wrap gap-2 items-center pt-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 text-xs"
+                  disabled={scanning || !mappingReady(columnMapping, pipelineFilters.documentCountMode)}
+                  onClick={() => void runClean()}
+                >
+                  {scanning ? (
+                    <>
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Cleaning…
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-3 w-3 mr-1" />
+                      Clean &amp; download CSV
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs"
+                  disabled={confirming || !mappingReady(columnMapping, pipelineFilters.documentCountMode)}
+                  onClick={() => void onSave()}
+                >
+                  {confirming ? (
+                    <>
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Saving…
+                    </>
+                  ) : (
+                    <>
+                      Save to database
+                      <ArrowRight className="h-3 w-3 ml-1" />
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {pipelineResult && (
+                <CleanSummary
+                  result={pipelineResult}
+                  onDownload={onDownloadCleaned}
+                  filename={selectedFile ? cleanedFilename(selectedFile.name) : "cleaned.csv"}
+                />
+              )}
+
+              {previewColumns.length > 0 && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">
+                    {pipelineResult ? "Clean preview" : "Mapped columns preview"}
+                  </p>
+                  <div className="max-h-48 overflow-auto border border-border rounded text-[10px]">
+                    <table className="w-full">
+                      <thead className="bg-muted/40 sticky top-0">
+                        <tr>
+                          {previewColumns.map((h) => (
+                            <th key={h} className="text-left p-2 font-semibold whitespace-nowrap">
+                              {h}
+                            </th>
                           ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {(pipelineResult?.preview ?? uploadResult.preview).slice(0, 8).map((row, i) => (
+                          <tr key={i} className="border-t border-border/40">
+                            {previewColumns.map((h) => (
+                              <td key={h} className="p-2 whitespace-nowrap max-w-[160px] truncate">
+                                {formatCell(
+                                  h === "document_count"
+                                    ? pipelineFilters.documentCountMode
+                                      ? 1
+                                      : null
+                                    : row[h],
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {uploadResult.fileType === "pdf" && uploadResult.rowCount === 0 && !uploadResult.pdfInsights && (
-              <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/30 rounded p-2">
-                <AlertTriangle className="h-4 w-4 text-at-risk shrink-0 mt-0.5" />
-                <p>
-                  PDF text could not be analyzed. Try the Auto-scan tab, or export your data as CSV or JSON
-                  for structured observation import.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {uploadResult.pdfInsights && (
-            <div className="space-y-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                PDF analysis
-                {uploadResult.pdfInsights.pages > 0 && (
-                  <span className="font-normal normal-case ml-1">
-                    · {uploadResult.pdfInsights.pages} page(s) · {uploadResult.pdfInsights.chars.toLocaleString()} chars
-                  </span>
-                )}
-              </p>
-              <AboutCard about={uploadResult.pdfInsights.about as Parameters<typeof AboutCard>[0]["about"]} />
-              <AnalysisCard
-                analysis={uploadResult.pdfInsights.analysis as Parameters<typeof AnalysisCard>[0]["analysis"]}
-                kind="pdf"
-              />
-              {uploadResult.pdfInsights.recommendations?.length > 0 && (
-                <RecommendationsCard items={uploadResult.pdfInsights.recommendations} />
               )}
-            </div>
+            </>
           )}
-
-          {/* Warnings panel */}
-          {warnings.length > 0 && (
-            <div className="rounded-lg border border-at-risk/30 bg-at-risk/5 p-3 space-y-2">
-              <p className="text-[10px] uppercase tracking-wider text-at-risk font-semibold flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" /> Warnings
-              </p>
-              <div className="space-y-1">
-                {warnings.map((w: IngestParseWarning, i) => (
-                  <WarningRow key={i} warning={w} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Confirm */}
-          {!importDone ? (
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                size="sm"
-                className="h-7 text-xs"
-                disabled={!mappingReady(columnMapping) || confirming || uploadResult.rowCount === 0}
-                onClick={() => void onConfirm()}
-              >
-                {confirming ? (
-                  <>
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Importing…
-                  </>
-                ) : (
-                  "Confirm & import"
-                )}
-              </Button>
-              {!mappingReady(columnMapping) && uploadResult.rowCount > 0 && (
-                <span className="text-[10px] text-muted-foreground self-center">
-                  Map year and value columns to enable import
-                </span>
-              )}
-            </div>
-          ) : (
-            <ImportSuccessPanel result={confirmResult} onReset={reset} />
-          )}
-        </>
+        </div>
       )}
 
-      {/* Import history */}
-      <div className="pt-3 border-t border-border">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 flex items-center gap-1">
-          <History className="h-3 w-3" /> Import history
-        </p>
-        {jobsLoading ? (
-          <p className="text-[10px] text-muted-foreground">Loading jobs…</p>
-        ) : jobs.length === 0 ? (
-          <p className="text-[10px] text-muted-foreground">No ingest jobs yet.</p>
-        ) : (
-          <div className="max-h-48 overflow-auto touch-scroll-x">
-            <table className="w-full text-[10px]">
-              <thead>
-                <tr className="text-muted-foreground border-b border-border">
-                  <th className="text-left p-1.5">Time</th>
-                  <th className="text-left p-1.5">File</th>
-                  <th className="text-left p-1.5">Type</th>
-                  <th className="text-left p-1.5">Status</th>
-                  <th className="text-right p-1.5">Rows</th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobs.map((j) => (
-                  <tr key={j.id} className="border-b border-border/30">
-                    <td className="p-1.5 whitespace-nowrap">
-                      {j.created_at.replace("T", " ").slice(0, 16)}
-                    </td>
-                    <td className="p-1.5 font-medium text-foreground max-w-[120px] truncate" title={j.filename}>
-                      {j.filename}
-                    </td>
-                    <td className="p-1.5 uppercase">{j.file_type}</td>
-                    <td className="p-1.5">
-                      <Badge variant="outline" className={cn("text-[9px] h-4 capitalize", STATUS_BADGE[j.status])}>
-                        {j.status}
-                      </Badge>
-                    </td>
-                    <td className="p-1.5 text-right tabular-nums">{j.row_count ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {importDone && (
+        <ImportSuccessPanel result={confirmResult} onReset={reset} />
+      )}
+
+      {jobs.length > 0 && (
+        <details className="text-[10px] text-muted-foreground">
+          <summary className="cursor-pointer font-semibold uppercase tracking-wider flex items-center gap-1">
+            <History className="h-3 w-3" /> Recent imports ({jobs.length})
+          </summary>
+          <ul className="mt-2 space-y-1">
+            {jobs.map((j) => (
+              <li key={j.id} className="flex gap-2">
+                <span className="text-foreground/80 truncate">{j.filename}</span>
+                <span className="ml-auto tabular-nums">{j.row_count ?? "—"} rows</span>
+                <Badge variant="outline" className="text-[9px] h-4 capitalize">
+                  {j.status}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </div>
+  );
+}
+
+function StepBar({ step }: { step: number }) {
+  const items = ["Upload file", "Map & clean", "Saved"];
+  return (
+    <div className="flex items-center gap-2 text-[10px]">
+      {items.map((label, i) => {
+        const n = i + 1;
+        const active = step >= n;
+        return (
+          <div key={label} className="flex items-center gap-2">
+            {i > 0 && <span className="text-muted-foreground/50">→</span>}
+            <span
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-2 py-0.5 border",
+                active ? "border-primary/40 bg-primary/5 text-foreground" : "border-border text-muted-foreground",
+              )}
+            >
+              <span
+                className={cn(
+                  "w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold",
+                  active ? "bg-primary text-primary-foreground" : "bg-muted",
+                )}
+              >
+                {n}
+              </span>
+              {label}
+            </span>
           </div>
-        )}
+        );
+      })}
+    </div>
+  );
+}
+
+function FilterToggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked?: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-[10px] text-foreground cursor-pointer">
+      <Checkbox checked={checked} onCheckedChange={(v) => onChange(v === true)} />
+      {label}
+    </label>
+  );
+}
+
+function CleanSummary({
+  result,
+  onDownload,
+  filename,
+}: {
+  result: PipelineScanResponse;
+  onDownload: () => void;
+  filename: string;
+}) {
+  return (
+    <div className="rounded-md border border-on-track/25 bg-on-track/5 p-3 space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-xs font-semibold text-foreground">
+          {result.rowsOutput.toLocaleString()} cleaned rows
+          <span className="font-normal text-muted-foreground">
+            {" "}
+            (from {result.rowsInput.toLocaleString()} raw)
+          </span>
+        </p>
+        <Button type="button" size="sm" variant="outline" className="h-7 text-[10px] ml-auto" onClick={onDownload}>
+          <Download className="h-3 w-3 mr-1" />
+          Download {filename}
+        </Button>
       </div>
+      {result.steps
+        .filter((s) => s.removed > 0 || s.id === "document_count")
+        .map((s) => (
+          <p key={s.id} className="text-[10px] text-muted-foreground">
+            <span className="text-foreground/90">{s.label}:</span>{" "}
+            {s.removed > 0 ? `removed ${s.removed.toLocaleString()} rows` : s.detail}
+          </p>
+        ))}
     </div>
   );
 }
@@ -537,89 +609,54 @@ function ImportSuccessPanel({
   result: IngestConfirmResponse | null;
   onReset: () => void;
 }) {
-  const persisted = result?.persisted ?? false;
-  const borderClass = persisted
-    ? "border-on-track/30 bg-on-track/5"
-    : "border-at-risk/30 bg-at-risk/5";
-
+  const ok = (result?.persisted ?? false) || (result?.rowsImported ?? 0) > 0;
   return (
-    <div className={cn("rounded-lg border p-3 space-y-2", borderClass)}>
-      <div className="flex items-start gap-2">
-        {persisted ? (
-          <CheckCircle2 className="h-5 w-5 text-on-track shrink-0 mt-0.5" />
+    <div
+      className={cn(
+        "rounded-lg border p-4 space-y-3",
+        ok ? "border-on-track/30 bg-on-track/5" : "border-at-risk/30 bg-at-risk/5",
+      )}
+    >
+      <div className="flex gap-2">
+        {ok ? (
+          <CheckCircle2 className="h-5 w-5 text-on-track shrink-0" />
         ) : (
-          <AlertTriangle className="h-5 w-5 text-at-risk shrink-0 mt-0.5" />
+          <AlertTriangle className="h-5 w-5 text-at-risk shrink-0" />
         )}
-        <div className="space-y-1.5 min-w-0">
-          <p className="text-xs font-semibold text-foreground">
-            {persisted
-              ? `${result?.rowsImported ?? 0} observation row(s) written to the database`
-              : "Import finished — nothing was stored"}
+        <div className="space-y-1 min-w-0">
+          <p className="text-sm font-semibold">
+            {ok || (result?.rowsImported ?? 0) > 0
+              ? `${result?.rowsImported ?? 0} observations saved`
+              : "Nothing was saved"}
           </p>
           {result?.storage && (
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Database className="h-3 w-3 shrink-0" />
-              Stored in <span className="font-mono text-foreground">{result.storage}</span>
-              {result.auditFile && (
-                <span className="text-muted-foreground"> · audit copy at {result.auditFile}</span>
-              )}
+              {result.storage}
             </p>
+          )}
+          {result?.dashboardHint && (
+            <p className="text-xs text-muted-foreground">{result.dashboardHint}</p>
           )}
           {result?.targetKeys && result.targetKeys.length > 0 && (
-            <p className="text-[11px] text-muted-foreground">
-              Target keys:{" "}
-              <span className="font-medium text-foreground">{result.targetKeys.join(", ")}</span>
-              {result.yearRange && (
-                <span>
-                  {" "}
-                  · years {result.yearRange.min}–{result.yearRange.max}
-                </span>
-              )}
+            <p className="text-xs text-muted-foreground">
+              Categories saved: {result.targetKeys.slice(0, 6).join(", ")}
+              {result.targetKeys.length > 6 ? " …" : ""}
             </p>
-          )}
-          {result?.rowsSkipped ? (
-            <p className="text-[11px] text-at-risk">
-              {result.rowsSkipped} row(s) skipped — see warnings above or fix mapping.
-            </p>
-          ) : null}
-          {result?.dashboardHint && (
-            <p className="text-[11px] text-muted-foreground leading-relaxed">{result.dashboardHint}</p>
-          )}
-          {persisted && (
-            <Button asChild size="sm" variant="outline" className="h-7 text-xs mt-1">
-              <Link to="/dashboard">
-                <LayoutDashboard className="h-3 w-3 mr-1" />
-                Open Dashboard
-              </Link>
-            </Button>
           )}
         </div>
       </div>
+      {ok && (
+        <Button asChild size="sm" variant="outline" className="h-8 text-xs">
+          <Link to="/dashboard">
+            <LayoutDashboard className="h-3 w-3 mr-1" />
+            Open Dashboard
+          </Link>
+        </Button>
+      )}
       <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onReset}>
         Import another file
       </Button>
     </div>
-  );
-}
-
-function WarningRow({ warning }: { warning: IngestParseWarning }) {
-  const [open, setOpen] = useState(false);
-  const hasRows = Boolean(warning.rowNumbers?.length);
-
-  if (!hasRows) {
-    return <p className="text-[10px] text-foreground/90">{warning.message}</p>;
-  }
-
-  return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex items-center gap-1 text-[10px] text-left w-full hover:text-foreground">
-        <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform", open && "rotate-180")} />
-        <span>{warning.message}</span>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="pl-4 pt-1 text-[10px] text-muted-foreground font-mono">
-        Rows: {warning.rowNumbers!.slice(0, 50).join(", ")}
-        {warning.rowNumbers!.length > 50 && ` … +${warning.rowNumbers!.length - 50} more`}
-      </CollapsibleContent>
-    </Collapsible>
   );
 }

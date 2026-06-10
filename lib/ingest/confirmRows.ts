@@ -23,6 +23,8 @@ function normalizeNumber(raw: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+const ROW_COUNT_VALUE_COLUMN = "__row_count__";
+
 export function mapRowsToObservations(
   rows: Record<string, unknown>[],
   mapping: ColumnMapping,
@@ -48,7 +50,10 @@ export function mapRowsToObservations(
   rows.forEach((row, idx) => {
     const sourceRow = idx + 1;
     const year = extractYearFromValue(row[yearCol]);
-    const value = normalizeNumber(row[valueCol]);
+    const value =
+      valueCol === ROW_COUNT_VALUE_COLUMN
+        ? 1
+        : normalizeNumber(row[valueCol]);
 
     if (year == null) {
       errors.push({ row: sourceRow, message: `Invalid or missing year in "${yearCol}"` });

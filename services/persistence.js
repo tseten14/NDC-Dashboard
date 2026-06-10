@@ -23,19 +23,22 @@ export async function getTargets() {
 export async function getObservationsForTarget(targetId) {
   const resolvedId = resolveTargetId(targetId);
   const { mode } = getPersistenceMode();
+  let rows = [];
   if (mode === "postgres") {
     const db = getDb();
-    const rows = await db
+    rows = await db
       .select()
       .from(observations)
       .where(eq(observations.targetId, resolvedId))
       .orderBy(observations.year);
-    return rows.map(formatObservationRow);
+  } else if (mode === "fallback") {
+    rows = await getFallbackObservations(targetId);
   }
-  if (mode === "fallback") {
-    return (await getFallbackObservations(targetId)).map(formatObservationRow);
-  }
-  return [];
+  const { getFileStoreObservations } = await import("./ingestObservationStore.js");
+  const fileRows = await getFileStoreObservations(resolvedId);
+  const merged = [...rows.map(formatObservationRow), ...fileRows.map(formatObservationRow)];
+  merged.sort((a, b) => a.year - b.year);
+  return merged;
 }
 
 export async function getRecentIngestJobs(limit = 20) {
@@ -227,25 +230,62 @@ export async function updateIngestJobStatus(id, { status, rowCount, errorMessage
   return row ? formatIngestJobRow(row) : null;
 }
 
-export async function insertObservationsBatch(observationRows) {
+/**
+ * Ensure target rows exist before observation insert (FK).
+ * Used for policy-catalog categories (MCF, Executive, etc.) not in seed data.
+ */
+export async function ensureIngestTargets(targetLabels) {
   const { mode } = getPersistenceMode();
-  if (mode !== "postgres" || !observationRows.length) {
-    return { inserted: 0, mode };
-  }
+  if (mode !== "postgres" || !targetLabels?.size) return;
 
   const db = getDb();
-  const today = new Date().toISOString().slice(0, 10);
-  const values = observationRows.map((o) => ({
-    targetId: o.targetId,
-    year: o.year,
-    value: String(o.value),
-    source: o.source,
-    asOf: today,
-    isEstimated: false,
-    isValidated: false,
-    qaqcStatus: "ok",
-  }));
+  for (const [targetId, label] of targetLabels.entries()) {
+    const existing = await db
+      .select({ id: targets.id })
+      .from(targets)
+      .where(eq(targets.id, targetId))
+      .limit(1);
+    if (existing.length) continue;
 
-  await db.insert(observations).values(values);
-  return { inserted: values.length, mode };
+    await db.insert(targets).values({
+      id: targetId,
+      sector: String(label).slice(0, 200),
+      baselineYear: 2020,
+      targetYear: 2030,
+      metricType: "absolute_level",
+      baselineValue: "0",
+      targetValue: "100",
+      unit: "count",
+    });
+  }
+}
+
+export async function insertObservationsBatch(observationRows, targetLabels = new Map()) {
+  const { mode } = getPersistenceMode();
+  if (!observationRows.length) {
+    return { inserted: 0, mode, storage: null };
+  }
+
+  if (mode === "postgres") {
+    await ensureIngestTargets(targetLabels);
+    const db = getDb();
+    const today = new Date().toISOString().slice(0, 10);
+    const values = observationRows.map((o) => ({
+      targetId: o.targetId,
+      year: o.year,
+      value: String(o.value),
+      source: o.source,
+      asOf: today,
+      isEstimated: false,
+      isValidated: false,
+      qaqcStatus: "ingested",
+    }));
+
+    await db.insert(observations).values(values);
+    return { inserted: values.length, mode: "postgres", storage: "postgres.observations" };
+  }
+
+  const { appendIngestedObservations } = await import("./ingestObservationStore.js");
+  const inserted = await appendIngestedObservations(observationRows, targetLabels);
+  return { inserted, mode: mode === "fallback" ? "fallback" : "file", storage: "data/ingest-observations.json" };
 }
