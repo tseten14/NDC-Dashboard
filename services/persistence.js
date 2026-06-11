@@ -1,4 +1,4 @@
-import { desc, eq, asc } from "drizzle-orm";
+import { and, desc, eq, asc } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "../db/index.ts";
 import { ingestJobs, observations, targets } from "../db/schema.ts";
@@ -280,6 +280,26 @@ export async function insertObservationsBatch(observationRows, targetLabels = ne
       isValidated: false,
       qaqcStatus: "ingested",
     }));
+
+    const replaceKeys = new Set();
+    const toReplace = [];
+    for (const v of values) {
+      const key = `${v.targetId}\0${v.year}`;
+      if (replaceKeys.has(key)) continue;
+      replaceKeys.add(key);
+      toReplace.push({ targetId: v.targetId, year: v.year });
+    }
+    for (const { targetId, year } of toReplace) {
+      await db
+        .delete(observations)
+        .where(
+          and(
+            eq(observations.targetId, targetId),
+            eq(observations.year, year),
+            eq(observations.qaqcStatus, "ingested"),
+          ),
+        );
+    }
 
     await db.insert(observations).values(values);
     return { inserted: values.length, mode: "postgres", storage: "postgres.observations" };

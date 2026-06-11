@@ -133,9 +133,8 @@ async function sumSectorYear(sector, year, gadmId = UGANDA_NATIONAL_GADM) {
   if (!slugs?.length) return null;
 
   const values = await Promise.all(slugs.map((slug) => fetchYearSlugMt(year, slug, gadmId)));
-  const present = values.filter((v) => v != null);
-  if (present.length === 0) return null;
-  return roundMtco2e(present.reduce((a, b) => a + b, 0));
+  if (values.some((v) => v == null)) return null;
+  return roundMtco2e(values.reduce((a, b) => a + b, 0));
 }
 
 /**

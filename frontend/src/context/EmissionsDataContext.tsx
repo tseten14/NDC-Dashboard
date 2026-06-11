@@ -207,13 +207,17 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
       .sort((a, b) => a - b)
       .map((year) => {
         let total = 0;
-        let hasAny = false;
+        let complete = true;
         for (const s of CLIMATE_TRACE_API_SECTORS) {
           const pts = d.timeseries[s as keyof typeof d.timeseries] ?? [];
           const pt = (pts as { year: number; value: number | null }[]).find((x) => x.year === year);
-          if (pt?.value != null) { total += pt.value; hasAny = true; }
+          if (pt?.value == null) {
+            complete = false;
+            break;
+          }
+          total += pt.value;
         }
-        return { year, value: hasAny ? Math.round(total * 100) / 100 : null };
+        return { year, value: complete ? Math.round(total * 100) / 100 : null };
       });
   }, [dashboardQuery.data]);
 

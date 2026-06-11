@@ -74,7 +74,8 @@ export function applyPipelineDefaults(
     fileKind: "indicator",
     mapping: { ...mapping, value: safeValue ?? null },
     filters: {
-      ugandaOnly: Boolean(headers.some((h) => /geograph|country|region/i.test(h))),
+      // Do not auto-filter by geography — blank cells are common and would be dropped silently.
+      ugandaOnly: false,
       dropDuplicates: true,
       latestYearOnly: false,
       documentCountMode: !safeValue,

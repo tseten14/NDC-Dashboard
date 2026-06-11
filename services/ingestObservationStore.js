@@ -50,8 +50,11 @@ export async function appendIngestedObservations(observationRows, targetLabels) 
   }
 
   for (const o of observationRows) {
-    store.observations.push({
-      id: randomUUID(),
+    const existingIdx = store.observations.findIndex(
+      (row) => row.target_id === o.targetId && row.year === o.year,
+    );
+    const row = {
+      id: existingIdx >= 0 ? store.observations[existingIdx].id : randomUUID(),
       target_id: o.targetId,
       year: o.year,
       value: Number(o.value),
@@ -60,8 +63,13 @@ export async function appendIngestedObservations(observationRows, targetLabels) 
       is_estimated: false,
       is_validated: false,
       qaqc_status: "ingested",
-      created_at: now,
-    });
+      created_at: existingIdx >= 0 ? store.observations[existingIdx].created_at : now,
+    };
+    if (existingIdx >= 0) {
+      store.observations[existingIdx] = row;
+    } else {
+      store.observations.push(row);
+    }
   }
 
   await writeStore(store);

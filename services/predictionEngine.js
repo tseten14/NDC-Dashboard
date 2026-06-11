@@ -129,6 +129,25 @@ function jsForecastSector(points, meta, targetYear) {
     }
   }
 
+  if (!candidates.length) {
+    return {
+      label: meta.label,
+      unit: meta.unit ?? "MtCO2e",
+      history,
+      forecast: [],
+      predicted_value: null,
+      target_value: target,
+      baseline_value: meta.baseline ?? null,
+      gap: null,
+      gap_pct: null,
+      status: "insufficient_data",
+      model: null,
+      r2: null,
+      n_points: clean.length,
+      note: "Could not fit a forecast model to the observed series.",
+    };
+  }
+
   const positive = candidates.filter((c) => c.points.length && c.points[c.points.length - 1].yhat > 0);
   const best = (positive.length ? positive : candidates).reduce((a, c) => (c.r2 > a.r2 ? c : a));
   const r2 = best.r2;
@@ -299,3 +318,5 @@ export async function getSectorPredictions(options = {}) {
 export function clearPredictionCache() {
   cache.flushAll();
 }
+
+export { jsForecastSector };
