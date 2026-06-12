@@ -12,6 +12,13 @@ import {
   YAxis,
 } from "recharts";
 
+/** Plain-language chart labels for non-technical readers. */
+export function pledgeLimitLabel(capTarget: boolean): string {
+  return capTarget ? "2030 pledge limit" : "Path to 2030 goal";
+}
+
+export const WITHOUT_EXTRA_ACTION_LABEL = "2030 if no extra action";
+
 /** SVG hatch pattern for projected series (45°, 4px spacing). */
 export function ChartHatchPatternDef({ id = "chart-hatch-projected" }: { id?: string }) {
   return (
@@ -35,22 +42,28 @@ export function ObservedProjectedLegend({
   showBauPath = false,
   showProjected = true,
   capTarget = false,
+  compareLines = false,
 }: {
   className?: string;
-  /** When false, hide the NDC target line (e.g. district view with no national target overlay). */
   showTarget?: boolean;
-  /** When true, show the 2030 no-policy (BAU) reference line. */
   showBauPath?: boolean;
-  /** When false, hide projected series (historical-only charts). */
   showProjected?: boolean;
-  /** When true, label the target line as a ceiling cap rather than a reduction path. */
   capTarget?: boolean;
+  /** When true, observed series is drawn as a line (not bars). */
+  compareLines?: boolean;
 }) {
   return (
     <div className={cn("flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground", className)}>
       <span className="inline-flex items-center gap-1">
-        <span className="inline-block h-2 w-2 rounded-full bg-[hsl(var(--chart-4))]" aria-hidden />
-        Observed
+        {compareLines ? (
+          <span
+            className="inline-block h-0.5 w-4 border-t-2 border-[hsl(var(--chart-4))]"
+            aria-hidden
+          />
+        ) : (
+          <span className="inline-block h-2 w-2 rounded-full bg-[hsl(var(--chart-4))]" aria-hidden />
+        )}
+        Measured
       </span>
       {showProjected && (
         <span className="inline-flex items-center gap-1">
@@ -72,16 +85,15 @@ export function ObservedProjectedLegend({
                 className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-3))] shrink-0"
                 aria-hidden
               />
-              2030 no-policy level
+              {WITHOUT_EXTRA_ACTION_LABEL}
               <Info className="h-2.5 w-2.5 shrink-0" aria-hidden />
             </button>
           </PopoverTrigger>
           <PopoverContent side="top" className="max-w-[260px] p-3 space-y-1">
-            <p className="text-xs font-semibold">No New Policies Scenario</p>
+            <p className="text-xs font-semibold">If no extra climate action</p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              How much this country would emit by 2030 if no new climate actions are taken.
-              It's a "what if nothing changes" reference line, useful for seeing how much
-              difference climate policies actually make.
+              An estimate of emissions in 2030 if Uganda does not add new climate policies.
+              It shows how much headroom the pledge creates compared with doing nothing extra.
             </p>
           </PopoverContent>
         </Popover>
@@ -97,26 +109,23 @@ export function ObservedProjectedLegend({
                 className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-2))] shrink-0"
                 aria-hidden
               />
-              {capTarget ? "2030 NDC ceiling" : "NDC target path"}
+              {pledgeLimitLabel(capTarget)}
               <Info className="h-2.5 w-2.5 shrink-0" aria-hidden />
             </button>
           </PopoverTrigger>
           <PopoverContent side="top" className="max-w-[260px] p-3 space-y-1">
             {capTarget ? (
               <>
-                <p className="text-xs font-semibold">NDC Emissions Ceiling</p>
+                <p className="text-xs font-semibold">2030 pledge limit</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  The highest amount of greenhouse gases this country is allowed to produce.
-                  To meet its climate promise, emissions must stay at or below this level by 2030.
+                  The highest emissions Uganda committed to stay under by 2030 in its climate pledge (NDC).
                 </p>
               </>
             ) : (
               <>
-                <p className="text-xs font-semibold">NDC Target Path</p>
+                <p className="text-xs font-semibold">Path to the 2030 goal</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  The linear emissions reduction pathway consistent with the NDC pledge,
-                  showing the expected trajectory from the baseline year to the 2030
-                  target value.
+                  The steady path from the starting year to the 2030 target in the climate pledge.
                 </p>
               </>
             )}
@@ -302,7 +311,7 @@ function ObservedProjectedTooltip({
             className="inline-block h-0.5 w-3 border-t-2 border-dashed border-[hsl(var(--chart-2))] mr-1.5 align-middle"
             aria-hidden
           />
-          {capTarget ? "2030 NDC ceiling" : "NDC target path"}:{" "}
+          {capTarget ? pledgeLimitLabel(true) : pledgeLimitLabel(false)}:{" "}
           <span className="text-foreground font-medium">{formatValue(target)}</span>
         </p>
       )}
@@ -312,7 +321,8 @@ function ObservedProjectedTooltip({
             className="inline-block h-0.5 w-3 border-t-2 border-dashed border-[hsl(var(--chart-3))] mr-1.5 align-middle"
             aria-hidden
           />
-          2030 no-policy level: <span className="text-foreground font-medium">{formatValue(bauPath)}</span>
+          {WITHOUT_EXTRA_ACTION_LABEL}:{" "}
+          <span className="text-foreground font-medium">{formatValue(bauPath)}</span>
         </p>
       )}
     </div>
@@ -327,26 +337,31 @@ export function ObservedProjectedComposedChart({
   showTarget = false,
   showBauPath = false,
   capTarget = false,
-  onBarClick,
-  height = 200,
+  onPointClick?: (point: { year: number; value: number }) => void;
+  height = 220,
   formatTick = formatChartAxisTick,
   xAxisLabel = "Year",
+  /** Line comparison chart (measured vs pledge) instead of bars. */
+  compareLines = false,
 }: {
   data: ObservedProjectedRow[];
   yUnit: string;
   observedSeriesLabel: string;
   showProjection?: boolean;
-  /** Overlay NDC target path or 2030 ceiling line. */
   showTarget?: boolean;
-  /** Overlay 2030 no-policy (BAU) reference line for cap-style targets. */
   showBauPath?: boolean;
   capTarget?: boolean;
+  /** @deprecated use onPointClick */
   onBarClick?: (point: { year: number; value: number }) => void;
+  onPointClick?: (point: { year: number; value: number }) => void;
   height?: number;
   formatTick?: (value: number) => string;
   xAxisLabel?: string;
+  compareLines?: boolean;
 }) {
+  const handlePointClick = onPointClick ?? onBarClick;
   const includeReference = showTarget || showBauPath;
+  const useLines = compareLines || includeReference;
   const [yMin, yMax] = chartValueExtent(data, includeReference);
   const yAxisWidth = estimateYAxisWidth(data, formatTick, includeReference);
   const anchorYear = lastObservedYearFromRows(data);
@@ -412,12 +427,12 @@ export function ObservedProjectedComposedChart({
                   capTarget={capTarget}
                 />
               }
-              cursor={{ fill: "hsl(var(--muted) / 0.25)" }}
+              cursor={useLines ? { stroke: "hsl(var(--muted-foreground) / 0.35)" } : { fill: "hsl(var(--muted) / 0.25)" }}
             />
             {showTarget && (
               <Line
                 dataKey="target"
-                name={capTarget ? "2030 NDC ceiling" : "NDC target path"}
+                name={pledgeLimitLabel(capTarget)}
                 type="linear"
                 stroke="hsl(var(--chart-2))"
                 strokeWidth={2}
@@ -425,13 +440,13 @@ export function ObservedProjectedComposedChart({
                 connectNulls
                 isAnimationActive={false}
                 dot={false}
-                activeDot={{ r: 3, strokeWidth: 1, fill: "hsl(var(--chart-2))" }}
+                activeDot={false}
               />
             )}
             {showBauPath && (
               <Line
                 dataKey="bauPath"
-                name="2030 no-policy level"
+                name={WITHOUT_EXTRA_ACTION_LABEL}
                 type="linear"
                 stroke="hsl(var(--chart-3))"
                 strokeWidth={2}
@@ -439,27 +454,61 @@ export function ObservedProjectedComposedChart({
                 connectNulls
                 isAnimationActive={false}
                 dot={false}
-                activeDot={{ r: 3, strokeWidth: 1, fill: "hsl(var(--chart-3))" }}
+                activeDot={false}
               />
             )}
-            <Bar
-              dataKey="observedValue"
-              name={observedSeriesLabel}
-              fill="hsl(var(--chart-4))"
-              radius={[2, 2, 0, 0]}
-              maxBarSize={showProjection ? 28 : 36}
-              minPointSize={2}
-              cursor={onBarClick ? "pointer" : undefined}
-              onClick={
-                onBarClick
-                  ? (bar: { year?: number; observedValue?: number | null }) => {
-                      if (bar?.observedValue != null && bar?.year != null) {
-                        onBarClick({ year: bar.year, value: bar.observedValue });
+            {useLines ? (
+              <Line
+                dataKey="observedValue"
+                name={observedSeriesLabel}
+                type="monotone"
+                stroke="hsl(var(--chart-4))"
+                strokeWidth={2.5}
+                connectNulls
+                isAnimationActive={false}
+                dot={{
+                  r: 3,
+                  fill: "hsl(var(--chart-4))",
+                  stroke: "hsl(var(--background))",
+                  strokeWidth: 2,
+                }}
+                activeDot={
+                  handlePointClick
+                    ? {
+                        r: 5,
+                        strokeWidth: 2,
+                        fill: "hsl(var(--chart-4))",
+                        cursor: "pointer",
+                        onClick: (_e, dot) => {
+                          const row = dot?.payload as ObservedProjectedRow | undefined;
+                          if (row?.observedValue != null) {
+                            handlePointClick({ year: row.year, value: row.observedValue });
+                          }
+                        },
                       }
-                    }
-                  : undefined
-              }
-            />
+                    : { r: 5, strokeWidth: 2, fill: "hsl(var(--chart-4))" }
+                }
+              />
+            ) : (
+              <Bar
+                dataKey="observedValue"
+                name={observedSeriesLabel}
+                fill="hsl(var(--chart-4))"
+                radius={[2, 2, 0, 0]}
+                maxBarSize={showProjection ? 28 : 36}
+                minPointSize={2}
+                cursor={handlePointClick ? "pointer" : undefined}
+                onClick={
+                  handlePointClick
+                    ? (bar: { year?: number; observedValue?: number | null }) => {
+                        if (bar?.observedValue != null && bar?.year != null) {
+                          handlePointClick({ year: bar.year, value: bar.observedValue });
+                        }
+                      }
+                    : undefined
+                }
+              />
+            )}
             {showProjection && (
               <Line
                 dataKey="projectedValue"

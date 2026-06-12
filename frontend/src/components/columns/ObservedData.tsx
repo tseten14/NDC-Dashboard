@@ -381,11 +381,12 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
               <p className="text-muted-foreground mt-0.5">
                 {isCapChart ? (
                   <>
-                    Bars are observed emissions from Climate TRACE. The 2030 NDC ceiling is{" "}
-                    {selectedTarget.targetValue} Mt and the no-policy level in 2030 is {bauRef} Mt.
+                    The solid line is measured emissions from Climate TRACE. Compare it with the pledge
+                    limit ({selectedTarget.targetValue} Mt by 2030) and the higher line for 2030 if no extra
+                    action is taken ({bauRef} Mt).
                   </>
                 ) : (
-                  <>Solid bars are observed emissions from Climate TRACE.</>
+                  <>The solid line is measured data. Dashed lines show the path to the 2030 climate pledge goal.</>
                 )}
               </p>
               {liveProgress.scope_note && (
@@ -425,19 +426,19 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                   </span>
                   <span className="text-muted-foreground/40">·</span>
                   <span className="text-muted-foreground">
-                    {isCapChart ? "2030 ceiling" : `${selectedTarget.targetYear} NDC goal`}:{" "}
+                    {isCapChart ? "2030 pledge limit" : `${selectedTarget.targetYear} goal`}:{" "}
                     <span className="font-medium text-[hsl(var(--chart-2))]">
                       {chartDisplay.formatValue(ndcTarget2030)} {chartDisplay.unitLabel}
                     </span>
                   </span>
                   {latestVsNdc === "below" && isCapChart && (
                     <Badge variant="outline" className="text-[8px] h-4 bg-on-track/10 text-on-track border-on-track/30">
-                      Below ceiling
+                      Below pledge limit
                     </Badge>
                   )}
                   {latestVsNdc === "above" && isCapChart && (
                     <Badge variant="outline" className="text-[8px] h-4 bg-off-track/10 text-off-track border-off-track/30">
-                      Above ceiling
+                      Above pledge limit
                     </Badge>
                   )}
                   {latestVsNdc === "met" && !isCapChart && (
@@ -460,7 +461,8 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                 showTarget={showNdcTarget}
                 showBauPath={showBauReference}
                 capTarget={isCapChart}
-                onBarClick={
+                compareLines={showNdcTarget}
+                onPointClick={
                   apiSector || usingProxyData
                     ? (point) =>
                         setClickedPoint({
@@ -476,10 +478,11 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                 showBauPath={showBauReference}
                 showProjected={false}
                 capTarget={isCapChart}
+                compareLines={showNdcTarget}
               />
               {(apiSector || usingProxyData) && !clickedPoint && (
                 <p className="text-[9px] text-muted-foreground/60 mt-1 px-1">
-                  Click any bar to trace its data source
+                  Click a point on the measured line to trace its data source
                 </p>
               )}
             </CardContent>
