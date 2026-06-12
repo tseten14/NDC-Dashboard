@@ -281,7 +281,7 @@ export function buildLiveObservedDataSet(
 
   return {
     targetId: target.id,
-    dataProviders: ["Climate TRACE", "Uganda NDC API"],
+    dataProviders: ["Climate Trace API", "Uganda NDC"],
     historicalData,
     projectionBaseline,
     provenance,
@@ -362,7 +362,7 @@ export function buildIndicatorPanelObservedDataSet(target: NDCTarget, entry: Ind
 
   return {
     targetId: target.id,
-    dataProviders: m.dataProviders?.length ? m.dataProviders : ["Uganda NDC API"],
+    dataProviders: m.dataProviders?.length ? m.dataProviders : ["Uganda NDC"],
     historicalData,
     projectionBaseline,
     provenance,

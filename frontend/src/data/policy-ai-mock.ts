@@ -8,19 +8,33 @@ import type { PolicyDocument } from "@/lib/policy-documents";
 
 export type QuickActionType = "exec_summary" | "key_items" | "targets" | "recommendations";
 
+export interface AiSourceLink {
+  id: string;
+  label: string;
+  url: string;
+}
+
+export interface AnalysisLine {
+  text: string;
+  refs?: string[];
+  citations?: AiSourceLink[];
+}
+
 export interface AnalysisSection {
   heading?: string;
-  lines: string[];           // each line may contain [p.N] or [§N.N] refs
-  page_refs: string[];       // list of page/section refs cited in this block
+  lines: (string | AnalysisLine)[];
+  page_refs: string[];
+  citations?: AiSourceLink[];
 }
 
 export interface AiAnalysisResponse {
-  type: QuickActionType | "chat";
+  type: QuickActionType | "chat" | string;
   title: string;
   sections: AnalysisSection[];
   confidence: "high" | "medium" | "low";
   disclaimer: string;
   suggested_follow_ups: string[];
+  sources?: AiSourceLink[];
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────

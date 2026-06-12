@@ -2,8 +2,6 @@ import {
   Globe2,
   CalendarRange,
   Factory,
-  Layers,
-  Database,
   Wind,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,14 +14,14 @@ const DATASET_GROUPS = [
     accent: "from-teal-500/15 to-emerald-500/5",
   },
   {
-    title: "In every",
+    title: "Geographic coverage",
     items: ["Country or territory", "State", "Province", "County", "Major urban area"],
     icon: Globe2,
     accent: "from-cyan-500/15 to-teal-500/5",
   },
   {
-    title: "From",
-    items: ["Jan 2015", "to 2 months ago"],
+    title: "Jan 2015 to 2 months ago",
+    items: [] as string[],
     icon: CalendarRange,
     accent: "from-sky-500/15 to-cyan-500/5",
   },
@@ -35,28 +33,6 @@ const DATASET_GROUPS = [
     ],
     icon: Factory,
     accent: "from-emerald-500/15 to-green-500/5",
-  },
-  {
-    title: "Broken down by",
-    items: [
-      "67 sectors and sub-sectors",
-      "Key drivers of emissions (activity, emission factors, capacity)",
-    ],
-    icon: Layers,
-    accent: "from-teal-600/15 to-emerald-600/5",
-  },
-  {
-    title: "Plus additional data",
-    items: [
-      "Ownership",
-      "Locations and names",
-      "Technology type",
-      "Marginal emissions rates",
-      "Uncertainty and confidence",
-      "Key non-GHG pollutants (SO₂, NOₓ, ammonia, VOCs)",
-    ],
-    icon: Database,
-    accent: "from-blue-500/15 to-cyan-500/5",
   },
 ] as const;
 
@@ -90,14 +66,16 @@ export function ClimateTraceDatasetOverview({ className }: { className?: string 
                 </div>
                 <div className="min-w-0">
                   <p className="text-[10px] font-semibold text-foreground leading-snug">{group.title}</p>
-                  <ul className="mt-1 space-y-0.5">
-                    {group.items.map((item) => (
-                      <li key={item} className="text-[9px] text-muted-foreground leading-snug flex gap-1.5">
-                        <span className="text-primary/60 shrink-0">·</span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {group.items.length > 0 && (
+                    <ul className="mt-1 space-y-0.5">
+                      {group.items.map((item) => (
+                        <li key={item} className="text-[9px] text-muted-foreground leading-snug flex gap-1.5">
+                          <span className="text-primary/60 shrink-0">·</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
             </div>

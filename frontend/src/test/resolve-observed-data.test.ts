@@ -38,7 +38,7 @@ describe("resolveObservedDataSetForTarget", () => {
       getObservedMode: () => "live",
     });
     expect(dataset?.provenance.qaqcStatus).toBe("ok");
-    expect(dataset?.dataProviders).toContain("Climate TRACE");
+    expect(dataset?.dataProviders).toContain("Climate Trace API");
   });
 });
 

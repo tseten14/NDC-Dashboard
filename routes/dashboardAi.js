@@ -83,8 +83,12 @@ Respond ONLY with valid JSON:
   "sections": [
     {
       "heading": "<section heading>",
-      "lines": ["<one rich sentence per bullet>"],
-      "page_refs": ["<optional source tag, e.g. Climate TRACE 2025 or NDC target t1>"]
+      "lines": [
+        {
+          "text": "<one rich sentence per bullet>",
+          "refs": ["<1–2 source_catalog ids backing this sentence>"]
+        }
+      ]
     }
   ],
   "disclaimer": "<one sentence, max 25 words>",
@@ -95,9 +99,84 @@ Rules:
 - Base answers ONLY on the provided dashboard context — never invent numbers not in the JSON.
 - If data is missing, say so and note what is unavailable.
 - Each bullet is exactly ONE sentence (25–45 words), plain language for government officers.
-- Cite sources in page_refs as short tags like "Climate TRACE 2025", "NDC pledge", "Dashboard progress".
+- Every line MUST include refs: 1–2 IDs copied exactly from context.source_catalog (e.g. climate_trace_afolu, ndc_target_t1, dashboard_progress_afolu, uganda_ndc_2022).
+- Match refs to the claim in that line — NDC pledge numbers use ndc_target_* or uganda_ndc_2022; measured emissions use climate_trace_* or dashboard_timeseries_*; progress % use dashboard_progress_*.
 - confidence is "high" only when the answer uses live Climate TRACE + clear NDC fields; "low" if mostly unknown/missing.
 - Return JSON only — no markdown fences.`;
+
+const SOURCE_ALIASES = {
+  "climate trace": "climate_trace_api",
+  "climate trace api": "climate_trace_api",
+  "ndc pledge": "uganda_ndc_2022",
+  "ndc target": "uganda_ndc_2022",
+  "dashboard progress": "dashboard_emissions",
+  "dashboard": "dashboard_view",
+};
+
+function resolveSourceId(ref, catalogMap) {
+  if (!ref || typeof ref !== "string") return null;
+  const trimmed = ref.trim();
+  if (catalogMap.has(trimmed)) return trimmed;
+  const lower = trimmed.toLowerCase();
+  if (SOURCE_ALIASES[lower] && catalogMap.has(SOURCE_ALIASES[lower])) {
+    return SOURCE_ALIASES[lower];
+  }
+  for (const [id] of catalogMap) {
+    if (lower.includes(id.replace(/_/g, " ")) || id.includes(lower.replace(/\s+/g, "_"))) {
+      return id;
+    }
+  }
+  for (const [id, source] of catalogMap) {
+    if (lower.includes(source.label.toLowerCase().slice(0, 24))) return id;
+  }
+  return null;
+}
+
+function resolveCitations(refs, catalogMap, used) {
+  return (refs ?? [])
+    .map((ref) => {
+      const id = resolveSourceId(ref, catalogMap);
+      if (!id) return null;
+      const source = catalogMap.get(id);
+      const link = { id, label: source.label, url: source.url };
+      used.set(id, link);
+      return link;
+    })
+    .filter(Boolean);
+}
+
+function normalizeLine(line, sectionRefs) {
+  if (typeof line === "string") {
+    return { text: line, refs: sectionRefs ?? [] };
+  }
+  return {
+    text: line?.text ?? "",
+    refs: line?.refs?.length ? line.refs : sectionRefs ?? [],
+  };
+}
+
+function enrichCitations(parsed, catalog = []) {
+  const catalogMap = new Map(catalog.map((s) => [s.id, s]));
+  const used = new Map();
+
+  const sections = (parsed.sections ?? []).map((section) => {
+    const sectionRefs = section.page_refs ?? [];
+    const lines = (section.lines ?? []).map((line) => {
+      const { text, refs } = normalizeLine(line, sectionRefs);
+      const citations = resolveCitations(refs, catalogMap, used);
+      return { text, refs, citations };
+    });
+    const sectionCitations = resolveCitations(
+      [...new Set(lines.flatMap((l) => l.refs))],
+      catalogMap,
+      used,
+    );
+    return { ...section, lines, page_refs: sectionRefs, citations: sectionCitations };
+  });
+
+  const sources = Array.from(used.values());
+  return { ...parsed, sections, sources };
+}
 
 function buildUserMessage({ action, question, context }) {
   const contextJson = JSON.stringify(context, null, 2);
@@ -144,15 +223,17 @@ router.post("/dashboard/analyze", async (req, res) => {
       parsed = JSON.parse(stripped);
     }
 
+    const enriched = enrichCitations(parsed, context.source_catalog ?? []);
     const result = {
       type: question ? "chat" : action ?? "progress_check",
-      title: parsed.title ?? "Dashboard analysis",
-      sections: parsed.sections ?? [],
-      confidence: parsed.confidence ?? "medium",
+      title: enriched.title ?? "Dashboard analysis",
+      sections: enriched.sections ?? [],
+      sources: enriched.sources ?? [],
+      confidence: enriched.confidence ?? "medium",
       disclaimer:
-        parsed.disclaimer ??
+        enriched.disclaimer ??
         "AI-generated summary of dashboard data. Verify against official NDC and MRV sources before official use.",
-      suggested_follow_ups: parsed.suggested_follow_ups ?? [],
+      suggested_follow_ups: enriched.suggested_follow_ups ?? [],
     };
 
     analysisCache.set(cacheKey, result);

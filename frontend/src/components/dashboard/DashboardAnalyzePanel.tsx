@@ -6,7 +6,7 @@ import {
   DASHBOARD_QUICK_ACTIONS,
   type DashboardQuickAction,
 } from "@/lib/dashboard-ai-context";
-import type { AiAnalysisResponse } from "@/data/policy-ai-mock";
+import type { AiAnalysisLine, AiAnalysisResponse, AiSourceLink } from "@/data/policy-ai-mock";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,90 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
+  ExternalLink,
 } from "lucide-react";
+
+function lineText(line: string | AnalysisLine): string {
+  return typeof line === "string" ? line : line.text;
+}
+
+function lineCitations(line: string | AnalysisLine): AiSourceLink[] {
+  return typeof line === "string" ? [] : (line.citations ?? []);
+}
+
+/** Short Perplexity-style label for an inline citation pill. */
+function citationPillLabel(source: AiSourceLink): string {
+  if (source.id === "uganda_ndc_2022" || source.url.includes("unfccc")) return "unfccc";
+  if (source.id.startsWith("climate_trace_") || source.url.includes("climatetrace")) return "climatetrace";
+  if (source.id.startsWith("ndc_target_")) return "ndc pledge";
+  if (source.id.startsWith("dashboard_progress_")) return "dashboard";
+  if (source.id.startsWith("dashboard_timeseries_")) return "trace api";
+  if (source.id === "policy_documents") return "policies";
+  if (source.id === "climate_trace_api") return "trace api";
+  try {
+    const host = new URL(source.url, window.location.origin).hostname.replace(/^www\./, "");
+    return host.split(".")[0] || "source";
+  } catch {
+    return "source";
+  }
+}
+
+function InlineCitationPills({ citations }: { citations: AiSourceLink[] }) {
+  if (citations.length === 0) return null;
+
+  const primary = citations[0];
+  const extra = citations.length - 1;
+  const external = primary.url.startsWith("http");
+
+  return (
+    <a
+      href={primary.url}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
+      title={citations.map((c) => c.label).join(" · ")}
+      className="inline-flex items-center rounded-md border border-border/70 bg-muted/80 px-1.5 py-px ml-1 text-[9px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors whitespace-nowrap align-middle"
+    >
+      {citationPillLabel(primary)}
+      {extra > 0 && ` +${extra}`}
+    </a>
+  );
+}
+
+function sourceNumber(sources: AiSourceLink[], id: string): number {
+  const idx = sources.findIndex((s) => s.id === id);
+  return idx >= 0 ? idx + 1 : 0;
+}
+
+function SourceLink({
+  source,
+  number,
+  compact = false,
+}: {
+  source: AiSourceLink;
+  number: number;
+  compact?: boolean;
+}) {
+  const external = source.url.startsWith("http");
+  return (
+    <a
+      href={source.url}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
+      className={cn(
+        "inline-flex items-center gap-1 text-primary hover:underline",
+        compact ? "text-[9px] font-medium" : "text-[10px]",
+      )}
+    >
+      {number > 0 && (
+        <span className="inline-flex h-4 min-w-4 items-center justify-center rounded bg-primary/10 px-1 font-mono text-[9px] font-semibold text-primary shrink-0">
+          {number}
+        </span>
+      )}
+      <span className={compact ? "truncate max-w-[140px]" : ""}>{source.label}</span>
+      {external && <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-70" aria-hidden />}
+    </a>
+  );
+}
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Target,
@@ -55,6 +138,8 @@ function AnalysisCard({
       return next;
     });
   };
+
+  const sources = response.sources ?? [];
 
   return (
     <Card className="border-border shadow-none">
@@ -94,31 +179,43 @@ function AnalysisCard({
             )}
             {(!section.heading || openSections.has(si)) && (
               <ul className="space-y-1.5">
-                {section.lines.map((line, li) => (
-                  <li
-                    key={li}
-                    className="flex items-start gap-2 text-xs text-foreground leading-relaxed"
-                  >
-                    <span className="mt-1.5 h-1 w-1 rounded-full bg-muted-foreground/40 shrink-0" />
-                    {line}
-                  </li>
-                ))}
+                {section.lines.map((line, li) => {
+                  const citations = lineCitations(line);
+                  return (
+                    <li
+                      key={li}
+                      className="flex items-start gap-2 text-xs text-foreground leading-relaxed"
+                    >
+                      <span className="mt-1.5 h-1 w-1 rounded-full bg-muted-foreground/40 shrink-0" />
+                      <span>
+                        {lineText(line)}
+                        <InlineCitationPills citations={citations} />
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
-            )}
-            {section.page_refs.length > 0 && (
-              <div className="flex flex-wrap gap-1 pl-3">
-                {section.page_refs.map((ref) => (
-                  <span
-                    key={ref}
-                    className="text-[9px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded"
-                  >
-                    {ref}
-                  </span>
-                ))}
-              </div>
             )}
           </div>
         ))}
+
+        {sources.length > 0 && (
+          <div className="space-y-1.5 border-t border-border pt-2">
+            <p className="text-[9px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Sources
+            </p>
+            <ol className="space-y-1.5">
+              {sources.map((source, i) => (
+                <li key={source.id} className="flex items-start gap-2">
+                  <span className="shrink-0 font-mono text-[9px] font-semibold text-muted-foreground w-4 pt-0.5">
+                    {i + 1}
+                  </span>
+                  <SourceLink source={source} number={0} />
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
 
         <div className="flex items-start gap-1.5 border-t border-border pt-1">
           <AlertCircle className="h-3 w-3 text-muted-foreground/60 shrink-0 mt-0.5" />

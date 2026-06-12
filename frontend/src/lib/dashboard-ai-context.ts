@@ -10,6 +10,11 @@ import {
   getClimateTraceSectorForTarget,
 } from "@/lib/emissions-integration";
 import { getTargetPlainLanguage } from "@/lib/target-plain-language";
+import { SECTOR_LINEAGE, CLIMATE_TRACE_API_DOCS_URL } from "@/lib/data-lineage";
+import type { AiSourceLink } from "@/data/policy-ai-mock";
+
+const UGANDA_NDC_UNFCCC_URL =
+  "https://unfccc.int/sites/default/files/NDC/2022-08/Uganda%20Updated%20NDC%202022_Final.pdf";
 
 export type DashboardQuickAction =
   | "progress_check"
@@ -77,6 +82,83 @@ export interface DashboardAnalyzeContext {
     } | null;
   };
   data_freshness: string | null;
+  source_catalog: AiSourceLink[];
+}
+
+/** Citable sources for NDC AI answers — IDs must match page_refs in the model response. */
+export function buildDashboardSourceCatalog(
+  emissions: EmissionsDataContextValue,
+  selectedTarget: NDCTarget | null,
+): AiSourceLink[] {
+  const since = emissions.dashboard?.since ?? 2015;
+  const to = emissions.dashboard?.to ?? emissions.dashboard?.inventory_year ?? 2025;
+  const districtQs =
+    emissions.districtName != null
+      ? `&district=${encodeURIComponent(emissions.districtName)}`
+      : "";
+  const sources: AiSourceLink[] = [
+    {
+      id: "climate_trace_api",
+      label: "Climate TRACE API (v7)",
+      url: CLIMATE_TRACE_API_DOCS_URL,
+    },
+    {
+      id: "dashboard_emissions",
+      label: "NDC Dashboard — live emissions API",
+      url: `/api/v1/emissions/dashboard?since=${since}&to=${to}${districtQs}`,
+    },
+    {
+      id: "uganda_ndc_2022",
+      label: "Uganda Updated NDC 2022 (UNFCCC)",
+      url: UGANDA_NDC_UNFCCC_URL,
+    },
+    {
+      id: "policy_documents",
+      label: "Policy documents library",
+      url: "/documents",
+    },
+  ];
+
+  for (const sector of CLIMATE_TRACE_API_SECTORS) {
+    const pr = emissions.progressBySector[sector];
+    const lineage = SECTOR_LINEAGE[sector];
+    const year = pr?.latest_year ?? to;
+    sources.push({
+      id: `climate_trace_${sector}`,
+      label: `Climate TRACE — ${lineage.sectorLabel} (${year})`,
+      url: lineage.ctPublicUrl,
+    });
+    sources.push({
+      id: `dashboard_timeseries_${sector}`,
+      label: `Dashboard API — ${lineage.sectorLabel} timeseries`,
+      url: `/api/v1/emissions/timeseries?sector=${sector}&since=${since}&to=${to}${districtQs}`,
+    });
+    if (pr) {
+      sources.push({
+        id: `dashboard_progress_${sector}`,
+        label: `Dashboard progress — ${lineage.sectorLabel}`,
+        url: `/api/v1/emissions/progress?sector=${sector}${districtQs}`,
+      });
+    }
+  }
+
+  for (const t of ndcTargets) {
+    sources.push({
+      id: `ndc_target_${t.id}`,
+      label: `NDC target — ${getTargetPlainLanguage(t).summary.slice(0, 72)}`,
+      url: `/dashboard?target=${encodeURIComponent(t.id)}`,
+    });
+  }
+
+  if (selectedTarget) {
+    sources.unshift({
+      id: "dashboard_view",
+      label: "Current dashboard view",
+      url: `/dashboard?target=${encodeURIComponent(selectedTarget.id)}`,
+    });
+  }
+
+  return sources;
 }
 
 function latestObservedRow(target: NDCTarget) {
@@ -193,6 +275,7 @@ export function buildDashboardAnalyzeContext(
         : null,
     },
     data_freshness: emissions.dashboardLastRefreshIso ?? null,
+    source_catalog: buildDashboardSourceCatalog(emissions, selectedTarget),
   };
 }
 
