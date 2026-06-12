@@ -20,6 +20,7 @@ import {
   ObservedProjectedLegend,
   chartYAxisUnit,
 } from "@/components/dashboard/ChartObservedProjected";
+import { Ndc2030CompareChart } from "@/components/dashboard/Ndc2030CompareChart";
 import { ColumnLoadingState, NoDataPlaceholder, SelectTargetPlaceholder } from "@/components/dashboard/DashboardStates";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -381,12 +382,12 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
               <p className="text-muted-foreground mt-0.5">
                 {isCapChart ? (
                   <>
-                    The solid line is measured emissions from Climate TRACE. Compare it with the pledge
-                    limit ({selectedTarget.targetValue} Mt by 2030) and the higher line for 2030 if no extra
-                    action is taken ({bauRef} Mt).
+                    Bars show measured emissions from Climate TRACE over time. The chart below compares
+                    the 2030 pledge limit ({selectedTarget.targetValue} Mt) with emissions if no extra action
+                    is taken ({bauRef} Mt).
                   </>
                 ) : (
-                  <>The solid line is measured data. Dashed lines show the path to the 2030 climate pledge goal.</>
+                  <>Bars show measured data over time. The chart below compares the 2030 climate pledge goal.</>
                 )}
               </p>
               {liveProgress.scope_note && (
@@ -454,15 +455,17 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                 </div>
               )}
               <ObservedProjectedComposedChart
-                data={scaledChartData}
+                data={scaledChartData.map(({ year, observedValue }) => ({
+                  year,
+                  observedValue,
+                  projectedValue: null,
+                  target: null,
+                  bauPath: null,
+                }))}
                 yUnit={chartDisplay.unitLabel}
                 formatTick={chartDisplay.formatValue}
                 observedSeriesLabel={observedSeriesLabel}
-                showTarget={showNdcTarget}
-                showBauPath={showBauReference}
-                capTarget={isCapChart}
-                compareLines={showNdcTarget}
-                onPointClick={
+                onBarClick={
                   apiSector || usingProxyData
                     ? (point) =>
                         setClickedPoint({
@@ -472,21 +475,26 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                     : undefined
                 }
               />
-              <ObservedProjectedLegend
-                className="mt-1 px-1"
-                showTarget={showNdcTarget}
-                showBauPath={showBauReference}
-                showProjected={false}
-                capTarget={isCapChart}
-                compareLines={showNdcTarget}
-              />
+              <ObservedProjectedLegend className="mt-1 px-1" showTarget={false} showProjected={false} />
               {(apiSector || usingProxyData) && !clickedPoint && (
                 <p className="text-[9px] text-muted-foreground/60 mt-1 px-1">
-                  Click a point on the measured line to trace its data source
+                  Click any bar to trace its data source
                 </p>
               )}
             </CardContent>
           </Card>
+
+          {showBauReference && ndcTarget2030 != null && bauRef != null && (
+            <Ndc2030CompareChart
+              pledgeLimit={ndcTarget2030}
+              withoutAction={bauRef}
+              unit={chartDisplay.unitLabel}
+              formatValue={chartDisplay.formatValue}
+              latestValue={latestObserved?.value ?? null}
+              latestYear={latestObserved?.year ?? null}
+              capTarget={isCapChart}
+            />
+          )}
 
           {clickedPoint && (
             <DataProvenancePanel
