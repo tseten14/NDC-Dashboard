@@ -29,7 +29,7 @@ export interface TransportPathwayModel {
   id: string;
   title: string;
   subtitle: string;
-  sector: "Transport";
+  sector: "Transport" | "Multi-sector";
   ndcTargetHint: string;
   nodes: PathwayNode[];
   edges: PathwayEdge[];

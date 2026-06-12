@@ -6,7 +6,7 @@ import {
   DASHBOARD_QUICK_ACTIONS,
   type DashboardQuickAction,
 } from "@/lib/dashboard-ai-context";
-import type { AiAnalysisLine, AiAnalysisResponse, AiSourceLink } from "@/data/policy-ai-mock";
+import type { AnalysisLine, AiAnalysisResponse, AiSourceLink } from "@/data/policy-ai-mock";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

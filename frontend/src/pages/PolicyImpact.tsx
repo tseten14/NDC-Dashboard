@@ -44,6 +44,16 @@ import { climateFinanceHrefFromPolicyImpact } from "@/lib/policy-impact-link";
 const STEPS = ["Objective", "Intervention", "Parameters", "Results"] as const;
 type Step = (typeof STEPS)[number];
 
+/** Map dashboard sector id or label to the Select value (display name). */
+function resolveSectorLabel(raw: string): string {
+  const key = raw.trim();
+  const byId = sectorDefinitions.find((s) => s.id === key.toLowerCase());
+  if (byId) return byId.name;
+  const byName = sectorDefinitions.find((s) => s.name.toLowerCase() === key.toLowerCase());
+  if (byName) return byName.name;
+  return key;
+}
+
 /** Normalize dashboard sector id/label for TEF API lookup. */
 function tefSectorQuery(sector: string): string {
   const aliases: Record<string, string> = {
@@ -112,6 +122,46 @@ function pickHeadlineImpacts(impacts: PolicyImpactOutcome[], max = 5): PolicyImp
   return ranked.slice(0, max);
 }
 
+type MatchedCase = PolicyImpactForecastResponse["matched_cases"][number];
+
+/** Plain-language source line — never implies the forecast *is* a single foreign country. */
+function describeForecastSources(
+  matchedCases: MatchedCase[],
+  dataSource?: string,
+): { summary: string; badge: string } {
+  const library =
+    dataSource === "bundled KCI corpus"
+      ? "UNFCCC KCI case study library"
+      : dataSource?.trim() || "policy case study library";
+
+  if (matchedCases.length === 0) {
+    return {
+      summary: `No close match in the ${library}. Treat this as a rough sketch for Uganda only.`,
+      badge: "Limited case matches",
+    };
+  }
+
+  const n = matchedCases.length;
+  const topTitle = matchedCases[0]?.title;
+  const countLabel = `${n} matched case ${n === 1 ? "study" : "studies"}`;
+  const countries = [
+    ...new Set(
+      matchedCases
+        .map((c) => c.country?.trim())
+        .filter((c): c is string => Boolean(c)),
+    ),
+  ];
+  const analogueNote =
+    countries.length > 0
+      ? ` Programme examples documented in ${countries.join(", ")} — used as analogues, not Uganda outcomes.`
+      : "";
+  const summary = topTitle
+    ? `Informed by ${countLabel} from the ${library}, scaled to your Uganda NDC context.${analogueNote} Closest match: “${topTitle}”.`
+    : `Informed by ${countLabel} from the ${library}, scaled to your Uganda NDC context.${analogueNote}`;
+
+  return { summary, badge: countLabel };
+}
+
 function pathwayToModel(
   diagram: PolicyImpactForecastResponse["pathway_diagram"],
   title: string,
@@ -119,11 +169,11 @@ function pathwayToModel(
   return {
     id: "forecast-pathway",
     title,
-    subtitle: "How similar programmes led to these outcomes elsewhere",
+    subtitle: "How matched case studies suggest outcomes could unfold",
     sector: "Multi-sector",
-    ndcTargetHint: "Based on comparable case studies — not an official Uganda forecast",
+    ndcTargetHint: "Matched case studies — not an official Uganda forecast",
     measuredOutcomeNote:
-      "These are analogies from other countries' experience, not measured impacts in Uganda.",
+      "Drawn from programmes in the policy corpus — not measured impacts in Uganda.",
     nodes: diagram.nodes.map((n) => ({
       id: n.id,
       kind: n.kind as TransportPathwayModel["nodes"][0]["kind"],
@@ -157,7 +207,7 @@ export default function PolicyImpact() {
       setCustomObjective(objectiveParam);
     }
     if (sectorParam) {
-      setSector(sectorParam);
+      setSector(resolveSectorLabel(sectorParam));
     }
     setPrefillApplied(true);
   }, [sectorParam, interventionParam, objectiveParam, prefillApplied]);
@@ -253,9 +303,6 @@ export default function PolicyImpact() {
               Explore what a policy might mean for jobs, income, and fairness — using lessons from similar programmes elsewhere.
             </p>
           </div>
-          <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 border-amber-500/30">
-            Illustrative — not an official forecast
-          </Badge>
         </div>
 
         {/* Step indicator */}
@@ -434,24 +481,24 @@ export default function PolicyImpact() {
           </Card>
         )}
 
-        {step === "Results" && result && (
+        {step === "Results" && result && (() => {
+          const sourceCopy = describeForecastSources(result.matched_cases, result.data_source);
+          return (
           <div className="space-y-4">
             <Card className="border-primary/20 bg-primary/[0.02]">
               <CardContent className="p-4 space-y-2">
                 <p className="text-sm font-semibold text-foreground">What this might mean</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  {intervention?.label ?? "Selected policy"} in {sector} — compared with similar programmes in{" "}
-                  {result.matched_cases[0]?.country ?? "other countries"}.
+                  <span className="font-medium text-foreground">{intervention?.label ?? "Selected policy"}</span> in{" "}
+                  {sector}. {sourceCopy.summary}
                 </p>
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   <Badge variant="secondary" className="text-[10px]">
                     Reliability: {confidenceLabel(result.overall_confidence)}
                   </Badge>
-                  {result.matched_cases[0] && (
-                    <Badge variant="outline" className="text-[10px]">
-                      Based on {result.matched_cases[0].country}
-                    </Badge>
-                  )}
+                  <Badge variant="outline" className="text-[10px]">
+                    {sourceCopy.badge}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
@@ -610,6 +657,9 @@ export default function PolicyImpact() {
                           >
                             <div>
                               <p className="text-[11px] font-semibold">{c.title}</p>
+                              {c.country ? (
+                                <p className="text-[10px] text-muted-foreground">{c.country}</p>
+                              ) : null}
                               <p className="text-[10px] text-muted-foreground">{c.summary}</p>
                             </div>
                             <Button size="sm" variant="outline" className="h-7 text-[10px] shrink-0" asChild>
@@ -640,7 +690,8 @@ export default function PolicyImpact() {
               </Button>
             </div>
           </div>
-        )}
+          );
+        })()}
       </div>
     </ScrollArea>
   );

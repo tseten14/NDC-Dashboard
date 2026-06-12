@@ -1,12 +1,15 @@
+import { useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { COUNTRY_OPTIONS, type CountryCode } from "@/data/countries";
 import { useCountry } from "@/context/CountryContext";
 import { useCurrentRole } from "@/hooks/use-current-role";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { TextReveal } from "@/components/TextReveal";
+import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
 import { cn } from "@/lib/utils";
 import {
-  Globe2, ChevronRight, Lock, Satellite, BarChart3, MapPin, Sparkles, Leaf,
+  Globe2, ChevronRight, Lock, Satellite, BarChart3, MapPin, Sparkles, Leaf, Search,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,10 +53,23 @@ function LandingBackdrop() {
   );
 }
 
+const HERO_STATS = [
+  { label: "Countries listed", value: COUNTRY_OPTIONS.length },
+  { label: "Emission sectors", value: 7 },
+  { label: "Years of data", value: 11 },
+] as const;
+
 export default function CountrySelect() {
   const navigate = useNavigate();
   const { country, selectCountry } = useCountry();
   const { setActiveRole } = useCurrentRole();
+  const [query, setQuery] = useState("");
+
+  const filteredCountries = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return COUNTRY_OPTIONS;
+    return COUNTRY_OPTIONS.filter((c) => c.name.toLowerCase().includes(q));
+  }, [query]);
 
   if (country) {
     return <Navigate to="/" replace />;
@@ -96,15 +112,30 @@ export default function CountrySelect() {
               </div>
             </div>
 
-            <h1 className="font-brand text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.5rem] leading-[1.12]">
-              NDC Data
-              <span className="block text-sidebar-primary">Explorer</span>
+            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.5rem] leading-[1.12]">
+              <TextReveal text="NDC Data" startDelay={0.15} />
+              <TextReveal
+                text="Explorer"
+                startDelay={0.32}
+                className="block bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-600 bg-clip-text text-transparent dark:from-emerald-400 dark:via-teal-300 dark:to-sky-400"
+              />
             </h1>
 
             <p className="mt-4 text-sm sm:text-base text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
               Choose your country to open a decision-support cockpit — link climate commitments to
               live emissions, districts, and delivery priorities.
             </p>
+
+            <div className="mt-6 flex justify-center lg:justify-start gap-6 landing-fade-up landing-stagger-2">
+              {HERO_STATS.map((stat) => (
+                <div key={stat.label} className="text-center lg:text-left">
+                  <p className="font-display text-2xl font-bold tabular-nums text-foreground">
+                    <CountUpNumber value={stat.value} durationMs={1400} />
+                  </p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">{stat.label}</p>
+                </div>
+              ))}
+            </div>
 
             <div className="mt-8 grid grid-cols-2 gap-2.5 sm:gap-3 max-w-md mx-auto lg:mx-0 lg:max-w-none">
               {HIGHLIGHTS.map((h, i) => (
@@ -139,10 +170,31 @@ export default function CountrySelect() {
                 <CardDescription className="text-xs">
                   Your selection applies for this browser session.
                 </CardDescription>
+                <div className="relative mt-2 group/search">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground transition-colors group-focus-within/search:text-sidebar-primary" />
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search countries…"
+                    aria-label="Search countries"
+                    className={cn(
+                      "w-full h-9 rounded-lg border border-border/70 bg-background/70 pl-9 pr-3 text-xs",
+                      "placeholder:text-muted-foreground/70 outline-none",
+                      "transition-all duration-300",
+                      "focus:border-sidebar-primary/50 focus:bg-background focus:shadow-[0_0_0_3px_hsl(var(--sidebar-primary)/0.15)]",
+                    )}
+                  />
+                </div>
               </CardHeader>
               <CardContent className="pb-5">
-                <ul className="grid gap-2 sm:grid-cols-1">
-                  {COUNTRY_OPTIONS.map((c, i) => (
+                <ul key={query.trim().toLowerCase()} className="grid gap-2 sm:grid-cols-1 dash-crossfade">
+                  {filteredCountries.length === 0 && (
+                    <li className="rounded-xl border border-dashed border-border/70 px-4 py-6 text-center text-xs text-muted-foreground">
+                      No countries match “{query.trim()}”.
+                    </li>
+                  )}
+                  {filteredCountries.map((c, i) => (
                     <li
                       key={c.code}
                       className={cn("landing-fade-up", `landing-stagger-${Math.min(i + 3, 5)}`)}

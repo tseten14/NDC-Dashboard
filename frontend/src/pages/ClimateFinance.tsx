@@ -31,13 +31,34 @@ import {
   Coins, Download, TrendingUp, MapPin, Leaf, Banknote, CheckCircle2, Info,
   Route, AlertTriangle, Landmark,
 } from "lucide-react";
-import { McfDocumentsPanel } from "@/components/McfDocumentsPanel";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import type { SectorId } from "@/data/uganda-ndc-data";
+
+/** Plain-language names for funding channels, for readers new to climate finance. */
+const CHANNEL_PLAIN_NAME: Record<string, string> = {
+  "gcf-readiness": "Preparation grant (GCF)",
+  "gcf-sap": "Green Climate Fund — smaller projects",
+  "gcf-full": "Green Climate Fund — large projects",
+  "gef-cc": "Global Environment Facility (GEF)",
+  "wb-ida": "World Bank",
+  afdb: "African Development Bank",
+  "carbon-market": "Selling carbon credits",
+  "bilateral-ta": "Donor country support",
+  "national-budget": "Uganda government budget",
+  "ldcf-adaptation": "Adaptation fund (LDCF)",
+};
+
+/** One-line plain-language reason per fit level (carbon market keeps its own). */
+const FIT_PLAIN_WHY: Record<FundFit, string> = {
+  high: "Right size for this project.",
+  medium: "Could work — check the size limits and rules.",
+  low: "Probably not the right size for this project.",
+  ineligible: "Not available for this project.",
+};
 
 const READINESS_ORDER: InvestmentReadiness[] = ["NotReady", "Emerging", "Pipeline", "Bankable"];
 const READINESS_LABEL: Record<InvestmentReadiness, string> = {
@@ -434,7 +455,7 @@ export default function ClimateFinance() {
         <div>
           <h3 className="text-xs font-bold text-foreground mb-0.5">Top opportunities</h3>
           <p className="text-[10px] text-muted-foreground mb-2">
-            Best value after costs at your credit price. Click a card for funding options and suggested next steps.
+            Projects with the best payback. Click one to see where the money could come from.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {dealCards.slice(0, 6).map((e) => (
@@ -455,63 +476,72 @@ export default function ClimateFinance() {
             <CardContent className="p-3 space-y-3">
               <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <Landmark className="h-3.5 w-3.5 text-primary" />
-                Funding options — {selectedEcon.title}
+                Where could the money come from? — {selectedEcon.title}
               </h3>
-              <p className="text-[10px] text-muted-foreground">{selectedRec.dataCaveat}</p>
+
+              {selectedRec.primaryWindow && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 px-2.5 py-2 text-[11px]">
+                  <span className="font-semibold text-primary">Start here: </span>
+                  {CHANNEL_PLAIN_NAME[selectedRec.primaryWindow.window.id] ?? selectedRec.primaryWindow.window.name}
+                  <span className="text-muted-foreground">
+                    {" — "}
+                    {selectedRec.primaryWindow.window.id === "carbon-market"
+                      ? selectedRec.primaryWindow.rationale
+                      : FIT_PLAIN_WHY[selectedRec.primaryWindow.fit]}
+                  </span>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                {selectedRec.matches
+                  .filter((m) => m.window.id !== selectedRec.primaryWindow?.window.id)
+                  .slice(0, 3)
+                  .map((m) => (
+                    <div
+                      key={m.window.id}
+                      className="flex items-center gap-2 rounded-md border border-border/60 px-2.5 py-1.5 text-[10px]"
+                    >
+                      <span className="font-medium text-foreground">
+                        {CHANNEL_PLAIN_NAME[m.window.id] ?? m.window.name}
+                      </span>
+                      <FitBadge fit={m.fit} />
+                      <span className="text-muted-foreground hidden sm:inline truncate">
+                        {m.window.id === "carbon-market" ? m.rationale : FIT_PLAIN_WHY[m.fit]}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+
+              <div>
+                <p className="text-[10px] font-semibold text-foreground mb-1">What to do next</p>
+                <ol className="text-[10px] text-muted-foreground space-y-1 list-decimal pl-4">
+                  {selectedRec.nextSteps
+                    .filter((step) => !step.startsWith("Best-fit funding channel"))
+                    .slice(0, 3)
+                    .map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                </ol>
+              </div>
+
+              <p className="text-[10px] text-muted-foreground">
+                Big projects usually need government sign-off, an approved delivery partner, and some matching money
+                from Uganda&apos;s own budget or private partners.
+              </p>
+
               <Collapsible>
                 <CollapsibleTrigger className="text-[10px] text-primary hover:underline">
-                  Technical data sources
+                  Where these figures come from
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-1.5 rounded-md border border-border/60 bg-muted/20 px-2.5 py-2 text-[10px] space-y-1 text-muted-foreground">
+                  <p>{selectedRec.dataCaveat}</p>
                   <p><span className="font-semibold text-foreground">Emissions data: </span>{selectedEcon.abatementSource}</p>
                   <p><span className="font-semibold text-foreground">Cost data: </span>{selectedEcon.costSource}</p>
                 </CollapsibleContent>
               </Collapsible>
-              {selectedRec.primaryWindow && (
-                <div className="rounded-md border border-primary/30 bg-primary/5 px-2.5 py-2 text-[11px]">
-                  <span className="font-semibold text-primary">Best fit: </span>
-                  {selectedRec.primaryWindow.window.name}
-                  <span className="text-muted-foreground"> — {selectedRec.primaryWindow.rationale}</span>
-                </div>
-              )}
-              <div className="overflow-x-auto rounded-md border border-border/60">
-                <table className="w-full text-[10px]">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30 text-muted-foreground">
-                      <th className="text-left py-1.5 px-2 font-semibold">Funding channel</th>
-                      <th className="text-left py-1.5 px-2 font-semibold">Fit</th>
-                      <th className="text-left py-1.5 px-2 font-semibold">Why</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedRec.matches.map((m) => (
-                      <tr key={m.window.id} className="border-b border-border/20">
-                        <td className="py-1.5 px-2 font-medium text-foreground">{m.window.name}</td>
-                        <td className="py-1.5 px-2"><FitBadge fit={m.fit} /></td>
-                        <td className="py-1.5 px-2 text-muted-foreground leading-snug">{m.rationale}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold text-foreground mb-1">Suggested next steps</p>
-                <ol className="text-[10px] text-muted-foreground space-y-1 list-decimal pl-4">
-                  {selectedRec.nextSteps.map((step) => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ol>
-              </div>
-              <p className="text-[10px] text-muted-foreground">
-                <span className="font-medium text-foreground">Matching funds: </span>
-                {selectedRec.coFinanceNote}
-              </p>
-              <p className="text-[10px] text-muted-foreground">{UGANDA_FINANCE_CONTEXT.gcfNote}</p>
             </CardContent>
           </Card>
         )}
-
-        <McfDocumentsPanel sectorId={selectedSector as SectorId} />
 
         {/* Project readiness */}
         <Card>
@@ -629,8 +659,8 @@ function DealCard({
     >
       <p className="text-xs font-bold text-foreground leading-tight mb-2">{e.title}</p>
       <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] mb-2">
-        <Metric label="Investment" value={formatUSD(e.fundingNeedUSD)} />
-        <Metric label="Credit income / yr" value={formatUSD(e.annualRevenueUSD)} tone="text-on-track" />
+        <Metric label="Costs to build" value={formatUSD(e.fundingNeedUSD)} />
+        <Metric label="Earns per year" value={formatUSD(e.annualRevenueUSD)} tone="text-on-track" />
         <Metric label="Emissions cut" value={`${formatMt(e.abatementMtPerYr)}/yr`} />
         <Metric
           label="Cost / tonne"
@@ -644,11 +674,11 @@ function DealCard({
       {e.carbonCoversCost ? (
         <div className="flex items-center gap-1.5 rounded-md bg-on-track/10 px-2 py-1 text-[10px] text-on-track">
           <CheckCircle2 className="h-3 w-3 shrink-0" />
-          <span className="font-medium">Credits could cover the cost (+{formatUSD(e.netAnnualUSD)}/yr)</span>
+          <span className="font-medium">Pays for itself (+{formatUSD(e.netAnnualUSD)}/yr)</span>
         </div>
       ) : (
         <div className="rounded-md bg-muted px-2 py-1 text-[10px] text-muted-foreground">
-          Needs <span className="font-medium text-foreground">{gapPerT != null ? formatPerT(gapPerT) : "—"}</span> more per tonne from grants or loans
+          Needs extra funding ({gapPerT != null ? formatPerT(gapPerT) : "—"}/tonne short)
         </div>
       )}
     </button>

@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useCountry } from "@/context/CountryContext";
+import { useScrollReveal } from "@/hooks/use-scroll-reveal";
+import { TextReveal } from "@/components/TextReveal";
+import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight, Globe2, LayoutDashboard, Sparkles, Target,
@@ -60,6 +63,8 @@ export default function Home() {
   const { country, clearCountry } = useCountry();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const featuresReveal = useScrollReveal();
+  const bannerReveal = useScrollReveal();
 
   // Legacy deep-links: /?target=... → /dashboard?target=...
   useEffect(() => {
@@ -89,9 +94,13 @@ export default function Home() {
               {country ? `${country.flag} ${country.name}` : "NDC Data Explorer"} · Decision-support cockpit
             </Badge>
 
-            <h1 className="font-brand text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight text-foreground max-w-3xl leading-[1.15]">
-              Turn {countryLabel}&apos;s climate commitments into{" "}
-              <span className="text-sidebar-primary">delivery decisions</span>.
+            <h1 className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight text-foreground max-w-3xl leading-[1.15]">
+              <TextReveal text={`Turn ${countryLabel}'s climate commitments into`} />{" "}
+              <TextReveal
+                text="delivery decisions."
+                startDelay={0.35}
+                className="bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-600 bg-clip-text text-transparent dark:from-emerald-400 dark:via-teal-300 dark:to-sky-400"
+              />
             </h1>
 
             <p className="mt-4 text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
@@ -129,7 +138,7 @@ export default function Home() {
         </section>
 
         {/* What you can do */}
-        <section className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-10">
+        <section ref={featuresReveal} className="reveal mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-10">
           <div className="mb-6 max-w-xl">
             <h2 className="font-brand text-lg sm:text-xl font-semibold text-foreground">What you can do here</h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
@@ -139,9 +148,14 @@ export default function Home() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <Link key={f.title} to={f.to} className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
-                <Card className="h-full border-border/80 transition-all duration-200 group-hover:border-primary/30 group-hover:shadow-md group-hover:-translate-y-0.5">
+            {FEATURES.map((f, i) => (
+              <Link
+                key={f.title}
+                to={f.to}
+                className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl dash-fade-up"
+                style={{ animationDelay: `${0.08 + i * 0.07}s` }}
+              >
+                <Card className="h-full border-border/80 transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-lg group-hover:shadow-primary/10 group-hover:-translate-y-1">
                   <CardContent className="p-4">
                     <div
                       className={cn(
@@ -166,8 +180,8 @@ export default function Home() {
         </section>
 
         {/* Banner */}
-        <section className="mx-auto max-w-5xl px-4 sm:px-6 pb-10 sm:pb-14">
-          <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/[0.07] via-card to-card shadow-sm">
+        <section ref={bannerReveal} className="reveal mx-auto max-w-5xl px-4 sm:px-6 pb-10 sm:pb-14">
+          <Card className="gradient-border-card overflow-hidden border-primary/20 bg-gradient-to-br from-primary/[0.07] via-card to-card shadow-sm">
             <CardContent className="p-0">
               <div className="grid md:grid-cols-[1.1fr_0.9fr] gap-0">
                 <div className="p-6 sm:p-8 flex flex-col justify-center">
@@ -202,16 +216,22 @@ export default function Home() {
                 >
                   <div className="grid grid-cols-2 gap-3 w-full max-w-[220px]">
                     {[
-                      { label: "Sectors", value: "7" },
-                      { label: "Targets", value: "11" },
+                      { label: "Sectors", value: 7 },
+                      { label: "Targets", value: 11 },
                       { label: "Live data", value: "TRACE" },
-                      { label: "Horizon", value: "2030" },
+                      { label: "Horizon", value: 2030 },
                     ].map((stat) => (
                       <div
                         key={stat.label}
-                        className="rounded-lg border border-white/10 bg-background/60 backdrop-blur-sm px-3 py-2.5 text-center shadow-sm"
+                        className="rounded-lg border border-white/10 bg-background/60 backdrop-blur-sm px-3 py-2.5 text-center shadow-sm transition-transform duration-300 hover:scale-105"
                       >
-                        <p className="text-lg font-bold tabular-nums text-foreground">{stat.value}</p>
+                        <p className="text-lg font-bold tabular-nums text-foreground font-display">
+                          {typeof stat.value === "number" ? (
+                            <CountUpNumber value={stat.value} durationMs={1200} />
+                          ) : (
+                            stat.value
+                          )}
+                        </p>
                         <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{stat.label}</p>
                       </div>
                     ))}

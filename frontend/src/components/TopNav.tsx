@@ -1,13 +1,16 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useCountry } from "@/context/CountryContext";
 import { useCurrentRole } from "@/hooks/use-current-role";
 import { isPrimaryNavVisible } from "@/lib/role-capabilities";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
-  Upload, Target, Sparkles, Coins, Workflow, Scale, Map, Home,
-  BookOpen, Briefcase, Globe2, Leaf,
+  Upload, Target, Sparkles, Coins, Workflow, Scale, Map as MapIcon, Home,
+  BookOpen, Briefcase, Globe2, Leaf, ChevronRight,
 } from "lucide-react";
 
 type NavItem = { title: string; url: string; icon: React.ElementType };
@@ -20,35 +23,140 @@ const primary: NavItem[] = [
   { title: "Climate Finance",    url: "/climate-finance",icon: Coins },
   { title: "Policy Impact",      url: "/policy-impact",  icon: Workflow },
   { title: "Policy Documents",   url: "/documents",      icon: Scale },
-  { title: "Emissions Map",      url: "/map",            icon: Map },
+  { title: "Emissions Map",      url: "/map",            icon: MapIcon },
   { title: "My Work",            url: "/my-work",        icon: Briefcase },
   { title: "Documentation",      url: "/docs",           icon: BookOpen },
 ];
 
+/** Extra route titles for breadcrumbs (routes not in the primary nav). */
+const EXTRA_TITLES: Record<string, string> = {
+  "/brazil-chat": "Country Chat",
+  "/exports": "Exports & API",
+  "/admin": "Admin",
+  "/risk": "Climate Risk",
+  "/indicators": "Indicators",
+  "/projections": "Projections",
+};
+
+function currentPageTitle(pathname: string): string | null {
+  if (pathname === "/") return null;
+  const exact = primary.find((p) => p.url !== "/" && pathname.startsWith(p.url));
+  if (exact) return exact.title;
+  const extraKey = Object.keys(EXTRA_TITLES).find((k) => pathname.startsWith(k));
+  if (extraKey) return EXTRA_TITLES[extraKey];
+  const seg = pathname.split("/").filter(Boolean)[0] ?? "";
+  return seg ? seg.charAt(0).toUpperCase() + seg.slice(1).replace(/-/g, " ") : null;
+}
+
+function Breadcrumbs() {
+  const { pathname } = useLocation();
+  const { country } = useCountry();
+  const page = currentPageTitle(pathname);
+  return (
+    <nav aria-label="Breadcrumb" className="hidden lg:flex items-center gap-1 text-[11px] text-muted-foreground min-w-0">
+      {country && (
+        <>
+          <span className="flex items-center gap-1 shrink-0">
+            <span className="text-sm leading-none" aria-hidden>{country.flag}</span>
+            {country.name}
+          </span>
+          <ChevronRight className="h-3 w-3 shrink-0 opacity-50" aria-hidden />
+        </>
+      )}
+      <NavLink to="/" end className="hover:text-foreground transition-colors shrink-0" activeClassName="text-foreground font-medium">
+        Home
+      </NavLink>
+      {page && (
+        <>
+          <ChevronRight className="h-3 w-3 shrink-0 opacity-50" aria-hidden />
+          <span className="text-foreground font-medium truncate">{page}</span>
+        </>
+      )}
+    </nav>
+  );
+}
+
 export function TopNav() {
   const { country, clearCountry } = useCountry();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { activeRole } = useCurrentRole();
   const visiblePrimary = primary.filter((item) => isPrimaryNavVisible(activeRole, item.url));
 
+  // Condense the header once page content (in any nested scroll container) scrolls down.
+  const [condensed, setCondensed] = useState(false);
+  useEffect(() => {
+    const onScroll = (e: Event) => {
+      const el =
+        e.target instanceof Document
+          ? (e.target.scrollingElement as HTMLElement | null)
+          : e.target instanceof HTMLElement
+            ? e.target
+            : null;
+      if (!el) return;
+      setCondensed(el.scrollTop > 48);
+    };
+    document.addEventListener("scroll", onScroll, true);
+    return () => document.removeEventListener("scroll", onScroll, true);
+  }, []);
+
+  // Sliding indicator: follows hover, settles on the active link.
+  const linkRefs = useRef(new Map<string, HTMLAnchorElement>());
+  const navRef = useRef<HTMLElement>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [indicator, setIndicator] = useState<{ left: number; width: number; visible: boolean }>({
+    left: 0,
+    width: 0,
+    visible: false,
+  });
+
+  const activeUrl =
+    visiblePrimary.find((p) => (p.url === "/" ? pathname === "/" : pathname.startsWith(p.url)))?.url ?? null;
+
+  useLayoutEffect(() => {
+    const targetUrl = hovered ?? activeUrl;
+    const el = targetUrl != null ? linkRefs.current.get(targetUrl) : undefined;
+    const nav = navRef.current;
+    if (!el || !nav) {
+      setIndicator((s) => ({ ...s, visible: false }));
+      return;
+    }
+    const navBox = nav.getBoundingClientRect();
+    const box = el.getBoundingClientRect();
+    setIndicator({ left: box.left - navBox.left + 8, width: box.width - 16, visible: true });
+  }, [hovered, activeUrl, pathname, visiblePrimary.length]);
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      {/* Top strip: brand + country + role */}
-      <div className="flex h-12 items-center gap-4 px-6 border-b border-border/50">
-        {/* Brand */}
+    <header
+      className={cn(
+        "sticky top-0 z-40 w-full border-b border-border/70",
+        "bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60",
+        "shadow-[0_1px_12px_-6px_hsl(168_45%_28%/0.15)]",
+      )}
+    >
+      {/* Top strip: brand + breadcrumb + country + role. Collapses on scroll. */}
+      <div
+        className={cn(
+          "flex items-center gap-4 px-6 border-b border-border/40 overflow-hidden",
+          "transition-[height,opacity] duration-300 ease-out",
+          condensed ? "h-0 opacity-0 border-b-0" : "h-12 opacity-100",
+        )}
+      >
         <NavLink to="/" end className="flex items-center gap-2.5 shrink-0 group" activeClassName="">
-          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-sm shadow-emerald-500/30 ring-1 ring-emerald-400/40 transition-shadow group-hover:shadow-emerald-500/50">
+          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-sm shadow-emerald-500/30 ring-1 ring-emerald-400/40 transition-all duration-300 group-hover:shadow-emerald-500/50 group-hover:scale-105">
             <Leaf className="h-4 w-4 text-white drop-shadow-sm" />
           </div>
           <div className="hidden sm:block">
-            <p className="text-sm font-extrabold tracking-tight text-foreground leading-none font-brand">NDC</p>
+            <p className="text-sm font-extrabold tracking-tight text-foreground leading-none font-display">NDC</p>
             <p className="text-[10px] font-medium text-muted-foreground tracking-wide leading-none mt-0.5">Data Explorer</p>
           </div>
         </NavLink>
 
+        <div className="w-px h-4 bg-border/60 hidden lg:block" />
+        <Breadcrumbs />
+
         <div className="flex-1" />
 
-        {/* Country + actions */}
         <div className="flex items-center gap-3">
           {country && (
             <span className="text-xs text-muted-foreground hidden md:flex items-center gap-1.5">
@@ -67,25 +175,62 @@ export function TopNav() {
             <span className="hidden sm:inline">{country ? "Change country" : "Select country"}</span>
           </Button>
           <div className="w-px h-4 bg-border" />
+          <ThemeToggle />
+          <div className="w-px h-4 bg-border" />
           <RoleSwitcher />
         </div>
       </div>
 
-      {/* Nav links strip */}
+      {/* Nav links strip with sliding active/hover indicator */}
       <div className="overflow-x-auto scrollbar-none">
-        <nav className="flex items-center gap-0 px-4 min-w-max">
+        <nav
+          ref={navRef}
+          className="relative flex items-center gap-0 px-4 min-w-max"
+          onMouseLeave={() => setHovered(null)}
+        >
+          {/* Sliding underline */}
+          <span
+            aria-hidden
+            className={cn(
+              "absolute bottom-0 h-[2.5px] rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500",
+              "transition-[left,width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              indicator.visible ? "opacity-100" : "opacity-0",
+            )}
+            style={{ left: indicator.left, width: indicator.width }}
+          />
+          {/* Condensed brand mark appears when the top strip is collapsed */}
+          <NavLink
+            to="/"
+            end
+            activeClassName=""
+            className={cn(
+              "flex items-center shrink-0 overflow-hidden transition-[width,margin,opacity] duration-300",
+              condensed ? "w-7 mr-2 opacity-100" : "w-0 mr-0 opacity-0",
+            )}
+          >
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-emerald-500 to-teal-600 shrink-0">
+              <Leaf className="h-3.5 w-3.5 text-white" />
+            </span>
+          </NavLink>
           {visiblePrimary.map((item) => (
             <NavLink
               key={item.url}
               to={item.url}
               end={item.url === "/"}
-              className="relative px-3.5 py-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:rounded-full after:bg-transparent hover:after:bg-border"
-              activeClassName="text-foreground after:!bg-sidebar-primary"
+              ref={(el: HTMLAnchorElement | null) => {
+                if (el) linkRefs.current.set(item.url, el);
+                else linkRefs.current.delete(item.url);
+              }}
+              onMouseEnter={() => setHovered(item.url)}
+              className={cn(
+                "relative px-3.5 text-[13px] font-medium text-muted-foreground transition-all duration-300 hover:text-foreground whitespace-nowrap",
+                condensed ? "py-2" : "py-3",
+              )}
+              activeClassName="text-foreground"
             >
               {item.title}
             </NavLink>
           ))}
-
         </nav>
       </div>
     </header>

@@ -43,6 +43,12 @@
     --off-track: 4 72% 56%;
     --neutral: 150 10% 44%;
 
+    /* Climate-tech accents: warm amber for highlights/CTAs, coral for alerts, ocean blue */
+    --highlight: 38 95% 52%;
+    --highlight-foreground: 35 60% 14%;
+    --coral: 12 82% 60%;
+    --ocean: 202 72% 44%;
+
     /* Sidebar: base = #1e2a24 */
     --sidebar-bg: 150 17% 14%;
     --sidebar-fg: 150 6% 90%;
@@ -85,6 +91,14 @@
     --border: 150 11% 24%;
     --input: 150 11% 24%;
     --ring: 152 32% 40%;
+
+    --highlight: 38 92% 56%;
+    --highlight-foreground: 35 60% 12%;
+    --coral: 12 80% 64%;
+    --ocean: 202 70% 56%;
+
+    --on-track: 152 40% 52%;
+    --neutral: 150 8% 60%;
   }
 }
 
@@ -148,6 +162,14 @@
   .touch-scroll-x {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -359,6 +381,68 @@
       hsl(var(--muted) / 0.4) 100%
     );
   }
+
+  /* Emissions map — bubble entrance, hover scale, legend focus */
+  .map-bubble-g {
+    transform-box: fill-box;
+    transform-origin: center;
+    transition:
+      transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.35s ease;
+  }
+  .map-bubble-g.is-hovered {
+    transform: scale(1.32);
+  }
+  .map-bubble-g.is-focused {
+    transform: scale(1.06);
+  }
+  .map-bubble-g.is-dimmed {
+    opacity: 0.16;
+  }
+  .map-bubble-circle {
+    transition:
+      r 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.35s ease,
+      stroke-width 0.2s ease;
+  }
+  .map-district-path {
+    transition:
+      fill 0.2s ease,
+      stroke 0.2s ease,
+      stroke-width 0.2s ease,
+      filter 0.2s ease;
+  }
+  .map-district-path.is-hovered {
+    filter: brightness(1.06);
+  }
+  .map-legend-item {
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      opacity 0.3s ease,
+      transform 0.2s ease;
+  }
+  .map-legend-item:hover {
+    transform: translateX(2px);
+  }
+  .map-legend-item.is-active {
+    background: hsl(168 38% 94% / 0.85);
+    border-color: hsl(168 42% 42% / 0.45);
+    box-shadow: 0 0 0 1px hsl(168 42% 42% / 0.2);
+  }
+  .dark .map-legend-item.is-active {
+    background: hsl(168 22% 18% / 0.7);
+    border-color: hsl(168 35% 48% / 0.5);
+  }
+  .map-summary-accent {
+    background: linear-gradient(
+      135deg,
+      hsl(152 42% 42%) 0%,
+      hsl(168 38% 38%) 50%,
+      hsl(202 45% 48%) 100%
+    );
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -374,6 +458,349 @@
   .dash-card-hover,
   .dash-card-hover:hover {
     transform: none;
+  }
+  .map-bubble-g,
+  .map-bubble-g.is-hovered,
+  .map-bubble-g.is-focused,
+  .map-bubble-circle,
+  .map-district-path,
+  .map-legend-item,
+  .map-legend-item:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ── Emissions map — bubble entrance & hover ── */
+@keyframes map-bubble-in {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes map-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.06);
+  }
+}
+
+@layer utilities {
+  .map-stage-bg {
+    background: linear-gradient(
+      155deg,
+      hsl(210 36% 97%) 0%,
+      hsl(44 32% 98%) 42%,
+      hsl(48 26% 97%) 68%,
+      hsl(200 30% 96.5%) 100%
+    );
+  }
+
+  .map-bubble-group {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: map-bubble-in 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+    animation-delay: var(--map-bubble-delay, 0ms);
+  }
+
+  .map-bubble-circle {
+    transition:
+      r 0.22s cubic-bezier(0.34, 1.2, 0.64, 1),
+      opacity 0.28s ease,
+      stroke-width 0.2s ease,
+      stroke-opacity 0.2s ease;
+  }
+
+  .map-bubble-halo {
+    animation: map-glow-pulse 2s ease-in-out infinite;
+  }
+
+  .map-district-path {
+    transition:
+      fill 0.2s ease,
+      stroke 0.2s ease,
+      stroke-width 0.2s ease,
+      filter 0.2s ease;
+  }
+
+  .map-district-path.is-hovered {
+    filter: drop-shadow(0 0 6px hsl(152 34% 38% / 0.35));
+  }
+
+  .map-legend-item {
+    transition:
+      background-color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.2s ease,
+      opacity 0.25s ease;
+  }
+
+  .map-legend-item.is-active {
+    background: hsl(var(--card));
+    box-shadow:
+      0 0 0 1px hsl(var(--ring) / 0.35),
+      0 4px 12px -4px hsl(168 45% 28% / 0.22);
+  }
+
+  .map-summary-card {
+    background: linear-gradient(
+      160deg,
+      hsl(44 36% 97% / 0.95) 0%,
+      hsl(var(--card)) 45%,
+      hsl(210 32% 97% / 0.88) 100%
+    );
+  }
+
+  .map-globe-stage {
+    background: radial-gradient(ellipse 120% 80% at 50% 0%, hsl(215 28% 14%) 0%, #0a0e16 55%, #06080d 100%);
+  }
+
+  .map-globe-summary {
+    background: linear-gradient(
+      160deg,
+      rgba(15, 23, 42, 0.85) 0%,
+      rgba(10, 14, 22, 0.75) 100%
+    );
+  }
+
+  .dark .map-globe-stage {
+    background: radial-gradient(ellipse 120% 80% at 50% 0%, hsl(215 28% 12%) 0%, #0a0e16 55%, #06080d 100%);
+  }
+}
+
+.dark .map-stage-bg {
+  background: linear-gradient(
+    155deg,
+    hsl(215 28% 11%) 0%,
+    hsl(210 22% 12%) 40%,
+    hsl(200 20% 11%) 70%,
+    hsl(220 24% 10%) 100%
+  );
+}
+
+.dark .map-summary-card {
+  background: linear-gradient(
+    160deg,
+    hsl(168 24% 16% / 0.95) 0%,
+    hsl(var(--card)) 45%,
+    hsl(202 22% 15% / 0.85) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-bubble-group {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .map-bubble-circle,
+  .map-district-path,
+  .map-legend-item {
+    transition: none;
+  }
+  .map-bubble-halo {
+    animation: none;
+    opacity: 0.4;
+  }
+}
+
+/* ── Dark-mode variants for decorative gradient layers ── */
+.dark .landing-gradient-bg {
+  background: linear-gradient(
+    125deg,
+    hsl(160 18% 9%) 0%,
+    hsl(168 22% 12%) 25%,
+    hsl(200 20% 10%) 50%,
+    hsl(152 20% 11%) 75%,
+    hsl(160 18% 10%) 100%
+  );
+  background-size: 200% 200%;
+  animation: landing-gradient-shift 18s ease infinite;
+}
+
+.dark .dash-animated-bg {
+  background: linear-gradient(
+    130deg,
+    hsl(168 22% 10%) 0%,
+    hsl(152 20% 11%) 28%,
+    hsl(202 24% 11%) 58%,
+    hsl(160 18% 10%) 100%
+  );
+  background-size: 300% 300%;
+  animation: dash-bg-shift 26s ease infinite;
+}
+
+.dark .dash-grid-pattern {
+  background-image: radial-gradient(hsl(168 40% 70% / 0.05) 1px, transparent 1px);
+}
+
+.dark .dash-section-header {
+  background: linear-gradient(
+    90deg,
+    hsl(168 24% 18% / 0.9) 0%,
+    hsl(200 22% 17% / 0.55) 55%,
+    hsl(var(--muted) / 0.4) 100%
+  );
+}
+
+.dark .landing-grid-pattern {
+  background-image: radial-gradient(hsl(150 30% 80% / 0.06) 1px, transparent 1px);
+}
+
+/* ── Smooth dark/light theme switch via the View Transitions API ──
+   The whole page cross-fades as a single composited snapshot, which is far
+   cheaper than transitioning colors on every element. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.35s;
+  animation-timing-function: ease;
+}
+
+/* ── Site-wide ambient background (behind all app pages) ── */
+@keyframes ambient-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, -30px) scale(1.08); }
+}
+@keyframes ambient-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-35px, 25px) scale(0.94); }
+}
+
+@layer utilities {
+  .ambient-orb-a {
+    animation: ambient-drift-a 22s ease-in-out infinite;
+  }
+  .ambient-orb-b {
+    animation: ambient-drift-b 28s ease-in-out infinite;
+  }
+  /* Faint topographic contour lines evoking terrain maps. */
+  .ambient-contours {
+    background-image: repeating-radial-gradient(
+      circle at 30% 40%,
+      hsl(var(--foreground) / 0.025) 0px,
+      hsl(var(--foreground) / 0.025) 1px,
+      transparent 1px,
+      transparent 56px
+    ),
+    repeating-radial-gradient(
+      circle at 75% 70%,
+      hsl(var(--foreground) / 0.02) 0px,
+      hsl(var(--foreground) / 0.02) 1px,
+      transparent 1px,
+      transparent 72px
+    );
+  }
+}
+
+/* ── Hero text reveal (word-by-word) ── */
+@keyframes hero-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.6em);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.hero-word {
+  display: inline-block;
+  animation: hero-word-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* ── Scroll-triggered reveal (paired with use-scroll-reveal hook) ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.reveal-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Animated progress fill (width eases in on load) ── */
+.progress-fill-animate {
+  transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Scroll-to-top button fade ── */
+.scroll-top-btn {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.scroll-top-btn.scroll-top-visible {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* ── Gradient border accent for premium cards ── */
+@layer utilities {
+  .gradient-border-card {
+    position: relative;
+    background-clip: padding-box;
+  }
+  .gradient-border-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      hsl(168 50% 45% / 0.35),
+      hsl(202 60% 50% / 0.12) 40%,
+      transparent 60%,
+      hsl(38 90% 55% / 0.18)
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-orb-a,
+  .ambient-orb-b,
+  .hero-word {
+    animation: none;
+  }
+  .hero-word {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .progress-fill-animate,
+  .scroll-top-btn {
+    transition: none;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
   }
 }
 

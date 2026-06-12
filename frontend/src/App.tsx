@@ -1,12 +1,15 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { EmissionsDataProvider } from "@/context/EmissionsDataContext";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
+import { AmbientBackground } from "@/components/AmbientBackground";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { useAppState, AppStateContext } from "@/hooks/use-app-state";
 import { CockpitProvider } from "@/hooks/use-cockpit";
 import { CurrentRoleProvider } from "@/hooks/use-current-role";
@@ -77,14 +80,18 @@ function LazyPage({ children }: { children: ReactNode }) {
 
 function ProtectedShell() {
   const state = useAppState();
+  const location = useLocation();
   return (
     <AppStateContext.Provider value={state}>
       <EmissionsDataProvider>
       <CockpitProvider>
-          <div className="min-h-screen flex flex-col w-full">
+          <div className="min-h-screen flex flex-col w-full relative">
+            <AmbientBackground />
             <TopNav />
-            <main className="flex-1 min-h-0 overflow-hidden relative">
+            <main className="flex-1 min-h-0 overflow-hidden relative z-10">
                 <ErrorBoundary label="Page">
+                {/* Keyed wrapper crossfades page content on route change */}
+                <div key={location.pathname} className="h-full dash-crossfade">
                 <Routes>
                   {/* Main */}
                   <Route path="/" element={<Home />} />
@@ -140,8 +147,10 @@ function ProtectedShell() {
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                </div>
                 </ErrorBoundary>
               </main>
+            <ScrollToTopButton />
             <Footer />
           </div>
       </CockpitProvider>
@@ -152,6 +161,7 @@ function ProtectedShell() {
 
 const App = () => (
   <ErrorBoundary>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
@@ -184,6 +194,7 @@ const App = () => (
         </CountryProvider>
       </TooltipProvider>
     </QueryClientProvider>
+    </ThemeProvider>
   </ErrorBoundary>
 );
 

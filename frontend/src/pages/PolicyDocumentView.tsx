@@ -74,7 +74,7 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
                 {section.lines.map((line, li) => (
                   <li key={li} className="flex items-start gap-2 text-xs text-foreground leading-relaxed">
                     <span className="mt-1.5 h-1 w-1 rounded-full bg-muted-foreground/40 shrink-0" />
-                    <RichLine line={line} documentUrl={doc?.documentUrl} />
+                    <RichLine line={typeof line === "string" ? line : line.text} documentUrl={doc?.documentUrl} />
                   </li>
                 ))}
               </ul>

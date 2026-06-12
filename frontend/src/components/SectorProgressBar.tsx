@@ -33,7 +33,7 @@ export const SectorProgressBar = memo(function SectorProgressBar({ sector }: { s
       </div>
       <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
         <div
-          className={cn("h-full rounded-full transition-all duration-500", statusColors[status])}
+          className={cn("h-full rounded-full progress-fill-animate", statusColors[status])}
           style={{ width: `${progress}%` }}
         />
       </div>

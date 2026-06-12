@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
-import { geoIdentity, geoPath, geoContains } from "d3-geo";
+import { geoContains } from "d3-geo";
 import type { FeatureCollection } from "geojson";
 import {
   ResponsiveContainer,
@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
+import { EmissionsGlobe } from "@/components/map/EmissionsGlobe";
 import {
   Loader2, AlertCircle, Map as MapIcon, Building2, Layers,
   TrendingUp, TrendingDown, Factory, Sparkles,
@@ -20,26 +22,24 @@ import {
 import ugandaGeo from "@/data/uganda-adm2.geo.json";
 
 const GEO = ugandaGeo as unknown as FeatureCollection;
-const WIDTH = 1000;
-const HEIGHT = 1000;
 const YEARS = [2021, 2022, 2023, 2024];
 
-/** Vivid sector palette — aligned with app chart accents */
+/** Climate-tech sector palette — saturated for crisp map bubbles */
 const SECTOR_COLORS: Record<string, string> = {
   "forestry-and-land-use": "#16a34a",
-  agriculture: "#eab308",
-  transportation: "#0ea5e9",
-  buildings: "#8b5cf6",
+  agriculture: "#d97706",
+  transportation: "#0284c7",
+  buildings: "#7c3aed",
   waste: "#ea580c",
   power: "#ef4444",
-  manufacturing: "#14b8a6",
+  manufacturing: "#0d9488",
   "fossil-fuel-operations": "#64748b",
-  "mineral-extraction": "#b45309",
-  "fluorinated-gases": "#ec4899",
+  "mineral-extraction": "#c2410c",
+  "fluorinated-gases": "#db2777",
 };
 const FALLBACK_COLOR = "#94a3b8";
 const sectorColor = (s: string) => SECTOR_COLORS[s] ?? FALLBACK_COLOR;
-const sectorGradId = (s: string) => `sg-${s.replace(/[^a-z0-9]/gi, "-")}`;
+const bubbleKey = (p: MapSourcePoint, i: number) => `${p.id ?? "x"}-${i}`;
 
 function titleize(slug: string): string {
   return slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
@@ -52,166 +52,31 @@ function fmtMt(v: number | null | undefined, digits = 2): string {
   return `${(v * 1e6).toFixed(0)} t`;
 }
 
-function choroplethFill(t: number): string {
-  const clamped = Math.max(0, Math.min(1, t));
-  const h = 152;
-  const s = 28 + clamped * 22;
-  const l = 94 - clamped * 58;
-  return `hsl(${h} ${s}% ${l}%)`;
-}
-
-function useProjection() {
-  return useMemo(() => {
-    const projection = geoIdentity()
-      .reflectY(true)
-      .fitExtent([[20, 20], [WIDTH - 20, HEIGHT - 20]], GEO);
-    const pathGen = geoPath(projection);
-    const districtPaths = GEO.features.map((f, idx) => ({
-      d: pathGen(f) ?? "",
-      key: idx,
-      feature: f,
-    }));
-    return { projection, districtPaths };
-  }, []);
-}
-
 function aggregateByDistrict(points: MapSourcePoint[]): Float64Array {
   const sums = new Float64Array(GEO.features.length);
   for (const p of points) {
-    if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) continue;
-    for (let i = 0; i < GEO.features.length; i++) {
-      if (geoContains(GEO.features[i], [p.lng, p.lat])) {
-        sums[i] += p.mtco2e ?? 0;
-        break;
-      }
-    }
+    const idx = findDistrictIndex(p.lng, p.lat);
+    if (idx >= 0) sums[idx] += p.mtco2e ?? 0;
   }
   return sums;
 }
 
-interface MapSvgProps {
-  districtPaths: { d: string; key: number }[];
-  districtEmissions: Float64Array;
-  maxDistrictMt: number;
-  points: MapSourcePoint[];
-  maxPointMt: number;
-  projection: ReturnType<typeof geoIdentity>;
-  hoveredDistrict: number | null;
-  onDistrictHover: (idx: number | null) => void;
-  onPointHover: (p: MapSourcePoint | null, e?: MouseEvent) => void;
-  variant: "main" | "mini";
-  showBubbles?: boolean;
-  className?: string;
-}
-
-function MapSvg({
-  districtPaths, districtEmissions, maxDistrictMt, points, maxPointMt,
-  projection, hoveredDistrict, onDistrictHover, onPointHover, variant, showBubbles = true, className,
-}: MapSvgProps) {
-  const isMain = variant === "main";
-  const radius = (mt: number | null) => {
-    const v = mt ?? 0;
-    if (maxPointMt <= 0) return isMain ? 2.5 : 1.5;
-    const scale = isMain ? 28 : 14;
-    return Math.max(isMain ? 2 : 1.2, Math.sqrt(v / maxPointMt) * scale);
-  };
-
-  const sectorList = useMemo(
-    () => [...new Set(points.map((p) => p.sector))],
-    [points],
-  );
-
-  return (
-    <svg
-      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      preserveAspectRatio="xMidYMid meet"
-      className={cn("w-full h-full max-h-full", className)}
-      role="img"
-      aria-label="Uganda emissions map"
-      onMouseLeave={() => {
-        onDistrictHover(null);
-        onPointHover(null);
-      }}
-    >
-      <defs>
-        <linearGradient id="map-ocean" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="hsl(150 25% 96%)" />
-          <stop offset="100%" stopColor="hsl(152 20% 90%)" />
-        </linearGradient>
-        <filter id="bubble-glow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="2.5" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        {sectorList.map((s) => (
-          <radialGradient key={s} id={sectorGradId(s)} cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor={sectorColor(s)} stopOpacity="0.95" />
-            <stop offset="100%" stopColor={sectorColor(s)} stopOpacity="0.35" />
-          </radialGradient>
-        ))}
-      </defs>
-
-      <rect width={WIDTH} height={HEIGHT} fill="url(#map-ocean)" rx={isMain ? 0 : 8} />
-
-      <g>
-        {districtPaths.map((p) => {
-          const mt = districtEmissions[p.key] ?? 0;
-          const t = maxDistrictMt > 0 ? mt / maxDistrictMt : 0;
-          const active = hoveredDistrict === p.key;
-          return (
-            <path
-              key={p.key}
-              d={p.d}
-              fill={choroplethFill(t)}
-              stroke={active ? "hsl(152 34% 38%)" : "hsl(150 12% 78%)"}
-              strokeWidth={active ? 1.4 : 0.5}
-              className="transition-[fill,stroke] duration-150"
-              onMouseEnter={() => onDistrictHover(p.key)}
-            />
-          );
-        })}
-      </g>
-
-      {showBubbles && (
-        <g filter={isMain ? "url(#bubble-glow)" : undefined}>
-          {points.map((p, i) => {
-            const xy = projection([p.lng, p.lat]);
-            if (!xy) return null;
-            const r = radius(p.mtco2e);
-            return (
-              <circle
-                key={`${p.id}-${i}`}
-                cx={xy[0]}
-                cy={xy[1]}
-                r={r}
-                fill={`url(#${sectorGradId(p.sector)})`}
-                stroke={sectorColor(p.sector)}
-                strokeWidth={isMain ? 0.6 : 0.4}
-                strokeOpacity={0.7}
-                className="cursor-pointer"
-                onMouseEnter={(e) => onPointHover(p, e)}
-                onMouseMove={(e) => onPointHover(p, e)}
-              />
-            );
-          })}
-        </g>
-      )}
-    </svg>
-  );
+function findDistrictIndex(lng: number, lat: number): number {
+  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return -1;
+  for (let i = 0; i < GEO.features.length; i++) {
+    if (geoContains(GEO.features[i], [lng, lat])) return i;
+  }
+  return -1;
 }
 
 export default function MapExplorer() {
   const [year, setYear] = useState<number>(2024);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [highlightedSector, setHighlightedSector] = useState<string | null>(null);
   const [assetsOnly, setAssetsOnly] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState<MapSourcePoint | null>(null);
-  const [hoveredDistrict, setHoveredDistrict] = useState<number | null>(null);
   const [tip, setTip] = useState({ x: 0, y: 0 });
   const wrapRef = useRef<HTMLDivElement>(null);
-
-  const { projection, districtPaths } = useProjection();
 
   const query = useQuery({
     queryKey: ["emissions", "map", year],
@@ -242,10 +107,11 @@ export default function MapExplorer() {
 
   const districtEmissions = useMemo(() => aggregateByDistrict(visiblePoints), [visiblePoints]);
 
-  const maxDistrictMt = useMemo(
-    () => districtEmissions.reduce((m, v) => Math.max(m, v), 0),
-    [districtEmissions],
-  );
+  const hoveredPointAreaMt = useMemo(() => {
+    if (!hoveredPoint) return null;
+    const idx = findDistrictIndex(hoveredPoint.lng, hoveredPoint.lat);
+    return idx >= 0 ? districtEmissions[idx] : null;
+  }, [hoveredPoint, districtEmissions]);
 
   const maxPointMt = useMemo(
     () => visiblePoints.reduce((m, p) => Math.max(m, p.mtco2e ?? 0), 0),
@@ -299,13 +165,24 @@ export default function MapExplorer() {
       return next;
     });
 
-  const handlePointHover = (p: MapSourcePoint | null, e?: MouseEvent) => {
+  const handleSectorHighlight = (s: string) =>
+    setHighlightedSector((prev) => (prev === s ? null : s));
+
+  const handlePointHover = (
+    p: MapSourcePoint | null,
+    _key: string | null,
+    e?: globalThis.MouseEvent,
+  ) => {
     setHoveredPoint(p);
     if (p && e && wrapRef.current) {
       const rect = wrapRef.current.getBoundingClientRect();
       setTip({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     }
   };
+
+  useEffect(() => {
+    setHighlightedSector(null);
+  }, [year]);
 
   return (
     <ScrollArea className="h-full">
@@ -352,17 +229,23 @@ export default function MapExplorer() {
 
         {/* KPI row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-on-track/12 via-card to-card overflow-hidden">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-on-track/12 via-card to-card overflow-hidden dash-card-hover gradient-border-card">
             <CardContent className="p-4 relative">
               <div className="absolute top-0 right-0 w-20 h-20 bg-on-track/10 rounded-full -translate-y-1/2 translate-x-1/2" />
               <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Total emissions</p>
               <p className="mt-1 text-2xl sm:text-3xl font-bold tabular-nums text-on-track">
-                {query.isLoading ? "…" : fmtMt(data?.total_mtco2e, 1)}
-                <span className="text-sm font-medium text-muted-foreground ml-1">CO₂e</span>
+                {query.isLoading || data?.total_mtco2e == null ? (
+                  "…"
+                ) : (
+                  <>
+                    <CountUpNumber value={data.total_mtco2e} format={(v) => fmtMt(v, 1)} durationMs={1000} />
+                    <span className="text-sm font-medium text-muted-foreground ml-1">CO₂e</span>
+                  </>
+                )}
               </p>
             </CardContent>
           </Card>
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-sky-500/10 via-card to-card overflow-hidden">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-sky-500/10 via-card to-card overflow-hidden dash-card-hover">
             <CardContent className="p-4 relative">
               <div className="absolute top-0 right-0 w-20 h-20 bg-sky-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
               <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Tracked sources</p>
@@ -388,42 +271,51 @@ export default function MapExplorer() {
           </Card>
         </div>
 
-        {/* Main bubble map — side gutters for legend & summary (no overlap) */}
+        {/* 3D globe — column height ∝ emissions */}
         <div className="mx-auto w-full max-w-6xl px-1">
-          <Card className="overflow-hidden border-border/80 shadow-md">
-            <CardContent className="p-3 sm:p-4">
+          <Card className="overflow-hidden border-border/80 shadow-md dash-card-hover">
+            <CardContent className="p-3 sm:p-4 map-globe-stage">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-5">
                 {/* Sectors — left gutter */}
                 <aside className="shrink-0 lg:w-44 xl:w-48 order-2 lg:order-1">
-                  <div className="rounded-lg border border-border/80 bg-muted/20 px-3 py-2.5 lg:py-3">
-                    <p className="text-[9px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">Sectors</p>
-                    <ul className="space-y-1">
+                  <div className="rounded-lg border border-white/10 bg-black/45 backdrop-blur-sm px-3 py-2.5 lg:py-3 shadow-sm">
+                    <p className="text-[9px] uppercase tracking-wider font-semibold text-slate-300 mb-2">Sectors</p>
+                    <ul className="space-y-0.5">
                       {(data?.sectors ?? []).map((s) => {
                         const pct = data?.total_mtco2e
                           ? (((s.mtco2e ?? 0) / data.total_mtco2e) * 100).toFixed(1)
                           : null;
+                        const isActive = highlightedSector === s.sector;
+                        const isHidden = hidden.has(s.sector);
                         return (
                           <li key={s.sector}>
                             <button
                               type="button"
-                              onClick={() => toggleSector(s.sector)}
+                              onClick={() => handleSectorHighlight(s.sector)}
                               className={cn(
-                                "flex w-full items-center gap-2 text-left text-[10px] rounded-md px-1 py-0.5 transition-colors hover:bg-background/80",
-                                hidden.has(s.sector) && "opacity-40",
+                                "map-legend-item flex w-full items-center gap-2 text-left text-[10px] rounded-md px-2 py-1 hover:bg-white/10",
+                                isActive && "is-active",
+                                isHidden && "opacity-35",
                               )}
                             >
-                              <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: sectorColor(s.sector) }} />
-                              <span className="flex-1 min-w-0 leading-tight text-foreground">{titleize(s.sector)}</span>
+                              <span
+                                className={cn(
+                                  "h-2.5 w-2.5 rounded-full shrink-0 ring-2 ring-offset-1 ring-offset-[#0c1018] transition-shadow",
+                                  isActive && "ring-current",
+                                )}
+                                style={{ background: sectorColor(s.sector), color: sectorColor(s.sector) }}
+                              />
+                              <span className="flex-1 min-w-0 leading-tight text-slate-100">{titleize(s.sector)}</span>
                               {pct != null && (
-                                <span className="tabular-nums text-muted-foreground shrink-0">{pct}%</span>
+                                <span className="tabular-nums text-slate-400 shrink-0">{pct}%</span>
                               )}
                             </button>
                           </li>
                         );
                       })}
                     </ul>
-                    <p className="text-[9px] text-muted-foreground mt-2 border-t border-border/60 pt-2">
-                      Bubble size ∝ emissions · click to filter
+                    <p className="text-[9px] text-slate-400 mt-2 border-t border-white/10 pt-2 leading-snug">
+                      Bubble size ∝ emissions · hover for details · click sector to highlight
                     </p>
                   </div>
                 </aside>
@@ -433,9 +325,9 @@ export default function MapExplorer() {
                   ref={wrapRef}
                   className="relative flex-1 min-w-0 order-1 lg:order-2 w-full max-w-[min(100%,560px)] lg:max-w-none mx-auto"
                 >
-                  <div className="relative w-full aspect-square max-h-[min(72vh,560px)]">
+                  <div className="relative w-full aspect-[4/3] min-h-[380px] max-h-[min(72vh,540px)] rounded-xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
                     {query.isLoading && (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-background/60 backdrop-blur-sm text-sm text-muted-foreground rounded-lg">
+                      <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-[#060a12]/85 backdrop-blur-sm text-sm text-slate-300 rounded-lg">
                         <Loader2 className="h-5 w-5 animate-spin text-primary" /> Loading {year} sources…
                       </div>
                     )}
@@ -447,35 +339,38 @@ export default function MapExplorer() {
                         <Button variant="outline" size="sm" onClick={() => query.refetch()}>Retry</Button>
                       </div>
                     )}
-                    <MapSvg
-                      variant="main"
-                      districtPaths={districtPaths}
-                      districtEmissions={districtEmissions}
-                      maxDistrictMt={maxDistrictMt}
+                    <EmissionsGlobe
                       points={visiblePoints}
                       maxPointMt={maxPointMt}
-                      projection={projection}
-                      hoveredDistrict={hoveredDistrict}
-                      onDistrictHover={setHoveredDistrict}
+                      sectorColor={sectorColor}
+                      highlightedSector={highlightedSector}
+                      pointKey={bubbleKey}
                       onPointHover={handlePointHover}
+                      className="rounded-xl"
                     />
                     {hoveredPoint && (
                       <div
-                        className="pointer-events-none absolute z-20 max-w-[240px] rounded-lg border border-border bg-popover/95 backdrop-blur-sm px-3 py-2 shadow-xl"
+                        className="pointer-events-none absolute z-20 max-w-[260px] rounded-lg border border-border/80 bg-popover/95 backdrop-blur-md px-3 py-2.5 shadow-xl dash-crossfade"
                         style={{
-                          left: Math.min(tip.x + 14, (wrapRef.current?.clientWidth ?? 400) - 250),
+                          left: Math.min(tip.x + 14, (wrapRef.current?.clientWidth ?? 400) - 270),
                           top: tip.y + 14,
                         }}
                       >
                         <div className="text-sm font-semibold leading-tight">{hoveredPoint.name ?? "Unnamed source"}</div>
-                        <div className="mt-1 flex items-center gap-1.5">
-                          <span className="h-2.5 w-2.5 rounded-full" style={{ background: sectorColor(hoveredPoint.sector) }} />
+                        <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                          <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: sectorColor(hoveredPoint.sector) }} />
                           <span className="text-xs text-muted-foreground">{titleize(hoveredPoint.sector)}</span>
                           {hoveredPoint.is_asset && (
                             <Badge variant="secondary" className="text-[8px] h-4 px-1">Asset</Badge>
                           )}
                         </div>
-                        <div className="mt-1 text-sm font-bold tabular-nums text-on-track">{fmtMt(hoveredPoint.mtco2e)} CO₂e</div>
+                        <div className="mt-1.5 text-sm font-bold tabular-nums text-on-track">{fmtMt(hoveredPoint.mtco2e)} CO₂e</div>
+                        {hoveredPointAreaMt != null && hoveredPointAreaMt > 0 && (
+                          <p className="mt-1.5 text-[10px] text-muted-foreground border-t border-border/50 pt-1.5">
+                            Area total:{" "}
+                            <span className="font-semibold text-foreground tabular-nums">{fmtMt(hoveredPointAreaMt)}</span>
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -484,19 +379,27 @@ export default function MapExplorer() {
                 {/* Year / total — right gutter */}
                 <aside className="shrink-0 lg:w-36 xl:w-40 order-3 flex lg:flex-col lg:items-stretch lg:justify-start">
                   {data && !query.isLoading ? (
-                    <div className="rounded-lg border border-border/80 bg-muted/20 px-3 py-2.5 text-left lg:text-right">
-                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground">{year}</p>
-                      <p className="text-xl sm:text-2xl font-bold tabular-nums text-on-track leading-tight">{fmtMt(data.total_mtco2e, 1)}</p>
-                      <p className="text-[9px] text-muted-foreground">Mt CO₂e mapped</p>
-                      {hoveredDistrict != null && (
-                        <p className="mt-2 pt-2 border-t border-border/60 text-[10px] text-foreground lg:text-right">
-                          <span className="text-muted-foreground">Area: </span>
-                          <span className="font-semibold tabular-nums">{fmtMt(districtEmissions[hoveredDistrict])}</span>
+                    <div className="map-globe-summary rounded-lg border border-white/10 bg-black/45 px-3 py-2.5 text-left lg:text-right shadow-sm">
+                      <p className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">{year}</p>
+                      <p className="text-xl sm:text-2xl font-bold tabular-nums text-emerald-400 leading-tight">
+                        <CountUpNumber
+                          value={data.total_mtco2e ?? 0}
+                          format={(v) => (v >= 1 ? v.toFixed(1) : v.toFixed(2))}
+                          durationMs={1100}
+                        />
+                      </p>
+                      <p className="text-[9px] text-slate-400">Mt CO₂e mapped</p>
+                      {highlightedSector && (
+                        <p className="mt-2 pt-2 border-t border-white/10 text-[10px] lg:text-right dash-crossfade">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full" style={{ background: sectorColor(highlightedSector) }} />
+                            <span className="font-medium text-slate-100">{titleize(highlightedSector)}</span>
+                          </span>
                         </p>
                       )}
                     </div>
                   ) : (
-                    <div className="rounded-lg border border-dashed border-border/60 px-3 py-4 text-[10px] text-muted-foreground text-center lg:text-right">
+                    <div className="rounded-lg border border-dashed border-white/15 px-3 py-4 text-[10px] text-slate-400 text-center lg:text-right">
                       Totals load with map data
                     </div>
                   )}

@@ -305,7 +305,7 @@ function ObservedProjectedTooltip({
   capTarget = false,
 }: {
   active?: boolean;
-  payload?: { name?: string; value?: number | null; dataKey?: string; color?: string }[];
+  payload?: { name?: string; value?: number | null; dataKey?: string; color?: string; payload?: unknown }[];
   label?: string | number;
   observedLabel: string;
   formatValue?: (value: number) => string;
@@ -535,7 +535,7 @@ export function ObservedProjectedComposedChart({
                         fill: "hsl(var(--chart-4))",
                         cursor: "pointer",
                         onClick: (_e, dot) => {
-                          const row = dot?.payload as ObservedProjectedRow | undefined;
+                          const row = (dot as { payload?: ObservedProjectedRow } | undefined)?.payload;
                           if (row?.observedValue != null) {
                             handlePointClick({ year: row.year, value: row.observedValue });
                           }

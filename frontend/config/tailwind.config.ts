@@ -28,6 +28,7 @@ export default {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
         brand: ['"Plus Jakarta Sans"', "system-ui", "sans-serif"],
+        display: ['"Space Grotesk"', '"Plus Jakarta Sans"', "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -66,6 +67,12 @@ export default {
         "on-track": "hsl(var(--on-track))",
         "at-risk": "hsl(var(--at-risk))",
         "off-track": "hsl(var(--off-track))",
+        highlight: {
+          DEFAULT: "hsl(var(--highlight))",
+          foreground: "hsl(var(--highlight-foreground))",
+        },
+        coral: "hsl(var(--coral))",
+        ocean: "hsl(var(--ocean))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

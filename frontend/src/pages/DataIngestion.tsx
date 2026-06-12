@@ -10,7 +10,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 export default function DataIngestion() {
-  const [tab, setTab] = useState("files");
+  const [tab, setTab] = useState("scan");
   const { canUseIngest } = useCurrentRole();
 
   if (!canUseIngest()) {
