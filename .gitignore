@@ -42,3 +42,6 @@ backend/*.db
 
 # Playwright / test runner output
 test-results/
+
+# TypeScript compiler output log
+.tsc-output.txt
