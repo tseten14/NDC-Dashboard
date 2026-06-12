@@ -228,6 +228,22 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
     bauPath: isDistrictView ? null : p.bauPath ?? null,
   }));
 
+  const showNdcTarget = !isDistrictView && chartData.some((d) => d.target != null);
+  const showBauReference = showNdcTarget && isCapChart && chartData.some((d) => d.bauPath != null);
+
+  if (showNdcTarget && !chartData.some((d) => d.year === selectedTarget.targetYear)) {
+    const ref = chartData.find((d) => d.target != null) ?? chartData[chartData.length - 1];
+    const proj2030 = observedData.projectionBaseline?.find((p) => p.year === selectedTarget.targetYear);
+    chartData.push({
+      year: selectedTarget.targetYear,
+      observedValue: null,
+      projectedValue: null,
+      target: proj2030?.target ?? ref?.target ?? selectedTarget.targetValue,
+      bauPath: isCapChart ? (proj2030?.bauPath ?? ref?.bauPath ?? bauRef ?? null) : null,
+    });
+    chartData.sort((a, b) => a.year - b.year);
+  }
+
   const chartDisplay = emissionsChartDisplay(
     chartData.map((d) => d.observedValue),
     yUnit,
@@ -235,7 +251,24 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
   const scaledChartData = chartData.map((d) => ({
     ...d,
     observedValue: d.observedValue != null ? d.observedValue * chartDisplay.scale : null,
+    target: d.target != null ? d.target * chartDisplay.scale : null,
+    bauPath: d.bauPath != null ? d.bauPath * chartDisplay.scale : null,
   }));
+
+  const ndcTarget2030 =
+    chartData.find((d) => d.year === selectedTarget.targetYear)?.target ??
+    chartData.find((d) => d.target != null)?.target ??
+    null;
+  const latestVsNdc =
+    latestObserved?.value != null && ndcTarget2030 != null
+      ? isCapChart
+        ? latestObserved.value <= ndcTarget2030
+          ? "below"
+          : "above"
+        : latestObserved.value >= ndcTarget2030
+          ? "met"
+          : "below"
+      : null;
 
   return (
     <div className="flex flex-col h-full">
@@ -382,11 +415,51 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
 
           <Card>
             <CardContent className="p-2 pt-3 pb-2">
+              {showNdcTarget && latestObserved?.value != null && ndcTarget2030 != null && (
+                <div className="mb-2 px-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
+                  <span className="text-muted-foreground">
+                    Latest ({latestObserved.year}):{" "}
+                    <span className="font-medium text-foreground">
+                      {chartDisplay.formatValue(latestObserved.value)} {chartDisplay.unitLabel}
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground/40">·</span>
+                  <span className="text-muted-foreground">
+                    {isCapChart ? "2030 ceiling" : `${selectedTarget.targetYear} NDC goal`}:{" "}
+                    <span className="font-medium text-[hsl(var(--chart-2))]">
+                      {chartDisplay.formatValue(ndcTarget2030)} {chartDisplay.unitLabel}
+                    </span>
+                  </span>
+                  {latestVsNdc === "below" && isCapChart && (
+                    <Badge variant="outline" className="text-[8px] h-4 bg-on-track/10 text-on-track border-on-track/30">
+                      Below ceiling
+                    </Badge>
+                  )}
+                  {latestVsNdc === "above" && isCapChart && (
+                    <Badge variant="outline" className="text-[8px] h-4 bg-off-track/10 text-off-track border-off-track/30">
+                      Above ceiling
+                    </Badge>
+                  )}
+                  {latestVsNdc === "met" && !isCapChart && (
+                    <Badge variant="outline" className="text-[8px] h-4 bg-on-track/10 text-on-track border-on-track/30">
+                      At or above goal
+                    </Badge>
+                  )}
+                  {latestVsNdc === "below" && !isCapChart && (
+                    <Badge variant="outline" className="text-[8px] h-4 bg-at-risk/10 text-at-risk border-at-risk/30">
+                      Below goal path
+                    </Badge>
+                  )}
+                </div>
+              )}
               <ObservedProjectedComposedChart
                 data={scaledChartData}
                 yUnit={chartDisplay.unitLabel}
                 formatTick={chartDisplay.formatValue}
                 observedSeriesLabel={observedSeriesLabel}
+                showTarget={showNdcTarget}
+                showBauPath={showBauReference}
+                capTarget={isCapChart}
                 onBarClick={
                   apiSector || usingProxyData
                     ? (point) =>
@@ -397,7 +470,13 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                     : undefined
                 }
               />
-              <ObservedProjectedLegend className="mt-1 px-1" showTarget={false} showProjected={false} />
+              <ObservedProjectedLegend
+                className="mt-1 px-1"
+                showTarget={showNdcTarget}
+                showBauPath={showBauReference}
+                showProjected={false}
+                capTarget={isCapChart}
+              />
               {(apiSector || usingProxyData) && !clickedPoint && (
                 <p className="text-[9px] text-muted-foreground/60 mt-1 px-1">
                   Click any bar to trace its data source

@@ -135,11 +135,16 @@ export function chartYAxisUnit(unit: string): string {
   return u || "Value";
 }
 
-/** Y-axis domain with padding so bars and projection line aren't clipped. */
-export function chartValueExtent(rows: ObservedProjectedRow[]): [number, number] {
-  const values = rows.flatMap((r) =>
-    [r.observedValue, r.projectedValue].filter((v): v is number => v != null && Number.isFinite(v)),
-  );
+/** Y-axis domain with padding so bars, projection, and NDC reference lines aren't clipped. */
+export function chartValueExtent(
+  rows: ObservedProjectedRow[],
+  includeReference = false,
+): [number, number] {
+  const values = rows.flatMap((r) => {
+    const base = [r.observedValue, r.projectedValue];
+    if (includeReference) base.push(r.target ?? null, r.bauPath ?? null);
+    return base.filter((v): v is number => v != null && Number.isFinite(v));
+  });
   const positive = values.filter((v) => v > 0);
   const usable = positive.length > 0 ? positive : values;
   if (usable.length === 0) return [0, 1];
@@ -157,8 +162,9 @@ export function chartValueExtent(rows: ObservedProjectedRow[]): [number, number]
 export function estimateYAxisWidth(
   rows: ObservedProjectedRow[],
   formatTick: (value: number) => string,
+  includeReference = false,
 ): number {
-  const [yMin, yMax] = chartValueExtent(rows);
+  const [yMin, yMax] = chartValueExtent(rows, includeReference);
   const mid = (yMin + yMax) / 2;
   const longest = [yMin, mid, yMax]
     .map((v) => formatTick(v))
@@ -242,18 +248,26 @@ function ObservedProjectedTooltip({
   label,
   observedLabel,
   formatValue = formatChartAxisTick,
+  showTarget = false,
+  showBauPath = false,
+  capTarget = false,
 }: {
   active?: boolean;
   payload?: { name?: string; value?: number | null; dataKey?: string; color?: string }[];
   label?: string | number;
   observedLabel: string;
   formatValue?: (value: number) => string;
+  showTarget?: boolean;
+  showBauPath?: boolean;
+  capTarget?: boolean;
 }) {
   if (!active || !payload?.length) return null;
 
   const row = payload[0]?.payload as ObservedProjectedRow | undefined;
   const observed = row?.observedValue;
   const projected = row?.projectedValue;
+  const target = row?.target;
+  const bauPath = row?.bauPath;
 
   return (
     <div className="rounded-md border border-border bg-card px-2.5 py-2 text-[11px] shadow-sm">
@@ -282,6 +296,25 @@ function ObservedProjectedTooltip({
           Projection starts: <span className="text-foreground font-medium">{formatValue(projected)}</span>
         </p>
       )}
+      {showTarget && target != null && (
+        <p className="text-muted-foreground">
+          <span
+            className="inline-block h-0.5 w-3 border-t-2 border-dashed border-[hsl(var(--chart-2))] mr-1.5 align-middle"
+            aria-hidden
+          />
+          {capTarget ? "2030 NDC ceiling" : "NDC target path"}:{" "}
+          <span className="text-foreground font-medium">{formatValue(target)}</span>
+        </p>
+      )}
+      {showBauPath && bauPath != null && (
+        <p className="text-muted-foreground">
+          <span
+            className="inline-block h-0.5 w-3 border-t-2 border-dashed border-[hsl(var(--chart-3))] mr-1.5 align-middle"
+            aria-hidden
+          />
+          2030 no-policy level: <span className="text-foreground font-medium">{formatValue(bauPath)}</span>
+        </p>
+      )}
     </div>
   );
 }
@@ -291,6 +324,9 @@ export function ObservedProjectedComposedChart({
   yUnit,
   observedSeriesLabel,
   showProjection = false,
+  showTarget = false,
+  showBauPath = false,
+  capTarget = false,
   onBarClick,
   height = 200,
   formatTick = formatChartAxisTick,
@@ -300,13 +336,19 @@ export function ObservedProjectedComposedChart({
   yUnit: string;
   observedSeriesLabel: string;
   showProjection?: boolean;
+  /** Overlay NDC target path or 2030 ceiling line. */
+  showTarget?: boolean;
+  /** Overlay 2030 no-policy (BAU) reference line for cap-style targets. */
+  showBauPath?: boolean;
+  capTarget?: boolean;
   onBarClick?: (point: { year: number; value: number }) => void;
   height?: number;
   formatTick?: (value: number) => string;
   xAxisLabel?: string;
 }) {
-  const [yMin, yMax] = chartValueExtent(data);
-  const yAxisWidth = estimateYAxisWidth(data, formatTick);
+  const includeReference = showTarget || showBauPath;
+  const [yMin, yMax] = chartValueExtent(data, includeReference);
+  const yAxisWidth = estimateYAxisWidth(data, formatTick, includeReference);
   const anchorYear = lastObservedYearFromRows(data);
   const lastYear = data[data.length - 1]?.year ?? null;
   const hasPositiveValues = data.some((row) => (row.observedValue ?? 0) > 0 || (row.projectedValue ?? 0) > 0);
@@ -361,9 +403,45 @@ export function ObservedProjectedComposedChart({
               allowDecimals
             />
             <RTooltip
-              content={<ObservedProjectedTooltip observedLabel={observedSeriesLabel} formatValue={formatTick} />}
+              content={
+                <ObservedProjectedTooltip
+                  observedLabel={observedSeriesLabel}
+                  formatValue={formatTick}
+                  showTarget={showTarget}
+                  showBauPath={showBauPath}
+                  capTarget={capTarget}
+                />
+              }
               cursor={{ fill: "hsl(var(--muted) / 0.25)" }}
             />
+            {showTarget && (
+              <Line
+                dataKey="target"
+                name={capTarget ? "2030 NDC ceiling" : "NDC target path"}
+                type="linear"
+                stroke="hsl(var(--chart-2))"
+                strokeWidth={2}
+                strokeDasharray="6 4"
+                connectNulls
+                isAnimationActive={false}
+                dot={false}
+                activeDot={{ r: 3, strokeWidth: 1, fill: "hsl(var(--chart-2))" }}
+              />
+            )}
+            {showBauPath && (
+              <Line
+                dataKey="bauPath"
+                name="2030 no-policy level"
+                type="linear"
+                stroke="hsl(var(--chart-3))"
+                strokeWidth={2}
+                strokeDasharray="4 4"
+                connectNulls
+                isAnimationActive={false}
+                dot={false}
+                activeDot={{ r: 3, strokeWidth: 1, fill: "hsl(var(--chart-3))" }}
+              />
+            )}
             <Bar
               dataKey="observedValue"
               name={observedSeriesLabel}
