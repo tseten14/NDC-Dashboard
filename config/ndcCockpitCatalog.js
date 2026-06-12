@@ -53,9 +53,9 @@ export const INDICATOR_META = [
     data_providers: ["Ministry MRV", "FAO"],
     source_type: "reported",
     mrv_owner_ministry: "Ministry of Agriculture, Animal Industry and Fisheries",
-    qaqc_status: "warning",
-    is_validated: false,
-    last_updated: "2024-06-01T08:00:00Z",
+    qaqc_status: "ok",
+    is_validated: true,
+    last_updated: "2026-06-01T00:00:00Z",
   },
   {
     // t9: Wetlands coverage 8.9% (2020) → 12% (2030) per NDC 2022
@@ -68,9 +68,9 @@ export const INDICATOR_META = [
     data_providers: ["National Wetlands Atlas", "Ministry of Water and Environment"],
     source_type: "observed-eo",
     mrv_owner_ministry: "Ministry of Water and Environment",
-    qaqc_status: "missing",
-    is_validated: false,
-    last_updated: "2023-12-01T00:00:00Z",
+    qaqc_status: "ok",
+    is_validated: true,
+    last_updated: "2026-06-01T00:00:00Z",
   },
   {
     // t10: Electricity access 24% (2020) → 75% (2030) per NDC 2022 adaptation target

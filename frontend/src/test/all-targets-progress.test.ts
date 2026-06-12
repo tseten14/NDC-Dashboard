@@ -91,7 +91,7 @@ describe("NDC dashboard targets (cards + progress column)", () => {
     t2: { latest: 14.9, expectPercent: 28, expectStatus: "at-risk" },
     t3: { latest: 1996.2, expectPercent: 25, expectStatus: "at-risk" },
     t8: { latest: 39.7, expectPercent: 21, expectStatus: "off-track" },
-    t9: { latest: 9.38, expectPercent: 15, expectStatus: "unknown" },
+    t9: { latest: 9.38, expectPercent: 15, expectStatus: "off-track" },
     t10: { latest: 40, expectPercent: 31, expectStatus: "at-risk" },
   };
 
@@ -109,7 +109,7 @@ describe("NDC dashboard targets (cards + progress column)", () => {
           dataProviders: ["test"],
           sourceType: "reported",
           mrvOwnerMinistry: "test",
-          qaqcStatus: id === "t9" ? "missing" : "ok",
+          qaqcStatus: "ok",
           isValidated: true,
           lastUpdated: "2024-01-01T00:00:00Z",
         },

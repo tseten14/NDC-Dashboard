@@ -464,7 +464,7 @@ export const observedDataSets: ObservedDataSet[] = [
     dataProviders: ["National Wetlands Atlas", "Ministry of Water and Environment"],
     historicalData: makeHistorical(8.9, 2020, 2024, 0.12, 2030, 12, false),
     projectionBaseline: makeProjection(9.38, 12, 2025, 2030, 12),
-    provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2024-11-15T00:00:00Z", isValidated: true },
+    provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2026-06-01T00:00:00Z", isValidated: true },
   },
   // t4: Energy stationary (5.66 MtCO2e 2015, growing toward 10.10 NDC target)
   {

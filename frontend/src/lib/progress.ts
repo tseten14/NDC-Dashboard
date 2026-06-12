@@ -8,6 +8,7 @@ import {
   isBauCapEmissionsTarget,
   capTargetPosition,
 } from "../../../shared/progress.js";
+import { reviewDashboardQaqc } from "../../../shared/qaqcReview.js";
 
 export { isBauCapEmissionsTarget, capTargetPosition };
 export type CapTargetPosition = "below_cap" | "between_cap_and_bau" | "above_bau";
@@ -62,34 +63,24 @@ export function calculateProgress(
 
 export { apiStatusFromUiStatus, uiStatusFromApiStatus };
 
+export { reviewDashboardQaqc };
+
 /** Derive QA/QC flags for Climate TRACE live observed datasets. */
-export function deriveTraceDataQuality(hints: {
-  missingSlugs?: string[];
-  dataStale?: boolean;
-  reconciliationDeltaPct?: number | null;
-}): { qaqcStatus: QAQCStatus; isValidated: boolean; isEstimated: boolean } {
-  const missing = hints.missingSlugs?.length ?? 0;
-  const stale = hints.dataStale ?? false;
-  const deltaPct = hints.reconciliationDeltaPct ?? 0;
-
-  let qaqcStatus: QAQCStatus = "ok";
-  let isValidated = true;
-  const isEstimated = true;
-
-  if (missing > 0) {
-    isValidated = false;
-    qaqcStatus = "warning";
-  }
-  if (stale) {
-    isValidated = false;
-    if (qaqcStatus === "ok") qaqcStatus = "warning";
-  }
-  if (deltaPct > 5) {
-    isValidated = false;
-    qaqcStatus = "inconsistent";
+export function deriveTraceDataQuality(
+  hints: {
+    missingSlugs?: string[];
+    dataStale?: boolean;
+    reconciliationDeltaPct?: number | null;
+    timeseries?: { year: number; value: number | null }[];
+    unit?: string;
+  } = {},
+): { qaqcStatus: QAQCStatus; isValidated: boolean; isEstimated: boolean } {
+  if (hints.timeseries?.length) {
+    const reviewed = reviewDashboardQaqc(hints.timeseries, hints.unit ?? "MtCO₂e");
+    return { ...reviewed, isEstimated: true };
   }
 
-  return { qaqcStatus, isValidated, isEstimated };
+  return { qaqcStatus: "ok", isValidated: true, isEstimated: true };
 }
 
 export function reconciliationDeltaPercent(

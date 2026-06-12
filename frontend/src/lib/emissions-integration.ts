@@ -10,6 +10,7 @@ import {
   calculateProgress,
   deriveTraceDataQuality,
   reconciliationDeltaPercent,
+  reviewDashboardQaqc,
   uiStatusFromApiStatus,
 } from "@/lib/progress";
 import { bau2030ForTarget, getObservedDataForTarget } from "@/data/uganda-ndc-data";
@@ -266,6 +267,8 @@ export function buildLiveObservedDataSet(
         qualityHints.reconciliationDeltaMt,
         qualityHints.reconciliationReferenceMt,
       ),
+    timeseries,
+    unit: target.unit,
   });
 
   const provenance: DataProvenance = {
@@ -320,11 +323,6 @@ function mapSourceType(st: string): import("@/data/uganda-ndc-data").DataSourceT
   return "reported";
 }
 
-function mapQaqc(q: string): import("@/data/uganda-ndc-data").QAQCStatus {
-  if (q === "warning" || q === "missing" || q === "inconsistent" || q === "ok") return q;
-  return "ok";
-}
-
 /**
  * Build ObservedDataSet from /api/v1/indicators/panel entry (non-MtCO₂e targets).
  */
@@ -352,12 +350,14 @@ export function buildIndicatorPanelObservedDataSet(target: NDCTarget, entry: Ind
     target: Math.round(linearTargetValue(year, by, bv, ty, tv) * 100) / 100,
   }));
 
+  const reviewed = reviewDashboardQaqc(entry.timeseries, m.unit);
+
   const provenance: DataProvenance = {
     sourceType: mapSourceType(m.sourceType),
     mrvOwnerMinistry: m.mrvOwnerMinistry || "—",
-    qaqcStatus: mapQaqc(m.qaqcStatus),
+    qaqcStatus: reviewed.qaqcStatus,
     lastUpdated: m.lastUpdated,
-    isValidated: m.isValidated,
+    isValidated: reviewed.isValidated,
   };
 
   return {
@@ -426,10 +426,12 @@ export function buildIngestedObservedDataSet(
       };
 
   const dataset = buildIndicatorPanelObservedDataSet(target, entry);
+  const reviewed = reviewDashboardQaqc(dataset.historicalData, target.unit);
   dataset.provenance = {
     ...dataset.provenance,
     sourceType: "reported",
-    isValidated: ingested.some((r) => r.is_validated),
+    qaqcStatus: reviewed.qaqcStatus,
+    isValidated: reviewed.isValidated,
     lastUpdated: ingested[ingested.length - 1]?.as_of ?? dataset.provenance.lastUpdated,
   };
   if (!dataset.dataProviders.includes("File ingest")) {

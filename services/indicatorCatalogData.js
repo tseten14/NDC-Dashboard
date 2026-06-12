@@ -4,6 +4,7 @@ import {
   CATALOG_ACTIVITIES,
   CATALOG_MITIGATION,
 } from "../config/ndcCockpitCatalog.js";
+import { reviewDashboardQaqc } from "../shared/qaqcReview.js";
 
 function num(v) {
   if (v == null) return null;
@@ -25,6 +26,8 @@ export async function getIndicatorPanel(since = 2015, to = 2024) {
 
   const out = {};
   for (const m of INDICATOR_META) {
+    const timeseries = byTarget[m.target_id] ?? [];
+    const reviewed = reviewDashboardQaqc(timeseries, m.unit);
     out[m.target_id] = {
       meta: {
         targetId: m.target_id,
@@ -36,11 +39,11 @@ export async function getIndicatorPanel(since = 2015, to = 2024) {
         dataProviders: m.data_providers ?? [],
         sourceType: m.source_type,
         mrvOwnerMinistry: m.mrv_owner_ministry,
-        qaqcStatus: m.qaqc_status,
-        isValidated: m.is_validated,
+        qaqcStatus: reviewed.qaqcStatus,
+        isValidated: reviewed.isValidated,
         lastUpdated: m.last_updated,
       },
-      timeseries: byTarget[m.target_id] ?? [],
+      timeseries,
     };
   }
   return out;
