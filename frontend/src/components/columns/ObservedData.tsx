@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { type NDCTarget, type ObservedDataSet, type QAQCStatus, getObservedDataForTarget, bau2030ForTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import {
@@ -228,19 +228,14 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
     bauPath: isDistrictView ? null : p.bauPath ?? null,
   }));
 
-  const chartDisplay = useMemo(
-    () => emissionsChartDisplay(chartData.map((d) => d.observedValue), yUnit),
-    [chartData, yUnit],
+  const chartDisplay = emissionsChartDisplay(
+    chartData.map((d) => d.observedValue),
+    yUnit,
   );
-
-  const scaledChartData = useMemo(
-    () =>
-      chartData.map((d) => ({
-        ...d,
-        observedValue: d.observedValue != null ? d.observedValue * chartDisplay.scale : null,
-      })),
-    [chartData, chartDisplay.scale],
-  );
+  const scaledChartData = chartData.map((d) => ({
+    ...d,
+    observedValue: d.observedValue != null ? d.observedValue * chartDisplay.scale : null,
+  }));
 
   return (
     <div className="flex flex-col h-full">
