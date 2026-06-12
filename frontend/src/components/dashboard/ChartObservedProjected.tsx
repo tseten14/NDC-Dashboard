@@ -337,11 +337,11 @@ export function ObservedProjectedComposedChart({
   showTarget = false,
   showBauPath = false,
   capTarget = false,
-  onPointClick?: (point: { year: number; value: number }) => void;
+  onBarClick,
+  onPointClick,
   height = 220,
   formatTick = formatChartAxisTick,
   xAxisLabel = "Year",
-  /** Line comparison chart (measured vs pledge) instead of bars. */
   compareLines = false,
 }: {
   data: ObservedProjectedRow[];
