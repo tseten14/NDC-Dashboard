@@ -19,16 +19,18 @@ import {
   ObservedProjectedComposedChart,
   ObservedProjectedLegend,
   chartYAxisUnit,
+  filterBarChartYears,
 } from "@/components/dashboard/ChartObservedProjected";
-import { Ndc2030CompareChart } from "@/components/dashboard/Ndc2030CompareChart";
+import { MeasuredVsNdcChart } from "@/components/dashboard/MeasuredVsNdcChart";
 import { ColumnLoadingState, NoDataPlaceholder, SelectTargetPlaceholder } from "@/components/dashboard/DashboardStates";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, CheckCircle2, XCircle, Database, Satellite, MapPin, CodeXml } from "lucide-react";
+import { AlertTriangle, CheckCircle2, XCircle, Database, Satellite, MapPin, CodeXml, ExternalLink } from "lucide-react";
 import { DataProvenancePanel } from "@/components/DataProvenancePanel";
 import { ViewSourceModal } from "@/components/ViewSourceModal";
+import { CLIMATE_TRACE_API_DOCS_URL } from "@/lib/data-lineage";
 import { cn } from "@/lib/utils";
 
 interface ObservedDataProps {
@@ -221,29 +223,33 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
   // Proxy data is always in MtCO2e regardless of the indicator's native unit
   const yUnit = usingProxyData ? "MtCO₂e" : chartYAxisUnit(selectedTarget.unit);
 
-  const chartData = observedData.historicalData.map((p) => ({
-    year: p.year,
-    observedValue: p.value,
-    projectedValue: null as number | null,
-    target: isDistrictView ? null : p.target ?? null,
-    bauPath: isDistrictView ? null : p.bauPath ?? null,
-  }));
+  const chartData = filterBarChartYears(
+    observedData.historicalData.map((p) => ({
+      year: p.year,
+      observedValue: p.value,
+      projectedValue: null as number | null,
+      target: isDistrictView ? null : p.target ?? null,
+      bauPath: isDistrictView ? null : p.bauPath ?? null,
+    })),
+    (p) => p.observedValue,
+  );
 
   const showNdcTarget = !isDistrictView && chartData.some((d) => d.target != null);
-  const showBauReference = showNdcTarget && isCapChart && chartData.some((d) => d.bauPath != null);
-
-  if (showNdcTarget && !chartData.some((d) => d.year === selectedTarget.targetYear)) {
-    const ref = chartData.find((d) => d.target != null) ?? chartData[chartData.length - 1];
-    const proj2030 = observedData.projectionBaseline?.find((p) => p.year === selectedTarget.targetYear);
-    chartData.push({
-      year: selectedTarget.targetYear,
-      observedValue: null,
-      projectedValue: null,
-      target: proj2030?.target ?? ref?.target ?? selectedTarget.targetValue,
-      bauPath: isCapChart ? (proj2030?.bauPath ?? ref?.bauPath ?? bauRef ?? null) : null,
-    });
-    chartData.sort((a, b) => a.year - b.year);
-  }
+  const ndcGoal = showNdcTarget ? selectedTarget.targetValue : null;
+  const isGrowthTarget =
+    !isCapChart &&
+    selectedTarget.targetValue > selectedTarget.baselineValue;
+  const ndcCompareValue = isCapChart
+    ? selectedTarget.targetValue
+    : isGrowthTarget
+      ? selectedTarget.baselineValue
+      : selectedTarget.targetValue;
+  const ndcCompareLabel = isCapChart
+    ? "NDC pledge limit"
+    : isGrowthTarget
+      ? `NDC baseline (${selectedTarget.baselineYear})`
+      : "NDC pledge goal";
+  const measuredCompareLabel = observedSeriesLabel.replace(/\s*observed\s*$/i, "").trim() || "Measured";
 
   const chartDisplay = emissionsChartDisplay(
     chartData.map((d) => d.observedValue),
@@ -256,17 +262,13 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
     bauPath: d.bauPath != null ? d.bauPath * chartDisplay.scale : null,
   }));
 
-  const ndcTarget2030 =
-    chartData.find((d) => d.year === selectedTarget.targetYear)?.target ??
-    chartData.find((d) => d.target != null)?.target ??
-    null;
   const latestVsNdc =
-    latestObserved?.value != null && ndcTarget2030 != null
+    latestObserved?.value != null && ndcGoal != null
       ? isCapChart
-        ? latestObserved.value <= ndcTarget2030
+        ? latestObserved.value <= ndcGoal
           ? "below"
           : "above"
-        : latestObserved.value >= ndcTarget2030
+        : latestObserved.value >= ndcGoal
           ? "met"
           : "below"
       : null;
@@ -288,18 +290,11 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             National
           </Badge>
         )}
-        {(apiSector || usingProxyData) && (
-          <Badge variant="outline" className="text-[8px] h-4 gap-0.5 shrink-0">
-            <Satellite className="h-2.5 w-2.5" />
-            Climate TRACE
-          </Badge>
-        )}
-        {isIndicatorPanelTarget(selectedTarget) && !usingProxyData && observedMode === "live" && !apiSector && (
-          <Badge variant="outline" className="text-[8px] h-4 gap-0.5 shrink-0">
-            <Database className="h-2.5 w-2.5" />
-            Indicators API
-          </Badge>
-        )}
+        {((apiSector || usingProxyData) ||
+          (isIndicatorPanelTarget(selectedTarget) &&
+            !usingProxyData &&
+            observedMode === "live" &&
+            !apiSector)) && <ClimateTraceApiBadge />}
         {hasIngestedObs && (
           <DataProvenanceBadge count={ingestedRows.length} source={ingestSourceLabel} />
         )}
@@ -380,15 +375,9 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs leading-snug">
               <p className="text-foreground font-medium">What you&apos;re seeing</p>
               <p className="text-muted-foreground mt-0.5">
-                {isCapChart ? (
-                  <>
-                    Bars show measured emissions from Climate TRACE over time. The chart below compares
-                    the 2030 pledge limit ({selectedTarget.targetValue} Mt) with emissions if no extra action
-                    is taken ({bauRef} Mt).
-                  </>
-                ) : (
-                  <>Bars show measured data over time. The chart below compares the 2030 climate pledge goal.</>
-                )}
+                Bars show measured emissions from Climate TRACE over time. The chart below compares the
+                latest measured total with Uganda&apos;s NDC pledge ({selectedTarget.targetValue}{" "}
+                {selectedTarget.unit}) — based on data collected so far, not a forecast.
               </p>
               {liveProgress.scope_note && (
                 <p className="text-muted-foreground mt-1 text-[10px]">{liveProgress.scope_note}</p>
@@ -417,29 +406,29 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
 
           <Card>
             <CardContent className="p-2 pt-3 pb-2">
-              {showNdcTarget && latestObserved?.value != null && ndcTarget2030 != null && (
+              {showNdcTarget && latestObserved?.value != null && ndcGoal != null && (
                 <div className="mb-2 px-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
                   <span className="text-muted-foreground">
-                    Latest ({latestObserved.year}):{" "}
-                    <span className="font-medium text-foreground">
+                    Latest measured ({latestObserved.year}):{" "}
+                    <span className="font-medium text-[hsl(var(--chart-3))]">
                       {chartDisplay.formatValue(latestObserved.value)} {chartDisplay.unitLabel}
                     </span>
                   </span>
                   <span className="text-muted-foreground/40">·</span>
                   <span className="text-muted-foreground">
-                    {isCapChart ? "2030 pledge limit" : `${selectedTarget.targetYear} goal`}:{" "}
+                    {selectedTarget.targetYear} goal:{" "}
                     <span className="font-medium text-[hsl(var(--chart-2))]">
-                      {chartDisplay.formatValue(ndcTarget2030)} {chartDisplay.unitLabel}
+                      {chartDisplay.formatValue(ndcGoal)} {chartDisplay.unitLabel}
                     </span>
                   </span>
                   {latestVsNdc === "below" && isCapChart && (
                     <Badge variant="outline" className="text-[8px] h-4 bg-on-track/10 text-on-track border-on-track/30">
-                      Below pledge limit
+                      Below NDC pledge
                     </Badge>
                   )}
                   {latestVsNdc === "above" && isCapChart && (
                     <Badge variant="outline" className="text-[8px] h-4 bg-off-track/10 text-off-track border-off-track/30">
-                      Above pledge limit
+                      Above NDC pledge
                     </Badge>
                   )}
                   {latestVsNdc === "met" && !isCapChart && (
@@ -475,7 +464,19 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                     : undefined
                 }
               />
-              <ObservedProjectedLegend className="mt-1 px-1" showTarget={false} showProjected={false} />
+              <ObservedProjectedLegend
+                className="mt-1 px-1"
+                showTarget={false}
+                showProjected={false}
+                dataSourceHref={
+                  observedMode === "live" &&
+                  (apiSector ||
+                    usingProxyData ||
+                    (isIndicatorPanelTarget(selectedTarget) && !usingProxyData && !apiSector))
+                    ? CLIMATE_TRACE_API_DOCS_URL
+                    : undefined
+                }
+              />
               {(apiSector || usingProxyData) && !clickedPoint && (
                 <p className="text-[9px] text-muted-foreground/60 mt-1 px-1">
                   Click any bar to trace its data source
@@ -484,15 +485,18 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             </CardContent>
           </Card>
 
-          {showBauReference && ndcTarget2030 != null && bauRef != null && (
-            <Ndc2030CompareChart
-              pledgeLimit={ndcTarget2030}
-              withoutAction={bauRef}
+          {showNdcTarget && ndcCompareValue != null && latestObserved?.value != null && (
+            <MeasuredVsNdcChart
+              measuredValue={latestObserved.value}
+              measuredYear={latestObserved.year}
+              ndcReference={ndcCompareValue}
+              ndcReferenceLabel={ndcCompareLabel}
+              measuredLabel={measuredCompareLabel}
               unit={chartDisplay.unitLabel}
               formatValue={chartDisplay.formatValue}
-              latestValue={latestObserved?.value ?? null}
-              latestYear={latestObserved?.year ?? null}
-              capTarget={isCapChart}
+              higherIsBetter={isGrowthTarget}
+              goalYear={isGrowthTarget ? selectedTarget.targetYear : undefined}
+              goalValue={isGrowthTarget ? ndcGoal ?? undefined : undefined}
             />
           )}
 
@@ -539,6 +543,22 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
         sector={usingProxyData ? null : (apiSector ?? (selectedTarget?.sectorId === "economy-wide" ? "economy-wide" : null))}
       />
     </div>
+  );
+}
+
+function ClimateTraceApiBadge() {
+  return (
+    <a
+      href={CLIMATE_TRACE_API_DOCS_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Open Climate TRACE API documentation"
+      className="inline-flex items-center gap-1.5 shrink-0 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary shadow-sm hover:bg-primary/15 hover:border-primary/50 transition-colors"
+    >
+      <Satellite className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      Climate Trace API
+      <ExternalLink className="h-3 w-3 shrink-0 opacity-80" aria-hidden />
+    </a>
   );
 }
 

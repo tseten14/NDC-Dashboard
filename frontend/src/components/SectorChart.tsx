@@ -2,6 +2,7 @@ import { type Sector } from "@/data/climate-data";
 import {
   ChartHatchPatternDef,
   ObservedProjectedLegend,
+  filterBarChartYears,
 } from "@/components/dashboard/ChartObservedProjected";
 import {
   BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -19,20 +20,23 @@ export function SectorChart({ sector, dataView }: SectorChartProps) {
   const yUnit = "MtCO₂e";
 
   if (dataView === "both") {
-    const data = [
-      ...sector.historicalData.map((d) => ({
-        year: d.year,
-        observedValue: d.emissions,
-        projectedValue: null as number | null,
-        target: d.target,
-      })),
-      ...sector.projectedData.map((d) => ({
-        year: d.year,
-        observedValue: null as number | null,
-        projectedValue: d.emissions,
-        target: d.target,
-      })),
-    ];
+    const data = filterBarChartYears(
+      [
+        ...sector.historicalData.map((d) => ({
+          year: d.year,
+          observedValue: d.emissions,
+          projectedValue: null as number | null,
+          target: d.target,
+        })),
+        ...sector.projectedData.map((d) => ({
+          year: d.year,
+          observedValue: null as number | null,
+          projectedValue: d.emissions,
+          target: d.target,
+        })),
+      ],
+      (row) => row.observedValue ?? row.projectedValue,
+    );
 
     return (
       <div aria-label={`${sector.name} emissions chart — observed and projected`} role="img">
@@ -78,7 +82,8 @@ export function SectorChart({ sector, dataView }: SectorChartProps) {
     );
   }
 
-  const data = dataView === "historical" ? sector.historicalData : sector.projectedData;
+  const rawData = dataView === "historical" ? sector.historicalData : sector.projectedData;
+  const data = filterBarChartYears(rawData, (d) => d.emissions);
   const isProjected = dataView === "projected";
 
   return (

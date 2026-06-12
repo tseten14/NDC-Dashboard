@@ -21,6 +21,9 @@ export interface SectorLineage {
 const CT_BASE = "https://climatetrace.org";
 const CT_INVENTORY_BASE = `${CT_BASE}/inventory/UGA`;
 
+/** Public Climate TRACE HTTP API documentation (v7). */
+export const CLIMATE_TRACE_API_DOCS_URL = "https://api.climatetrace.org/v7/docs/index.html";
+
 export const SECTOR_LINEAGE: Record<ClimatetraceApiSector | "economy-wide", SectorLineage> = {
   energy: {
     sectorSlug: "energy",

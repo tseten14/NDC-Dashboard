@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Info } from "lucide-react";
+import { ExternalLink, Info } from "lucide-react";
 import {
   Bar,
   CartesianGrid,
@@ -43,6 +43,8 @@ export function ObservedProjectedLegend({
   showProjected = true,
   capTarget = false,
   compareLines = false,
+  dataSourceHref,
+  dataSourceLabel = "Climate TRACE API",
 }: {
   className?: string;
   showTarget?: boolean;
@@ -51,9 +53,18 @@ export function ObservedProjectedLegend({
   capTarget?: boolean;
   /** When true, observed series is drawn as a line (not bars). */
   compareLines?: boolean;
+  /** Optional external link for measured-series data provenance. */
+  dataSourceHref?: string;
+  dataSourceLabel?: string;
 }) {
   return (
-    <div className={cn("flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground", className)}>
+    <div
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] text-muted-foreground",
+        className,
+      )}
+    >
+      <div className="flex flex-wrap items-center gap-3">
       <span className="inline-flex items-center gap-1">
         {compareLines ? (
           <span
@@ -132,6 +143,21 @@ export function ObservedProjectedLegend({
           </PopoverContent>
         </Popover>
       )}
+      </div>
+      {dataSourceHref && (
+        <span className="inline-flex items-center gap-1 shrink-0">
+          <span>Where this data comes from:</span>
+          <a
+            href={dataSourceHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-0.5 font-medium text-primary hover:underline"
+          >
+            {dataSourceLabel}
+            <ExternalLink className="h-2.5 w-2.5" aria-hidden />
+          </a>
+        </span>
+      )}
     </div>
   );
 }
@@ -142,6 +168,23 @@ export function chartYAxisUnit(unit: string): string {
   if (/mtco/i.test(u.replace(/\s/g, ""))) return "MtCO₂e";
   if (u.includes("%")) return "%";
   return u || "Value";
+}
+
+/** Bar charts show observed history only — never 2030 or other forecast horizon years. */
+export function filterBarChartYears<T extends { year: number }>(
+  rows: T[],
+  getObserved?: (row: T) => number | null | undefined,
+): T[] {
+  const without2030 = rows.filter((r) => r.year < 2030);
+  if (!getObserved) return without2030;
+
+  const latestYear = without2030.reduce((max, r) => {
+    const v = getObserved(r);
+    return v != null && Number.isFinite(v) ? Math.max(max, r.year) : max;
+  }, -Infinity);
+
+  if (!Number.isFinite(latestYear) || latestYear < 0) return without2030;
+  return without2030.filter((r) => r.year <= latestYear);
 }
 
 /** Y-axis domain with padding so bars, projection, and NDC reference lines aren't clipped. */
@@ -362,11 +405,16 @@ export function ObservedProjectedComposedChart({
   const handlePointClick = onPointClick ?? onBarClick;
   const includeReference = showTarget || showBauPath;
   const useLines = compareLines || includeReference;
-  const [yMin, yMax] = chartValueExtent(data, includeReference);
-  const yAxisWidth = estimateYAxisWidth(data, formatTick, includeReference);
-  const anchorYear = lastObservedYearFromRows(data);
-  const lastYear = data[data.length - 1]?.year ?? null;
-  const hasPositiveValues = data.some((row) => (row.observedValue ?? 0) > 0 || (row.projectedValue ?? 0) > 0);
+  const plotData = useLines
+    ? data
+    : filterBarChartYears(data, (row) => row.observedValue);
+  const [yMin, yMax] = chartValueExtent(plotData, includeReference);
+  const yAxisWidth = estimateYAxisWidth(plotData, formatTick, includeReference);
+  const anchorYear = lastObservedYearFromRows(plotData);
+  const lastYear = plotData[plotData.length - 1]?.year ?? null;
+  const hasPositiveValues = plotData.some(
+    (row) => (row.observedValue ?? 0) > 0 || (row.projectedValue ?? 0) > 0,
+  );
 
   return (
     <div className="flex items-stretch gap-2 min-w-0">
@@ -382,7 +430,7 @@ export function ObservedProjectedComposedChart({
       <div className="min-w-0 flex-1">
         <ResponsiveContainer width="100%" height={height}>
           <ComposedChart
-            data={data}
+            data={plotData}
             margin={{ top: 10, right: 8, left: 4, bottom: xAxisLabel ? 18 : 6 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
