@@ -81,7 +81,7 @@ export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTar
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-3 py-2 border-b border-border bg-muted/50">
+      <div className="px-3 py-2.5 border-b border-border dash-section-header">
         <div className="flex items-start justify-between gap-2">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">NDC Targets</h3>
@@ -101,7 +101,7 @@ export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTar
         </div>
       </div>
       <ScrollArea className="flex-1">
-        <div className="p-2 space-y-3">
+        <div className="p-3 space-y-3">
           {grouped.map(({ sector, targets: sectorTargets }) => (
             <div key={sector.id}>
               {selectedSector === "economy-wide" && (
@@ -146,7 +146,7 @@ function TargetCard({
   return (
     <Card
       className={cn(
-        "cursor-pointer transition-all hover:shadow-md mb-2",
+        "cursor-pointer mb-2 dash-card-hover",
         isActive
           ? "ring-2 ring-accent border-accent shadow-md"
           : "hover:border-muted-foreground/30"

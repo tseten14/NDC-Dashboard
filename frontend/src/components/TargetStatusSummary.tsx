@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, Library, AlertTriangle, CheckCircle2, Database, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getTargetPlainLanguage } from "@/lib/target-plain-language";
+import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
 
 interface TargetStatusSummaryProps {
   onSelectTarget: (targetId: string, sectorId: string) => void;
@@ -101,13 +102,13 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
   }
 
   return (
-    <div className="px-3 py-2 border-b border-border bg-muted/20">
+    <div className="px-3 py-2.5 border-b border-border dash-section-header">
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <Stat icon={<CheckCircle2 className="h-3 w-3 text-on-track" />} label="On-track" value={onTrack} />
-          <Stat icon={<AlertTriangle className="h-3 w-3 text-off-track" />} label="Off-track" value={offTrack} />
-          <Stat icon={<Database className="h-3 w-3 text-at-risk" />} label="Activity gaps" value={implGaps} hint="Targets with no linked activities" />
-          <Stat icon={<Database className="h-3 w-3 text-muted-foreground" />} label="Data gaps" value={mrvGaps} hint="Targets missing observed data" />
+          <Stat icon={<CheckCircle2 className="h-3 w-3 text-on-track" />} label="On-track" value={onTrack} index={0} />
+          <Stat icon={<AlertTriangle className="h-3 w-3 text-off-track" />} label="Off-track" value={offTrack} index={1} />
+          <Stat icon={<Database className="h-3 w-3 text-at-risk" />} label="Activity gaps" value={implGaps} hint="Targets with no linked activities" index={2} />
+          <Stat icon={<Database className="h-3 w-3 text-muted-foreground" />} label="Data gaps" value={mrvGaps} hint="Targets missing observed data" index={3} />
         </div>
 
         <div className="flex items-center gap-1.5 flex-1 min-w-0 touch-scroll-x">
@@ -115,13 +116,14 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
           {topGaps.length === 0 && (
             <span className="text-[10px] text-muted-foreground">No gaps detected</span>
           )}
-          {topGaps.map(s => {
+          {topGaps.map((s, i) => {
             const plain = getTargetPlainLanguage(s.target);
             return (
             <button
               key={s.target.id}
               onClick={() => onSelectTarget(s.target.id, s.target.sectorId)}
-              className="group flex items-center gap-1 px-1.5 py-0.5 rounded border border-border hover:border-primary hover:bg-primary/5 transition-colors shrink-0"
+              className="group flex items-center gap-1 px-1.5 py-0.5 rounded border border-border hover:border-primary hover:bg-primary/5 transition-colors shrink-0 dash-fade-up"
+              style={{ animationDelay: `${0.2 + i * 0.07}s` }}
               title={plain.summary}
             >
               <GapBadge kind={s.gap} />
@@ -145,12 +147,16 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
   );
 }
 
-function Stat({ icon, label, value, hint }: { icon: React.ReactNode; label: string; value: number; hint?: string }) {
+function Stat({ icon, label, value, hint, index = 0 }: { icon: React.ReactNode; label: string; value: number; hint?: string; index?: number }) {
   return (
-    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-background border border-border" title={hint}>
+    <div
+      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-background border border-border shadow-sm dash-fade-up dash-card-hover"
+      style={{ animationDelay: `${index * 0.07}s` }}
+      title={hint}
+    >
       {icon}
       <span className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</span>
-      <span className="text-[11px] font-bold tabular-nums">{value}</span>
+      <CountUpNumber value={value} className="text-[11px] font-bold tabular-nums" />
     </div>
   );
 }

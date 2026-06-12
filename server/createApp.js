@@ -17,6 +17,7 @@ import dbHealthRouter from "../routes/dbHealth.js";
 import healthRouter from "../routes/health.js";
 import policyImpactRouter from "../routes/policyImpact.js";
 import policyAiRouter from "../routes/policyAi.js";
+import dashboardAiRouter from "../routes/dashboardAi.js";
 import { logger } from "./logger.js";
 import { createCorsMiddleware } from "./middleware/cors.js";
 import { createHelmetMiddleware } from "./middleware/security.js";
@@ -58,6 +59,7 @@ export function createApp() {
   app.use("/v1/risk", riskRouter);
   app.use("/v1", policyImpactRouter);
   app.use("/v1", policyAiRouter);
+  app.use("/v1", dashboardAiRouter);
 
   const useMock = isMockMode();
   app.use("/v1", useMock ? mockEmissionsRouter : emissionsRouter);

@@ -1,0 +1,414 @@
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import type { NDCTarget, SectorId } from "@/data/uganda-ndc-data";
+import { useEmissionsData } from "@/context/EmissionsDataContext";
+import {
+  buildDashboardAnalyzeContext,
+  DASHBOARD_QUICK_ACTIONS,
+  type DashboardQuickAction,
+} from "@/lib/dashboard-ai-context";
+import type { AiAnalysisResponse } from "@/data/policy-ai-mock";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import {
+  Loader2,
+  Send,
+  Sparkles,
+  Target,
+  BarChart3,
+  Satellite,
+  Zap,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  Target,
+  BarChart3,
+  Satellite,
+  Zap,
+};
+
+type PanelEntry =
+  | { kind: "action"; type: DashboardQuickAction; response: AiAnalysisResponse }
+  | { kind: "chat"; question: string; response: AiAnalysisResponse }
+  | { kind: "loading"; label: string };
+
+function AnalysisCard({
+  response,
+  onFollowUp,
+}: {
+  response: AiAnalysisResponse;
+  onFollowUp: (q: string) => void;
+}) {
+  const [openSections, setOpenSections] = useState<Set<number>>(new Set([0, 1, 2, 3]));
+
+  const toggleSection = (i: number) => {
+    setOpenSections((s) => {
+      const next = new Set(s);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  };
+
+  return (
+    <Card className="border-border shadow-none">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h4 className="text-xs font-bold text-foreground">{response.title}</h4>
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-[9px] h-4 shrink-0",
+              response.confidence === "high"
+                ? "text-on-track border-on-track/30 bg-on-track/5"
+                : response.confidence === "medium"
+                  ? "text-amber-600 border-amber-500/30 bg-amber-500/5"
+                  : "text-muted-foreground",
+            )}
+          >
+            {response.confidence} confidence
+          </Badge>
+        </div>
+
+        {response.sections.map((section, si) => (
+          <div key={si} className="space-y-1.5">
+            {section.heading && (
+              <button
+                type="button"
+                onClick={() => toggleSection(si)}
+                className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+              >
+                {openSections.has(si) ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+                {section.heading}
+              </button>
+            )}
+            {(!section.heading || openSections.has(si)) && (
+              <ul className="space-y-1.5">
+                {section.lines.map((line, li) => (
+                  <li
+                    key={li}
+                    className="flex items-start gap-2 text-xs text-foreground leading-relaxed"
+                  >
+                    <span className="mt-1.5 h-1 w-1 rounded-full bg-muted-foreground/40 shrink-0" />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {section.page_refs.length > 0 && (
+              <div className="flex flex-wrap gap-1 pl-3">
+                {section.page_refs.map((ref) => (
+                  <span
+                    key={ref}
+                    className="text-[9px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded"
+                  >
+                    {ref}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+
+        <div className="flex items-start gap-1.5 border-t border-border pt-1">
+          <AlertCircle className="h-3 w-3 text-muted-foreground/60 shrink-0 mt-0.5" />
+          <p className="text-[10px] text-muted-foreground leading-relaxed">{response.disclaimer}</p>
+        </div>
+
+        {response.suggested_follow_ups.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
+              Follow-up questions
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {response.suggested_follow_ups.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => onFollowUp(q)}
+                  className="text-[10px] px-2 py-1 rounded border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-muted-foreground hover:text-foreground text-left"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface DashboardAnalyzePanelProps {
+  selectedSector: SectorId;
+  selectedTarget: NDCTarget | null;
+}
+
+export function DashboardAnalyzePanel({ selectedSector, selectedTarget }: DashboardAnalyzePanelProps) {
+  const emissions = useEmissionsData();
+  const [entries, setEntries] = useState<PanelEntry[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const context = useMemo(
+    () => buildDashboardAnalyzeContext(emissions, selectedSector, selectedTarget),
+    [emissions, selectedSector, selectedTarget],
+  );
+
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [entries]);
+
+  const callAnalyzeApi = useCallback(
+    async (action?: DashboardQuickAction, question?: string): Promise<AiAnalysisResponse> => {
+      const res = await fetch("/api/v1/dashboard/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, question, context }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (res.status === 404) {
+          throw new Error(
+            "NDC AI endpoint not found. Restart the API server (npm run start:api) or redeploy the latest backend.",
+          );
+        }
+        if (res.status === 503) {
+          throw new Error(
+            err.error || "NDC AI is unavailable — set OPENAI_API_KEY on the API server.",
+          );
+        }
+        throw new Error(err.error || `Analysis failed (${res.status})`);
+      }
+      return res.json();
+    },
+    [context],
+  );
+
+  const runAction = useCallback(
+    (type: DashboardQuickAction, label: string) => {
+      if (isLoading) return;
+      setIsLoading(true);
+      setEntries((prev) => [...prev, { kind: "loading", label }]);
+      callAnalyzeApi(type)
+        .then((response) => {
+          setEntries((prev) => {
+            const next = [...prev];
+            for (let i = next.length - 1; i >= 0; i--) {
+              if (next[i].kind === "loading") {
+                next[i] = { kind: "action", type, response };
+                break;
+              }
+            }
+            return next;
+          });
+        })
+        .catch((err) => {
+          setEntries((prev) => prev.filter((e) => e.kind !== "loading"));
+          setEntries((prev) => [
+            ...prev,
+            {
+              kind: "action",
+              type,
+              response: {
+                type,
+                title: "Analysis unavailable",
+                sections: [
+                  {
+                    lines: [
+                      err.message ||
+                        "Could not reach the AI service. Check OPENAI_API_KEY is set on the API server.",
+                    ],
+                    page_refs: [],
+                  },
+                ],
+                confidence: "low",
+                disclaimer: "",
+                suggested_follow_ups: [],
+              },
+            },
+          ]);
+        })
+        .finally(() => setIsLoading(false));
+    },
+    [isLoading, callAnalyzeApi],
+  );
+
+  const runChat = useCallback(
+    (question: string) => {
+      const q = question.trim();
+      if (!q || isLoading) return;
+      setChatInput("");
+      setIsLoading(true);
+      setEntries((prev) => [...prev, { kind: "loading", label: `"${q}"` }]);
+      callAnalyzeApi(undefined, q)
+        .then((response) => {
+          setEntries((prev) => {
+            const next = [...prev];
+            for (let i = next.length - 1; i >= 0; i--) {
+              if (next[i].kind === "loading") {
+                next[i] = { kind: "chat", question: q, response };
+                break;
+              }
+            }
+            return next;
+          });
+        })
+        .catch((err) => {
+          setEntries((prev) => prev.filter((e) => e.kind !== "loading"));
+          setEntries((prev) => [
+            ...prev,
+            {
+              kind: "chat",
+              question: q,
+              response: {
+                type: "chat",
+                title: "Error",
+                sections: [{ lines: [err.message || "Could not reach the AI service."], page_refs: [] }],
+                confidence: "low",
+                disclaimer: "",
+                suggested_follow_ups: [],
+              },
+            },
+          ]);
+        })
+        .finally(() => setIsLoading(false));
+    },
+    [isLoading, callAnalyzeApi],
+  );
+
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      <div className="shrink-0 px-4 py-3 border-b border-border bg-card">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          <h3 className="text-sm font-bold text-foreground">NDC AI</h3>
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-0.5">
+          Answers from Climate TRACE observations, NDC targets, and progress on this dashboard — not
+          forecasts.
+        </p>
+        {selectedTarget && (
+          <p className="text-[10px] text-foreground/80 mt-1 line-clamp-2">
+            Focus: {context.selected_target?.summary}
+          </p>
+        )}
+      </div>
+
+      <div className="shrink-0 px-4 pt-3 pb-2 border-b border-border bg-muted/20">
+        <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+          Quick analysis
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {DASHBOARD_QUICK_ACTIONS.map((action) => {
+            const Icon = ICON_MAP[action.icon] ?? Target;
+            return (
+              <button
+                key={action.type}
+                type="button"
+                onClick={() => runAction(action.type, action.label)}
+                disabled={isLoading}
+                className={cn(
+                  "flex items-start gap-2 p-2.5 rounded-lg border border-border bg-card text-left transition-all",
+                  "hover:border-primary/40 hover:bg-primary/5",
+                  "disabled:opacity-50 disabled:cursor-not-allowed",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-semibold text-foreground">{action.label}</p>
+                  <p className="text-[9px] text-muted-foreground">{action.description}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-4 space-y-4">
+          {entries.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-10 text-center space-y-2">
+              <Sparkles className="h-8 w-8 text-muted-foreground/25" />
+              <p className="text-xs text-muted-foreground">
+                Select a quick action or ask about NDC progress, Climate TRACE data, or sector gaps
+              </p>
+            </div>
+          )}
+
+          {entries.map((entry, i) => {
+            if (entry.kind === "loading") {
+              return (
+                <div key={i} className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                  <span>
+                    Analysing: <span className="italic">{entry.label}</span>…
+                  </span>
+                </div>
+              );
+            }
+            if (entry.kind === "chat") {
+              return (
+                <div key={i} className="space-y-2">
+                  <div className="flex justify-end">
+                    <div className="max-w-[80%] px-3 py-2 rounded-2xl bg-primary text-primary-foreground text-xs">
+                      {entry.question}
+                    </div>
+                  </div>
+                  <AnalysisCard response={entry.response} onFollowUp={runChat} />
+                </div>
+              );
+            }
+            return <AnalysisCard key={i} response={entry.response} onFollowUp={runChat} />;
+          })}
+
+          <div ref={scrollRef} />
+        </div>
+      </ScrollArea>
+
+      <div className="shrink-0 px-4 py-3 border-t border-border bg-card">
+        <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+          Ask NDC AI
+        </p>
+        <div className="flex gap-2 items-end">
+          <Textarea
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                runChat(chatInput);
+              }
+            }}
+            placeholder="e.g. Is AFOLU on track vs the 2030 pledge?"
+            className="resize-none text-xs min-h-[36px] max-h-[90px] leading-relaxed"
+            rows={1}
+            disabled={isLoading}
+          />
+          <Button
+            size="sm"
+            onClick={() => runChat(chatInput)}
+            disabled={!chatInput.trim() || isLoading}
+            className="h-9 px-3 shrink-0"
+          >
+            <Send className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        <p className="text-[9px] text-muted-foreground/60 mt-1">
+          Uses live dashboard context · Enter to send
+        </p>
+      </div>
+    </div>
+  );
+}

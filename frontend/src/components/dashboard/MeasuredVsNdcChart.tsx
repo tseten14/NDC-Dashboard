@@ -97,7 +97,7 @@ export function MeasuredVsNdcChart({
     : "Compares the latest measured emissions with Uganda's NDC commitment ceiling — based on data collected so far, not a forecast.";
 
   return (
-    <div className="rounded-xl border border-border/80 bg-gradient-to-br from-muted/40 via-background to-muted/20 p-3 shadow-sm">
+    <div className="rounded-xl border border-border/80 bg-gradient-to-br from-muted/40 via-background to-muted/20 p-3 shadow-sm dash-card-hover dash-fade-up">
       <div className="mb-3">
         <p className="text-[11px] font-semibold text-foreground tracking-tight">Reality vs NDC pledge</p>
         <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug max-w-[320px]">{subtitle}</p>
@@ -134,7 +134,7 @@ export function MeasuredVsNdcChart({
             cursor={{ fill: "hsl(var(--muted) / 0.35)" }}
             content={<CompareTooltip formatValue={formatValue} unit={unit} />}
           />
-          <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={22} isAnimationActive={false}>
+          <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={22} isAnimationActive animationDuration={700}>
             {rows.map((row) => (
               <Cell
                 key={row.id}

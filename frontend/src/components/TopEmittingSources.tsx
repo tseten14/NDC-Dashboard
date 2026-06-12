@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { emissionsApi, type EmissionsSource } from "@/lib/api";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { MapPin, Layers, Loader2, AlertCircle, Download, Plus, ShieldCheck, Activity } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { filterBarChartYears } from "@/components/dashboard/ChartObservedProjected";
 
 const STALE_MS = 15 * 60 * 1000;
 const PAGE_SIZE = 25;
@@ -20,6 +21,12 @@ function titleize(slug: string | null): string {
     .split("-")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
+}
+
+function fallbackDashboardYears(since: number, to: number): number[] {
+  const years: number[] = [];
+  for (let y = since; y <= to && y < 2030; y++) years.push(y);
+  return years;
 }
 
 function toCsv(rows: EmissionsSource[], geoLabel: string, year: number | undefined): string {
@@ -61,15 +68,34 @@ export function TopEmittingSources() {
   const [limit, setLimit] = useState(PAGE_SIZE);
   const [sectorFilter, setSectorFilter] = useState<string>("all");
 
+  const dashboardSince = emissions.dashboard?.since ?? 2015;
+  const dashboardTo = emissions.dashboard?.to ?? emissions.dashboard?.inventory_year ?? 2024;
+  const dashboardYears = useMemo(() => {
+    const fromCharts = filterBarChartYears(emissions.economyWideTimeseries, (p) => p.value).map(
+      (p) => p.year,
+    );
+    if (fromCharts.length > 0) return fromCharts;
+    return fallbackDashboardYears(dashboardSince, dashboardTo);
+  }, [emissions.economyWideTimeseries, dashboardSince, dashboardTo]);
+  const defaultYear = dashboardYears[dashboardYears.length - 1] ?? dashboardTo;
+  const [selectedYear, setSelectedYear] = useState<number>(defaultYear);
+
+  useEffect(() => {
+    setSelectedYear(defaultYear);
+    setLimit(PAGE_SIZE);
+    setSectorFilter("all");
+  }, [geoKey, defaultYear]);
+
   const query = useQuery({
-    queryKey: ["emissions", "sources", geoKey, limit],
+    queryKey: ["emissions", "sources", geoKey, selectedYear, limit],
     queryFn: () =>
       emissionsApi.sources(
         isDistrict && districtName ? { district: districtName } : undefined,
-        { limit },
+        { year: selectedYear, limit },
       ),
     staleTime: STALE_MS,
     retry: 1,
+    enabled: dashboardYears.includes(selectedYear),
   });
 
   const geoLabel = isDistrict && districtName ? districtName : "Uganda (national)";
@@ -96,12 +122,12 @@ export function TopEmittingSources() {
 
   const handleCsv = () => {
     if (sources.length === 0) return;
-    const csv = toCsv(sources, geoLabel, query.data?.year);
+    const csv = toCsv(sources, geoLabel, selectedYear);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `top_emitting_sources_${geoKey.replace(/\s+/g, "_")}_${query.data?.year ?? "latest"}.csv`;
+    a.download = `top_emitting_sources_${geoKey.replace(/\s+/g, "_")}_${selectedYear}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success(`Exported ${sources.length} sources (${geoLabel})`);
@@ -135,11 +161,24 @@ export function TopEmittingSources() {
           <MapPin className="h-2.5 w-2.5" />
           {geoLabel}
         </Badge>
-        {query.data?.year != null && (
-          <Badge variant="outline" className="text-[10px] h-5">
-            {query.data.year}
-          </Badge>
-        )}
+        <Select
+          value={String(selectedYear)}
+          onValueChange={(v) => {
+            setSelectedYear(Number(v));
+            setLimit(PAGE_SIZE);
+          }}
+        >
+          <SelectTrigger className="w-[88px] h-7 text-xs" aria-label="Inventory year">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {[...dashboardYears].reverse().map((y) => (
+              <SelectItem key={y} value={String(y)}>
+                <span className="text-xs">{y}</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={sectorFilter} onValueChange={setSectorFilter}>
           <SelectTrigger className="w-[160px] h-7 text-xs" aria-label="Filter by sector">
             <SelectValue placeholder="All sectors" />

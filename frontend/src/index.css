@@ -52,7 +52,7 @@
     --chart-1: 152 32% 28%;
     --chart-2: 38 92% 50%;
     --chart-3: 4 72% 56%;
-    --chart-4: 150 14% 44%;
+    --chart-4: 164 26% 36%;
     --chart-5: 150 10% 68%;
 
     --sidebar-background: 150 17% 14%;
@@ -271,6 +271,109 @@
 
   .landing-shimmer-bar {
     animation: landing-shimmer-line 2.8s ease-in-out infinite;
+  }
+}
+
+/* ── Dashboard motion & climate theme ── */
+@keyframes dash-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dash-crossfade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dash-bg-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@layer utilities {
+  .dash-fade-up {
+    animation: dash-fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  /* Re-mounted content (target/district/filter switches) fades in instead of popping. */
+  .dash-crossfade {
+    animation: dash-crossfade 0.4s ease-out;
+  }
+
+  /* Subtle lift + teal shadow glow for cards and chart containers. */
+  .dash-card-hover {
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .dash-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 24px -8px hsl(168 45% 28% / 0.28),
+      0 0 0 1px hsl(var(--ring) / 0.18);
+  }
+
+  /* Slow-drifting climate gradient (deep teal → green → blue) behind main content. */
+  .dash-animated-bg {
+    background: linear-gradient(
+      130deg,
+      hsl(168 38% 96%) 0%,
+      hsl(152 32% 95%) 28%,
+      hsl(202 38% 96%) 58%,
+      hsl(160 28% 96%) 100%
+    );
+    background-size: 300% 300%;
+    animation: dash-bg-shift 26s ease infinite;
+  }
+
+  /* Faint dot-grid texture layered over the gradient. */
+  .dash-grid-pattern {
+    background-image: radial-gradient(hsl(168 35% 28% / 0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Section / column headers: soft teal-to-blue gradient wash. */
+  .dash-section-header {
+    background: linear-gradient(
+      90deg,
+      hsl(168 32% 92% / 0.9) 0%,
+      hsl(200 32% 94% / 0.55) 55%,
+      hsl(var(--muted) / 0.4) 100%
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-animated-bg {
+    animation: none;
+  }
+  .dash-fade-up,
+  .dash-crossfade {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .dash-card-hover,
+  .dash-card-hover:hover {
+    transform: none;
   }
 }
 

@@ -22,6 +22,8 @@ import {
   filterBarChartYears,
 } from "@/components/dashboard/ChartObservedProjected";
 import { MeasuredVsNdcChart } from "@/components/dashboard/MeasuredVsNdcChart";
+import { ClimateTraceDatasetOverview } from "@/components/dashboard/ClimateTraceDatasetOverview";
+import { ClimateTraceEstimationFlow } from "@/components/dashboard/ClimateTraceEstimationFlow";
 import { ColumnLoadingState, NoDataPlaceholder, SelectTargetPlaceholder } from "@/components/dashboard/DashboardStates";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +33,7 @@ import { AlertTriangle, CheckCircle2, XCircle, Database, Satellite, MapPin, Code
 import { DataProvenancePanel } from "@/components/DataProvenancePanel";
 import { ViewSourceModal } from "@/components/ViewSourceModal";
 import { CLIMATE_TRACE_API_DOCS_URL } from "@/lib/data-lineage";
+import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
 import { cn } from "@/lib/utils";
 
 interface ObservedDataProps {
@@ -275,7 +278,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-3 py-2 border-b border-border bg-muted/50 flex items-center justify-between gap-2">
+      <div className="px-3 py-2.5 border-b border-border dash-section-header flex items-center justify-between gap-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Observed Data</h3>
         {/* District badge — direct CT or proxy CT (both are real per-district data) */}
         {emissions.isDistrictView && emissions.districtName && (!!apiSector || usingProxyData) && (
@@ -311,7 +314,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
         )}
       </div>
       <ScrollArea className="flex-1">
-        <div className="p-2 space-y-2">
+        <div className="p-3 space-y-2.5">
           <div className="flex flex-wrap gap-1 items-center">
             {observedData.dataProviders.map(provider => (
               <Badge key={provider} variant="outline" className="text-[9px] h-5 gap-1">
@@ -404,14 +407,18 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             </div>
           )}
 
-          <Card>
+          <Card className="dash-card-hover dash-fade-up">
             <CardContent className="p-2 pt-3 pb-2">
               {showNdcTarget && latestObserved?.value != null && ndcGoal != null && (
                 <div className="mb-2 px-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
                   <span className="text-muted-foreground">
                     Latest measured ({latestObserved.year}):{" "}
-                    <span className="font-medium text-[hsl(var(--chart-3))]">
-                      {chartDisplay.formatValue(latestObserved.value)} {chartDisplay.unitLabel}
+                    <span className="font-medium text-[hsl(var(--chart-3))] tabular-nums">
+                      <CountUpNumber
+                        value={latestObserved.value}
+                        format={(v) => chartDisplay.formatValue(v)}
+                      />{" "}
+                      {chartDisplay.unitLabel}
                     </span>
                   </span>
                   <span className="text-muted-foreground/40">·</span>
@@ -534,6 +541,13 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
               </div>
             </CardContent>
           </Card>
+
+          {(apiSector || usingProxyData) && (
+            <div className="space-y-4 pt-1">
+              <ClimateTraceDatasetOverview />
+              <ClimateTraceEstimationFlow />
+            </div>
+          )}
         </div>
       </ScrollArea>
 

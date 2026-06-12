@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { bau2030ForTarget } from "@/data/uganda-ndc-data";
+import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
 import { capTargetPosition } from "@/lib/progress";
 
 interface ProgressProps {
@@ -62,15 +63,6 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
     emissions.indicatorTargets,
   ]);
 
-  const latestRow = useMemo(() => {
-    const rows = observedForData?.historicalData;
-    if (!rows?.length) return undefined;
-    for (let i = rows.length - 1; i >= 0; i--) {
-      if (rows[i].value != null) return rows[i];
-    }
-    return undefined;
-  }, [observedForData]);
-
   if (!selectedTarget) {
     return <SelectTargetPlaceholder column="Progress" />;
   }
@@ -113,13 +105,6 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
   const hasProgressData = percent != null;
   const displayPercent = hasProgressData ? percent : 0;
   const cfg = statusConfig[status];
-  const latestDisplay =
-    liveLatest != null
-      ? `${liveLatest.value} ${selectedTarget.unit}`
-      : latestRow != null && latestRow.value != null
-        ? `${latestRow.value} ${selectedTarget.unit}`
-        : null;
-
   const isEmissionsCapTarget =
     selectedTarget.metricType === "emissions-reduction" &&
     selectedTarget.targetValue > selectedTarget.baselineValue;
@@ -147,11 +132,6 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
   const bauDisplay =
     isEmissionsCapTarget && bau2030 != null
       ? `Without new policies (2030): ${bau2030} ${selectedTarget.unit}`
-      : null;
-
-  const progressFormulaNote =
-    isEmissionsCapTarget && bau2030 != null && liveLatest != null
-      ? `Progress = (${bau2030} − ${liveLatest.value}) ÷ (${bau2030} − ${selectedTarget.targetValue})`
       : null;
 
   const dataUsedLabel =
@@ -216,10 +196,10 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                   : "Progress requires observed values for the selected reporting period."
               }
             />
-            <div className="text-xs text-muted-foreground space-y-0.5">
-              <p>{baselineDisplay}</p>
-              <p>{targetDisplay}</p>
-            </div>
+            <ProgressFormulaBlock
+              selectedTarget={selectedTarget}
+              isEmissionsCapTarget={isEmissionsCapTarget}
+            />
           </div>
         </ScrollArea>
       </div>
@@ -228,11 +208,11 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-3 py-2 border-b border-border bg-muted/50">
+      <div className="px-3 py-2.5 border-b border-border dash-section-header">
         <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Progress</h3>
       </div>
       <ScrollArea className="flex-1">
-        <div className="p-2 space-y-3">
+        <div className="p-3 space-y-3">
           {districtNote}
           {isEmissionsCapTarget && !emissions.isDistrictView && (
             <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs">
@@ -260,7 +240,7 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
             </div>
           )}
 
-          <Card className={cn("ring-2", cfg.ring)}>
+          <Card className={cn("ring-2 dash-card-hover dash-fade-up", cfg.ring)}>
             <CardContent className="p-4 flex flex-col items-center text-center">
               <div className="relative w-28 h-28 mb-3">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
@@ -275,7 +255,11 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className={cn("text-2xl font-bold", cfg.color)}>{displayPercent}%</span>
+                  <CountUpNumber
+                    value={displayPercent}
+                    format={(v) => `${Math.round(v)}%`}
+                    className={cn("text-2xl font-bold tabular-nums", cfg.color)}
+                  />
                 </div>
               </div>
 
@@ -298,37 +282,12 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                 <p className="mt-1 text-[11px] text-muted-foreground">Not enough data to score progress</p>
               )}
 
-              {source === "api" && (
-                <p className="mt-2 text-[11px] text-muted-foreground max-w-[240px] leading-relaxed">
-                  Using satellite data to track progress against Uganda&apos;s climate goal. These are estimates, not official government figures.
-                </p>
-              )}
-
-              {source === "api" && apiSector && pr?.trace_yoy_pct != null && (
-                <p className="text-[11px] text-muted-foreground">
-                  Emissions change from last year ({pr.latest_year}): {pr.trace_yoy_pct >= 0 ? "+" : ""}
-                  {pr.trace_yoy_pct}%
-                </p>
-              )}
-
               {capProgressBar}
 
-              <div className="mt-3 text-xs text-muted-foreground space-y-0.5">
-                <p>{baselineDisplay}</p>
-                {bauDisplay && <p>{bauDisplay}</p>}
-                <p>{targetDisplay}</p>
-                {latestDisplay && (
-                  <p className="font-medium text-foreground">
-                    Latest: {latestDisplay}
-                    {liveLatest != null && (
-                      <span className="text-muted-foreground font-normal"> ({liveLatest.year})</span>
-                    )}
-                    {!liveLatest && source === "catalog" && latestRow != null && (
-                      <span className="text-muted-foreground font-normal"> ({latestRow.year})</span>
-                    )}
-                  </p>
-                )}
-              </div>
+              <ProgressFormulaBlock
+                selectedTarget={selectedTarget}
+                isEmissionsCapTarget={isEmissionsCapTarget}
+              />
             </CardContent>
           </Card>
 
@@ -357,9 +316,6 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                             : "Compare current emissions to the reduction promised in the climate pledge"
                           : "Use a related measure as a stand-in for progress"}
                       </p>
-                      {progressFormulaNote && (
-                        <p className="text-muted-foreground font-mono text-[10px]">{progressFormulaNote}</p>
-                      )}
                       {pr?.scope_note && <p className="text-muted-foreground">{pr.scope_note}</p>}
                       <p className="text-muted-foreground">Poor data quality can lower the status. Missing data shows as &quot;Unknown.&quot;</p>
                     </div>
@@ -380,6 +336,38 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
           )}
         </div>
       </ScrollArea>
+    </div>
+  );
+}
+
+function ProgressFormulaBlock({
+  selectedTarget,
+  isEmissionsCapTarget,
+}: {
+  selectedTarget: NDCTarget;
+  isEmissionsCapTarget: boolean;
+}) {
+  const isTrueReduction =
+    selectedTarget.metricType === "emissions-reduction" &&
+    selectedTarget.targetValue < selectedTarget.baselineValue;
+
+  let template: string;
+
+  if (isEmissionsCapTarget) {
+    template =
+      "Progress = (without new policies − measured) ÷ (without new policies − pledge limit) × 100";
+  } else if (isTrueReduction) {
+    template = "Progress = (starting point − measured) ÷ (starting point − goal) × 100";
+  } else {
+    template = "Progress = (measured − starting point) ÷ (goal − starting point) × 100";
+  }
+
+  return (
+    <div className="mt-3 w-full px-2.5 py-2 rounded-md bg-muted/40 border border-border text-center">
+      <p className="text-[9px] uppercase tracking-wide font-semibold text-muted-foreground mb-1">
+        Progress formula
+      </p>
+      <p className="text-[10px] text-foreground whitespace-nowrap overflow-x-auto">{template}</p>
     </div>
   );
 }

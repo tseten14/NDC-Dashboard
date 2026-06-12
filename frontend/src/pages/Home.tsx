@@ -7,38 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { useCountry } from "@/context/CountryContext";
 import { cn } from "@/lib/utils";
 import {
-  ArrowRight, BarChart3, Globe2, LayoutDashboard, Sparkles, Target,
-  TrendingUp, Upload, Leaf, Satellite, ChevronRight, Scale, Workflow, Briefcase,
+  ArrowRight, Globe2, LayoutDashboard, Sparkles, Target,
+  Upload, Satellite, ChevronRight, Scale, Workflow, Briefcase,
 } from "lucide-react";
 
 const FEATURES = [
   {
     icon: Target,
     title: "Explore NDCs",
-    blurb: "Browse sector targets, pledges and linked measures.",
+    blurb: "Browse sector targets, pledges, progress, and linked measures.",
     to: "/dashboard",
     accent: "from-emerald-500/20 to-emerald-500/5",
-  },
-  {
-    icon: TrendingUp,
-    title: "Track Progress",
-    blurb: "Compare live Climate TRACE data against NDC goals.",
-    to: "/dashboard",
-    accent: "from-sky-500/20 to-sky-500/5",
-  },
-  {
-    icon: BarChart3,
-    title: "Analyze Targets",
-    blurb: "Drill into districts, sources and spatial certainty.",
-    to: "/dashboard",
-    accent: "from-violet-500/20 to-violet-500/5",
-  },
-  {
-    icon: Leaf,
-    title: "Mitigation Measures",
-    blurb: "Review activities and options tied to each target.",
-    to: "/dashboard",
-    accent: "from-teal-500/20 to-teal-500/5",
   },
   {
     icon: Upload,

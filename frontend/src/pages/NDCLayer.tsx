@@ -23,7 +23,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Download, FileSpreadsheet, FileText } from "lucide-react";
+import { RefreshCw, Download, FileSpreadsheet, FileText, Sparkles } from "lucide-react";
+import { DashboardAnalyzePanel } from "@/components/dashboard/DashboardAnalyzePanel";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { exportNdcDashboardExcel, exportNdcDashboardPdf, exportCrtBtrCsv } from "@/lib/ndc-export";
 import { toast } from "sonner";
@@ -178,7 +179,7 @@ export default function NDCLayer() {
       )}
 
       {/* NDC sub-controls */}
-      <div className="px-3 py-1.5 border-b border-border bg-muted/30 flex flex-wrap items-center gap-3">
+      <div className="px-3 py-2 border-b border-border dash-section-header flex flex-wrap items-center gap-3">
         <Badge variant="secondary" className="h-6 text-[10px] font-semibold shrink-0">
           {DASHBOARD_MODE_LABELS[dashboardMode]} mode
         </Badge>
@@ -304,19 +305,55 @@ export default function NDCLayer() {
       {/* Target Status Summary — 'all targets first' anchor */}
       <TargetStatusSummary onSelectTarget={handleSummarySelect} />
 
-      {/* Three-column layout */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border overflow-hidden">
-        <div className="overflow-hidden">
+      {/* Three-column layout over a slow-drifting climate gradient */}
+      <div className="flex-1 relative isolate overflow-hidden">
+        <div aria-hidden className="absolute inset-0 -z-10 dash-animated-bg" />
+        <div aria-hidden className="absolute inset-0 -z-10 dash-grid-pattern" />
+        <div className="h-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border">
+        <div
+          className="overflow-hidden dash-crossfade"
+          key={`targets-${state.selectedSector}-${state.geographyLevel}`}
+        >
           <NDCTargetsColumn selectedSector={state.selectedSector as SectorId} selectedTargetId={state.selectedTargetId} onSelectTarget={handleSelectTarget} />
         </div>
-        <div className="overflow-hidden">
+        <div
+          className="overflow-hidden dash-crossfade"
+          key={`observed-${state.selectedTargetId}-${state.selectedSector}-${state.geographyLevel}-${state.selectedDistrictId}`}
+        >
           <ObservedDataColumn selectedTarget={selectedTarget} selectedMitigationOptions={state.selectedMitigationOptions} />
         </div>
-        <div className="overflow-hidden flex flex-col">
+        <div
+          className="overflow-hidden flex flex-col dash-crossfade"
+          key={`progress-${state.selectedTargetId}-${state.selectedSector}-${state.geographyLevel}-${state.selectedDistrictId}`}
+        >
           <div className="overflow-hidden">
             <ProgressTowardTargetColumn selectedTarget={selectedTarget} />
           </div>
-          <div className="shrink-0 px-3 py-2 border-t border-border bg-muted/20 space-y-2">
+          <div className="shrink-0 px-3 py-3 border-t border-border bg-muted/20 space-y-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="w-full justify-start text-xs gap-1.5 font-semibold"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  NDC AI
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl h-[85vh] p-0 overflow-hidden flex flex-col">
+                <DialogHeader className="px-4 py-3 border-b border-border shrink-0">
+                  <DialogTitle className="text-sm">NDC AI</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 min-h-0">
+                  <DashboardAnalyzePanel
+                    selectedSector={state.selectedSector as SectorId}
+                    selectedTarget={selectedTarget}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="w-full justify-start text-xs">
@@ -428,6 +465,7 @@ export default function NDCLayer() {
             </Dialog>
             )}
           </div>
+        </div>
         </div>
       </div>
     </div>

@@ -433,6 +433,13 @@ export function ObservedProjectedComposedChart({
             data={plotData}
             margin={{ top: 10, right: 8, left: 4, bottom: xAxisLabel ? 18 : 6 }}
           >
+            <defs>
+              {/* Climate-themed teal → deep green fill for the measured series */}
+              <linearGradient id="dash-measured-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(172 40% 34%)" />
+                <stop offset="100%" stopColor="hsl(152 32% 24%)" />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis
               dataKey="year"
@@ -541,7 +548,7 @@ export function ObservedProjectedComposedChart({
               <Bar
                 dataKey="observedValue"
                 name={observedSeriesLabel}
-                fill="hsl(var(--chart-4))"
+                fill="url(#dash-measured-grad)"
                 radius={[2, 2, 0, 0]}
                 maxBarSize={showProjection ? 28 : 36}
                 minPointSize={2}
