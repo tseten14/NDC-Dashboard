@@ -9,6 +9,6 @@ const splash = document.getElementById("splash");
 if (splash) {
   requestAnimationFrame(() => {
     splash.classList.add("splash-done");
-    window.setTimeout(() => splash.remove(), 500);
+    window.setTimeout(() => splash.remove(), 280);
   });
 }

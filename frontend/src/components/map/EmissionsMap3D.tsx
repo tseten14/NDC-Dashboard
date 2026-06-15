@@ -85,6 +85,7 @@ export function EmissionsMap3D({
   const rafRef = useRef({ hover: 0, resize: 0 });
   const lastHoverKeyRef = useRef<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   hoverRef.current = onPointHover;
 
@@ -130,10 +131,17 @@ export function EmissionsMap3D({
     let resizeObserver: ResizeObserver | null = null;
 
     void (async () => {
-      const maplibre = await import("maplibre-gl");
-      const maplibregl = maplibre.default ?? maplibre;
+      let maplibregl;
+      try {
+        const maplibre = await import("maplibre-gl");
+        maplibregl = maplibre.default ?? maplibre;
+      } catch {
+        if (!disposed) setLoadError(true);
+        return;
+      }
       if (disposed || !containerRef.current) return;
 
+      try {
       const map = new maplibregl.Map({
         container: el,
         attributionControl: { compact: true },
@@ -317,6 +325,9 @@ export function EmissionsMap3D({
         });
       });
       resizeObserver.observe(el);
+      } catch {
+        if (!disposed) setLoadError(true);
+      }
     })();
 
     return () => {
@@ -353,6 +364,15 @@ export function EmissionsMap3D({
       className={cn("emissions-map relative h-full w-full min-h-[360px] overflow-hidden bg-[#0a0f1a]", className)}
       role="img"
       aria-label="3D satellite map of Uganda; bubble size shows emissions, color shows sector"
-    />
+    >
+      {loadError && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-[#0a0f1a] px-4 text-center">
+          <span className="text-sm font-medium text-slate-200">Map failed to load</span>
+          <span className="text-xs text-slate-400">
+            Your browser may not support WebGL, or map tiles are unreachable.
+          </span>
+        </div>
+      )}
+    </div>
   );
 }

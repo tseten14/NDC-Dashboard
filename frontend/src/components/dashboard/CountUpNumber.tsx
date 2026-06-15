@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useCountUp } from "@/hooks/use-count-up";
 
 interface CountUpNumberProps {
@@ -6,10 +7,47 @@ interface CountUpNumberProps {
   format?: (value: number) => string;
   durationMs?: number;
   className?: string;
+  /** Wait until the element is in view before counting (saves work below the fold). */
+  startWhenVisible?: boolean;
 }
 
-/** Animated number that counts up to `value` on mount and on change. */
-export function CountUpNumber({ value, format, durationMs = 900, className }: CountUpNumberProps) {
-  const animated = useCountUp(value, durationMs);
-  return <span className={className}>{format ? format(animated) : String(Math.round(animated))}</span>;
+/** Animated number that counts up when enabled and on change. */
+export function CountUpNumber({
+  value,
+  format,
+  durationMs = 900,
+  className,
+  startWhenVisible = false,
+}: CountUpNumberProps) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [active, setActive] = useState(!startWhenVisible);
+
+  useEffect(() => {
+    if (!startWhenVisible) return;
+    const el = ref.current;
+    if (!el) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setActive(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setActive(true);
+        observer.disconnect();
+      },
+      { threshold: 0.15 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [startWhenVisible]);
+
+  const animated = useCountUp(value, durationMs, { enabled: active });
+  return (
+    <span ref={ref} className={className}>
+      {format ? format(animated) : String(Math.round(animated))}
+    </span>
+  );
 }

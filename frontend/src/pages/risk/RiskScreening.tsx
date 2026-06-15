@@ -17,24 +17,6 @@ export default function RiskScreening() {
 
   const isLoading = hazardsLoading || cellsLoading || districtsLoading || optionsLoading;
 
-  if (hazardsError) {
-    return (
-      <div className="flex items-center gap-2 p-4 text-destructive">
-        <AlertCircle className="h-4 w-4 shrink-0" />
-        <span className="text-xs">Failed to load risk data: {hazardsError.message}</span>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center gap-2 p-4 text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-        <span className="text-xs">Loading risk screening data…</span>
-      </div>
-    );
-  }
-
   const [targetId, setTargetId] = useState<string>(allFlatTargets[0]?.id || "");
   const [districtId, setDistrictId] = useState<string>("ALL");
 
@@ -42,8 +24,8 @@ export default function RiskScreening() {
 
   // Aggregate risk: average intensity by hazard for either selected district or all.
   const screening = useMemo(() => {
-    return hazards.map(h => {
-      const relevant = cells.filter(c =>
+    return (hazards ?? []).map(h => {
+      const relevant = (cells ?? []).filter(c =>
         c.hazard_layer_id === h.id &&
         (districtId === "ALL" || c.district_id === districtId)
       );
@@ -62,7 +44,25 @@ export default function RiskScreening() {
   }, [hazards, cells, districtId]);
 
   const topHazardTypes = screening.filter(s => s.score > 0).slice(0, 3).map(s => s.hazard.hazard_type);
-  const recommended = options.filter(o => o.hazard_types.some(t => topHazardTypes.includes(t)));
+  const recommended = (options ?? []).filter(o => o.hazard_types.some(t => topHazardTypes.includes(t)));
+
+  if (hazardsError) {
+    return (
+      <div className="flex items-center gap-2 p-4 text-destructive">
+        <AlertCircle className="h-4 w-4 shrink-0" />
+        <span className="text-xs">Failed to load risk data: {hazardsError.message}</span>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 p-4 text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+        <span className="text-xs">Loading risk screening data…</span>
+      </div>
+    );
+  }
 
   const exportBrief = () => {
     const lines = [

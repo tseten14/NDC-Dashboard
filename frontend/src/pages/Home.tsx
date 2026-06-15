@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type CSSProperties } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -6,8 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useCountry } from "@/context/CountryContext";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
-import { TextReveal } from "@/components/TextReveal";
 import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
+import { HERO_GRADIENT_TEXT } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight, Globe2, LayoutDashboard, Sparkles, Target,
@@ -94,13 +94,9 @@ export default function Home() {
               {country ? `${country.flag} ${country.name}` : "NDC Data Explorer"} · Decision-support cockpit
             </Badge>
 
-            <h1 className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight text-foreground max-w-3xl leading-[1.15]">
-              <TextReveal text={`Turn ${countryLabel}'s climate commitments into`} />{" "}
-              <TextReveal
-                text="delivery decisions."
-                startDelay={0.35}
-                className="bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-600 bg-clip-text text-transparent dark:from-emerald-400 dark:via-teal-300 dark:to-sky-400"
-              />
+            <h1 className="hero-headline font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight text-foreground max-w-3xl leading-[1.15]">
+              Turn {countryLabel}&apos;s climate commitments into{" "}
+              <span className={HERO_GRADIENT_TEXT}>delivery decisions.</span>
             </h1>
 
             <p className="mt-4 text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
@@ -153,7 +149,7 @@ export default function Home() {
                 key={f.title}
                 to={f.to}
                 className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl dash-fade-up"
-                style={{ animationDelay: `${0.08 + i * 0.07}s` }}
+                style={{ "--dash-fade-delay": `${0.04 + i * 0.04}s` } as CSSProperties}
               >
                 <Card className="h-full border-border/80 transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-lg group-hover:shadow-primary/10 group-hover:-translate-y-1">
                   <CardContent className="p-4">
@@ -227,7 +223,7 @@ export default function Home() {
                       >
                         <p className="text-lg font-bold tabular-nums text-foreground font-display">
                           {typeof stat.value === "number" ? (
-                            <CountUpNumber value={stat.value} durationMs={1200} />
+                            <CountUpNumber value={stat.value} durationMs={800} startWhenVisible />
                           ) : (
                             stat.value
                           )}

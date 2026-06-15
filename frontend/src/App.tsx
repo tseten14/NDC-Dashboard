@@ -22,8 +22,11 @@ import CountrySelect from "./pages/CountrySelect.tsx";
 
 import ActivityForm from "./pages/ActivityForm.tsx";
 import ActivityDetail from "./pages/ActivityDetail.tsx";
-import NDCLayer from "./pages/NDCLayer.tsx";
 import Home from "./pages/Home.tsx";
+
+// Dashboard pulls in recharts + chart components; lazy-load so the landing
+// page bundle stays small and first paint is fast.
+const NDCLayer = lazy(() => import("./pages/NDCLayer.tsx"));
 
 // Heavy secondary pages (recharts / mermaid / large data) are code-split so
 // they don't bloat the initial bundle and delay first paint + hydration.
@@ -106,7 +109,7 @@ function ProtectedShell() {
                 <Routes>
                   {/* Main */}
                   <Route path="/" element={<Home />} />
-                  <Route path="/dashboard" element={<NDCLayer />} />
+                  <Route path="/dashboard" element={<LazyPage><NDCLayer /></LazyPage>} />
                   <Route path="/library" element={<LazyPage><StrategyLibrary /></LazyPage>} />
                   <Route path="/my-work" element={<LazyPage><MyWork /></LazyPage>} />
                   <Route path="/activities/new" element={<ActivityForm />} />
@@ -137,7 +140,7 @@ function ProtectedShell() {
                   </Route>
 
                   <Route path="/legacy-overview" element={<LazyPage><Overview /></LazyPage>} />
-                  <Route path="/ndc" element={<NDCLayer />} />
+                  <Route path="/ndc" element={<LazyPage><NDCLayer /></LazyPage>} />
                   <Route path="/indicators" element={<LazyPage><Indicators /></LazyPage>} />
                   <Route path="/interlinkages" element={<LazyPage><Interlinkages /></LazyPage>} />
                   <Route path="/causal-chains" element={<LazyPage><CausalChains /></LazyPage>} />

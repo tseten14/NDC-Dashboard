@@ -94,7 +94,7 @@ export default function MapExplorer() {
 
   const visiblePoints = useMemo(() => {
     if (!data) return [];
-    return data.points
+    return (data.points ?? [])
       .filter((p) => !hidden.has(p.sector))
       .filter((p) => (assetsOnly ? p.is_asset : true))
       .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))

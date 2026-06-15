@@ -5,12 +5,28 @@ import { useEffect, useRef, useState } from "react";
  * First render counts up from 0; later changes animate from the previous value.
  * Respects prefers-reduced-motion (jumps straight to the target).
  */
-export function useCountUp(target: number, durationMs = 900): number {
+export function useCountUp(
+  target: number,
+  durationMs = 900,
+  options?: { enabled?: boolean },
+): number {
+  const enabled = options?.enabled ?? true;
   const [value, setValue] = useState(target);
   const fromRef = useRef(0);
   const firstRef = useRef(true);
+  const wasEnabledRef = useRef(enabled);
 
   useEffect(() => {
+    if (!enabled) {
+      setValue(target);
+      return;
+    }
+
+    if (!wasEnabledRef.current) {
+      firstRef.current = true;
+    }
+    wasEnabledRef.current = true;
+
     const reduced =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -34,7 +50,7 @@ export function useCountUp(target: number, durationMs = 900): number {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [target, durationMs]);
+  }, [target, durationMs, enabled]);
 
   return value;
 }

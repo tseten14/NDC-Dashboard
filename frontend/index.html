@@ -9,7 +9,23 @@
     <link rel="icon" type="image/svg+xml" href="/app-icon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Space+Grotesk:wght@500;600;700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Space+Grotesk:wght@500;600;700&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Space+Grotesk:wght@500;600;700&display=swap"
+      />
+    </noscript>
     <style>
       /* Initial-load splash — removed by main.tsx once React mounts */
       #splash {
@@ -22,7 +38,7 @@
         flex-direction: column;
         gap: 18px;
         background: linear-gradient(135deg, hsl(168 38% 96%), hsl(152 32% 94%), hsl(202 38% 96%));
-        transition: opacity 0.45s ease;
+        transition: opacity 0.28s ease;
       }
       #splash.splash-done {
         opacity: 0;
@@ -78,6 +94,7 @@
         100% { transform: translateX(290%); }
       }
       @media (prefers-reduced-motion: reduce) {
+        #splash { transition: none; }
         #splash .splash-logo, #splash .splash-bar::after { animation: none; }
       }
     </style>

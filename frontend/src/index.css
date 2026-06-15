@@ -196,13 +196,13 @@
 @keyframes landing-float {
   0%,
   100% {
-    transform: translate(0, 0) scale(1);
+    transform: translate3d(0, 0, 0);
   }
   33% {
-    transform: translate(12px, -18px) scale(1.04);
+    transform: translate3d(12px, -18px, 0);
   }
   66% {
-    transform: translate(-8px, 10px) scale(0.98);
+    transform: translate3d(-8px, 10px, 0);
   }
 }
 
@@ -252,6 +252,7 @@
   }
 
   .landing-orb {
+    will-change: transform;
     animation: landing-float 14s ease-in-out infinite;
   }
 
@@ -264,23 +265,23 @@
   }
 
   .landing-fade-up {
-    animation: landing-fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation: landing-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
 
   .landing-stagger-1 {
-    animation-delay: 0.05s;
+    animation-delay: 0.02s;
   }
   .landing-stagger-2 {
-    animation-delay: 0.12s;
+    animation-delay: 0.06s;
   }
   .landing-stagger-3 {
-    animation-delay: 0.2s;
+    animation-delay: 0.1s;
   }
   .landing-stagger-4 {
-    animation-delay: 0.28s;
+    animation-delay: 0.14s;
   }
   .landing-stagger-5 {
-    animation-delay: 0.36s;
+    animation-delay: 0.18s;
   }
 
   .landing-card-glow {
@@ -332,7 +333,19 @@
 
 @layer utilities {
   .dash-fade-up {
-    animation: dash-fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation: dash-fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: var(--dash-fade-delay, 0s);
+  }
+
+  /* Hold child card animations until the scroll-reveal parent is visible. */
+  .reveal:not(.reveal-visible) .dash-fade-up {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: none;
+  }
+  .reveal.reveal-visible .dash-fade-up {
+    animation: dash-fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: var(--dash-fade-delay, 0s);
   }
 
   /* Re-mounted content (target/district/filter switches) fades in instead of popping. */
@@ -448,6 +461,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none;
+    background: hsl(var(--muted));
+  }
   .dash-animated-bg {
     animation: none;
   }
@@ -729,11 +746,27 @@
   }
 }
 
-/* ── Hero text reveal (word-by-word) ── */
+/* ── Hero headline (single fast fade — avoids per-word delay on load) ── */
+@keyframes hero-headline-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-headline {
+  animation: hero-headline-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Hero text reveal (word-by-word; optional, used outside main headlines) ── */
 @keyframes hero-word-in {
   from {
     opacity: 0;
-    transform: translateY(0.6em);
+    transform: translateY(0.4em);
   }
   to {
     opacity: 1;
@@ -743,16 +776,31 @@
 
 .hero-word {
   display: inline-block;
-  animation: hero-word-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: hero-word-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* Gradient clipped text must live on the same element as the glyphs (Safari/iOS). */
+.hero-gradient-text {
+  -webkit-text-fill-color: transparent;
+  color: hsl(160 84% 39%);
+}
+.dark .hero-gradient-text {
+  color: hsl(158 64% 52%);
+}
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+  .hero-gradient-text {
+    -webkit-text-fill-color: currentColor;
+    background-image: none !important;
+  }
 }
 
 /* ── Scroll-triggered reveal (paired with use-scroll-reveal hook) ── */
 .reveal {
   opacity: 0;
-  transform: translateY(18px);
+  transform: translateY(14px);
   transition:
-    opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .reveal.reveal-visible {
   opacity: 1;
@@ -806,13 +854,14 @@
 @media (prefers-reduced-motion: reduce) {
   .ambient-orb-a,
   .ambient-orb-b,
+  .hero-headline,
   .hero-word {
     animation: none;
   }
+  .hero-headline,
   .hero-word {
     opacity: 1;
     transform: none;
-    filter: none;
   }
   .reveal {
     opacity: 1;
@@ -850,4 +899,46 @@ body.demo-presenter-mode [data-sidebar="trigger"] {
     opacity: 1;
     transform: none;
   }
+}
+
+/*
+ * Dark theme for the MapLibre attribution control on the emissions map.
+ * Kept UNLAYERED (outside @layer) so these win over maplibre-gl.css, whose
+ * default rules are also unlayered and otherwise beat layered overrides.
+ * Scoped to .emissions-map so nothing else is affected.
+ */
+.emissions-map .maplibregl-ctrl-attrib,
+.emissions-map .maplibregl-ctrl-attrib.maplibregl-compact {
+  background: rgba(10, 15, 26, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(226, 232, 240, 0.85);
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+}
+.emissions-map .maplibregl-ctrl-attrib-inner {
+  color: rgba(226, 232, 240, 0.85);
+}
+.emissions-map .maplibregl-ctrl-attrib a {
+  color: #7dd3fc;
+}
+.emissions-map .maplibregl-ctrl-attrib a:hover {
+  color: #bae6fd;
+}
+/* Compact collapsed pill: keep rounded + dark on all corners. */
+.emissions-map .maplibregl-ctrl-attrib.maplibregl-compact {
+  min-height: 24px;
+  border-radius: 12px;
+}
+/*
+ * Info (i) toggle button. The glyph ships as a dark SVG background-image, so we
+ * keep the button background transparent (the dark pill shows through) and
+ * invert the element so only the icon reads light against the dark background.
+ */
+.emissions-map .maplibregl-ctrl-attrib-button {
+  background-color: transparent;
+  border-radius: 50%;
+  filter: invert(1) brightness(1.2);
+}
+.emissions-map .maplibregl-ctrl-attrib-button:hover {
+  background-color: rgba(255, 255, 255, 0.12);
 }

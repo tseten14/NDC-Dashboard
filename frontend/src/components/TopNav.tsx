@@ -155,7 +155,7 @@ export function TopNav() {
       {/* Top strip: brand + breadcrumb + country + role. Collapses on scroll. */}
       <div
         className={cn(
-          "flex items-center gap-4 px-6 border-b border-border/40 overflow-hidden",
+          "flex items-center gap-3 sm:gap-4 px-4 sm:px-6 border-b border-border/40 overflow-hidden",
           "transition-[height,opacity] duration-300 ease-out",
           condensed ? "h-0 opacity-0 border-b-0" : "h-12 opacity-100",
         )}

@@ -5,8 +5,8 @@ import { useCountry } from "@/context/CountryContext";
 import { useCurrentRole } from "@/hooks/use-current-role";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TextReveal } from "@/components/TextReveal";
 import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
+import { HERO_GRADIENT_TEXT } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 import {
   Globe2, ChevronRight, Lock, Satellite, BarChart3, MapPin, Sparkles, Leaf, Search,
@@ -30,11 +30,11 @@ function LandingBackdrop() {
         style={{ background: "hsl(var(--sidebar-primary) / 0.35)" }}
       />
       <div
-        className="absolute top-1/3 -right-20 h-[360px] w-[360px] rounded-full landing-orb landing-orb-delay-1 opacity-30 blur-3xl"
+        className="absolute top-1/3 -right-20 hidden sm:block h-[360px] w-[360px] rounded-full landing-orb landing-orb-delay-1 opacity-30 blur-3xl"
         style={{ background: "hsl(152 40% 45% / 0.25)" }}
       />
       <div
-        className="absolute -bottom-24 left-1/4 h-[320px] w-[320px] rounded-full landing-orb landing-orb-delay-2 opacity-25 blur-3xl"
+        className="absolute -bottom-24 left-1/4 hidden md:block h-[320px] w-[320px] rounded-full landing-orb landing-orb-delay-2 opacity-25 blur-3xl"
         style={{ background: "hsl(var(--accent) / 0.2)" }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/80" />
@@ -91,7 +91,7 @@ export default function CountrySelect() {
     <div className="relative min-h-screen overflow-x-hidden">
       <LandingBackdrop />
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-10 sm:px-6 lg:py-14">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col justify-start px-4 py-8 sm:justify-center sm:px-6 sm:py-10 lg:py-14">
         <div className="grid items-center gap-10 lg:grid-cols-[1fr,minmax(0,420px)] lg:gap-14 xl:grid-cols-[1.1fr,minmax(0,440px)]">
           {/* Hero column */}
           <div className="landing-fade-up landing-stagger-1 text-center lg:text-left">
@@ -112,13 +112,9 @@ export default function CountrySelect() {
               </div>
             </div>
 
-            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.5rem] leading-[1.12]">
-              <TextReveal text="NDC Data" startDelay={0.15} />
-              <TextReveal
-                text="Explorer"
-                startDelay={0.32}
-                className="block bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-600 bg-clip-text text-transparent dark:from-emerald-400 dark:via-teal-300 dark:to-sky-400"
-              />
+            <h1 className="hero-headline font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.5rem] leading-[1.12]">
+              NDC Data{" "}
+              <span className={cn("block", HERO_GRADIENT_TEXT)}>Explorer</span>
             </h1>
 
             <p className="mt-4 text-sm sm:text-base text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
@@ -126,11 +122,11 @@ export default function CountrySelect() {
               live emissions, districts, and delivery priorities.
             </p>
 
-            <div className="mt-6 flex justify-center lg:justify-start gap-6 landing-fade-up landing-stagger-2">
+            <div className="mt-6 flex flex-wrap justify-center gap-4 sm:gap-6 lg:justify-start landing-fade-up landing-stagger-2">
               {HERO_STATS.map((stat) => (
-                <div key={stat.label} className="text-center lg:text-left">
-                  <p className="font-display text-2xl font-bold tabular-nums text-foreground">
-                    <CountUpNumber value={stat.value} durationMs={1400} />
+                <div key={stat.label} className="text-center lg:text-left min-w-[4.5rem]">
+                  <p className="font-display text-xl sm:text-2xl font-bold tabular-nums text-foreground">
+                    <CountUpNumber value={stat.value} durationMs={700} startWhenVisible />
                   </p>
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">{stat.label}</p>
                 </div>
@@ -158,7 +154,7 @@ export default function CountrySelect() {
 
           {/* Country picker */}
           <div className="landing-fade-up landing-stagger-3 w-full max-w-md mx-auto lg:max-w-none">
-            <Card className="border-border/50 bg-card/85 shadow-xl backdrop-blur-xl ring-1 ring-white/50 dark:ring-white/10 overflow-hidden">
+            <Card className="border-border/50 bg-card/90 shadow-xl backdrop-blur-md sm:backdrop-blur-xl ring-1 ring-white/50 dark:ring-white/10 overflow-hidden">
               <div className="relative h-1 w-full overflow-hidden bg-muted">
                 <div className="landing-shimmer-bar absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-sidebar-primary/60 to-transparent" />
               </div>
@@ -237,11 +233,11 @@ export default function CountrySelect() {
                           )}
                         </span>
                         {c.available ? (
-                          <Badge className="shrink-0 bg-sidebar-primary/15 text-sidebar-primary border-sidebar-primary/30 hover:bg-sidebar-primary/20 text-[10px]">
+                          <Badge className="hidden min-[400px]:inline-flex shrink-0 bg-sidebar-primary/15 text-sidebar-primary border-sidebar-primary/30 hover:bg-sidebar-primary/20 text-[10px]">
                             Available
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[10px] shrink-0 text-muted-foreground">
+                          <Badge variant="outline" className="hidden min-[400px]:inline-flex text-[10px] shrink-0 text-muted-foreground">
                             Soon
                           </Badge>
                         )}

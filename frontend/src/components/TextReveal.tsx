@@ -1,4 +1,6 @@
 import { Fragment } from "react";
+import { cn } from "@/lib/utils";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 
 interface TextRevealProps {
   text: string;
@@ -9,19 +11,28 @@ interface TextRevealProps {
   className?: string;
 }
 
-/** Word-by-word reveal for hero headlines (fade + rise + unblur per word). */
-export function TextReveal({ text, startDelay = 0, stagger = 0.055, className }: TextRevealProps) {
+/** Word-by-word reveal for headlines (fade + rise per word). */
+export function TextReveal({ text, startDelay = 0, stagger = 0.03, className }: TextRevealProps) {
+  const reducedMotion = usePrefersReducedMotion();
   const words = text.split(" ");
+
+  if (reducedMotion) {
+    return <span className={className}>{text}</span>;
+  }
+
   return (
-    <span className={className}>
+    <>
       {words.map((word, i) => (
         <Fragment key={`${word}-${i}`}>
-          <span className="hero-word" style={{ animationDelay: `${startDelay + i * stagger}s` }}>
+          <span
+            className={cn("hero-word", className)}
+            style={{ animationDelay: `${startDelay + i * stagger}s` }}
+          >
             {word}
           </span>
           {i < words.length - 1 ? " " : null}
         </Fragment>
       ))}
-    </span>
+    </>
   );
 }
