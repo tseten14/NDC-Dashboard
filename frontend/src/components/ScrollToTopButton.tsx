@@ -12,6 +12,15 @@ export function ScrollToTopButton() {
   const scrollerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    // rAF-batched: read scrollTop at most once per frame to avoid a forced
+    // layout read on every scroll event. setVisible is a no-op when the
+    // boolean is unchanged, so React only re-renders at the threshold.
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const el = scrollerRef.current;
+      if (el) setVisible(el.scrollTop > 320);
+    };
     const onScroll = (e: Event) => {
       const el =
         e.target instanceof Document
@@ -21,10 +30,13 @@ export function ScrollToTopButton() {
             : null;
       if (!el) return;
       scrollerRef.current = el;
-      setVisible(el.scrollTop > 320);
+      if (frame === 0) frame = requestAnimationFrame(measure);
     };
-    document.addEventListener("scroll", onScroll, true);
-    return () => document.removeEventListener("scroll", onScroll, true);
+    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => {
+      document.removeEventListener("scroll", onScroll, true);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
 
   const scrollToTop = () => {

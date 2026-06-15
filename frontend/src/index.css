@@ -247,7 +247,8 @@
       hsl(150 20% 96%) 100%
     );
     background-size: 200% 200%;
-    animation: landing-gradient-shift 18s ease infinite;
+    /* Static gradient — animating background-position repaints the whole
+       viewport every frame and was a major source of scroll jank. */
   }
 
   .landing-orb {
@@ -363,7 +364,8 @@
       hsl(160 28% 96%) 100%
     );
     background-size: 300% 300%;
-    animation: dash-bg-shift 26s ease infinite;
+    /* Static gradient — see note above; the position drift was imperceptible
+       at 26s but forced a continuous full-viewport repaint. */
   }
 
   /* Faint dot-grid texture layered over the gradient. */
@@ -576,6 +578,28 @@
   .dark .map-globe-stage {
     background: radial-gradient(ellipse 120% 80% at 50% 0%, hsl(215 28% 12%) 0%, #0a0e16 55%, #06080d 100%);
   }
+
+  /* MapLibre chrome themed for the dark satellite stage */
+  .emissions-map .maplibregl-ctrl-attrib {
+    background: rgba(8, 12, 20, 0.72);
+    color: rgba(226, 232, 240, 0.8);
+    font-size: 9px;
+    border-radius: 6px 0 0 0;
+  }
+  .emissions-map .maplibregl-ctrl-attrib a {
+    color: rgba(226, 232, 240, 0.9);
+  }
+  .emissions-map .maplibregl-ctrl-group {
+    background: rgba(8, 12, 20, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(4px);
+  }
+  .emissions-map .maplibregl-ctrl-group button + button {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .emissions-map .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+    filter: invert(1) hue-rotate(180deg) brightness(1.1);
+  }
 }
 
 .dark .map-stage-bg {
@@ -625,7 +649,6 @@
     hsl(160 18% 10%) 100%
   );
   background-size: 200% 200%;
-  animation: landing-gradient-shift 18s ease infinite;
 }
 
 .dark .dash-animated-bg {
@@ -637,7 +660,6 @@
     hsl(160 18% 10%) 100%
   );
   background-size: 300% 300%;
-  animation: dash-bg-shift 26s ease infinite;
 }
 
 .dark .dash-grid-pattern {
@@ -667,20 +689,25 @@
 }
 
 /* ── Site-wide ambient background (behind all app pages) ── */
+/* Translate-only drift: scaling a 64px-blurred orb re-rasterizes the blur
+   every frame, so we move (compositor-only) instead of scale, and promote
+   each orb to its own GPU layer with will-change. */
 @keyframes ambient-drift-a {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(40px, -30px) scale(1.08); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(40px, -30px, 0); }
 }
 @keyframes ambient-drift-b {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-35px, 25px) scale(0.94); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(-35px, 25px, 0); }
 }
 
 @layer utilities {
   .ambient-orb-a {
+    will-change: transform;
     animation: ambient-drift-a 22s ease-in-out infinite;
   }
   .ambient-orb-b {
+    will-change: transform;
     animation: ambient-drift-b 28s ease-in-out infinite;
   }
   /* Faint topographic contour lines evoking terrain maps. */
@@ -707,12 +734,10 @@
   from {
     opacity: 0;
     transform: translateY(0.6em);
-    filter: blur(4px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
   }
 }
 

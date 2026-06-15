@@ -19,8 +19,8 @@ const primary: NavItem[] = [
   { title: "Home",               url: "/",               icon: Home },
   { title: "Dashboard",          url: "/dashboard",      icon: Target },
   { title: "Data Ingestion",     url: "/ingest",         icon: Upload },
-  { title: "AI 2030 Prediction", url: "/ai-2030",        icon: Sparkles },
   { title: "Climate Finance",    url: "/climate-finance",icon: Coins },
+  { title: "AI 2030 Prediction", url: "/ai-2030",        icon: Sparkles },
   { title: "Policy Impact",      url: "/policy-impact",  icon: Workflow },
   { title: "Policy Documents",   url: "/documents",      icon: Scale },
   { title: "Emissions Map",      url: "/map",            icon: MapIcon },
@@ -84,8 +84,16 @@ export function TopNav() {
   const visiblePrimary = primary.filter((item) => isPrimaryNavVisible(activeRole, item.url));
 
   // Condense the header once page content (in any nested scroll container) scrolls down.
+  // The scroll handler is rAF-batched so we read scrollTop at most once per frame
+  // and only flip state when the threshold is actually crossed.
   const [condensed, setCondensed] = useState(false);
   useEffect(() => {
+    let frame = 0;
+    let lastTarget: HTMLElement | null = null;
+    const measure = () => {
+      frame = 0;
+      if (lastTarget) setCondensed(lastTarget.scrollTop > 48);
+    };
     const onScroll = (e: Event) => {
       const el =
         e.target instanceof Document
@@ -94,10 +102,14 @@ export function TopNav() {
             ? e.target
             : null;
       if (!el) return;
-      setCondensed(el.scrollTop > 48);
+      lastTarget = el;
+      if (frame === 0) frame = requestAnimationFrame(measure);
     };
-    document.addEventListener("scroll", onScroll, true);
-    return () => document.removeEventListener("scroll", onScroll, true);
+    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => {
+      document.removeEventListener("scroll", onScroll, true);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
 
   // Sliding indicator: follows hover, settles on the active link.
@@ -130,7 +142,9 @@ export function TopNav() {
     <header
       className={cn(
         "sticky top-0 z-40 w-full border-b border-border/70",
-        "bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60",
+        // backdrop-blur-md (not -xl): a sticky element's backdrop-filter is
+        // recomputed every scroll frame, so a smaller blur radius is cheaper.
+        "bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65",
         "shadow-[0_1px_12px_-6px_hsl(168_45%_28%/0.15)]",
       )}
     >

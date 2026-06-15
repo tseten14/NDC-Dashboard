@@ -4,7 +4,10 @@
  */
 export function AmbientBackground() {
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
+    <div
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden [contain:layout_paint]"
+      aria-hidden
+    >
       <div className="absolute inset-0 dash-animated-bg opacity-60" />
       <div className="absolute inset-0 ambient-contours" />
       <div

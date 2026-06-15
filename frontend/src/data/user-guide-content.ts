@@ -227,14 +227,14 @@ export const BASIC_FEATURES: FeatureGuide[] = [
     steps: [
       "Open Emissions Map.",
       "Select year and sector filters as offered on screen.",
-      "Pan and zoom the map; hover bubbles for source name and emissions.",
+      "Pan, zoom, and tilt the 3D satellite map; hover bubbles for source name and emissions.",
       "Read the side panels for sector breakdown and national total for that year.",
     ],
     howItWorks:
-      "The server requests geolocated sources from Climate TRACE for Uganda (national or district). Each bubble is a facility or located aggregate with coordinates. Totals include emissions that cannot be placed on a map exactly — those appear in spatial certainty on the Dashboard, not as bubbles.",
+      "The map is a real 3D satellite basemap of Uganda (Esri World Imagery) with terrain relief, framed so the country fills the view. District boundaries are drawn on top, and each Climate TRACE source is a colour-coded bubble sized by its emissions. Bubbles render on the GPU as a single map layer, so thousands of sources stay smooth. Totals include emissions that cannot be placed on a map exactly — those appear in spatial certainty on the Dashboard, not as bubbles.",
     result: "A map-based briefing aid: which regions and source types dominate visually for the selected year.",
     limitations: "Not every tonne appears as a bubble. Very large datasets may be capped for performance. District boundaries are for context.",
-    youWillSee: ["Uganda map with sized/coloured bubbles", "Sector legend", "Year and total summary"],
+    youWillSee: ["3D satellite map of Uganda with sized/coloured bubbles", "Sector legend", "Year and total summary"],
   },
   {
     title: "Documentation",

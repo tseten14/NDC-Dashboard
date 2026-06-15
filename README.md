@@ -14,6 +14,7 @@ Web application for exploring Uganda’s Nationally Determined Contribution (NDC
 ## Stack
 
 - **Frontend:** Vite + React + TypeScript + Tailwind / shadcn
+- **Emissions map:** MapLibre GL JS (3D satellite/terrain, token-free Esri World Imagery + AWS terrain tiles)
 - **API:** Express (`server.js`) — Climate TRACE live (API v7) + bundled catalog/risk data
 - **Mapped ingest:** Postgres when `DATABASE_URL` is set (indicator targets); otherwise ingest confirm is disabled
 - **Activities / roles:** Browser `localStorage` (demo)
@@ -41,10 +42,10 @@ Pick a country, choose a demo role from the top bar, and explore. **Home** (`/`)
 | `/dashboard` | NDC cockpit (sectors, targets, observed, progress, compact gap panel) |
 | `/policy-impact` | Socio-economic impact forecasting (KCI case analogies) |
 | `/ingest` | Data ingestion (mapped import → Postgres; quick scan profiling) |
-| `/ai-2030` | 2030 sector predictions |
 | `/climate-finance` | Indicative finance / fund screening |
+| `/ai-2030` | 2030 sector predictions (positioned immediately after Climate Finance in the nav) |
 | `/documents` | Policy corpus (laws, UN submissions, MCF projects) |
-| `/map` | Emissions map (geolocated sources) |
+| `/map` | Emissions map — Climate TRACE sources as bubbles over a 3D satellite/terrain basemap (MapLibre GL) |
 | `/docs` | User guide (non-technical) |
 
 Advanced sidebar: Strategy Library, My Work, Climate Risk, and legacy cockpit pages.

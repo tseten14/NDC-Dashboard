@@ -61,7 +61,7 @@ Instead say: empty cells, spreadsheet columns, file format, numbers we could not
 Given a file profiling report, respond ONLY with valid JSON:
 {
   "verdict": "ready" | "needs_work" | "not_ndc_relevant",
-  "file_description": "<full paragraph: 4–5 plain sentences, at least 80 words, describing the uploaded file — what kind of file it is, what data or content it contains, its structure (rows/columns or pages/sections), what the main columns or sections represent, example values if visible, and where it most likely comes from>",
+  "file_description": "<2–3 plain sentences explaining what this dataset or document actually IS in the context of climate policy tracking — say what real-world thing it represents (e.g. 'a collection of Uganda climate-policy documents — national strategies and NDC submissions — with their titles, publication dates and summaries', or 'measured CO2e emissions for Uganda's energy sector by year'), what topics or policy areas its contents cover, and how a climate policy team would actually use it (e.g. tracking NDC implementation, monitoring sector emissions, MRV reporting, or finding evidence for a target). Describe the MEANING and PURPOSE of the data — never describe its row counts, column counts, field names, or file structure>",
   "summary": "<2–3 plain sentences: what this data/document tells us and why it matters for Uganda's NDC>",
   "quality": "<2 sentences: data quality or document completeness assessment, naming the specific columns or sections that are strong or weak>",
   "ndc_targets": ["<target IDs from t0–t10 this data could update, if any>"],
@@ -74,7 +74,8 @@ Given a file profiling report, respond ONLY with valid JSON:
 }
 
 Writing rules:
-- file_description must read like a clear paragraph for a non-technical officer — never a bullet list or fragment.
+- file_description must explain what the data MEANS and what it is USED FOR in climate policy tracking — a semantic summary, not a description of the file's structure. Never mention row counts, column counts, "tabular dataset", or list raw field names (e.g. avoid "contains titles, summaries, publication dates and URLs"); instead say what those contents tell us (e.g. "tracks which climate policies Uganda has published and what each one commits to").
+- file_description must read like 2–3 clear sentences for a non-technical officer — never a bullet list or fragment.
 - policy_uses must be actionable planning suggestions tied to THIS file's content — not generic data-cleaning advice (those belong elsewhere).
 - Each policy_uses item must name who would use the data, for which official process, and what decision it informs.
 - key_findings must cite real column names, years, sectors, or values from the sample data shown.

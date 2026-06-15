@@ -23,14 +23,17 @@ import CountrySelect from "./pages/CountrySelect.tsx";
 import ActivityForm from "./pages/ActivityForm.tsx";
 import ActivityDetail from "./pages/ActivityDetail.tsx";
 import NDCLayer from "./pages/NDCLayer.tsx";
-import Ai2030Prediction from "./pages/Ai2030Prediction.tsx";
-import ClimateFinance from "./pages/ClimateFinance.tsx";
-import PolicyDocuments from "./pages/PolicyDocuments.tsx";
-import Documentation from "./pages/Documentation.tsx";
 import Home from "./pages/Home.tsx";
-import PolicyImpact from "./pages/PolicyImpact.tsx";
-import BrazilChatbot from "./pages/BrazilChatbot.tsx";
-import PolicyDocumentView from "./pages/PolicyDocumentView.tsx";
+
+// Heavy secondary pages (recharts / mermaid / large data) are code-split so
+// they don't bloat the initial bundle and delay first paint + hydration.
+const Ai2030Prediction = lazy(() => import("./pages/Ai2030Prediction.tsx"));
+const ClimateFinance = lazy(() => import("./pages/ClimateFinance.tsx"));
+const PolicyDocuments = lazy(() => import("./pages/PolicyDocuments.tsx"));
+const Documentation = lazy(() => import("./pages/Documentation.tsx"));
+const PolicyImpact = lazy(() => import("./pages/PolicyImpact.tsx"));
+const BrazilChatbot = lazy(() => import("./pages/BrazilChatbot.tsx"));
+const PolicyDocumentView = lazy(() => import("./pages/PolicyDocumentView.tsx"));
 
 const MapExplorer = lazy(() => import("./pages/MapExplorer.tsx"));
 const DataIngestion = lazy(() => import("./pages/DataIngestion.tsx"));
@@ -108,14 +111,14 @@ function ProtectedShell() {
                   <Route path="/evidence" element={<LazyPage><EvidenceMRV /></LazyPage>} />
                   <Route path="/finance" element={<LazyPage><FinanceInvestment /></LazyPage>} />
                   <Route path="/ingest" element={<LazyPage><DataIngestion /></LazyPage>} />
-                  <Route path="/ai-2030" element={<Ai2030Prediction />} />
-                  <Route path="/brazil-chat" element={<BrazilChatbot />} />
-                  <Route path="/climate-finance" element={<ClimateFinance />} />
-                  <Route path="/documents" element={<PolicyDocuments />} />
-                  <Route path="/documents/view" element={<PolicyDocumentView />} />
-                  <Route path="/policy-impact" element={<PolicyImpact />} />
+                  <Route path="/ai-2030" element={<LazyPage><Ai2030Prediction /></LazyPage>} />
+                  <Route path="/brazil-chat" element={<LazyPage><BrazilChatbot /></LazyPage>} />
+                  <Route path="/climate-finance" element={<LazyPage><ClimateFinance /></LazyPage>} />
+                  <Route path="/documents" element={<LazyPage><PolicyDocuments /></LazyPage>} />
+                  <Route path="/documents/view" element={<LazyPage><PolicyDocumentView /></LazyPage>} />
+                  <Route path="/policy-impact" element={<LazyPage><PolicyImpact /></LazyPage>} />
                   <Route path="/map" element={<LazyPage><MapExplorer /></LazyPage>} />
-                  <Route path="/docs" element={<Documentation />} />
+                  <Route path="/docs" element={<LazyPage><Documentation /></LazyPage>} />
 
                   {/* Climate Risk & Vulnerability */}
                   <Route path="/risk" element={<LazyPage><RiskLayout /></LazyPage>}>

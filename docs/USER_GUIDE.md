@@ -14,10 +14,10 @@ The in-app **Documentation** tab (`/docs`) renders the same content family from 
 | Dashboard | `/dashboard` | NDC targets vs Climate TRACE emissions; compact gap panel; export |
 | Policy Impact | `/policy-impact` | Socio-economic forecast from KCI case analogies (indicative) |
 | Data Ingestion | `/ingest` | Mapped import → Postgres (indicator targets); Quick Scan profiling |
-| AI 2030 | `/ai-2030` | Trend to 2030 with uncertainty (indicative) |
 | Climate Finance | `/climate-finance` | Cost/abatement screening + fund hints + MCF docs |
+| AI 2030 | `/ai-2030` | Trend to 2030 with uncertainty (indicative) — sits right after Climate Finance in the nav |
 | Policy documents | `/documents` | CPR corpus + intervention pathway diagram |
-| Emissions Map | `/map` | Geolocated sources on a map |
+| Emissions Map | `/map` | Geolocated Climate TRACE sources as bubbles on a 3D satellite/terrain basemap (MapLibre GL) |
 
 ## Three layers of truth
 

@@ -2,10 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { geoContains } from "d3-geo";
 import type { FeatureCollection } from "geojson";
-import {
-  ResponsiveContainer,
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as LineTooltip,
-} from "recharts";
 import { emissionsApi, type MapSourcePoint } from "@/lib/api";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,10 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
-import { EmissionsGlobe } from "@/components/map/EmissionsGlobe";
+import { EmissionsMap3D } from "@/components/map/EmissionsMap3D";
 import {
   Loader2, AlertCircle, Map as MapIcon, Building2, Layers,
-  TrendingUp, TrendingDown, Factory, Sparkles,
+  TrendingUp, TrendingDown, Factory,
 } from "lucide-react";
 import ugandaGeo from "@/data/uganda-adm2.geo.json";
 
@@ -116,15 +112,6 @@ export default function MapExplorer() {
   const maxPointMt = useMemo(
     () => visiblePoints.reduce((m, p) => Math.max(m, p.mtco2e ?? 0), 0),
     [visiblePoints],
-  );
-
-  const trendData = useMemo(
-    () =>
-      YEARS.map((y, i) => ({
-        year: y,
-        total: trendQueries[i]?.data?.total_mtco2e ?? null,
-      })).filter((d) => d.total != null),
-    [trendQueries],
   );
 
   const prevYearData = trendQueries.find((q) => q.data?.year === year - 1)?.data;
@@ -271,7 +258,7 @@ export default function MapExplorer() {
           </Card>
         </div>
 
-        {/* 3D globe — column height ∝ emissions */}
+        {/* 3D satellite map — bubble size ∝ emissions */}
         <div className="mx-auto w-full max-w-6xl px-1">
           <Card className="overflow-hidden border-border/80 shadow-md dash-card-hover">
             <CardContent className="p-3 sm:p-4 map-globe-stage">
@@ -339,7 +326,7 @@ export default function MapExplorer() {
                         <Button variant="outline" size="sm" onClick={() => query.refetch()}>Retry</Button>
                       </div>
                     )}
-                    <EmissionsGlobe
+                    <EmissionsMap3D
                       points={visiblePoints}
                       maxPointMt={maxPointMt}
                       sectorColor={sectorColor}
@@ -409,50 +396,8 @@ export default function MapExplorer() {
           </Card>
         </div>
 
-        {/* Bottom row: trend + insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card className="border-border/80 shadow-sm">
-            <CardContent className="p-4">
-              <h3 className="text-xs font-semibold text-foreground mb-3 flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                Mapped emissions over time
-              </h3>
-              <div className="h-[180px]">
-                {trendData.length > 1 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={trendData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="hsl(152 34% 44%)" stopOpacity={0.35} />
-                          <stop offset="100%" stopColor="hsl(152 34% 44%)" stopOpacity={0.02} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                      <XAxis dataKey="year" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={42} tickFormatter={(v) => `${v}`} />
-                      <LineTooltip
-                        formatter={(v: number) => [`${fmtMt(v)} CO₂e`, "Total"]}
-                        contentStyle={{ fontSize: 11, borderRadius: 8 }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="total"
-                        stroke="hsl(152 34% 38%)"
-                        strokeWidth={2.5}
-                        fill="url(#trend-fill)"
-                        dot={{ r: 4, fill: "hsl(152 34% 38%)", strokeWidth: 0 }}
-                        activeDot={{ r: 6 }}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-full flex items-center justify-center text-xs text-muted-foreground">Loading trend…</div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Bottom row: insights */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card className="border-border/80 shadow-sm">
               <CardContent className="p-4">
                 <h3 className="text-xs font-semibold text-foreground mb-2">Where emissions are changing</h3>
@@ -502,7 +447,6 @@ export default function MapExplorer() {
                 </ul>
               </CardContent>
             </Card>
-          </div>
         </div>
 
         {/* Sector filter panel */}
@@ -539,7 +483,7 @@ export default function MapExplorer() {
               </Badge>
             )}
             <p className="mt-2 text-[10px] text-muted-foreground">
-              Basemap: geoBoundaries (CC BY 4.0) · Data: Climate TRACE (CC BY 4.0)
+              Satellite: Esri World Imagery · Terrain: Nextzen/AWS · Boundaries: geoBoundaries (CC BY 4.0) · Data: Climate TRACE (CC BY 4.0)
             </p>
           </CardContent>
         </Card>
