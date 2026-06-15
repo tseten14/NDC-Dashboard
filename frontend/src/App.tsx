@@ -88,7 +88,13 @@ function ProtectedShell() {
     <AppStateContext.Provider value={state}>
       <EmissionsDataProvider>
       <CockpitProvider>
-          <div className="min-h-screen flex flex-col w-full relative">
+          {/* Fixed (not min-) viewport height so `main` is height-bounded and the
+              per-page ScrollArea becomes the real scroll container. With min-h-screen
+              the shell grew to content height, leaving nothing for the inner
+              overflow to scroll — and the document itself couldn't scroll either,
+              so pages (notably on touch devices) were frozen. h-dvh tracks the
+              dynamic viewport so mobile browser chrome doesn't clip the footer. */}
+          <div className="h-dvh flex flex-col w-full relative">
             <AmbientBackground />
             <TopNav />
             <main className="flex-1 min-h-0 overflow-hidden relative z-10">
