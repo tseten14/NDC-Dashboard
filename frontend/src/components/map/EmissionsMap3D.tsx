@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Feature, FeatureCollection, Point } from "geojson";
-import type { MapMouseEvent, GeoJSONSource } from "maplibre-gl";
+import type { MapLayerMouseEvent, GeoJSONSource } from "maplibre-gl";
 import type { MapSourcePoint } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import ugandaGeo from "@/data/uganda-adm2.geo.json";
@@ -79,6 +79,11 @@ export function EmissionsMap3D({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
   const hoverRef = useRef(onPointHover);
+  // rAF handles so mousemove/resize floods collapse to at most one update per
+  // frame (the hover state update re-renders the whole page, and resize during
+  // the header-condense transition would otherwise thrash the GL canvas).
+  const rafRef = useRef({ hover: 0, resize: 0 });
+  const lastHoverKeyRef = useRef<string | null>(null);
   const [ready, setReady] = useState(false);
 
   hoverRef.current = onPointHover;
@@ -117,6 +122,7 @@ export function EmissionsMap3D({
 
   // Mount the map once.
   useEffect(() => {
+    const raf = rafRef.current; // stable ref object; safe to use in cleanup
     const el = containerRef.current;
     if (!el) return;
 
@@ -244,13 +250,20 @@ export function EmissionsMap3D({
           },
         });
 
-        // Hover → tooltip. queryRenderedFeatures on the bubble layer only.
-        const emitHover = (e: MapMouseEvent) => {
-          const feats = map.queryRenderedFeatures(e.point, { layers: [BUBBLE_LAYER] });
-          const f = feats[0];
+        // Hover → tooltip. The layer-scoped event already carries the features
+        // under the cursor (e.features), so no queryRenderedFeatures call is
+        // needed. We rAF-throttle so a flood of mousemove events causes at most
+        // one parent re-render per frame.
+        let pending: MapLayerMouseEvent | null = null;
+        const processHover = () => {
+          raf.hover = 0;
+          const e = pending;
+          pending = null;
+          if (!e) return;
+          const f = e.features?.[0];
           if (!f) {
+            lastHoverKeyRef.current = null;
             hoverRef.current(null, null, e.originalEvent);
-            map.getCanvas().style.cursor = "";
             return;
           }
           const pr = f.properties ?? {};
@@ -264,12 +277,24 @@ export function EmissionsMap3D({
             lng: Number(pr.lng),
             mtco2e: pr.mtco2e == null ? null : Number(pr.mtco2e),
           };
-          map.getCanvas().style.cursor = "pointer";
+          lastHoverKeyRef.current = String(pr.key);
           hoverRef.current(record, String(pr.key), e.originalEvent);
         };
 
-        map.on("mousemove", BUBBLE_LAYER, emitHover);
-        map.on("mouseleave", BUBBLE_LAYER, (e: MapMouseEvent) => {
+        map.on("mousemove", BUBBLE_LAYER, (e: MapLayerMouseEvent) => {
+          pending = e;
+          map.getCanvas().style.cursor = "pointer";
+          if (!raf.hover) {
+            raf.hover = requestAnimationFrame(processHover);
+          }
+        });
+        map.on("mouseleave", BUBBLE_LAYER, (e: MapLayerMouseEvent) => {
+          if (raf.hover) {
+            cancelAnimationFrame(raf.hover);
+            raf.hover = 0;
+          }
+          pending = null;
+          lastHoverKeyRef.current = null;
           map.getCanvas().style.cursor = "";
           hoverRef.current(null, null, e?.originalEvent);
         });
@@ -281,13 +306,26 @@ export function EmissionsMap3D({
         setReady(true);
       });
 
-      resizeObserver = new ResizeObserver(() => map.resize());
+      // Debounce to one resize per frame: the header-condense transition fires
+      // a burst of ResizeObserver callbacks that would otherwise thrash the GL
+      // canvas and stutter.
+      resizeObserver = new ResizeObserver(() => {
+        if (raf.resize) return;
+        raf.resize = requestAnimationFrame(() => {
+          raf.resize = 0;
+          mapRef.current?.resize();
+        });
+      });
       resizeObserver.observe(el);
     })();
 
     return () => {
       disposed = true;
       resizeObserver?.disconnect();
+      if (raf.hover) cancelAnimationFrame(raf.hover);
+      if (raf.resize) cancelAnimationFrame(raf.resize);
+      raf.hover = 0;
+      raf.resize = 0;
       const map = mapRef.current;
       if (map) {
         try {

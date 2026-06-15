@@ -93,8 +93,10 @@ function ProtectedShell() {
             <TopNav />
             <main className="flex-1 min-h-0 overflow-hidden relative z-10">
                 <ErrorBoundary label="Page">
-                {/* Keyed wrapper crossfades page content on route change */}
-                <div key={location.pathname} className="h-full dash-crossfade">
+                {/* Keyed wrapper remounts page content on route change.
+                    No crossfade here: fading heavy pages (e.g. the GL map) on
+                    every navigation caused a visible flash/flicker. */}
+                <div key={location.pathname} className="h-full">
                 <Routes>
                   {/* Main */}
                   <Route path="/" element={<Home />} />

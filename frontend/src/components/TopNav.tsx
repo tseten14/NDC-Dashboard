@@ -92,7 +92,11 @@ export function TopNav() {
     let lastTarget: HTMLElement | null = null;
     const measure = () => {
       frame = 0;
-      if (lastTarget) setCondensed(lastTarget.scrollTop > 48);
+      if (!lastTarget) return;
+      const y = lastTarget.scrollTop;
+      // Hysteresis: condense past 64px, only expand again below 16px. A single
+      // threshold made the header flicker/jump when scrolling near it.
+      setCondensed((prev) => (prev ? y > 16 : y > 64));
     };
     const onScroll = (e: Event) => {
       const el =
