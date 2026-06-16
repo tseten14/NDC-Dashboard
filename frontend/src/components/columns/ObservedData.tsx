@@ -291,9 +291,10 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
     (r) => r.projectedValue != null && r.observedValue == null,
   );
   const showProjection = isProjected && hasProjectionPath;
-  // NDC "path to 2030 goal" target line removed by request — keep the projection clean.
+  // Reference lines removed by request — the projected view is just measured + projected,
+  // no NDC "path to 2030 goal" (yellow) and no "2030 if no extra action" (red BAU) line.
   const projectionShowTarget = false;
-  const projectionShowBau = isProjected && isCapChart && !isDistrictView;
+  const projectionShowBau = false;
   const chartRows = isProjected
     ? scaledProjectedRows
     : scaledChartData.map(({ year, observedValue }) => ({
@@ -443,7 +444,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
 
           <Card className="dash-card-hover dash-fade-up">
             <CardContent className="p-2 pt-3 pb-2">
-              {showNdcTarget && latestObserved?.value != null && ndcGoal != null && (
+              {!isProjected && showNdcTarget && latestObserved?.value != null && ndcGoal != null && (
                 <div className="mb-2 px-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
                   <span className="text-muted-foreground">
                     Latest measured ({latestObserved.year}):{" "}
@@ -528,7 +529,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             </CardContent>
           </Card>
 
-          {showNdcTarget && ndcCompareValue != null && latestObserved?.value != null && (
+          {!isProjected && showNdcTarget && ndcCompareValue != null && latestObserved?.value != null && (
             <MeasuredVsNdcChart
               measuredValue={latestObserved.value}
               measuredYear={latestObserved.year}
