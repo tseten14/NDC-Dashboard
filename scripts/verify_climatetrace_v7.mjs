@@ -9,7 +9,7 @@ import {
   toMtco2e,
   climateTraceUrl,
 } from "../config/climateTrace.js";
-import { getUiSectorTimeseries } from "../services/climateTraceTimeseries.js";
+import { getUiSectorTimeseries } from "../backend/services/climateTraceTimeseries.js";
 
 const YEAR = parseInt(process.env.VERIFY_YEAR || "2023", 10);
 const GADM = "UGA";

@@ -14,7 +14,7 @@ import { spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getEmissionsDashboard } from "../services/emissionsData.js";
+import { getEmissionsDashboard } from "../backend/services/emissionsData.js";
 import { NDC_TARGETS } from "../config/ndcTargets.js";
 import { defaultInventoryRange } from "../config/climateTrace.js";
 

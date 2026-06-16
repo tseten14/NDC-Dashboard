@@ -14,7 +14,7 @@ import {
   parseTopicIds,
   parseTopicLabellers,
   slugFromDocumentUrl,
-} from "../services/policyPassageParser.js";
+} from "../backend/services/policyPassageParser.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
