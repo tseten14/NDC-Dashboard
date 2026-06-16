@@ -358,27 +358,42 @@ export default function MapExplorer() {
 
                 {/* Year / total — right gutter */}
                 <aside className="shrink-0 lg:w-36 xl:w-40 order-3 flex lg:flex-col lg:items-stretch lg:justify-start">
-                  {data && !query.isLoading ? (
+                  {data && !query.isLoading ? (() => {
+                    const sectorRow = highlightedSector
+                      ? data.sectors?.find((s) => s.sector === highlightedSector)
+                      : null;
+                    const shownValue = sectorRow ? sectorRow.mtco2e ?? 0 : data.total_mtco2e ?? 0;
+                    const sectorPct =
+                      sectorRow && data.total_mtco2e
+                        ? ((sectorRow.mtco2e ?? 0) / data.total_mtco2e) * 100
+                        : null;
+                    return (
                     <div className="map-globe-summary rounded-lg border border-white/10 bg-black/45 px-3 py-2.5 text-left lg:text-right shadow-sm">
                       <p className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">{year}</p>
                       <p className="text-xl sm:text-2xl font-bold tabular-nums text-emerald-400 leading-tight">
                         <CountUpNumber
-                          value={data.total_mtco2e ?? 0}
+                          value={shownValue}
                           format={(v) => (v >= 1 ? v.toFixed(1) : v.toFixed(2))}
                           durationMs={1100}
                         />
                       </p>
-                      <p className="text-[9px] text-slate-400">Mt CO₂e mapped</p>
-                      {highlightedSector && (
+                      <p className="text-[9px] text-slate-400">
+                        {sectorRow ? "Mt CO₂e — this sector" : "Mt CO₂e mapped"}
+                      </p>
+                      {sectorRow ? (
                         <p className="mt-2 pt-2 border-t border-white/10 text-[10px] lg:text-right dash-crossfade">
                           <span className="inline-flex items-center gap-1.5">
-                            <span className="h-2 w-2 rounded-full" style={{ background: sectorColor(highlightedSector) }} />
-                            <span className="font-medium text-slate-100">{titleize(highlightedSector)}</span>
+                            <span className="h-2 w-2 rounded-full" style={{ background: sectorColor(highlightedSector!) }} />
+                            <span className="font-medium text-slate-100">{titleize(highlightedSector!)}</span>
                           </span>
+                          {sectorPct != null && (
+                            <span className="block text-slate-400">{sectorPct.toFixed(1)}% of mapped total</span>
+                          )}
                         </p>
-                      )}
+                      ) : null}
                     </div>
-                  ) : (
+                    );
+                  })() : (
                     <div className="rounded-lg border border-dashed border-white/15 px-3 py-4 text-[10px] text-slate-400 text-center lg:text-right">
                       Totals load with map data
                     </div>
