@@ -846,6 +846,24 @@ router.post("/ingest/scan", requireWriteApiKey, uploadMiddleware, async (req, re
       }
     }
 
+    // Persist each scanned file so quick scans are saved (Postgres when
+    // configured, in-memory fallback otherwise) and appear in the jobs list.
+    await Promise.all(
+      files.map((f, i) => {
+        const ext = (f.originalname?.split(".").pop() || "").toLowerCase();
+        const fileType = ext === "json" ? "json" : ext === "pdf" ? "pdf" : "csv";
+        const r = results[i] ?? {};
+        return createIngestJob({
+          filename: f.originalname ?? "upload",
+          fileType,
+          status: r.error ? "failed" : "complete",
+          rowCount: typeof r.rows === "number" ? r.rows : null,
+          errorMessage: r.error ?? null,
+          createdBy: "quick-scan",
+        }).catch((e) => req.log?.warn?.({ err: e }, "scan_job_record_failed"));
+      }),
+    );
+
     const files_failed = results.filter((r) => r.error).length;
     const files_ok = results.length - files_failed;
     const total_warnings = results.reduce((a, r) => a + (r.warnings?.length ?? 0), 0);

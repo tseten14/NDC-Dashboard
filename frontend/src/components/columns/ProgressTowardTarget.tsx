@@ -110,6 +110,39 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
 
   const bau2030 = pr?.bau_2030 ?? bau2030ForTarget(selectedTarget);
 
+  const baselineDisplay =
+    source === "api" && pr
+      ? `Starting point (${pr.baseline_year}): ${pr.baseline_value} ${selectedTarget.unit}`
+      : `Starting point (${selectedTarget.baselineYear}): ${selectedTarget.baselineValue} ${selectedTarget.unit}`;
+
+  const targetDisplay =
+    source === "api" && pr
+      ? isEmissionsCapTarget
+        ? `Emissions limit by ${pr.target_year}: ${pr.target_value} ${selectedTarget.unit}`
+        : `Goal by ${pr.target_year}: ${pr.target_value} ${selectedTarget.unit}`
+      : isEmissionsCapTarget
+        ? `Emissions limit by ${selectedTarget.targetYear}: ${selectedTarget.targetValue} ${selectedTarget.unit}`
+        : `Goal by ${selectedTarget.targetYear}: ${selectedTarget.targetValue} ${selectedTarget.unit}`;
+
+  const bauDisplay =
+    isEmissionsCapTarget && bau2030 != null
+      ? `Without new policies (2030): ${bau2030} ${selectedTarget.unit}`
+      : null;
+
+  const dataUsedLabel =
+    source === "api"
+      ? "Live satellite estimates + official NDC goals"
+      : source === "catalog"
+        ? "National indicators + official NDC goals"
+        : "Latest reported observations";
+
+  const methodLabel =
+    selectedTarget.metricType === "emissions-reduction"
+      ? isEmissionsCapTarget
+        ? "Compare current emissions to what they would be without new policies, and to the 2030 emissions limit."
+        : "Compare current emissions to the reduction promised in the climate pledge."
+      : "Use a related measure as a stand-in for progress.";
+
   const baselineMismatch =
     source === "api" &&
     pr?.baseline_vs_trace_delta_mt != null &&
@@ -257,6 +290,19 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                 selectedTarget={selectedTarget}
                 isEmissionsCapTarget={isEmissionsCapTarget}
               />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-3 text-xs space-y-1.5">
+              <p className="font-semibold text-foreground">How progress is calculated</p>
+              <p><span className="text-muted-foreground">Data:</span> {dataUsedLabel}</p>
+              <p className="text-muted-foreground">{baselineDisplay}</p>
+              {bauDisplay && <p className="text-muted-foreground">{bauDisplay}</p>}
+              <p className="text-muted-foreground">{targetDisplay}</p>
+              <p><span className="text-muted-foreground">Method:</span> {methodLabel}</p>
+              {pr?.scope_note && <p className="text-muted-foreground">{pr.scope_note}</p>}
+              <p className="text-muted-foreground">Poor data quality can lower the status. Missing data shows as &ldquo;Unknown.&rdquo;</p>
             </CardContent>
           </Card>
 
