@@ -36,4 +36,4 @@ Check: `GET /api/v1/ingest/health` → `analysis.python3: true`.
 
 Delivery activities are stored in the browser (`localStorage`) via `frontend/src/lib/activities-store.ts`.
 
-Full feature guide: [../PROJECT_DOCUMENTATION.txt](../PROJECT_DOCUMENTATION.txt). API index: [../docs/README.md](../docs/README.md).
+Full feature guide: [PROJECT_DOCUMENTATION.txt](../../docs/PROJECT_DOCUMENTATION.txt). API index: [../docs/README.md](../docs/README.md).

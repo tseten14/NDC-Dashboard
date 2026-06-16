@@ -2,7 +2,7 @@
 
 Web application for exploring Uganda’s Nationally Determined Contribution (NDC) data: decision-support cockpit, emissions map, climate finance screening, strategy library, climate risk views, and role-based delivery tools.
 
-**Documentation:** [PROJECT_DOCUMENTATION.txt](PROJECT_DOCUMENTATION.txt) (full non-technical + technical reference). Also [docs/README.md](docs/README.md) (architecture, data honesty, deploy). In-app guide at `/docs`.
+**Documentation:** [PROJECT_DOCUMENTATION.txt](docs/PROJECT_DOCUMENTATION.txt) (full non-technical + technical reference). Also [docs/README.md](docs/README.md) (architecture, data honesty, deploy). In-app guide at `/docs`.
 
 ## What you can do (in plain terms)
 

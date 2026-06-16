@@ -1,6 +1,6 @@
 # User guide (repository copy)
 
-The **canonical** long-form guide for non-technical readers is **[PROJECT_DOCUMENTATION.txt](../../PROJECT_DOCUMENTATION.txt)** — Part A (sections A1–A9): features, how each screen works, what results to expect, data honesty, and status colours.
+The **canonical** long-form guide for non-technical readers is **[PROJECT_DOCUMENTATION.txt](../PROJECT_DOCUMENTATION.txt)** — Part A (sections A1–A9): features, how each screen works, what results to expect, data honesty, and status colours.
 
 The in-app **Documentation** tab (`/docs`) renders the same content family from [`frontend/src/data/user-guide-content.ts`](../../frontend/src/data/user-guide-content.ts). When updating help text, edit **both** that TypeScript file and **PROJECT_DOCUMENTATION.txt** § A7.
 

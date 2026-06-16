@@ -464,7 +464,7 @@ ndc-data-explorer/
 | [deploy.md](./deploy.md) | Env vars, Postgres on Vercel |
 | [policy-engine.md](./policy-engine.md) | KCI matching detail |
 | [../guide/user-guide.md](../guide/user-guide.md) | Non-technical index |
-| [../../PROJECT_DOCUMENTATION.txt](../../PROJECT_DOCUMENTATION.txt) | Full feature + API reference |
+| [PROJECT_DOCUMENTATION.txt](../PROJECT_DOCUMENTATION.txt) | Full feature + API reference |
 
 ---
 

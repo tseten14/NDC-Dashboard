@@ -12,7 +12,7 @@ docs/
 
 | Document | Audience | Purpose |
 | -------- | -------- | ------- |
-| [../PROJECT_DOCUMENTATION.txt](../PROJECT_DOCUMENTATION.txt) | **Everyone (primary)** | Full non-technical feature guide (Part A) + technical API/config reference (Part B) |
+| [PROJECT_DOCUMENTATION.txt](./PROJECT_DOCUMENTATION.txt) | **Everyone (primary)** | Full non-technical feature guide (Part A) + technical API/config reference (Part B) |
 | [../README.md](../README.md) | Developers | Quick start, stack, NDC targets, navigation |
 
 ## guide/ — for users
