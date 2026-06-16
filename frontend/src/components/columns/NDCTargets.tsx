@@ -6,11 +6,6 @@ import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronDown, ChevronRight, Database, Satellite } from "lucide-react";
 import { getTargetPlainLanguage } from "@/lib/target-plain-language";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -189,15 +184,14 @@ function TargetCard({
                 </ul>
               </div>
             )}
-            <Collapsible>
-              <CollapsibleTrigger className="text-[10px] text-primary hover:underline flex items-center gap-1">
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-1">
                 Official NDC wording
-                <ChevronRight className="h-3 w-3" />
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-1.5 text-[10px] text-muted-foreground leading-relaxed border-l-2 border-muted pl-2">
+              </p>
+              <p className="text-[10px] text-muted-foreground leading-relaxed border-l-2 border-muted pl-2">
                 {target.targetText}
-              </CollapsibleContent>
-            </Collapsible>
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
               <Dialog>
