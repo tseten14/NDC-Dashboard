@@ -30,13 +30,32 @@ export async function runMigrations(): Promise<void> {
     .filter((f) => f.endsWith(".sql"))
     .sort();
 
-  const hasTargets = await tableExists("targets");
-  if (hasTargets && files.length > 0) {
-    console.log("[db:migrate] Tables already exist — skipping migration apply");
-    return;
+  // Track applied migrations so each file runs once and new migrations reach
+  // existing databases (instead of skipping everything once the schema exists).
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS schema_migrations (
+      filename text PRIMARY KEY,
+      applied_at timestamptz NOT NULL DEFAULT now()
+    )`,
+  );
+  const appliedRes = await pool.query("SELECT filename FROM schema_migrations");
+  const applied = new Set<string>(appliedRes.rows.map((r) => r.filename as string));
+
+  // Databases created before this tracking existed already have the 0000
+  // baseline (which is not idempotent). Mark it applied so it isn't re-run,
+  // then let newer, idempotent migrations apply on top.
+  if (applied.size === 0 && (await tableExists("targets"))) {
+    const baseline = "0000_init.sql";
+    if (files.includes(baseline)) {
+      await pool.query("INSERT INTO schema_migrations (filename) VALUES ($1) ON CONFLICT DO NOTHING", [
+        baseline,
+      ]);
+      applied.add(baseline);
+    }
   }
 
   for (const file of files) {
+    if (applied.has(file)) continue;
     const sql = readFileSync(path.join(migrationsDir, file), "utf8");
     const statements = sql
       .split("--> statement-breakpoint")
@@ -46,6 +65,7 @@ export async function runMigrations(): Promise<void> {
     for (const statement of statements) {
       await pool.query(statement);
     }
+    await pool.query("INSERT INTO schema_migrations (filename) VALUES ($1) ON CONFLICT DO NOTHING", [file]);
     console.log(`[db:migrate] Applied ${file}`);
   }
 }
