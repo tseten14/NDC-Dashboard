@@ -54,7 +54,7 @@ function scanPdf(pdfPath) {
     process.exit(1);
   }
 
-  const ingestScript = join(ROOT, "scripts/ingest_analyze.py");
+  const ingestScript = join(ROOT, "backend/ml/ingest_analyze.py");
   const result = spawnSync("python3", [ingestScript, abs], {
     encoding: "utf8",
     maxBuffer: 20 * 1024 * 1024,

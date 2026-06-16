@@ -61,8 +61,8 @@ async function ensurePythonPredictionDeps() {
     console.log(`→ Python prediction deps ready (torch ${check.stdout.trim()})\n`);
     return;
   }
-  console.log("→ Installing Python prediction deps (requirements-predict.txt)…\n");
-  await run("pip3", ["install", "-r", "requirements-predict.txt"]);
+  console.log("→ Installing Python prediction deps (backend/ml/requirements-predict.txt)…\n");
+  await run("pip3", ["install", "-r", "backend/ml/requirements-predict.txt"]);
   console.log("");
 }
 

@@ -70,7 +70,7 @@ describe("Mock router produces a distinct data_source = 'MOCK' marker", () => {
   it("the mock router's progress handler hardcodes progress_pct=62 and status='mixed'", async () => {
     // If the mock router were accidentally used for live data, these sentinel
     // values would appear in the API response. Confirm they exist in the source.
-    const mockModule = await import("../../../routes/mock/emissions.js");
+    const mockModule = await import("../../../backend/routes/mock/emissions.js");
     // We cannot invoke the router directly in unit tests, but we can confirm
     // the module loads without error and exports a default router.
     expect(mockModule.default).toBeDefined();

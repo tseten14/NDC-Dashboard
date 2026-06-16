@@ -1,0 +1,31 @@
+{
+  "jobId": "7d95401e-99bb-4a76-9a05-5e7c01022c79",
+  "filename": "indicator-import.csv",
+  "fileType": "csv",
+  "columnMapping": {
+    "year": "year",
+    "value": "value",
+    "source": "source",
+    "target_id": "target_id"
+  },
+  "imported_at": "2026-06-16T22:45:54.163Z",
+  "rows_imported": 2,
+  "rows_skipped": 0,
+  "errors": [],
+  "observations": [
+    {
+      "targetId": "daafc25a-0973-5716-9021-e1a0a52e8ff0",
+      "year": 2022,
+      "value": 16.5,
+      "source": "Integration test",
+      "sourceRow": 1
+    },
+    {
+      "targetId": "daafc25a-0973-5716-9021-e1a0a52e8ff0",
+      "year": 2023,
+      "value": 17.2,
+      "source": "Integration test",
+      "sourceRow": 2
+    }
+  ]
+}

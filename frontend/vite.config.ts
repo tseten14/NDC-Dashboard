@@ -46,7 +46,7 @@ export default defineConfig(({ mode }) => {
     setupFiles: ["./src/test/setup.ts"],
     include: [
       "src/**/*.{test,spec}.{ts,tsx}",
-      "../services/**/*.test.js",
+      "../backend/services/**/*.test.js",
       "../shared/**/*.test.js",
     ],
   },

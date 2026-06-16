@@ -3,12 +3,12 @@
  * Verify the 2030 emissions forecaster against live Climate TRACE data.
  *
  * 1. Fetches national sector timeseries via emissionsData (same path as /api/v1/emissions/predictions)
- * 2. Runs scripts/backtest_predictions.py (rolling-origin backtest + training audit)
- * 3. Runs scripts/predict_emissions.py on the same live series
+ * 2. Runs backend/ml/backtest_predictions.py (rolling-origin backtest + training audit)
+ * 3. Runs backend/ml/predict_emissions.py on the same live series
  * 4. Writes scripts/.verify-predictions-report.json and exits non-zero on failed checks
  *
  * Usage: node scripts/verify_predictions.mjs
- * Requires: python3, torch (pip install -r requirements-predict.txt), network for Climate TRACE
+ * Requires: python3, torch (pip install -r backend/ml/requirements-predict.txt), network for Climate TRACE
  */
 import { spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
@@ -22,8 +22,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const SERIES_PATH = join(__dirname, ".verify-predictions-series.json");
 const REPORT_PATH = join(__dirname, ".verify-predictions-report.json");
-const BACKTEST_SCRIPT = join(__dirname, "backtest_predictions.py");
-const PREDICT_SCRIPT = join(__dirname, "predict_emissions.py");
+const BACKTEST_SCRIPT = join(__dirname, "..", "backend", "ml", "backtest_predictions.py");
+const PREDICT_SCRIPT = join(__dirname, "..", "backend", "ml", "predict_emissions.py");
 
 function run(cmd, args, { stdin } = {}) {
   return new Promise((resolve, reject) => {
@@ -115,7 +115,7 @@ async function main() {
   if (minPoints < 5) fail("min_history_points", `Some sectors have <5 points (min=${minPoints})`);
   else pass("min_history_points", `All sectors have ≥5 annual points (min=${minPoints})`);
 
-  console.log("\nRunning rolling-origin backtest (scripts/backtest_predictions.py)…");
+  console.log("\nRunning rolling-origin backtest (backend/ml/backtest_predictions.py)…");
   const { stdout: backtestOut } = await run("python3", [BACKTEST_SCRIPT, SERIES_PATH]);
   const parsed = parseBacktestMetrics(backtestOut);
 
@@ -150,7 +150,7 @@ async function main() {
     fail("backtest_metrics_parse", "Could not parse backtest metrics table");
   }
 
-  console.log("\nRunning 2030 forecast (scripts/predict_emissions.py)…");
+  console.log("\nRunning 2030 forecast (backend/ml/predict_emissions.py)…");
   const { stdout: predictOut } = await run("python3", [PREDICT_SCRIPT], {
     stdin: JSON.stringify(payload),
   });
