@@ -556,23 +556,20 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
 
           <Card>
             <CardContent className="p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Where this data comes from</p>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
-                <span className="text-foreground font-medium">{sourceTypeLabel(observedData.provenance.sourceType)}</span>
-                {observedData.provenance.mrvOwnerMinistry && (
-                  <>
-                    <span className="text-muted-foreground/40">·</span>
-                    <span className="text-muted-foreground">{observedData.provenance.mrvOwnerMinistry}</span>
-                  </>
-                )}
-                {observedData.provenance.lastUpdated && (
-                  <>
-                    <span className="text-muted-foreground/40">·</span>
-                    <span className="text-muted-foreground">
-                      Updated {new Date(observedData.provenance.lastUpdated).toLocaleDateString("en-UG", { day: "numeric", month: "short", year: "numeric" })}
-                    </span>
-                  </>
-                )}
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Where this data comes from</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Button asChild variant="outline" size="sm" className="justify-start text-xs gap-1.5 h-8">
+                  <a href="https://climatetrace.org" target="_blank" rel="noopener noreferrer">
+                    <Satellite className="h-3.5 w-3.5" /> Climate TRACE website
+                    <ExternalLink className="h-3 w-3 ml-auto opacity-70" aria-hidden />
+                  </a>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="justify-start text-xs gap-1.5 h-8">
+                  <a href={CLIMATE_TRACE_API_DOCS_URL} target="_blank" rel="noopener noreferrer">
+                    <CodeXml className="h-3.5 w-3.5" /> Climate TRACE API
+                    <ExternalLink className="h-3 w-3 ml-auto opacity-70" aria-hidden />
+                  </a>
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -633,17 +630,6 @@ function ClimateTraceApiBadge() {
       <ExternalLink className="h-3 w-3 shrink-0 opacity-80" aria-hidden />
     </a>
   );
-}
-
-
-function sourceTypeLabel(type: string): string {
-  const map: Record<string, string> = {
-    "observed-eo": "Observed (Earth Observation)",
-    "observed-emissions-tracing": "Observed (Emissions Tracing)",
-    reported: "Reported (Sector Ministry)",
-    validated: "Validated (National Authority)",
-  };
-  return map[type] || type;
 }
 
 function SectorErrorState({ message }: { message: string }) {
