@@ -66,6 +66,52 @@ const BUBBLE_SOURCE = "emission-bubbles";
 const BUBBLE_LAYER = "emission-bubbles-circles";
 const DISTRICT_SOURCE = "uganda-districts";
 
+function titleizeLabel(s: string): string {
+  return s ? s.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : s;
+}
+
+function fmtMtValue(v: number | null): string {
+  if (v == null || Number.isNaN(v)) return "—";
+  return v >= 1 ? v.toFixed(2) : v.toFixed(3);
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] ?? c));
+}
+
+/** Build the click-popup body for a bubble from its feature properties. */
+function buildPopupHtml(
+  pr: Record<string, unknown>,
+  info: { totalMt: number; sectorColor: (sector: string) => string },
+): string {
+  const name = escapeHtml(String(pr.name ?? "Unnamed source"));
+  const sector = String(pr.sector ?? "");
+  const color = info.sectorColor(sector);
+  const sub = pr.subsector ? ` · ${escapeHtml(titleizeLabel(String(pr.subsector)))}` : "";
+  const mt = pr.mtco2e == null ? null : Number(pr.mtco2e);
+  const isAsset = pr.is_asset === true || pr.is_asset === "true";
+  const kind = isAsset ? "Facility / asset" : "Distributed area emissions";
+  const share = info.totalMt > 0 && mt != null ? (mt / info.totalMt) * 100 : null;
+  const shareLabel =
+    share == null ? "" : share >= 0.1 ? `${share.toFixed(1)}%` : "<0.1%";
+  const lat = Number(pr.lat);
+  const lng = Number(pr.lng);
+  const coords =
+    Number.isFinite(lat) && Number.isFinite(lng) ? `${lat.toFixed(3)}, ${lng.toFixed(3)}` : "—";
+
+  return `
+    <div class="emap-pop">
+      <div class="emap-pop-name">${name}</div>
+      <div class="emap-pop-sector">
+        <span class="emap-pop-dot" style="background:${color}"></span>
+        <span>${escapeHtml(titleizeLabel(sector))}${sub}</span>
+      </div>
+      <div class="emap-pop-value">${fmtMtValue(mt)}<span class="emap-pop-unit"> MtCO₂e / yr</span></div>
+      ${shareLabel ? `<div class="emap-pop-share">${shareLabel} of emissions shown on the map</div>` : ""}
+      <div class="emap-pop-meta">${kind} · ${coords}</div>
+    </div>`;
+}
+
 export function EmissionsMap3D({
   points,
   maxPointMt,
@@ -84,10 +130,21 @@ export function EmissionsMap3D({
   // the header-condense transition would otherwise thrash the GL canvas).
   const rafRef = useRef({ hover: 0, resize: 0 });
   const lastHoverKeyRef = useRef<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const popupRef = useRef<any>(null);
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
   hoverRef.current = onPointHover;
+
+  // Stats the click-popup needs (e.g. share of shown emissions). Kept in a ref
+  // so the click handler — registered once on mount — always reads fresh values.
+  const totalVisibleMt = useMemo(
+    () => points.reduce((sum, p) => sum + (p.mtco2e ?? 0), 0),
+    [points],
+  );
+  const popupInfoRef = useRef({ totalMt: 0, sectorColor });
+  popupInfoRef.current = { totalMt: totalVisibleMt, sectorColor };
 
   // Bubbles as a GeoJSON FeatureCollection — all per-feature styling (radius,
   // colour, dimming) is precomputed into properties so the circle layer can be
@@ -307,6 +364,28 @@ export function EmissionsMap3D({
           hoverRef.current(null, null, e?.originalEvent);
         });
 
+        // Click → pinned popup anchored on the bubble. Hover tooltips are easy
+        // to miss on the pitched 3-D view, so a click opens persistent details
+        // about that source's emissions.
+        const popup = new maplibregl.Popup({
+          closeButton: true,
+          closeOnClick: false,
+          className: "emap-popup",
+          maxWidth: "260px",
+          offset: 10,
+        });
+        popupRef.current = popup;
+        map.on("click", BUBBLE_LAYER, (e: MapLayerMouseEvent) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const pr = (f.properties ?? {}) as Record<string, unknown>;
+          const coords: [number, number] =
+            f.geometry.type === "Point"
+              ? (f.geometry.coordinates as [number, number])
+              : [Number(pr.lng), Number(pr.lat)];
+          popup.setLngLat(coords).setHTML(buildPopupHtml(pr, popupInfoRef.current)).addTo(map);
+        });
+
         // Frame Uganda precisely once the map knows its size.
         map.fitBounds(UGANDA_BOUNDS, { padding: 24, pitch: 55, bearing: -12, duration: 0 });
 
@@ -337,6 +416,14 @@ export function EmissionsMap3D({
       if (raf.resize) cancelAnimationFrame(raf.resize);
       raf.hover = 0;
       raf.resize = 0;
+      if (popupRef.current) {
+        try {
+          popupRef.current.remove();
+        } catch {
+          /* best-effort */
+        }
+        popupRef.current = null;
+      }
       const map = mapRef.current;
       if (map) {
         try {

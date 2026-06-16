@@ -302,7 +302,7 @@ export default function MapExplorer() {
                       })}
                     </ul>
                     <p className="text-[9px] text-slate-400 mt-2 border-t border-white/10 pt-2 leading-snug">
-                      Bubble size ∝ emissions · hover for details · click sector to highlight
+                      Bubble size ∝ emissions · click a bubble for details · click a sector to highlight
                     </p>
                   </div>
                 </aside>

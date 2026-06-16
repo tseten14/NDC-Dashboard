@@ -933,3 +933,68 @@
 .emissions-map .maplibregl-ctrl-attrib-button:hover {
   background-color: rgba(255, 255, 255, 0.12);
 }
+
+/* Emissions map click popup — dark card to match the satellite basemap. */
+.emap-popup .maplibregl-popup-content {
+  background: #0f172a;
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px -8px rgba(0, 0, 0, 0.7);
+  padding: 10px 12px;
+}
+.emap-popup .maplibregl-popup-tip {
+  border-top-color: #0f172a !important;
+  border-bottom-color: #0f172a !important;
+}
+.emap-popup .maplibregl-popup-close-button {
+  color: #94a3b8;
+  font-size: 16px;
+  padding: 0 5px;
+}
+.emap-popup .maplibregl-popup-close-button:hover {
+  background: transparent;
+  color: #e2e8f0;
+}
+.emap-pop-name {
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.25;
+  padding-right: 12px;
+}
+.emap-pop-sector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+.emap-pop-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+.emap-pop-value {
+  margin-top: 7px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #34d399;
+  font-variant-numeric: tabular-nums;
+}
+.emap-pop-unit {
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+}
+.emap-pop-share {
+  margin-top: 3px;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+.emap-pop-meta {
+  margin-top: 6px;
+  font-size: 10px;
+  color: #64748b;
+}
