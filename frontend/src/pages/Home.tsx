@@ -90,7 +90,7 @@ export default function Home() {
 
             <h1 className="hero-headline font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight text-foreground max-w-3xl leading-[1.15]">
               Turn {countryLabel}&apos;s climate commitments into{" "}
-              <span className={HERO_GRADIENT_TEXT}>delivery decisions.</span>
+              <span className={HERO_GRADIENT_TEXT}>implementation decisions.</span>
             </h1>
 
             <p className="mt-4 text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
