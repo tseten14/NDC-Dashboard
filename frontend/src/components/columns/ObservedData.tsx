@@ -554,26 +554,6 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             />
           )}
 
-          <Card>
-            <CardContent className="p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Where this data comes from</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Button asChild variant="outline" size="sm" className="justify-start text-xs gap-1.5 h-8">
-                  <a href="https://climatetrace.org" target="_blank" rel="noopener noreferrer">
-                    <Satellite className="h-3.5 w-3.5" /> Climate TRACE website
-                    <ExternalLink className="h-3 w-3 ml-auto opacity-70" aria-hidden />
-                  </a>
-                </Button>
-                <Button asChild variant="outline" size="sm" className="justify-start text-xs gap-1.5 h-8">
-                  <a href={CLIMATE_TRACE_API_DOCS_URL} target="_blank" rel="noopener noreferrer">
-                    <CodeXml className="h-3.5 w-3.5" /> Climate TRACE API
-                    <ExternalLink className="h-3 w-3 ml-auto opacity-70" aria-hidden />
-                  </a>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
           {(apiSector || usingProxyData) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
               <Dialog>
