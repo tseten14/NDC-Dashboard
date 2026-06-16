@@ -246,6 +246,8 @@ function AnalysisCard({
   );
 }
 
+const CHAT_EXAMPLE = "Is AFOLU on track vs the 2030 pledge?";
+
 interface DashboardAnalyzePanelProps {
   selectedSector: SectorId;
   selectedTarget: NDCTarget | null;
@@ -483,12 +485,17 @@ export function DashboardAnalyzePanel({ selectedSector, selectedTarget }: Dashbo
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             onKeyDown={(e) => {
+              if (e.key === "Tab" && !e.shiftKey && !chatInput.trim()) {
+                e.preventDefault();
+                setChatInput(CHAT_EXAMPLE);
+                return;
+              }
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 runChat(chatInput);
               }
             }}
-            placeholder="e.g. Is AFOLU on track vs the 2030 pledge?"
+            placeholder={`e.g. ${CHAT_EXAMPLE}`}
             className="resize-none text-xs min-h-[36px] max-h-[90px] leading-relaxed"
             rows={1}
             disabled={isLoading}
@@ -503,7 +510,7 @@ export function DashboardAnalyzePanel({ selectedSector, selectedTarget }: Dashbo
           </Button>
         </div>
         <p className="text-[9px] text-muted-foreground/60 mt-1">
-          Uses live dashboard context · Enter to send
+          Uses live dashboard context · Tab for example · Enter to send
         </p>
       </div>
     </div>
