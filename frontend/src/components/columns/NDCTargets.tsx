@@ -4,13 +4,23 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Database, Satellite } from "lucide-react";
 import { getTargetPlainLanguage } from "@/lib/target-plain-language";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ClimateTraceDatasetOverview } from "@/components/dashboard/ClimateTraceDatasetOverview";
+import { ClimateTraceEstimationFlow } from "@/components/dashboard/ClimateTraceEstimationFlow";
 
 interface NDCTargetsProps {
   selectedSector: SectorId;
@@ -188,6 +198,35 @@ function TargetCard({
                 {target.targetText}
               </CollapsibleContent>
             </Collapsible>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="justify-start text-xs gap-1.5 h-8">
+                    <Database className="h-3.5 w-3.5" /> What's in Climate TRACE
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-sm">What&apos;s in Climate TRACE&apos;s dataset</DialogTitle>
+                  </DialogHeader>
+                  <ClimateTraceDatasetOverview />
+                </DialogContent>
+              </Dialog>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="justify-start text-xs gap-1.5 h-8">
+                    <Satellite className="h-3.5 w-3.5" /> How the estimate is made
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-sm">How Climate TRACE estimates emissions</DialogTitle>
+                  </DialogHeader>
+                  <ClimateTraceEstimationFlow />
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         )}
       </CardContent>
