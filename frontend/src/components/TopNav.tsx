@@ -24,7 +24,7 @@ const primary: NavItem[] = [
   { title: "Policy Impact",      url: "/policy-impact",  icon: Workflow },
   { title: "Policy Documents",   url: "/documents",      icon: Scale },
   { title: "Emissions Map",      url: "/map",            icon: MapIcon },
-  { title: "My Work",            url: "/my-work",        icon: Briefcase },
+  { title: "Settings",           url: "/my-work",        icon: Briefcase },
   { title: "Documentation",      url: "/docs",           icon: BookOpen },
 ];
 

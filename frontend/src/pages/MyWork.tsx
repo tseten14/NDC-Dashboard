@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCurrentRole, ALL_ROLES } from "@/hooks/use-current-role";
+import { useCurrentRole } from "@/hooks/use-current-role";
 import {
   listActivitiesByCreator,
   listActivitiesByWorkflow,
@@ -41,16 +41,11 @@ export default function MyWork() {
 
   if (loading) return <div className="p-6 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
 
-  const roleMeta = ALL_ROLES.find((r) => r.id === activeRole);
-
   return (
     <ScrollArea className="h-full">
       <div className="max-w-5xl mx-auto p-4 space-y-3">
         <div>
-          <h1 className="text-base font-semibold">My Work</h1>
-          <p className="text-[11px] text-muted-foreground">
-            Acting as <strong>{roleMeta?.label ?? "—"}</strong>. {roleMeta?.description}
-          </p>
+          <h1 className="text-base font-semibold">Settings</h1>
         </div>
 
         {(activeRole === "ProjectDeveloper" || activeRole === "FieldOfficer" || activeRole === "MinistryDeliveryOfficer" || activeRole === "SeniorDecisionMaker" || activeRole === "Admin") && (

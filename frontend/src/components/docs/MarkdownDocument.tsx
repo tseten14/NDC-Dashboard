@@ -19,18 +19,18 @@ function ensureMermaid() {
     securityLevel: "strict",
     fontFamily: mermaidFont,
     themeVariables: {
-      fontSize: "12px",
+      fontSize: "11px",
       fontFamily: mermaidFont,
     },
     flowchart: {
       useMaxWidth: true,
       htmlLabels: false,
-      padding: 18,
-      nodeSpacing: 40,
-      rankSpacing: 50,
-      wrappingWidth: 220,
+      padding: 10,
+      nodeSpacing: 28,
+      rankSpacing: 36,
+      wrappingWidth: 180,
     },
-    sequence: { useMaxWidth: true, wrap: true, width: 280 },
+    sequence: { useMaxWidth: true, wrap: true, width: 240 },
     state: { useMaxWidth: true, nodeSpacing: 36, rankSpacing: 40 },
   });
   mermaidInitialized = true;
@@ -158,7 +158,7 @@ export function MermaidDiagram({ chart }: { chart: string }) {
   }
 
   return (
-    <div className="not-prose my-4 w-full min-w-0 rounded-md border border-border bg-background p-3 sm:p-4">
+    <div className="not-prose my-4 w-full min-w-0 max-w-2xl mx-auto rounded-md border border-border bg-background p-3 sm:p-4">
       <div
         ref={containerRef}
         className={cn(
