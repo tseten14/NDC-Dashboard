@@ -80,7 +80,7 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
     return <ColumnLoadingState title="Progress" />;
   }
 
-  const { percent, status, source } = emissions.getProgressForTarget(selectedTarget);
+  const { percent, status } = emissions.getProgressForTarget(selectedTarget);
   const districtProgressBlocked = isDistrictProgressBlocked(selectedTarget, emissions.isDistrictView);
   const liveLatest = getLiveLatestForTarget(selectedTarget, {
     progressBySector: emissions.progressBySector,
@@ -130,27 +130,10 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
       ? "The aim here is to bring emissions down from where they are today."
       : "The aim here is to grow this measure toward its 2030 target.";
 
-  const baselineMismatch =
-    source === "api" &&
-    pr?.baseline_vs_trace_delta_mt != null &&
-    (Math.abs(pr.baseline_vs_trace_delta_mt) >= 5 ||
-      (isEmissionsCapTarget &&
-        pr.baseline_value > 0 &&
-        Math.abs(pr.baseline_vs_trace_delta_mt) / pr.baseline_value >= 0.25));
-
   const capPosition =
     isEmissionsCapTarget && bau2030 != null && liveLatest != null
       ? capTargetPosition(liveLatest.value, selectedTarget.targetValue, bau2030)
       : null;
-
-  const capExplainerText =
-    capPosition === "below_cap"
-      ? `Current emissions (${liveLatest?.value} Mt) are within the allowed limit of ${selectedTarget.targetValue} Mt — this counts as full progress, even if emissions ticked up slightly last year.`
-      : capPosition === "between_cap_and_bau"
-        ? `Current emissions are above the allowed limit (${selectedTarget.targetValue} Mt) but still lower than they would be without new policies (${bau2030} Mt) — partial progress.`
-        : capPosition === "above_bau"
-          ? `Current emissions (${liveLatest?.value} Mt) are above both the allowed limit (${selectedTarget.targetValue} Mt) and the no-new-policies level (${bau2030} Mt) — progress is 0% until emissions come back down.`
-          : null;
 
   const zeroProgressNote =
     capPosition === "above_bau"
@@ -203,31 +186,6 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-3">
           {districtNote}
-          {isEmissionsCapTarget && !emissions.isDistrictView && (
-            <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs">
-              <p className="font-medium text-foreground">This is a ceiling target, not a cut from 2015</p>
-              <p className="text-muted-foreground mt-0.5 leading-relaxed">
-                Uganda pledged to stay below {selectedTarget.targetValue} Mt by 2030 — below the expected
-                &ldquo;no extra policy&rdquo; level
-                {bau2030 != null ? ` (${bau2030} Mt)` : ""}. Progress =
-                {" "}(no-policy trend − latest) ÷ (no-policy trend − ceiling) × 100.
-              </p>
-              {capExplainerText && (
-                <p className="text-foreground/90 mt-1.5 leading-relaxed">{capExplainerText}</p>
-              )}
-            </div>
-          )}
-
-          {baselineMismatch && pr && (
-            <div className="p-2 rounded-md bg-muted/40 border border-border text-xs">
-              <p className="font-medium text-foreground">Note: two different ways of counting emissions</p>
-              <p className="text-muted-foreground mt-0.5 leading-relaxed">
-                Uganda&apos;s official inventory baseline ({pr.baseline_value} Mt) and Climate TRACE&apos;s estimate (
-                {pr.latest_value} Mt in {pr.latest_year}) use different methods — that is expected. Progress uses
-                Climate TRACE observations compared to the NDC pledge.
-              </p>
-            </div>
-          )}
 
           <Card className={cn("ring-2 dash-card-hover dash-fade-up", cfg.ring)}>
             <CardContent className="p-4 flex flex-col items-center text-center">
