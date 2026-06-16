@@ -82,18 +82,15 @@ function escapeHtml(s: string): string {
 /** Build the click-popup body for a bubble from its feature properties. */
 function buildPopupHtml(
   pr: Record<string, unknown>,
-  info: { totalMt: number; sectorColor: (sector: string) => string },
+  sectorColor: (sector: string) => string,
 ): string {
   const name = escapeHtml(String(pr.name ?? "Unnamed source"));
   const sector = String(pr.sector ?? "");
-  const color = info.sectorColor(sector);
+  const color = sectorColor(sector);
   const sub = pr.subsector ? ` · ${escapeHtml(titleizeLabel(String(pr.subsector)))}` : "";
   const mt = pr.mtco2e == null ? null : Number(pr.mtco2e);
   const isAsset = pr.is_asset === true || pr.is_asset === "true";
   const kind = isAsset ? "Facility / asset" : "Distributed area emissions";
-  const share = info.totalMt > 0 && mt != null ? (mt / info.totalMt) * 100 : null;
-  const shareLabel =
-    share == null ? "" : share >= 0.1 ? `${share.toFixed(1)}%` : "<0.1%";
   const lat = Number(pr.lat);
   const lng = Number(pr.lng);
   const coords =
@@ -107,7 +104,6 @@ function buildPopupHtml(
         <span>${escapeHtml(titleizeLabel(sector))}${sub}</span>
       </div>
       <div class="emap-pop-value">${fmtMtValue(mt)}<span class="emap-pop-unit"> MtCO₂e / yr</span></div>
-      ${shareLabel ? `<div class="emap-pop-share">${shareLabel} of emissions shown on the map</div>` : ""}
       <div class="emap-pop-meta">${kind} · ${coords}</div>
     </div>`;
 }
@@ -137,14 +133,10 @@ export function EmissionsMap3D({
 
   hoverRef.current = onPointHover;
 
-  // Stats the click-popup needs (e.g. share of shown emissions). Kept in a ref
-  // so the click handler — registered once on mount — always reads fresh values.
-  const totalVisibleMt = useMemo(
-    () => points.reduce((sum, p) => sum + (p.mtco2e ?? 0), 0),
-    [points],
-  );
-  const popupInfoRef = useRef({ totalMt: 0, sectorColor });
-  popupInfoRef.current = { totalMt: totalVisibleMt, sectorColor };
+  // Kept in a ref so the click handler — registered once on mount — always
+  // builds popups with the current sector palette.
+  const sectorColorRef = useRef(sectorColor);
+  sectorColorRef.current = sectorColor;
 
   // Bubbles as a GeoJSON FeatureCollection — all per-feature styling (radius,
   // colour, dimming) is precomputed into properties so the circle layer can be
@@ -383,7 +375,7 @@ export function EmissionsMap3D({
             f.geometry.type === "Point"
               ? (f.geometry.coordinates as [number, number])
               : [Number(pr.lng), Number(pr.lat)];
-          popup.setLngLat(coords).setHTML(buildPopupHtml(pr, popupInfoRef.current)).addTo(map);
+          popup.setLngLat(coords).setHTML(buildPopupHtml(pr, sectorColorRef.current)).addTo(map);
         });
 
         // Frame Uganda precisely once the map knows its size.

@@ -7,12 +7,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
 import { EmissionsMap3D } from "@/components/map/EmissionsMap3D";
 import {
-  Loader2, AlertCircle, Map as MapIcon, Building2, Layers,
+  Loader2, AlertCircle, Map as MapIcon, Layers,
   TrendingUp, TrendingDown, Factory,
 } from "lucide-react";
 import ugandaGeo from "@/data/uganda-adm2.geo.json";
@@ -69,7 +68,6 @@ export default function MapExplorer() {
   const [year, setYear] = useState<number>(2024);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [highlightedSector, setHighlightedSector] = useState<string | null>(null);
-  const [assetsOnly, setAssetsOnly] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState<MapSourcePoint | null>(null);
   const [tip, setTip] = useState({ x: 0, y: 0 });
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -96,10 +94,9 @@ export default function MapExplorer() {
     if (!data) return [];
     return (data.points ?? [])
       .filter((p) => !hidden.has(p.sector))
-      .filter((p) => (assetsOnly ? p.is_asset : true))
       .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
       .sort((a, b) => (a.mtco2e ?? 0) - (b.mtco2e ?? 0));
-  }, [data, hidden, assetsOnly]);
+  }, [data, hidden]);
 
   const districtEmissions = useMemo(() => aggregateByDistrict(visiblePoints), [visiblePoints]);
 
@@ -204,11 +201,6 @@ export default function MapExplorer() {
                     </button>
                   ))}
                 </div>
-                <label className="flex items-center gap-2 text-xs text-sidebar-foreground/80 cursor-pointer">
-                  <Building2 className="h-3.5 w-3.5" />
-                  Assets only
-                  <Switch checked={assetsOnly} onCheckedChange={setAssetsOnly} aria-label="Asset-level only" />
-                </label>
               </div>
             </div>
           </div>
