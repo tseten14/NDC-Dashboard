@@ -19,6 +19,7 @@ import {
   Download,
 } from "lucide-react";
 import { cleanedFilename, cleanedRowsToCsv, downloadCsv } from "@/lib/csvExport";
+import { recordUpload } from "@/lib/uploaded-files-store";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -170,6 +171,7 @@ export function FilesIngest() {
       setUploadResult(result);
       setColumnMapping(result.columnMapping);
       setFileKind(result.fileKind ?? null);
+      recordUpload({ name: file.name, ext, size: file.size, rows: result.rowCount, status: "uploaded" });
       setPipelineFilters(
         result.pipelineDefaults ?? {
           ugandaOnly: Boolean(result.headers.some((h) => /geograph|country|region/i.test(h))),

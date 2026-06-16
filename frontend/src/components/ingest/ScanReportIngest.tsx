@@ -50,6 +50,7 @@ import { cn } from "@/lib/utils";
 
 import { ingestApi, resolveApiHost, applyIngestWriteHeaders } from "@/lib/api";
 import { safeParseOrLog, ingestScanReportSchema } from "@/lib/schemas";
+import { recordUpload } from "@/lib/uploaded-files-store";
 
 const BASE = resolveApiHost();
 const ACCEPTED = ".csv,.json,.txt,.pdf";
@@ -310,6 +311,15 @@ export function ScanReportIngest() {
 
       if (badExt.length) toast.error(`Unsupported type: ${badExt.join(", ")}`);
       if (tooBig.length) toast.error(`Too large (max 20 MB): ${tooBig.join(", ")}`);
+
+      for (const f of accepted) {
+        recordUpload({
+          name: f.name,
+          ext: f.name.split(".").pop() ?? "",
+          size: f.size,
+          status: "scanned",
+        });
+      }
 
       const merged = [...files, ...accepted].slice(0, MAX_FILES);
       if (files.length + accepted.length > MAX_FILES) {
