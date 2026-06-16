@@ -25,7 +25,7 @@ export default function MyWork() {
     setLoading(true);
     setActivities(listActivitiesByCreator(user.id));
 
-    if (activeRole === "MinistryDeliveryOfficer" || activeRole === "Admin") {
+    if (activeRole === "SeniorDecisionMaker" || activeRole === "Admin") {
       setSubmittedForReview(listActivitiesByWorkflow("Submitted"));
     } else {
       setSubmittedForReview([]);
@@ -53,7 +53,7 @@ export default function MyWork() {
           </p>
         </div>
 
-        {(activeRole === "ProjectDeveloper" || activeRole === "FieldOfficer" || activeRole === "MinistryDeliveryOfficer" || activeRole === "Admin") && (
+        {(activeRole === "ProjectDeveloper" || activeRole === "FieldOfficer" || activeRole === "MinistryDeliveryOfficer" || activeRole === "SeniorDecisionMaker" || activeRole === "Admin") && (
           <Card>
             <CardHeader className="py-3 flex flex-row items-center justify-between space-y-0">
               <div>
@@ -77,7 +77,7 @@ export default function MyWork() {
           </Card>
         )}
 
-        {(activeRole === "MinistryDeliveryOfficer" || activeRole === "Admin") && (
+        {(activeRole === "SeniorDecisionMaker" || activeRole === "Admin") && (
           <Card>
             <CardHeader className="py-3 flex flex-row items-center gap-2 space-y-0">
               <ClipboardList className="h-4 w-4 text-chart-4" />

@@ -7,13 +7,16 @@ import { CPR_PASSAGE_ATTRIBUTION, resolveCprLink } from "@/lib/policy-lineage";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ExternalLink, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface OfficialSourcesPanelProps {
   sectorId: SectorId;
   className?: string;
+  /** Render the source list inline (e.g. inside a dialog) without the collapsible trigger. */
+  embedded?: boolean;
 }
 
-export function OfficialSourcesPanel({ sectorId, className }: OfficialSourcesPanelProps) {
+export function OfficialSourcesPanel({ sectorId, className, embedded = false }: OfficialSourcesPanelProps) {
   const curatedQuery = useQuery({
     queryKey: ["documents", "curated", "dashboard", sectorId],
     queryFn: () => documentsApi.curated(sectorId, "dashboard"),
@@ -22,15 +25,8 @@ export function OfficialSourcesPanel({ sectorId, className }: OfficialSourcesPan
 
   const docs = curatedQuery.data?.documents ?? [];
 
-  return (
-    <Collapsible defaultOpen={false} className={className}>
-      <CollapsibleTrigger asChild>
-        <Button variant="outline" size="sm" className="group w-full justify-start text-xs gap-2">
-          <span className="flex-1 text-left">📜 Official sources</span>
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-        </Button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="mt-2 rounded-md border border-border bg-card/80 px-2.5 py-2 space-y-1.5">
+  const body = (
+    <>
         <div className="flex flex-wrap items-center gap-2">
           <ClimatePolicyRadarBadge className="inline-flex items-center gap-1 shrink-0 rounded border border-primary/25 bg-primary/8 px-2 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/12 transition-colors" />
         </div>
@@ -62,6 +58,23 @@ export function OfficialSourcesPanel({ sectorId, className }: OfficialSourcesPan
         <Button variant="link" className="h-auto p-0 text-xs" asChild>
           <Link to="/documents">View all policy documents →</Link>
         </Button>
+    </>
+  );
+
+  if (embedded) {
+    return <div className={cn("space-y-1.5", className)}>{body}</div>;
+  }
+
+  return (
+    <Collapsible defaultOpen={false} className={className}>
+      <CollapsibleTrigger asChild>
+        <Button variant="outline" size="sm" className="group w-full justify-start text-xs gap-2">
+          <span className="flex-1 text-left">📜 Official sources</span>
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-2 rounded-md border border-border bg-card/80 px-2.5 py-2 space-y-1.5">
+        {body}
       </CollapsibleContent>
     </Collapsible>
   );

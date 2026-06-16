@@ -3,16 +3,14 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useCountry } from "@/context/CountryContext";
 import { useCurrentRole } from "@/hooks/use-current-role";
-import { useDemoModeOptional } from "@/hooks/use-demo-mode";
 import { isPrimaryNavVisible } from "@/lib/role-capabilities";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { DemoModeToggle } from "@/components/DemoModePanel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   Upload, Target, Sparkles, Coins, Workflow, Scale, Map as MapIcon, Home,
-  BookOpen, Briefcase, Globe2, Leaf, ChevronRight,
+  BookOpen, Briefcase, Globe2, Leaf,
 } from "lucide-react";
 
 type NavItem = { title: string; url: string; icon: React.ElementType };
@@ -30,61 +28,11 @@ const primary: NavItem[] = [
   { title: "Documentation",      url: "/docs",           icon: BookOpen },
 ];
 
-/** Extra route titles for breadcrumbs (routes not in the primary nav). */
-const EXTRA_TITLES: Record<string, string> = {
-  "/brazil-chat": "Country Chat",
-  "/exports": "Exports & API",
-  "/admin": "Admin",
-  "/risk": "Climate Risk",
-  "/indicators": "Indicators",
-  "/projections": "Projections",
-};
-
-function currentPageTitle(pathname: string): string | null {
-  if (pathname === "/") return null;
-  const exact = primary.find((p) => p.url !== "/" && pathname.startsWith(p.url));
-  if (exact) return exact.title;
-  const extraKey = Object.keys(EXTRA_TITLES).find((k) => pathname.startsWith(k));
-  if (extraKey) return EXTRA_TITLES[extraKey];
-  const seg = pathname.split("/").filter(Boolean)[0] ?? "";
-  return seg ? seg.charAt(0).toUpperCase() + seg.slice(1).replace(/-/g, " ") : null;
-}
-
-function Breadcrumbs() {
-  const { pathname } = useLocation();
-  const { country } = useCountry();
-  const page = currentPageTitle(pathname);
-  return (
-    <nav aria-label="Breadcrumb" className="hidden lg:flex items-center gap-1 text-[11px] text-muted-foreground min-w-0">
-      {country && (
-        <>
-          <span className="flex items-center gap-1 shrink-0">
-            <span className="text-sm leading-none" aria-hidden>{country.flag}</span>
-            {country.name}
-          </span>
-          <ChevronRight className="h-3 w-3 shrink-0 opacity-50" aria-hidden />
-        </>
-      )}
-      <NavLink to="/" end className="hover:text-foreground transition-colors shrink-0" activeClassName="text-foreground font-medium">
-        Home
-      </NavLink>
-      {page && (
-        <>
-          <ChevronRight className="h-3 w-3 shrink-0 opacity-50" aria-hidden />
-          <span className="text-foreground font-medium truncate">{page}</span>
-        </>
-      )}
-    </nav>
-  );
-}
-
 export function TopNav() {
   const { country, clearCountry } = useCountry();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { activeRole } = useCurrentRole();
-  const demo = useDemoModeOptional();
-  const hideNavStrip = demo?.presenterMode && !demo?.sidebarPeek;
   const visiblePrimary = primary.filter((item) => isPrimaryNavVisible(activeRole, item.url));
 
   // Condense the header once page content (in any nested scroll container) scrolls down.
@@ -134,17 +82,25 @@ export function TopNav() {
     visiblePrimary.find((p) => (p.url === "/" ? pathname === "/" : pathname.startsWith(p.url)))?.url ?? null;
 
   useLayoutEffect(() => {
-    const targetUrl = hovered ?? activeUrl;
-    const el = targetUrl != null ? linkRefs.current.get(targetUrl) : undefined;
-    const nav = navRef.current;
-    if (!el || !nav) {
-      setIndicator((s) => ({ ...s, visible: false }));
-      return;
-    }
-    const navBox = nav.getBoundingClientRect();
-    const box = el.getBoundingClientRect();
-    setIndicator({ left: box.left - navBox.left + 8, width: box.width - 16, visible: true });
-  }, [hovered, activeUrl, pathname, visiblePrimary.length]);
+    const measure = () => {
+      const targetUrl = hovered ?? activeUrl;
+      const el = targetUrl != null ? linkRefs.current.get(targetUrl) : undefined;
+      const nav = navRef.current;
+      if (!el || !nav) {
+        setIndicator((s) => ({ ...s, visible: false }));
+        return;
+      }
+      const navBox = nav.getBoundingClientRect();
+      const box = el.getBoundingClientRect();
+      setIndicator({ left: box.left - navBox.left + 8, width: box.width - 16, visible: true });
+    };
+    measure();
+    // The condense transition slides the brand mark + links over 300ms, so the
+    // first measurement reads a mid-transition position. Re-measure once it
+    // settles; the indicator's own CSS transition keeps the move smooth.
+    const t = window.setTimeout(measure, 320);
+    return () => window.clearTimeout(t);
+  }, [hovered, activeUrl, pathname, visiblePrimary.length, condensed]);
 
   return (
     <header
@@ -174,9 +130,6 @@ export function TopNav() {
           </div>
         </NavLink>
 
-        <div className="w-px h-4 bg-border/60 hidden lg:block" />
-        <Breadcrumbs />
-
         <div className="flex-1" />
 
         <div className="flex items-center gap-3">
@@ -199,19 +152,12 @@ export function TopNav() {
           <div className="w-px h-4 bg-border" />
           <ThemeToggle />
           <div className="w-px h-4 bg-border" />
-          <DemoModeToggle />
-          <div className="w-px h-4 bg-border" />
           <RoleSwitcher />
         </div>
       </div>
 
       {/* Nav links strip with sliding active/hover indicator */}
-      <div
-        className={cn(
-          "overflow-x-auto scrollbar-none transition-[height,opacity] duration-300",
-          hideNavStrip ? "h-0 opacity-0 overflow-hidden" : "h-auto opacity-100",
-        )}
-      >
+      <div className="overflow-x-auto scrollbar-none h-auto opacity-100">
         <nav
           ref={navRef}
           className="relative flex items-center gap-0 px-4 min-w-max"

@@ -1,8 +1,8 @@
 # User guide (repository copy)
 
-The **canonical** long-form guide for non-technical readers is **[PROJECT_DOCUMENTATION.txt](../PROJECT_DOCUMENTATION.txt)** — Part A (sections A1–A9): features, how each screen works, what results to expect, data honesty, and status colours.
+The **canonical** long-form guide for non-technical readers is **[PROJECT_DOCUMENTATION.txt](../../PROJECT_DOCUMENTATION.txt)** — Part A (sections A1–A9): features, how each screen works, what results to expect, data honesty, and status colours.
 
-The in-app **Documentation** tab (`/docs`) renders the same content family from [`frontend/src/data/user-guide-content.ts`](../frontend/src/data/user-guide-content.ts). When updating help text, edit **both** that TypeScript file and **PROJECT_DOCUMENTATION.txt** § A7.
+The in-app **Documentation** tab (`/docs`) renders the same content family from [`frontend/src/data/user-guide-content.ts`](../../frontend/src/data/user-guide-content.ts). When updating help text, edit **both** that TypeScript file and **PROJECT_DOCUMENTATION.txt** § A7.
 
 ---
 
@@ -48,6 +48,6 @@ Strategy Library, My Work (browser-only), Climate Risk (illustrative seed data) 
 
 | Doc | Purpose |
 | --- | ------- |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Routes, API, folders |
-| [DATA_AND_CATALOG.md](./DATA_AND_CATALOG.md) | Live vs indicative data |
-| [DEPLOY-VERCEL.md](./DEPLOY-VERCEL.md) | Hosting |
+| [../dev/architecture.md](../dev/architecture.md) | Routes, API, folders |
+| [data.md](./data.md) | Live vs indicative data |
+| [../dev/deploy.md](../dev/deploy.md) | Hosting |

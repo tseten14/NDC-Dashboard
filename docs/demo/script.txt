@@ -1,0 +1,74 @@
+==============================================================================
+  NDC DATA EXPLORER — DEMO SCRIPT
+==============================================================================
+
+Primary script (5 minutes):  see  notes.txt
+                              (timed lines, clicks, and fallbacks).
+
+Live site:  https://ndc-data-explorer-e051f914.vercel.app
+
+
+------------------------------------------------------------------------------
+  QUICK START
+------------------------------------------------------------------------------
+
+  1. Open the live site and select  UGANDA.
+  2. Go to the dashboard with Transport pre-selected:
+
+         /dashboard?sector=transport
+
+  3. Press  F11  for fullscreen.
+
+  Before stage: pre-warm the production URL ~2 minutes early and open  /map
+  in a background tab. Do NOT set USE_MOCK_DATA=true — it breaks the map and
+  dashboard routes.
+
+
+------------------------------------------------------------------------------
+  SUGGESTED WALKTHROUGH (Uganda · Transport)
+------------------------------------------------------------------------------
+
+  Dashboard   /dashboard?sector=transport   Targets + live Climate TRACE data
+  Map         /map                          3D GIS bubbles, satellite terrain
+  Documents   /documents?tab=pathway        Policy intervention pathway
+  Finance     /climate-finance              Cost / abatement (MAC) screening
+  NDC AI      /dashboard  (NDC AI panel)     Tab -> example question -> send
+
+  Punchline: from reporting to decision support — one operational system for
+  NDC delivery.
+
+
+------------------------------------------------------------------------------
+  POWERPOINT DECK
+------------------------------------------------------------------------------
+
+  File:  docs/demo/deck.pptx  (13 slides)
+
+  Regenerate with:
+
+      pip install python-pptx
+      python3 scripts/build_demo_deck.py
+
+  Contents: title, problem, cockpit architecture, system architecture,
+  Climate TRACE pipeline, three layers of truth, dashboard, NDC AI + 3D GIS,
+  satellite-to-decision, policy & finance, live walkthrough, challenges,
+  future roadmap.
+
+  Screenshots live in  docs/demo/screenshots/  (replace before regenerating):
+
+      dashboard-transport.png
+      map-uganda.png
+      ai-2030.png
+      documents-pathway.png
+      climate-finance.png
+
+
+------------------------------------------------------------------------------
+  HEALTH CHECK
+------------------------------------------------------------------------------
+
+  Before presenting, confirm the API is warm:
+
+      /api/v1/health/full
+
+==============================================================================

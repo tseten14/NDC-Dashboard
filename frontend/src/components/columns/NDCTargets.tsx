@@ -2,17 +2,15 @@ import { useEffect, useState } from "react";
 import { type NDCTarget, type SectorId, getTargetsForSector, sectorDefinitions } from "@/data/uganda-ndc-data";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronDown, ChevronRight, Link2 } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { getTargetPlainLanguage } from "@/lib/target-plain-language";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { toast } from "sonner";
 
 interface NDCTargetsProps {
   selectedSector: SectorId;
@@ -55,15 +53,6 @@ export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTar
       })).filter(g => g.targets.length > 0)
     : [{ sector: sectorDefinitions.find(s => s.id === selectedSector)!, targets }];
 
-  const handleShareUrl = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      toast.success("Copied!", { duration: 2000 });
-    } catch {
-      toast.error("Could not copy URL");
-    }
-  };
-
   const handleTargetClick = (targetId: string) => {
     onSelectTarget(targetId);
     setExpandedTargetId(targetId);
@@ -82,23 +71,8 @@ export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTar
   return (
     <div className="flex flex-col h-full">
       <div className="px-3 py-2.5 border-b border-border dash-section-header">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">NDC Targets</h3>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{targets.length} target{targets.length !== 1 ? "s" : ""}</p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-6 text-[10px] gap-1 shrink-0"
-            onClick={handleShareUrl}
-            title="Copy shareable link to this target"
-          >
-            <Link2 className="h-3 w-3" />
-            Share
-          </Button>
-        </div>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">NDC Targets</h3>
+        <p className="text-[10px] text-muted-foreground mt-0.5">{targets.length} target{targets.length !== 1 ? "s" : ""}</p>
       </div>
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-3">

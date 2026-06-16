@@ -17,12 +17,6 @@ import { AuthGate } from "@/components/AuthGate";
 import { CountryGate } from "@/components/CountryGate";
 import { CountryProvider } from "@/context/CountryContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { DemoModeProvider } from "@/hooks/use-demo-mode";
-import {
-  DemoModePanel,
-  DemoModeToggle,
-  DemoPresenterController,
-} from "@/components/DemoModePanel";
 import NotFound from "./pages/NotFound.tsx";
 import CountrySelect from "./pages/CountrySelect.tsx";
 
@@ -97,11 +91,9 @@ function ProtectedShell() {
     <AppStateContext.Provider value={state}>
       <EmissionsDataProvider>
       <CockpitProvider>
-      <DemoModeProvider>
           <div className="h-dvh flex flex-col w-full relative">
             <AmbientBackground />
             <TopNav />
-            <DemoPresenterController />
             <main className="flex-1 min-h-0 overflow-hidden relative z-10">
                 <ErrorBoundary label="Page">
                 {/* Keyed wrapper remounts page content on route change.
@@ -167,10 +159,8 @@ function ProtectedShell() {
                 </ErrorBoundary>
               </main>
             <ScrollToTopButton />
-            <DemoModePanel />
             <Footer />
           </div>
-      </DemoModeProvider>
       </CockpitProvider>
       </EmissionsDataProvider>
     </AppStateContext.Provider>
@@ -179,7 +169,7 @@ function ProtectedShell() {
 
 const App = () => (
   <ErrorBoundary>
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />

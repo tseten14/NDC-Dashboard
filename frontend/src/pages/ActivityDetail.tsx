@@ -7,6 +7,7 @@ import {
   setActivityWorkflow,
   approveTargetLink,
   addValidation,
+  type WorkflowState,
 } from "@/lib/activities-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { WorkflowBadge, ValidationBadge } from "@/components/WorkflowBadge";
 import { Textarea } from "@/components/ui/textarea";
 import { findTargetById } from "@/data/strategy-targets-flat";
-import { ArrowLeft, Edit, Send, Check, Undo2, ShieldCheck, Loader2, MessagesSquare } from "lucide-react";
+import { ArrowLeft, Edit, Send, Check, X, Clock, ShieldCheck, Loader2, MessagesSquare } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -32,8 +33,10 @@ export default function ActivityDetail() {
   const [validations, setValidations] = useState<any[]>([]);
   const [audit, setAudit] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [returnDialog, setReturnDialog] = useState(false);
-  const [returnNote, setReturnNote] = useState("");
+  const [decision, setDecision] = useState<
+    { state: WorkflowState; title: string; cta: string; requireNote?: boolean } | null
+  >(null);
+  const [decisionNote, setDecisionNote] = useState("");
   const [validateOpen, setValidateOpen] = useState<{ entity: string; entityId: string } | null>(null);
   const [vStatus, setVStatus] = useState("Verified");
   const [vNotes, setVNotes] = useState("");
@@ -57,7 +60,7 @@ export default function ActivityDetail() {
 
   useEffect(() => { load(); }, [load]);
 
-  const transition = async (next: "Submitted" | "Approved" | "Returned" | "Draft", note?: string) => {
+  const transition = async (next: WorkflowState, note?: string) => {
     if (!user || !id) return;
     try {
       setActivityWorkflow(id, next);
@@ -97,7 +100,9 @@ export default function ActivityDetail() {
   const isOwner = user?.id === activity.created_by;
   const canEditDraft = isOwner && (activity.workflow_state === "Draft" || activity.workflow_state === "Returned");
   const canSubmit = isOwner && activity.workflow_state === "Draft";
-  const canApprove = canApproveMapping() && activity.workflow_state === "Submitted";
+  const canApprove =
+    canApproveMapping() &&
+    (activity.workflow_state === "Submitted" || activity.workflow_state === "Pending");
 
   const validationFor = (outputId: string) => validations.filter(v => v.entity_id === outputId);
 
@@ -112,8 +117,9 @@ export default function ActivityDetail() {
             {canEditDraft && <Button size="sm" variant="outline" onClick={() => nav(`/activities/${id}/edit`)} className="h-7 text-xs gap-1"><Edit className="h-3 w-3" /> Edit</Button>}
             {canSubmit && <Button size="sm" onClick={() => transition("Submitted")} className="h-7 text-xs gap-1"><Send className="h-3 w-3" /> Submit for review</Button>}
             {canApprove && <>
-              <Button size="sm" onClick={() => transition("Approved")} className="h-7 text-xs gap-1"><Check className="h-3 w-3" /> Approve</Button>
-              <Button size="sm" variant="outline" onClick={() => setReturnDialog(true)} className="h-7 text-xs gap-1"><Undo2 className="h-3 w-3" /> Return</Button>
+              <Button size="sm" onClick={() => { setDecision({ state: "Approved", title: "Approve activity", cta: "Approve" }); setDecisionNote(""); }} className="h-7 text-xs gap-1"><Check className="h-3 w-3" /> Approve</Button>
+              <Button size="sm" variant="outline" onClick={() => { setDecision({ state: "Declined", title: "Decline activity", cta: "Decline", requireNote: true }); setDecisionNote(""); }} className="h-7 text-xs gap-1"><X className="h-3 w-3" /> Decline</Button>
+              <Button size="sm" variant="outline" onClick={() => { setDecision({ state: "Pending", title: "Mark as pending", cta: "Set pending", requireNote: true }); setDecisionNote(""); }} className="h-7 text-xs gap-1"><Clock className="h-3 w-3" /> Pending</Button>
             </>}
           </div>
         </div>
@@ -217,13 +223,29 @@ export default function ActivityDetail() {
         </Card>
       </div>
 
-      <Dialog open={returnDialog} onOpenChange={setReturnDialog}>
+      <Dialog open={!!decision} onOpenChange={(o) => { if (!o) { setDecision(null); setDecisionNote(""); } }}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle className="text-sm">Return for edits</DialogTitle></DialogHeader>
-          <Textarea value={returnNote} onChange={e => setReturnNote(e.target.value)} placeholder="What needs to change?" className="text-xs" />
+          <DialogHeader><DialogTitle className="text-sm">{decision?.title}</DialogTitle></DialogHeader>
+          <Textarea
+            value={decisionNote}
+            onChange={e => setDecisionNote(e.target.value)}
+            placeholder={decision?.requireNote ? "Add a comment (required)" : "Add a comment (optional)"}
+            className="text-xs"
+          />
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setReturnDialog(false)}>Cancel</Button>
-            <Button size="sm" onClick={() => { transition("Returned", returnNote); setReturnDialog(false); setReturnNote(""); }}>Return</Button>
+            <Button variant="outline" size="sm" onClick={() => { setDecision(null); setDecisionNote(""); }}>Cancel</Button>
+            <Button
+              size="sm"
+              disabled={!!decision?.requireNote && !decisionNote.trim()}
+              onClick={() => {
+                if (!decision) return;
+                transition(decision.state, decisionNote.trim() || undefined);
+                setDecision(null);
+                setDecisionNote("");
+              }}
+            >
+              {decision?.cta}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

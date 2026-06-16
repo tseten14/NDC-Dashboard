@@ -1,5 +1,20 @@
 import type { AppRole } from "@/hooks/use-current-role";
 
+/**
+ * Officer roles: restricted to the My Work tab only (create/submit/validate tickets).
+ * Full-access roles (Senior Decision-Maker, Admin) see every tab and approve tickets.
+ */
+export const MY_WORK_ONLY_ROLES: AppRole[] = [
+  "ProjectDeveloper",
+  "FieldOfficer",
+  "MinistryDeliveryOfficer",
+  "MRVOfficer",
+];
+
+export function isMyWorkOnlyRole(role: AppRole | null): boolean {
+  return role != null && MY_WORK_ONLY_ROLES.includes(role);
+}
+
 export type DashboardMode = "briefing" | "mrv" | "field" | "standard" | "admin";
 export type ExportFormat = "excel" | "pdf" | "csv";
 
@@ -52,17 +67,11 @@ export function getDashboardPresets(role: AppRole | null): DashboardPresets {
 }
 
 export function getDefaultRoute(role: AppRole | null): string {
+  // Officer roles land on My Work — their only tab.
+  if (isMyWorkOnlyRole(role)) return "/my-work";
   switch (role) {
     case "SeniorDecisionMaker":
       return "/";
-    case "MRVOfficer":
-      return "/dashboard?sector=afolu";
-    case "FieldOfficer":
-      return "/dashboard";
-    case "ProjectDeveloper":
-      return "/my-work";
-    case "MinistryDeliveryOfficer":
-      return "/dashboard";
     case "Admin":
       return "/admin";
     default:
@@ -88,51 +97,46 @@ export function getDashboardMode(role: AppRole | null): DashboardMode {
 export function getRoleContextMessage(role: AppRole | null): string {
   switch (role) {
     case "SeniorDecisionMaker":
-      return "Briefing mode — read-only; PDF export available; activity edits disabled.";
+      return "Full access — every tab plus approval of activities (tickets) submitted by officers in My Work.";
     case "MRVOfficer":
-      return "MRV mode — verification tools emphasized; full export formats.";
+      return "My Work — validate and QA submitted outputs.";
     case "MinistryDeliveryOfficer":
-      return "Programme mode — create and approve activities; check approvals queue in My Work.";
+      return "My Work — create and submit activities for approval.";
     case "FieldOfficer":
-      return "Field mode — district geography default; map and local sources emphasized.";
+      return "My Work — log and submit field activities.";
     case "ProjectDeveloper":
-      return "Project mode — create activities and track delivery in My Work.";
+      return "My Work — create activities and track delivery.";
     case "Admin":
-      return "Admin — full workflow and configuration access.";
+      return "Admin — full workflow, approvals, and configuration access.";
     default:
       return "Select a role to tailor the workspace.";
   }
 }
 
 export function canExport(role: AppRole | null, format: ExportFormat): boolean {
-  if (!role) return true;
-  if (role === "SeniorDecisionMaker") return format === "pdf";
+  // Every role may export in any format.
+  void role;
+  void format;
   return true;
 }
 
 export function canUseIngest(role: AppRole | null): boolean {
   if (!role) return true;
-  return role === "MRVOfficer" || role === "Admin" || role === "MinistryDeliveryOfficer";
+  return (
+    role === "MRVOfficer" ||
+    role === "Admin" ||
+    role === "MinistryDeliveryOfficer" ||
+    role === "SeniorDecisionMaker"
+  );
 }
 
 export function shouldShowAdvancedNav(role: AppRole | null): boolean {
   return role !== "SeniorDecisionMaker";
 }
 
-function isDemoModeNavOverride(): boolean {
-  if (typeof window === "undefined") return false;
-  return (
-    new URLSearchParams(window.location.search).get("demo") === "1" ||
-    sessionStorage.getItem("uganda-ndc-demo-mode") === "1"
-  );
-}
-
 export function isPrimaryNavVisible(role: AppRole | null, url: string): boolean {
-  const demo = isDemoModeNavOverride();
-  if (url === "/ingest" && role === "SeniorDecisionMaker") return false;
-  if (url === "/climate-finance" && (role === "SeniorDecisionMaker" || role === "FieldOfficer") && !demo) {
-    return false;
-  }
+  // Officer roles only see the My Work tab. Senior Decision-Maker and Admin see everything.
+  if (isMyWorkOnlyRole(role)) return url === "/my-work";
   return true;
 }
 
@@ -167,30 +171,30 @@ export function getHomeRoleStartHere(role: AppRole | null): {
     case "SeniorDecisionMaker":
       return {
         title: "As Senior Decision-Maker",
-        bullets: ["Open Dashboard for national on-track summary", "Export PDF briefing", "No activity edits in this mode"],
+        bullets: ["Full access to every tab", "Approve activities submitted by officers", "Export briefings in any format"],
         to: "/dashboard",
         cta: "Open Dashboard",
       };
     case "MRVOfficer":
       return {
         title: "As MRV Officer",
-        bullets: ["Review spatial certainty and trackability", "Export CRT/BTR-style CSV", "Verify outputs in My Work"],
-        to: "/dashboard?sector=afolu",
-        cta: "Open MRV dashboard",
+        bullets: ["Validate and QA submitted outputs", "Work the validation queue", "All in My Work"],
+        to: "/my-work",
+        cta: "Go to My Work",
       };
     case "MinistryDeliveryOfficer":
       return {
         title: "As Ministry Delivery Officer",
-        bullets: ["Find IMPL. GAPS targets on Dashboard", "Approve submitted activities", "Browse policy documents"],
-        to: "/dashboard",
-        cta: "Open Dashboard",
+        bullets: ["Create activities linked to targets", "Submit for approval", "Track status in My Work"],
+        to: "/my-work",
+        cta: "Go to My Work",
       };
     case "FieldOfficer":
       return {
         title: "As Field Officer",
-        bullets: ["Switch Dashboard to District view", "Use Emissions Map for local sources", "Log activities from the field"],
-        to: "/map",
-        cta: "Open Emissions Map",
+        bullets: ["Log activities from the field", "Submit for approval", "Track status in My Work"],
+        to: "/my-work",
+        cta: "Go to My Work",
       };
     case "ProjectDeveloper":
       return {
@@ -222,7 +226,7 @@ export function getWorkQueueBadgeCount(
 ): number {
   if (!role) return 0;
   if (role === "Admin") return counts.approvals + counts.verifications;
-  if (role === "MinistryDeliveryOfficer") return counts.approvals;
+  if (role === "SeniorDecisionMaker") return counts.approvals;
   if (role === "MRVOfficer") return counts.verifications;
   return 0;
 }

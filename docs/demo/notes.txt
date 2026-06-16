@@ -1,0 +1,150 @@
+==============================================================================
+  NDC DATA EXPLORER — 5-MINUTE SPEAKER NOTES
+==============================================================================
+
+Live site:  https://ndc-data-explorer-e051f914.vercel.app
+Start here:  /dashboard?sector=transport
+
+Print this page and keep it beside your laptop during the demo.
+
+
+------------------------------------------------------------------------------
+  PRE-FLIGHT (30 seconds)
+------------------------------------------------------------------------------
+
+  1. Open the production URL, then select  UGANDA.
+  2. Go to  /dashboard?sector=transport  (Transport pre-selected).
+  3. Press  F11  for fullscreen.
+  4. Pre-warm  /map  in a background tab (avoids cold-start delay).
+  5. Close extra browser tabs.
+
+  Tip: open the dashboard, the map, and the NDC AI panel once before you go
+  on stage so the Climate TRACE API and OpenAI calls are already warm.
+
+
+------------------------------------------------------------------------------
+  TIMED SCRIPT
+------------------------------------------------------------------------------
+
+  0:00  | DASHBOARD (Transport)
+        | Action: pause on the Transport sector.
+        | Say: "Governments don't lack climate ambition — they lack a live
+        |       picture of delivery. This cockpit answers that in one
+        |       workspace."
+
+  0:25  | DASHBOARD
+        | Action: point at the Climate TRACE banner.
+        | Say: "Not a static PDF — observed emissions, updated from satellite
+        |       and facility data."
+
+  0:40  | DASHBOARD
+        | Action: name the five operational questions.
+        | Say: "Ministries ask five questions: where we are, what moves the
+        |       needle, policy impact, gaps vs target, and what to prioritise
+        |       next."
+
+  1:00  | DASHBOARD
+        | Action: scroll the progress column / timeseries.
+        | Say: "Here: Uganda's transport target, pledges, and progress in one
+        |       view — targets linked to evidence."
+
+  1:25  | EMISSIONS MAP  (/map)
+        | Action: zoom to Uganda; point at hotspots.
+        | Say: "Spatial layer — see where emissions actually come from, down
+        |       to assets and districts."
+
+  2:00  | POLICY DOCUMENTS  (/documents?tab=pathway)
+        | Action: show the intervention pathway.
+        | Say: "Policies aren't separate from data — documents and measures
+        |       trace back to NDC outcomes."
+
+  2:25  | CLIMATE FINANCE  (/climate-finance)
+        | Action: move the carbon-price slider once.
+        | Say: "Decision support: compare options by cost, abatement, and
+        |       trade-offs — not abstract targets."
+
+  2:55  | DASHBOARD — NDC AI
+        | Action: open NDC AI; press Tab to fill an example question; send.
+        | Say: "Ask in plain language — 'Are we on track for transport?' —
+        |       grounded in this country's data."
+
+  3:35  | DASHBOARD
+        | Action: stop clicking; look at the audience.
+        | Say: "The shift: from reporting to decision support. From fragmented
+        |       files to one operational system."
+
+  4:00  | (verbal / slide: Challenges)
+        | Say: "Honest challenges: mixed data sources, API warm-up, and
+        |       adoption across ministries — not a UNFCCC submission tool."
+
+  4:25  | (verbal / slide: Future)
+        | Say: "Next: a searchable policy corpus per country, and a mobile app
+        |       for field MRV and district briefings."
+
+  4:45  | (verbal close)
+        | Say: "Uganda NDC Data Explorer — live Climate TRACE data. Happy to
+        |       take questions."
+
+  Target duration: 4:45 - 5:15 with natural pauses.
+
+
+------------------------------------------------------------------------------
+  IF RUNNING LONG — SKIP ONE
+------------------------------------------------------------------------------
+
+  - Skip the map (saves ~35s): stay on the dashboard through 2:00.
+  - Skip NDC AI (saves ~40s): go straight to the punchline at 3:35.
+
+
+------------------------------------------------------------------------------
+  IF RUNNING SHORT — DWELL ON
+------------------------------------------------------------------------------
+
+  - Dashboard progress column and timeseries (1:00).
+  - Climate finance slider + MAC chart (2:25).
+
+
+------------------------------------------------------------------------------
+  EMERGENCY ONE-LINERS
+------------------------------------------------------------------------------
+
+  Map slow to load:
+    "Satellite layer is loading — the architecture is live; on a cold start
+     it can take a moment."
+
+  NDC AI error:
+    "The AI assistant uses live API keys — I'll show the dashboard evidence
+     instead."
+
+  Risk question:
+    "Risk screening is an illustrative prototype — adaptation geography is on
+     the roadmap."
+
+  AI 2030 badge:
+    "Forecasts use a lightweight model on serverless — the full Python model
+     runs locally."
+
+  Do NOT say: "mock data", "bug", "we didn't finish", "this route is legacy".
+
+
+------------------------------------------------------------------------------
+  DECK + LIVE COMBO (~5 min total on stage)
+------------------------------------------------------------------------------
+
+  If you only have five minutes for everything:
+
+    1. Slides 1-3 (1 min)  — problem + solution.
+    2. Live: dashboard -> documents -> finance (2.5 min).
+    3. Slide 13 future + close (1.5 min).
+
+  Skip the screenshot slides during a tight slot.
+
+
+------------------------------------------------------------------------------
+  AFTER DEMO — PANEL BRIDGE (optional)
+------------------------------------------------------------------------------
+
+  "The key question now is: what would it take to make systems like this
+   usable — and scalable — across countries?"
+
+==============================================================================

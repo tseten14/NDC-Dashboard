@@ -113,16 +113,18 @@ export function CurrentRoleProvider({ children }: { children: ReactNode }) {
       activeRole === "ProjectDeveloper" ||
       activeRole === "FieldOfficer" ||
       activeRole === "MinistryDeliveryOfficer" ||
+      activeRole === "SeniorDecisionMaker" ||
       activeRole === "Admin",
     [activeRole],
   );
   const canEditActivityAsCreator = useCallback(() => canCreateActivity(), [canCreateActivity]);
+  // Officers submit tickets; Senior Decision-Makers and Admins approve them.
   const canApproveMapping = useCallback(
-    () => activeRole === "MinistryDeliveryOfficer" || activeRole === "Admin",
+    () => activeRole === "SeniorDecisionMaker" || activeRole === "Admin",
     [activeRole],
   );
   const canVerify = useCallback(() => activeRole === "MRVOfficer" || activeRole === "Admin", [activeRole]);
-  const isReadOnly = useCallback(() => activeRole === "SeniorDecisionMaker", [activeRole]);
+  const isReadOnly = useCallback(() => false, []);
 
   const roleDefaultRoute = useCallback(() => getDefaultRoute(activeRole), [activeRole]);
   const roleDashboardMode = useCallback(() => getDashboardMode(activeRole), [activeRole]);

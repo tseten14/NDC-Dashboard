@@ -1,6 +1,6 @@
 /**
  * Plain-language user guide content (in-app Documentation tab at /docs → User guide).
- * System design lives in docs/SYSTEM_DESIGN.md (rendered on the System design tab).
+ * System design lives in docs/dev/system-design.md (rendered on the System design tab).
  * Keep in sync with PROJECT_DOCUMENTATION.txt Part A (especially § A7).
  */
 

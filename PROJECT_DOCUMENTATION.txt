@@ -552,11 +552,11 @@ B6. REPOSITORY DOCUMENTATION (2026)
 
   Markdown supplements:
     README.md                 — quick start, navigation table, NDC target summary
-    docs/README.md            — index of all doc files
-    docs/ARCHITECTURE.md      — routes, folders, state, dev proxy
-    docs/USER_GUIDE.md        — abbreviated feature guide (points to this .txt for full detail)
-    docs/DATA_AND_CATALOG.md  — live vs indicative vs localStorage honesty table
-    docs/DEPLOY-VERCEL.md     — production hosting
+    docs/README.md               — index of all doc files
+    docs/dev/architecture.md     — routes, folders, state, dev proxy
+    docs/guide/user-guide.md     — abbreviated feature guide (points to this .txt for full detail)
+    docs/guide/data.md           — live vs indicative vs localStorage honesty table
+    docs/dev/deploy.md           — production hosting
 
   In-app only (not a substitute for this .txt in the repo):
     /docs tab — renders frontend/src/data/user-guide-content.ts (update A7 and that file together)

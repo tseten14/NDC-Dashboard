@@ -2,7 +2,7 @@
 
 const STORAGE_KEY = "uganda-ndc-activities-v1";
 
-export type WorkflowState = "Draft" | "Submitted" | "Approved" | "Returned";
+export type WorkflowState = "Draft" | "Submitted" | "Approved" | "Returned" | "Declined" | "Pending";
 
 export interface StoredActivity {
   id: string;

@@ -5,7 +5,6 @@ import { useAppContext } from "@/hooks/use-app-state";
 import { useCurrentRole } from "@/hooks/use-current-role";
 import { DASHBOARD_MODE_LABELS, getDashboardPresets } from "@/lib/role-capabilities";
 import { AlertCircle } from "lucide-react";
-import { TargetStatusSummary } from "@/components/TargetStatusSummary";
 import { NdcGapSummary } from "@/components/NdcGapSummary";
 import { DataCoveragePanel } from "@/components/DataCoveragePanel";
 import { NDCTargetsColumn } from "@/components/columns/NDCTargets";
@@ -23,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Download, FileSpreadsheet, FileText, Sparkles } from "lucide-react";
+import { RefreshCw, Download, FileSpreadsheet, FileText, Sparkles, ChevronDown, LayoutList } from "lucide-react";
 import { DashboardAnalyzePanel } from "@/components/dashboard/DashboardAnalyzePanel";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { exportNdcDashboardExcel, exportNdcDashboardPdf, exportCrtBtrCsv } from "@/lib/ndc-export";
@@ -41,8 +40,8 @@ export default function NDCLayer() {
   const readOnly = isReadOnly();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [spatialOpen, setSpatialOpen] = useState(false);
-  const [trackabilityOpen, setTrackabilityOpen] = useState(false);
+  // Which detail panel (opened from the "Data & insights" menu) is showing.
+  const [activePanel, setActivePanel] = useState<string | null>(null);
 
   // Deep-link support: /dashboard?target=...&sector=...
   useEffect(() => {
@@ -90,8 +89,7 @@ export default function NDCLayer() {
     }
 
     if (!dashboardPresets.emphasizeMrvPanels) {
-      setSpatialOpen(false);
-      setTrackabilityOpen(false);
+      setActivePanel(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeRole]);
@@ -104,12 +102,6 @@ export default function NDCLayer() {
     }
     state.setSelectedTargetId(targetId);
     setSearchParams({ target: targetId, sector: target.sectorId });
-  }, [state, setSearchParams]);
-
-  const handleSummarySelect = useCallback((targetId: string, sectorId: string) => {
-    state.setSelectedSector(sectorId, { preserveTarget: true });
-    state.setSelectedTargetId(targetId);
-    setSearchParams({ target: targetId, sector: sectorId });
   }, [state, setSearchParams]);
 
   const handleGapSectorSelect = useCallback((sectorId: string) => {
@@ -187,9 +179,22 @@ export default function NDCLayer() {
         <div className="flex items-center gap-1.5">
           <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Sector</span>
           <Select value={state.selectedSector} onValueChange={(v) => state.setSelectedSector(v)}>
-            <SelectTrigger className="w-[140px] h-7 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[140px] h-7 text-xs">
+              <span className="truncate">
+                {sectorDefinitions.find((s) => s.id === state.selectedSector)?.name ?? "Sector"}
+              </span>
+            </SelectTrigger>
             <SelectContent>
-              {sectorDefinitions.map(s => <SelectItem key={s.id} value={s.id}><span className="text-xs">{s.name}</span></SelectItem>)}
+              {sectorDefinitions.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  <span className="flex flex-col">
+                    <span className="text-xs">{s.name}</span>
+                    {s.description && s.description !== s.name && (
+                      <span className="text-[10px] text-muted-foreground">{s.description}</span>
+                    )}
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -302,9 +307,6 @@ export default function NDCLayer() {
         <NdcGapSummary variant="compact" onSelectSector={handleGapSectorSelect} />
       )}
 
-      {/* Target Status Summary — 'all targets first' anchor */}
-      <TargetStatusSummary onSelectTarget={handleSummarySelect} />
-
       {/* Three-column layout over a slow-drifting climate gradient */}
       <div className="flex-1 relative isolate overflow-hidden">
         <div aria-hidden className="absolute inset-0 -z-10 dash-animated-bg" />
@@ -326,10 +328,11 @@ export default function NDCLayer() {
           className="overflow-hidden flex flex-col dash-crossfade"
           key={`progress-${state.selectedTargetId}-${state.selectedSector}-${state.geographyLevel}-${state.selectedDistrictId}`}
         >
-          <div className="overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-hidden">
             <ProgressTowardTargetColumn selectedTarget={selectedTarget} />
           </div>
-          <div className="shrink-0 px-3 py-3 border-t border-border bg-muted/20 space-y-2">
+          <div className="shrink-0 px-3 py-2.5 border-t border-border bg-muted/20 space-y-1.5">
+            {/* NDC AI — primary action */}
             <Dialog>
               <DialogTrigger asChild>
                 <Button
@@ -354,97 +357,95 @@ export default function NDCLayer() {
               </DialogContent>
             </Dialog>
 
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                  📋 Activities / Measures
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden flex flex-col">
-                <DialogHeader className="px-4 py-3 border-b border-border">
-                  <DialogTitle className="text-sm">Activities / Measures</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 min-h-0">
-                  <NDCActivitiesColumn
-                    selectedTargetId={state.selectedTargetId}
-                    geographyLevel={state.geographyLevel as GeographyLevel}
-                    selectedDistrictId={state.selectedDistrictId}
-                  />
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                  🏭 Top Emitting Sources
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-3xl h-[80vh] p-0 overflow-hidden flex flex-col">
-                <DialogHeader className="px-4 py-3 border-b border-border">
-                  <DialogTitle className="text-sm">Top Emitting Sources (Climate TRACE)</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 min-h-0">
-                  <TopEmittingSources />
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={spatialOpen} onOpenChange={setSpatialOpen}>
-              <DialogTrigger asChild>
+            {/* Data & insights — detail panels collapsed into one menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
                   className={cn(
-                    "w-full justify-start text-xs",
+                    "w-full justify-between text-xs gap-1.5",
                     dashboardPresets.emphasizeMrvPanels && "border-primary ring-1 ring-primary/30 bg-primary/5",
                   )}
                 >
-                  🛰️ Spatial Certainty
+                  <span className="flex items-center gap-1.5">
+                    <LayoutList className="h-3.5 w-3.5" />
+                    Data &amp; insights
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl h-[80vh] p-0 overflow-hidden flex flex-col">
-                <DialogHeader className="px-4 py-3 border-b border-border">
-                  <DialogTitle className="text-sm">Spatial Certainty (Climate TRACE)</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 min-h-0">
-                  <SpatialConfidencePanel />
-                </div>
-              </DialogContent>
-            </Dialog>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] min-w-56">
+                <DropdownMenuItem onSelect={() => setActivePanel("activities")}>📋 Activities / Measures</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setActivePanel("sources")}>🏭 Top Emitting Sources</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setActivePanel("spatial")}>🛰️ Spatial Certainty</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setActivePanel("trackability")}>📡 What Climate TRACE Can Track</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setActivePanel("official")}>📜 Official sources</DropdownMenuItem>
+                {!readOnly && <DropdownMenuItem onSelect={() => setActivePanel("mitigation")}>💡 Mitigation Options</DropdownMenuItem>}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-            <Dialog open={trackabilityOpen} onOpenChange={setTrackabilityOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-xs",
-                    dashboardPresets.emphasizeMrvPanels && "border-primary ring-1 ring-primary/30 bg-primary/5",
-                  )}
-                >
-                  📡 What Climate TRACE Can Track
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-3xl h-[80vh] p-0 overflow-hidden flex flex-col">
-                <DialogHeader className="px-4 py-3 border-b border-border">
-                  <DialogTitle className="text-sm">NDC Trackability (Climate TRACE)</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 min-h-0">
-                  <DataTrackabilityPanel />
-                </div>
-              </DialogContent>
-            </Dialog>
+          {/* Detail dialogs opened from the Data & insights menu */}
+          <Dialog open={activePanel === "activities"} onOpenChange={(o) => !o && setActivePanel(null)}>
+            <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden flex flex-col">
+              <DialogHeader className="px-4 py-3 border-b border-border">
+                <DialogTitle className="text-sm">Activities / Measures</DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 min-h-0">
+                <NDCActivitiesColumn
+                  selectedTargetId={state.selectedTargetId}
+                  geographyLevel={state.geographyLevel as GeographyLevel}
+                  selectedDistrictId={state.selectedDistrictId}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
 
-            <OfficialSourcesPanel sectorId={state.selectedSector as SectorId} />
+          <Dialog open={activePanel === "sources"} onOpenChange={(o) => !o && setActivePanel(null)}>
+            <DialogContent className="max-w-3xl h-[80vh] p-0 overflow-hidden flex flex-col">
+              <DialogHeader className="px-4 py-3 border-b border-border">
+                <DialogTitle className="text-sm">Top Emitting Sources (Climate TRACE)</DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 min-h-0">
+                <TopEmittingSources />
+              </div>
+            </DialogContent>
+          </Dialog>
 
-            {!readOnly && (
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                  💡 Mitigation Options
-                </Button>
-              </DialogTrigger>
+          <Dialog open={activePanel === "spatial"} onOpenChange={(o) => !o && setActivePanel(null)}>
+            <DialogContent className="max-w-2xl h-[80vh] p-0 overflow-hidden flex flex-col">
+              <DialogHeader className="px-4 py-3 border-b border-border">
+                <DialogTitle className="text-sm">Spatial Certainty (Climate TRACE)</DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 min-h-0">
+                <SpatialConfidencePanel />
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={activePanel === "trackability"} onOpenChange={(o) => !o && setActivePanel(null)}>
+            <DialogContent className="max-w-3xl h-[80vh] p-0 overflow-hidden flex flex-col">
+              <DialogHeader className="px-4 py-3 border-b border-border">
+                <DialogTitle className="text-sm">NDC Trackability (Climate TRACE)</DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 min-h-0">
+                <DataTrackabilityPanel />
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={activePanel === "official"} onOpenChange={(o) => !o && setActivePanel(null)}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-sm">Official sources</DialogTitle>
+              </DialogHeader>
+              <OfficialSourcesPanel sectorId={state.selectedSector as SectorId} embedded />
+            </DialogContent>
+          </Dialog>
+
+          {!readOnly && (
+            <Dialog open={activePanel === "mitigation"} onOpenChange={(o) => !o && setActivePanel(null)}>
               <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden flex flex-col">
                 <DialogHeader className="px-4 py-3 border-b border-border">
                   <DialogTitle className="text-sm">Mitigation Options</DialogTitle>
@@ -463,8 +464,7 @@ export default function NDCLayer() {
                 </div>
               </DialogContent>
             </Dialog>
-            )}
-          </div>
+          )}
         </div>
         </div>
       </div>

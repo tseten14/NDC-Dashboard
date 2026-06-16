@@ -1,6 +1,6 @@
 # System design — Uganda NDC Data Explorer
 
-End-to-end architecture and workflows for the application. For file-level layout see [ARCHITECTURE.md](./ARCHITECTURE.md). For deployment see [DEPLOY-VERCEL.md](./DEPLOY-VERCEL.md).
+End-to-end architecture and workflows for the application. For file-level layout see [architecture.md](./architecture.md). For deployment see [deploy.md](./deploy.md).
 
 ---
 
@@ -326,7 +326,7 @@ Uses live `EmissionsDataContext` when API is reachable.
 | Risk | `/v1/risk/*` | Illustrative seed choropleth |
 | Mock | `/v1/mock/*` | Fixture mode when `USE_MOCK_DATA=true` |
 
-Full route list: [ARCHITECTURE.md](./ARCHITECTURE.md) and `PROJECT_DOCUMENTATION.txt` Part B.
+Full route list: [architecture.md](./architecture.md) and `PROJECT_DOCUMENTATION.txt` Part B.
 
 ---
 
@@ -459,12 +459,12 @@ ndc-data-explorer/
 
 | Document | Focus |
 |----------|--------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | File paths, routes, dev proxy |
-| [DATA_AND_CATALOG.md](./DATA_AND_CATALOG.md) | Live vs indicative vs localStorage |
-| [DEPLOY-VERCEL.md](./DEPLOY-VERCEL.md) | Env vars, Postgres on Vercel |
-| [POLICY_IMPACT_ENGINE.md](./POLICY_IMPACT_ENGINE.md) | KCI matching detail |
-| [USER_GUIDE.md](./USER_GUIDE.md) | Non-technical index |
-| [../PROJECT_DOCUMENTATION.txt](../PROJECT_DOCUMENTATION.txt) | Full feature + API reference |
+| [architecture.md](./architecture.md) | File paths, routes, dev proxy |
+| [../guide/data.md](../guide/data.md) | Live vs indicative vs localStorage |
+| [deploy.md](./deploy.md) | Env vars, Postgres on Vercel |
+| [policy-engine.md](./policy-engine.md) | KCI matching detail |
+| [../guide/user-guide.md](../guide/user-guide.md) | Non-technical index |
+| [../../PROJECT_DOCUMENTATION.txt](../../PROJECT_DOCUMENTATION.txt) | Full feature + API reference |
 
 ---
 

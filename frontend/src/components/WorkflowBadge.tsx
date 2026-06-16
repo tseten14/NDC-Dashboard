@@ -1,13 +1,15 @@
 import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { CircleDot, Send, Check, Undo2 } from "lucide-react";
+import { CircleDot, Send, Check, Undo2, X, Clock } from "lucide-react";
 
 const styles: Record<string, { cls: string; Icon: any; label: string }> = {
   Draft: { cls: "bg-muted text-muted-foreground", Icon: CircleDot, label: "Draft" },
   Submitted: { cls: "bg-chart-4/15 text-chart-4 border-chart-4/40", Icon: Send, label: "Submitted" },
   Approved: { cls: "bg-on-track/15 text-on-track border-on-track/40", Icon: Check, label: "Approved" },
   Returned: { cls: "bg-at-risk/15 text-at-risk border-at-risk/40", Icon: Undo2, label: "Returned" },
+  Declined: { cls: "bg-off-track/15 text-off-track border-off-track/40", Icon: X, label: "Declined" },
+  Pending: { cls: "bg-chart-3/15 text-chart-3 border-chart-3/40", Icon: Clock, label: "Pending" },
 };
 
 export const WorkflowBadge = memo(function WorkflowBadge({ state, className }: { state: string; className?: string }) {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, waitFor } from "@testing-library/react";
-import systemDesignMarkdown from "../../../docs/SYSTEM_DESIGN.md?raw";
+import systemDesignMarkdown from "../../../docs/dev/system-design.md?raw";
 import {
   MermaidDiagram,
   normalizeMermaidSvg,
@@ -50,7 +50,7 @@ describe("Mermaid diagrams in system design", () => {
     });
   });
 
-  it("bundled SYSTEM_DESIGN.md uses compact in-box flowchart labels", () => {
+  it("bundled system-design.md uses compact in-box flowchart labels", () => {
     expect(systemDesignMarkdown).toContain("CT[Climate TRACE]");
     expect(systemDesignMarkdown).toContain("[*] --> Check");
     expect(systemDesignMarkdown).toContain("subgraph UI[Presentation layer]");

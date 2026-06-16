@@ -1,7 +1,7 @@
 /**
  * Climate TRACE emissions routes for the NDC cockpit, map, predictions, and MRV helpers.
  * Geography: optional `gadm_id` or `district` query params (national default).
- * @see docs/ARCHITECTURE.md and PROJECT_DOCUMENTATION.txt § B2
+ * @see docs/dev/architecture.md and PROJECT_DOCUMENTATION.txt § B2
  */
 import express from "express";
 import {

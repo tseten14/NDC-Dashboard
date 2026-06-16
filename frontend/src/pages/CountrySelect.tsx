@@ -5,7 +5,6 @@ import { useCountry } from "@/context/CountryContext";
 import { useCurrentRole } from "@/hooks/use-current-role";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
 import { HERO_GRADIENT_TEXT } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 import {
@@ -52,12 +51,6 @@ function LandingBackdrop() {
     </div>
   );
 }
-
-const HERO_STATS = [
-  { label: "Countries listed", value: COUNTRY_OPTIONS.length },
-  { label: "Emission sectors", value: 7 },
-  { label: "Years of data", value: 11 },
-] as const;
 
 export default function CountrySelect() {
   const navigate = useNavigate();
@@ -121,17 +114,6 @@ export default function CountrySelect() {
               Choose your country to open a decision-support cockpit — link climate commitments to
               live emissions, districts, and delivery priorities.
             </p>
-
-            <div className="mt-6 flex flex-wrap justify-center gap-4 sm:gap-6 lg:justify-start landing-fade-up landing-stagger-2">
-              {HERO_STATS.map((stat) => (
-                <div key={stat.label} className="text-center lg:text-left min-w-[4.5rem]">
-                  <p className="font-display text-xl sm:text-2xl font-bold tabular-nums text-foreground">
-                    <CountUpNumber value={stat.value} durationMs={700} startWhenVisible />
-                  </p>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">{stat.label}</p>
-                </div>
-              ))}
-            </div>
 
             <div className="mt-8 grid grid-cols-2 gap-2.5 sm:gap-3 max-w-md mx-auto lg:mx-0 lg:max-w-none">
               {HIGHLIGHTS.map((h, i) => (

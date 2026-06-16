@@ -93,7 +93,7 @@ National is the default. To request a district, add one of:
 
 Endpoints: `GET /api/v1/emissions/dashboard`, `/timeseries`, `/progress` (all accept the geography params above), `GET /api/v1/emissions/districts` (the district list), `GET /api/v1/emissions/sources` (asset/source-level emitters; accepts the geography params plus `year`, `limit`, `offset`), `GET /api/v1/emissions/map` (map points; `year`, geography), `GET /api/v1/emissions/predictions`, `GET /api/v1/emissions/spatial-confidence`, `GET /api/v1/emissions/trackability`. To refresh the district→GADM map from Climate TRACE: `node scripts/discover_uganda_gadm.mjs`. To verify the source-level shape: `node scripts/verify_sources.mjs`.
 
-Catalog: `GET /api/v1/catalog/activities`, `GET /api/v1/catalog/mitigation-options` (indicative abatement/cost fields — see [docs/DATA_AND_CATALOG.md](docs/DATA_AND_CATALOG.md)).
+Catalog: `GET /api/v1/catalog/activities`, `GET /api/v1/catalog/mitigation-options` (indicative abatement/cost fields — see [docs/guide/data.md](docs/guide/data.md)).
 
 > Note: "v7" is the Climate TRACE **API** version (which endpoints exist), not the data version. The data is released monthly (latest v5.8.0) and the API always serves the latest. User-facing labels read "Climate TRACE" (no version).
 
@@ -103,7 +103,7 @@ Set `USE_MOCK_DATA=true` in `.env` for offline fixture mode (no Climate TRACE ca
 
 | Variable | Purpose |
 | -------- | ------- |
-| `DATABASE_URL` | Postgres for mapped ingest + `GET /targets/:id/observations` (see [DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md)) |
+| `DATABASE_URL` | Postgres for mapped ingest + `GET /targets/:id/observations` (see [deploy.md](docs/dev/deploy.md)) |
 | `SEED_DB` | Run bundled seed on bootstrap (`true` for first deploy) |
 | `FRONTEND_ORIGIN` | Only browser origin allowed by CORS (default `http://localhost:8080`) |
 | `INGEST_API_KEY` | Shared secret for **write** endpoints (`POST` under `/api/v1/ingest/*`) |

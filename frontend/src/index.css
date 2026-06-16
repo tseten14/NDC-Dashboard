@@ -878,19 +878,6 @@
   }
 }
 
-/* Demo presenter mode — maximise stage area for live presentations */
-body.demo-presenter-mode footer {
-  display: none;
-}
-
-body.demo-presenter-mode .group\/sidebar-wrapper > .group.peer {
-  display: none;
-}
-
-body.demo-presenter-mode [data-sidebar="trigger"] {
-  display: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .landing-gradient-bg,
   .landing-orb,

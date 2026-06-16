@@ -10,7 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const outDir = path.join(root, "docs", "demo-screenshots");
+const outDir = path.join(root, "docs", "demo", "screenshots");
 const baseURL = process.argv[2] ?? "https://ndc-data-explorer-e051f914.vercel.app";
 
 const shots = [

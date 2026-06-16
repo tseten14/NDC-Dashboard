@@ -7,7 +7,7 @@
  * Emissions: dashboard, timeseries, progress, districts, sources, map, predictions,
  * spatial-confidence, trackability. Catalog + ingest helpers are also defined here.
  *
- * @see docs/ARCHITECTURE.md
+ * @see docs/dev/architecture.md
  */
 
 import type { IndicatorPanelEntry } from "./emissions-integration";

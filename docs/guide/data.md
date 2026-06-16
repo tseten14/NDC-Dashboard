@@ -33,7 +33,7 @@ Build passage corpus: `npm run build:passages` (source CSV in `data/sources/Ugan
 | Mitigation options | `config/ndcCockpitCatalog.js` | Mitigation tab | Abatement/cost **indicative**; hidden on Mitigation tab, used in Climate Finance |
 | Indicator panel targets | API + `measurableVariables` | Non-emissions charts | National indicators, not CT sectors |
 
-**June 2026 audit:** Removed unsourced focal points, foreign case studies, and assumed district lists except where NDC names locations. See `docs/Climate-TRACE-Data-Gaps-and-Requests.txt` § E7.
+**June 2026 audit:** Removed unsourced focal points, foreign case studies, and assumed district lists except where NDC names locations. See `docs/dev/ct-data-gaps.txt` § E7.
 
 ## Climate Finance — indicative only
 
@@ -77,5 +77,5 @@ Does **not** replace Climate TRACE MtCO₂e on emissions sectors. Requires `INGE
 
 1. State the **source** (Climate TRACE, NDC PDF, assumption).
 2. Label **indicative** if not from audited MRV.
-3. Update `docs/Climate-TRACE-Data-Gaps-and-Requests.txt` if CT cannot supply the metric.
+3. Update `docs/dev/ct-data-gaps.txt` if CT cannot supply the metric.
 4. Update `PROJECT_DOCUMENTATION.txt` § A2/A7 and in-app `user-guide-content.ts` glossary if users will see new terms.
