@@ -322,11 +322,6 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                 {provider}
               </Badge>
             ))}
-            {latestObserved && latestObserved.value != null && (
-              <span className="text-[10px] text-muted-foreground">
-                Latest: {chartDisplay.formatValue(latestObserved.value)} {chartDisplay.unitLabel} ({latestObserved.year})
-              </span>
-            )}
           </div>
 
           {apiSector && observedMode === "live" && isDistrictView && (

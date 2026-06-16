@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { bau2030ForTarget } from "@/data/uganda-ndc-data";
 import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
@@ -110,36 +109,6 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
     selectedTarget.targetValue > selectedTarget.baselineValue;
 
   const bau2030 = pr?.bau_2030 ?? bau2030ForTarget(selectedTarget);
-
-  const baselineDisplay =
-    source === "api" && pr
-      ? isEmissionsCapTarget
-        ? `Starting point (${pr.baseline_year}): ${pr.baseline_value} ${selectedTarget.unit}`
-        : `Starting point (${pr.baseline_year}): ${pr.baseline_value} ${selectedTarget.unit}`
-      : isEmissionsCapTarget
-        ? `Starting point (${selectedTarget.baselineYear}): ${selectedTarget.baselineValue} ${selectedTarget.unit}`
-        : `Starting point (${selectedTarget.baselineYear}): ${selectedTarget.baselineValue} ${selectedTarget.unit}`;
-
-  const targetDisplay =
-    source === "api" && pr
-      ? isEmissionsCapTarget
-        ? `Emissions limit by ${pr.target_year}: ${pr.target_value} ${selectedTarget.unit}`
-        : `Goal by ${pr.target_year}: ${pr.target_value} ${selectedTarget.unit}`
-      : isEmissionsCapTarget
-        ? `Emissions limit by ${selectedTarget.targetYear}: ${selectedTarget.targetValue} ${selectedTarget.unit}`
-        : `Goal by ${selectedTarget.targetYear}: ${selectedTarget.targetValue} ${selectedTarget.unit}`;
-
-  const bauDisplay =
-    isEmissionsCapTarget && bau2030 != null
-      ? `Without new policies (2030): ${bau2030} ${selectedTarget.unit}`
-      : null;
-
-  const dataUsedLabel =
-    source === "api"
-      ? "Live satellite estimates + official NDC goals"
-      : source === "catalog"
-        ? "National indicators + official NDC goals"
-        : "Latest reported observations";
 
   const baselineMismatch =
     source === "api" &&
@@ -291,39 +260,6 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center gap-1.5">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-                      <HelpCircle className="h-3 w-3" />
-                      How is this calculated?
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[260px] p-3">
-                    <div className="text-xs space-y-1.5">
-                      <p className="font-semibold">How progress is calculated</p>
-                      <p><strong>Data:</strong> {dataUsedLabel}</p>
-                      <p><strong>Starting point:</strong> {baselineDisplay}</p>
-                      {bauDisplay && <p><strong>Without new policies:</strong> {bauDisplay}</p>}
-                      <p><strong>Goal:</strong> {targetDisplay}</p>
-                      <p>
-                        <strong>Method:</strong>{" "}
-                        {selectedTarget.metricType === "emissions-reduction"
-                          ? isEmissionsCapTarget
-                            ? "Compare current emissions to what they would be without new policies, and to the 2030 emissions limit"
-                            : "Compare current emissions to the reduction promised in the climate pledge"
-                          : "Use a related measure as a stand-in for progress"}
-                      </p>
-                      {pr?.scope_note && <p className="text-muted-foreground">{pr.scope_note}</p>}
-                      <p className="text-muted-foreground">Poor data quality can lower the status. Missing data shows as &quot;Unknown.&quot;</p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </ScrollArea>
     </div>

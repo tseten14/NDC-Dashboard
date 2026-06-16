@@ -993,3 +993,14 @@
   font-size: 10px;
   color: #64748b;
 }
+
+/* Desktop readability: nudge the smallest text up a step (the dashboard relies
+ * on a lot of 9–12px labels). A targeted bump rather than a full rescale so
+ * layout/spacing stay put. Unlayered rules win over Tailwind's utility layer. */
+@media (min-width: 1024px) {
+  .text-\[8px\] { font-size: 9px; }
+  .text-\[9px\] { font-size: 10px; }
+  .text-\[10px\] { font-size: 11px; }
+  .text-\[11px\] { font-size: 12px; }
+  .text-xs { font-size: 0.8125rem; } /* 12px -> 13px */
+}
