@@ -8,13 +8,19 @@ let mermaidInitialized = false;
 
 function ensureMermaid() {
   if (mermaidInitialized) return;
+  // Use an explicit sans-serif stack (not "inherit"): with htmlLabels:false
+  // mermaid sizes each node box from the measured label width, so the
+  // measurement font must match the rendered font or labels overflow and clip.
+  const mermaidFont =
+    'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
   mermaid.initialize({
     startOnLoad: false,
     theme: "neutral",
     securityLevel: "strict",
-    fontFamily: "inherit",
+    fontFamily: mermaidFont,
     themeVariables: {
-      fontSize: "13px",
+      fontSize: "12px",
+      fontFamily: mermaidFont,
     },
     flowchart: {
       useMaxWidth: true,
@@ -22,7 +28,7 @@ function ensureMermaid() {
       padding: 18,
       nodeSpacing: 40,
       rankSpacing: 50,
-      wrappingWidth: 200,
+      wrappingWidth: 220,
     },
     sequence: { useMaxWidth: true, wrap: true, width: 280 },
     state: { useMaxWidth: true, nodeSpacing: 36, rankSpacing: 40 },
@@ -158,7 +164,7 @@ export function MermaidDiagram({ chart }: { chart: string }) {
         className={cn(
           "w-full min-w-0 mermaid-host",
           "[&_svg]:overflow-visible [&_svg]:max-w-full [&_svg]:h-auto",
-          "[&_.nodeLabel]:overflow-hidden [&_.nodeLabel_p]:m-0 [&_.nodeLabel_p]:leading-snug",
+          "[&_.nodeLabel]:overflow-visible [&_.nodeLabel_p]:m-0 [&_.nodeLabel_p]:leading-snug",
           "[&_.node rect]:rx-[4px]",
           "[&_.edgeLabel]:text-[11px] [&_.edgeLabel_p]:text-[11px] [&_.edgeLabel]:leading-tight",
           "[&_.messageText]:text-[11px] [&_.actor]:text-[12px]",
