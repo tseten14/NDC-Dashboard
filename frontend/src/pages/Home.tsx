@@ -47,7 +47,7 @@ const FEATURES = [
   },
   {
     icon: Briefcase,
-    title: "My Work",
+    title: "Database",
     to: "/my-work",
     accent: "from-orange-500/20 to-orange-500/5",
   },

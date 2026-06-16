@@ -38,7 +38,7 @@ const primary: NavItem[] = [
 
 const advanced: NavItem[] = [
   { title: "Strategy Library", url: "/library", icon: Library },
-  { title: "My Work", url: "/my-work", icon: Briefcase },
+  { title: "Database", url: "/my-work", icon: Briefcase },
   { title: "Climate Risk", url: "/risk", icon: ShieldAlert },
   { title: "Executive Overview", url: "/executive", icon: LayoutDashboard },
   { title: "Delivery & Accountability", url: "/delivery", icon: Network },

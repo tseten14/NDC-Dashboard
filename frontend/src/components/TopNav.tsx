@@ -24,7 +24,7 @@ const primary: NavItem[] = [
   { title: "Climate Finance",    url: "/climate-finance",icon: Coins },
   { title: "Policy Documents",   url: "/documents",      icon: Scale },
   { title: "Emissions Map",      url: "/map",            icon: MapIcon },
-  { title: "Settings",           url: "/my-work",        icon: Briefcase },
+  { title: "Database",           url: "/my-work",        icon: Briefcase },
   { title: "Documentation",      url: "/docs",           icon: BookOpen },
 ];
 
