@@ -147,12 +147,12 @@ export const BASIC_FEATURES: FeatureGuide[] = [
     ],
   },
   {
-    title: "AI 2030 Prediction",
+    title: "AI 2030 Projection",
     to: "/ai-2030",
     who: "Policy planners, strategy teams, briefing officers",
     purpose: "Show where sector emissions might land in 2030 if recent trends continue — compared to NDC goals.",
     steps: [
-      "Open AI 2030 Prediction.",
+      "Open AI 2030 Projection.",
       "Review the chart for each sector with a Climate TRACE history.",
       "Read the shaded band as uncertainty, not a government forecast.",
       "Compare the 2030 point to the NDC target line where shown.",

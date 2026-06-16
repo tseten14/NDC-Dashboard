@@ -19,7 +19,7 @@ const primary: NavItem[] = [
   { title: "Home",               url: "/",               icon: Home },
   { title: "Dashboard",          url: "/dashboard",      icon: Target },
   { title: "Data Ingestion",     url: "/ingest",         icon: Upload },
-  { title: "AI 2030 Prediction", url: "/ai-2030",        icon: Sparkles },
+  { title: "AI 2030 Projection", url: "/ai-2030",        icon: Sparkles },
   { title: "Policy Impact",      url: "/policy-impact",  icon: Workflow },
   { title: "Climate Finance",    url: "/climate-finance",icon: Coins },
   { title: "Policy Documents",   url: "/documents",      icon: Scale },

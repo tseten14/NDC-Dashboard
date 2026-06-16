@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Download, FileSpreadsheet, FileText, Sparkles, LayoutList, Activity, TrendingUp } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Sparkles, LayoutList } from "lucide-react";
 import { DashboardAnalyzePanel } from "@/components/dashboard/DashboardAnalyzePanel";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { exportNdcDashboardExcel, exportNdcDashboardPdf, exportCrtBtrCsv } from "@/lib/ndc-export";
@@ -256,43 +256,6 @@ export default function NDCLayer() {
               </SelectContent>
             </Select>
           )}
-        </div>
-
-        {/* Data view: observed history vs projected trajectory to 2030 */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Data</span>
-          <div className="flex rounded-md border border-input overflow-hidden">
-            <button
-              type="button"
-              onClick={() => state.setTimeMode("historical")}
-              aria-pressed={state.timeMode === "historical"}
-              title="Show measured emissions recorded so far"
-              className={cn(
-                "flex items-center gap-1 px-2 py-0.5 text-xs font-medium transition-colors",
-                state.timeMode === "historical"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:bg-muted",
-              )}
-            >
-              <Activity className="h-3 w-3" />
-              Observed
-            </button>
-            <button
-              type="button"
-              onClick={() => state.setTimeMode("projection")}
-              aria-pressed={state.timeMode === "projection"}
-              title="Show the projected path toward the 2030 pledge"
-              className={cn(
-                "flex items-center gap-1 px-2 py-0.5 text-xs font-medium transition-colors border-l border-input",
-                state.timeMode === "projection"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:bg-muted",
-              )}
-            >
-              <TrendingUp className="h-3 w-3" />
-              Projected
-            </button>
-          </div>
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
