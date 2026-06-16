@@ -18,42 +18,48 @@ const FEATURES = [
   {
     icon: Target,
     title: "Explore NDCs",
-    blurb: "Browse sector targets, pledges, progress, and linked measures.",
+    blurb:
+      "Planners and focal points: browse sector targets, Climate TRACE progress, pledges, and linked measures in one cockpit. Spot which sectors need attention before BTR reporting.",
     to: "/dashboard",
     accent: "from-emerald-500/20 to-emerald-500/5",
   },
   {
     icon: Upload,
     title: "Data Ingestion",
-    blurb: "Import your own files and publish trusted observations.",
+    blurb:
+      "MRV and GIS teams: quick-scan unknown files or map columns to indicators and publish observations. Ministry data feeds the same charts as satellite observations — with validation first.",
     to: "/ingest",
     accent: "from-amber-500/20 to-amber-500/5",
   },
   {
     icon: Sparkles,
     title: "AI Predictions",
-    blurb: "Forecast 2030 trajectories and spot emerging gaps.",
+    blurb:
+      "Strategy and finance teams: forecast 2030 trajectories from observed emissions and review gap cards. Flag emerging shortfalls early so you can reprioritise before the deadline.",
     to: "/ai-2030",
     accent: "from-fuchsia-500/20 to-fuchsia-500/5",
   },
   {
     icon: Scale,
     title: "Policy documents",
-    blurb: "Browse national documents and see how interventions link to intended outcomes.",
+    blurb:
+      "Policy and legal teams: browse the national corpus, search CPR passages in key laws, and follow intervention pathways. Trace how documents link interventions to NDC outcomes.",
     to: "/documents",
     accent: "from-slate-500/20 to-slate-500/5",
   },
   {
     icon: Workflow,
     title: "Policy Impact",
-    blurb: "Model the impact of specific policies and trace outcomes to NDC targets.",
+    blurb:
+      "Socio-economic planners: model policy choices with international case-study analogies and TEF interventions. Stress-test impacts before committing resources — with finance screening links.",
     to: "/policy-impact",
     accent: "from-indigo-500/20 to-indigo-500/5",
   },
   {
     icon: Briefcase,
     title: "My Work",
-    blurb: "Track your activities, approvals queue and pending verifications.",
+    blurb:
+      "Field officers and validators: log delivery activities, manage your approvals queue, and track pending verifications. Keep evidence organized before it counts toward national reporting.",
     to: "/my-work",
     accent: "from-orange-500/20 to-orange-500/5",
   },

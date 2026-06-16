@@ -140,6 +140,91 @@ def add_three_cards(slide, cards, top=BODY_TOP, card_h=None):
         )
 
 
+HOME_FEATURES = [
+    (
+        "Explore NDCs",
+        "Planners · sector ministries · focal points",
+        "Browse sector targets, Climate TRACE progress, mitigation options, and finance links in one cockpit.\n\n"
+        "Useful when you need to see which sectors are on or off track before BTR reporting.",
+    ),
+    (
+        "Data Ingestion",
+        "MRV teams · GIS · ministry statistics",
+        "Quick-scan unknown files or map columns to indicators and publish trusted observations.\n\n"
+        "Useful when ministry spreadsheets must sit beside satellite data — triage without committing bad rows.",
+    ),
+    (
+        "AI Predictions",
+        "Strategy planners · finance · gap screening",
+        "Forecast 2030 trajectories from observed emissions history; gap cards flag emerging shortfalls.\n\n"
+        "Useful for prioritisation conversations — spot problems early, not at the 2030 deadline.",
+    ),
+    (
+        "Policy documents",
+        "Policy analysts · legal · delegation prep",
+        "National corpus, CPR passage search on key laws, and intervention pathway diagrams.\n\n"
+        "Useful to find evidence in NDC, NDPIV, and regulations — trace interventions to intended outcomes.",
+    ),
+    (
+        "Policy Impact",
+        "Socio-economic planners · adaptation teams",
+        "Model policy choices with international case-study analogies and TEF intervention picker.\n\n"
+        "Useful to stress-test options before committing resources — deep-link to finance screening.",
+    ),
+    (
+        "My Work",
+        "Field officers · delivery units · validators",
+        "Log delivery activities, manage approvals queue, and track pending verifications.\n\n"
+        "Useful to keep evidence organized before it counts toward national reporting.",
+    ),
+]
+
+
+def add_six_feature_cards(slide, features, top=BODY_TOP):
+    lefts, w, _ = col_widths(3)
+    row_gap = Inches(0.16)
+    avail_h = BODY_BOTTOM - top - row_gap
+    card_h = avail_h / 2
+    accents = [ACCENT, AMBER, RGBColor(155, 89, 182), MUTED, OCEAN, RGBColor(230, 126, 34)]
+    for i, (title, audience, body) in enumerate(features):
+        col = i % 3
+        row = i // 3
+        left = lefts[col]
+        y = top + row * (card_h + row_gap)
+        accent = accents[i % len(accents)]
+        add_rect(slide, left, y, w, card_h, WHITE, PALE, radius=True)
+        add_rect(slide, left, y, w, Inches(0.32), accent)
+        styled_textbox(
+            slide, left + Inches(0.1), y + Inches(0.05), w - Inches(0.2), Inches(0.24),
+            title, size=10, bold=True, color=WHITE,
+        )
+        styled_textbox(
+            slide, left + Inches(0.1), y + Inches(0.36), w - Inches(0.2), Inches(0.22),
+            audience, size=7, bold=True, color=accent,
+        )
+        styled_textbox(
+            slide, left + Inches(0.1), y + Inches(0.58), w - Inches(0.2), card_h - Inches(0.66),
+            body, size=7.5, color=DARK,
+        )
+
+
+def slide_home_features(prs, num):
+    s = content_slide(
+        prs,
+        "What you can do here",
+        "Six modules for planners, MRV teams and partners — Climate TRACE + Uganda's Updated NDC",
+        num,
+    )
+    add_rect(s, MARGIN_L, BODY_TOP, CONTENT_W, BODY_BOTTOM - BODY_TOP, LIGHT)
+    add_six_feature_cards(s, HOME_FEATURES, top=BODY_TOP + Inches(0.1))
+    styled_textbox(
+        s, MARGIN_L + Inches(0.12), BODY_BOTTOM - Inches(0.42), CONTENT_W - Inches(0.24), Inches(0.32),
+        "Each tile maps to a live route in the app — same home screen users see at " + LIVE_URL.replace("https://", ""),
+        size=8, color=MUTED, align=PP_ALIGN.CENTER,
+    )
+    return s
+
+
 def add_challenge_rows(slide, rows, top=BODY_TOP):
     row_h = Inches(0.58)
     y = top
@@ -537,17 +622,18 @@ def slide_demo_journey(prs, num):
     s = content_slide(prs, "5-minute live walkthrough", "Suggested flow — Uganda · Transport sector", num)
     add_rect(s, MARGIN_L, BODY_TOP, CONTENT_W, BODY_BOTTOM - BODY_TOP, LIGHT)
     journey = [
-        ("0:00", "Dashboard", "Transport sector\nClimate TRACE data"),
-        ("1:00", "3D GIS map", "Emissions Map tab\nSatellite · bubbles"),
-        ("1:45", "Documents", "Policy pathway\nNDC linkage"),
-        ("2:10", "Finance", "Cost & abatement\nMAC chart"),
-        ("2:40", "NDC AI", "Chatbot briefing\nTab → ask"),
+        ("0:00", "Explore NDCs", "Dashboard · Transport\nClimate TRACE progress"),
+        ("0:45", "Data Ingestion", "Quick scan file\nMapped publish"),
+        ("1:15", "AI Predictions", "2030 trajectory\nGap cards"),
+        ("1:45", "Policy docs", "CPR passages\nIntervention path"),
+        ("2:15", "Policy Impact", "KCI analogies\nFinance link"),
+        ("2:45", "My Work", "Activities queue\nVerifications"),
     ]
-    jw = Inches(1.55)
-    jh = Inches(1.15)
-    jgap = Inches(0.14)
-    jx = MARGIN_L + Inches(0.2)
-    jy = BODY_TOP + Inches(0.35)
+    jw = Inches(1.22)
+    jh = Inches(1.05)
+    jgap = Inches(0.1)
+    jx = MARGIN_L + Inches(0.12)
+    jy = BODY_TOP + Inches(0.28)
     for time, title, sub in journey:
         add_rect(s, jx, jy, jw, jh, WHITE, ACCENT, radius=True)
         add_rect(s, jx, jy, jw, Inches(0.28), ACCENT)
@@ -559,19 +645,19 @@ def slide_demo_journey(prs, num):
         jx += jw + jgap
 
     styled_textbox(
-        s, MARGIN_L + Inches(0.2), BODY_TOP + Inches(1.75), CONTENT_W - Inches(0.4), Inches(0.35),
-        "Punchline: from reporting to decision support — one operational system for NDC delivery.",
+        s, MARGIN_L + Inches(0.2), BODY_TOP + Inches(1.55), CONTENT_W - Inches(0.4), Inches(0.35),
+        "Punchline: all six home modules — from observed emissions to policy evidence and delivery workflow.",
         size=10, bold=True, color=ACCENT, align=PP_ALIGN.CENTER,
     )
 
-    # Bottom row: future
+    # Bottom row: extras + live URL
     future = [
+        ("Also in app", "3D GIS map · NDC AI chatbot\nFinance & MAC screening"),
         ("Challenges", "Mixed sources · API warm-up\nNot UNFCCC submission"),
-        ("Future", "Policy corpus per country\nMobile MRV app"),
         ("Live URL", LIVE_URL.replace("https://", "")),
     ]
-    fx = MARGIN_L + Inches(0.2)
-    fy = BODY_TOP + Inches(2.25)
+    fx = MARGIN_L + Inches(0.12)
+    fy = BODY_TOP + Inches(2.05)
     fw = Inches(2.75)
     for title, sub in future:
         add_flow_node(s, fx, fy, fw, Inches(0.95), title, sub)
@@ -781,32 +867,35 @@ def build():
     # 03 Cockpit architecture
     slide_cockpit_architecture(prs, 3)
 
-    # 04 System architecture (tech stack diagram)
-    slide_system_architecture(prs, 4)
+    # 04 Home — six feature modules (user value)
+    slide_home_features(prs, 4)
 
-    # 05 Climate TRACE pipeline (hero technical slide)
-    slide_climate_trace_pipeline(prs, 5)
+    # 05 System architecture (tech stack diagram)
+    slide_system_architecture(prs, 5)
 
-    # 06 Three layers of truth (data honesty diagram)
-    slide_three_layers(prs, 6)
+    # 06 Climate TRACE pipeline (hero technical slide)
+    slide_climate_trace_pipeline(prs, 6)
 
-    # 07 Dashboard screenshot + annotation points
-    slide_dashboard(prs, 7)
+    # 07 Three layers of truth (data honesty diagram)
+    slide_three_layers(prs, 7)
 
-    # 08 NDC AI + 3D GIS (dedicated)
-    slide_ai_and_3d_gis(prs, 8)
+    # 08 Dashboard screenshot + annotation points
+    slide_dashboard(prs, 8)
 
-    # 09 End-to-end user value
-    slide_satellite_to_decision(prs, 9)
+    # 09 NDC AI + 3D GIS (dedicated)
+    slide_ai_and_3d_gis(prs, 9)
 
-    # 10 Policy & finance (screenshots + descriptions + mini flow)
-    slide_policy_finance(prs, 10)
+    # 10 End-to-end user value
+    slide_satellite_to_decision(prs, 10)
 
-    # 11 Live walkthrough flowchart
-    slide_demo_journey(prs, 11)
+    # 11 Policy & finance (screenshots + descriptions + mini flow)
+    slide_policy_finance(prs, 11)
 
-    # 12 Challenges
-    s = content_slide(prs, "Challenges & mitigations", "Honest limits of a prototype", 12)
+    # 12 Live walkthrough flowchart
+    slide_demo_journey(prs, 12)
+
+    # 13 Challenges
+    s = content_slide(prs, "Challenges & mitigations", "Honest limits of a prototype", 13)
     add_challenge_rows(s, [
         ("Climate TRACE ≠ inventory", "Open observed layer; label provenance clearly"),
         ("API cold starts", "Pre-warm dashboard, 3D GIS map, and NDC AI before stage"),
@@ -815,8 +904,8 @@ def build():
         ("Official reporting", "Briefing tool — not UNFCCC submission"),
     ])
 
-    # 13 Future + close
-    s = content_slide(prs, "Future roadmap", "Scaling beyond Uganda", 13)
+    # 14 Future + close
+    s = content_slide(prs, "Future roadmap", "Scaling beyond Uganda", 14)
     add_three_cards(s, [
         ("Policy paper database",
          "Searchable national policy corpus per country.\n\n"
