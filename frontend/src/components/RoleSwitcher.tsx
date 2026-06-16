@@ -7,7 +7,7 @@ import { ShieldOff } from "lucide-react";
 import { toast } from "sonner";
 
 export function RoleSwitcher() {
-  const { user, activeRole, availableRoles, setActiveRole, grantRole, signOut, isReadOnly } = useCurrentRole();
+  const { user, activeRole, grantRole, isReadOnly } = useCurrentRole();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -48,14 +48,11 @@ export function RoleSwitcher() {
           <SelectValue placeholder="Select role…" />
         </SelectTrigger>
         <SelectContent>
-          {availableRoles.map((r) => {
-            const meta = ALL_ROLES.find((x) => x.id === r);
-            return (
-              <SelectItem key={r} value={r}>
-                <span className="text-xs">{meta?.label ?? r}</span>
-              </SelectItem>
-            );
-          })}
+          {ALL_ROLES.map((meta) => (
+            <SelectItem key={meta.id} value={meta.id}>
+              <span className="text-xs">{meta.label}</span>
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 

@@ -149,15 +149,13 @@ export function TopNav() {
             <Globe2 className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">{country ? "Change country" : "Select country"}</span>
           </Button>
-          <div className="w-px h-4 bg-border" />
-          <ThemeToggle />
-          <div className="w-px h-4 bg-border" />
-          <RoleSwitcher />
         </div>
       </div>
 
-      {/* Nav links strip with sliding active/hover indicator */}
-      <div className="overflow-x-auto scrollbar-none h-auto opacity-100">
+      {/* Nav links strip — links scroll, controls (theme + role) stay pinned
+          right so the role switcher is always visible, even when scrolled. */}
+      <div className="flex items-stretch">
+        <div className="overflow-x-auto scrollbar-none flex-1 min-w-0">
         <nav
           ref={navRef}
           className="relative flex items-center gap-0 px-4 min-w-max"
@@ -207,6 +205,11 @@ export function TopNav() {
             </NavLink>
           ))}
         </nav>
+        </div>
+        <div className="flex items-center gap-2 px-3 shrink-0 border-l border-border/40 bg-background/40">
+          <ThemeToggle />
+          <RoleSwitcher />
+        </div>
       </div>
     </header>
   );
