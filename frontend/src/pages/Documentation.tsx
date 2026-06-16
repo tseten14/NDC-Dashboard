@@ -122,7 +122,7 @@ export default function Documentation() {
           <p className="text-xs text-muted-foreground leading-relaxed">
             The left sidebar is grouped into <strong className="text-foreground">five decision questions</strong> (Q1–Q5).
             Each group is collapsible and starts open. A page may appear in more than one group.
-            Always-visible items (Home, Data Ingestion, My Work, Executive Overview, Policy documents) sit above the groups.
+            Always-visible items (Home, Data Ingestion, Database, Executive Overview, Policy documents) sit above the groups.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1 pt-1">
             {[

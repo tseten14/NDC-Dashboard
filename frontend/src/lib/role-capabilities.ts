@@ -1,7 +1,7 @@
 import type { AppRole } from "@/hooks/use-current-role";
 
 /**
- * Officer roles: restricted to the My Work tab only (create/submit/validate tickets).
+ * Officer roles: restricted to the Database tab only (create/submit/validate tickets).
  * Full-access roles (Senior Decision-Maker, Admin) see every tab and approve tickets.
  */
 export const MY_WORK_ONLY_ROLES: AppRole[] = [
@@ -67,7 +67,7 @@ export function getDashboardPresets(role: AppRole | null): DashboardPresets {
 }
 
 export function getDefaultRoute(role: AppRole | null): string {
-  // Officer roles land on My Work — their only tab.
+  // Officer roles land on Database — their only tab.
   if (isMyWorkOnlyRole(role)) return "/my-work";
   switch (role) {
     case "SeniorDecisionMaker":
@@ -97,15 +97,15 @@ export function getDashboardMode(role: AppRole | null): DashboardMode {
 export function getRoleContextMessage(role: AppRole | null): string {
   switch (role) {
     case "SeniorDecisionMaker":
-      return "Full access — every tab plus approval of activities (tickets) submitted by officers in My Work.";
+      return "Full access — every tab plus approval of activities (tickets) submitted by officers in Database.";
     case "MRVOfficer":
-      return "My Work — validate and QA submitted outputs.";
+      return "Database — validate and QA submitted outputs.";
     case "MinistryDeliveryOfficer":
-      return "My Work — create and submit activities for approval.";
+      return "Database — create and submit activities for approval.";
     case "FieldOfficer":
-      return "My Work — log and submit field activities.";
+      return "Database — log and submit field activities.";
     case "ProjectDeveloper":
-      return "My Work — create activities and track delivery.";
+      return "Database — create activities and track delivery.";
     case "Admin":
       return "Admin — full workflow, approvals, and configuration access.";
     default:
@@ -135,7 +135,7 @@ export function shouldShowAdvancedNav(role: AppRole | null): boolean {
 }
 
 export function isPrimaryNavVisible(role: AppRole | null, url: string): boolean {
-  // Officer roles only see the My Work tab. Senior Decision-Maker and Admin see everything.
+  // Officer roles only see the Database tab. Senior Decision-Maker and Admin see everything.
   if (isMyWorkOnlyRole(role)) return url === "/my-work";
   return true;
 }
@@ -178,30 +178,30 @@ export function getHomeRoleStartHere(role: AppRole | null): {
     case "MRVOfficer":
       return {
         title: "As MRV Officer",
-        bullets: ["Validate and QA submitted outputs", "Work the validation queue", "All in My Work"],
+        bullets: ["Validate and QA submitted outputs", "Work the validation queue", "All in Database"],
         to: "/my-work",
-        cta: "Go to My Work",
+        cta: "Go to Database",
       };
     case "MinistryDeliveryOfficer":
       return {
         title: "As Ministry Delivery Officer",
-        bullets: ["Create activities linked to targets", "Submit for approval", "Track status in My Work"],
+        bullets: ["Create activities linked to targets", "Submit for approval", "Track status in Database"],
         to: "/my-work",
-        cta: "Go to My Work",
+        cta: "Go to Database",
       };
     case "FieldOfficer":
       return {
         title: "As Field Officer",
-        bullets: ["Log activities from the field", "Submit for approval", "Track status in My Work"],
+        bullets: ["Log activities from the field", "Submit for approval", "Track status in Database"],
         to: "/my-work",
-        cta: "Go to My Work",
+        cta: "Go to Database",
       };
     case "ProjectDeveloper":
       return {
         title: "As Project Developer",
-        bullets: ["Create draft activities linked to targets", "Submit for ministry approval", "Track status in My Work"],
+        bullets: ["Create draft activities linked to targets", "Submit for ministry approval", "Track status in Database"],
         to: "/my-work",
-        cta: "Go to My Work",
+        cta: "Go to Database",
       };
     case "Admin":
       return {
