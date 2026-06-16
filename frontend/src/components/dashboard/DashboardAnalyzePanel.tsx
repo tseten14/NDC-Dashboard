@@ -153,7 +153,7 @@ function AnalysisCard({
               response.confidence === "high"
                 ? "text-on-track border-on-track/30 bg-on-track/5"
                 : response.confidence === "medium"
-                  ? "text-amber-600 border-amber-500/30 bg-amber-500/5"
+                  ? "text-muted-foreground border-border bg-muted/50"
                   : "text-muted-foreground",
             )}
           >

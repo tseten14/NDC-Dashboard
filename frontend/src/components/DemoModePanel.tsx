@@ -11,7 +11,6 @@ import {
   toggleFullscreen,
 } from "@/lib/demo-mode";
 import { useDemoMode } from "@/hooks/use-demo-mode";
-import { useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -57,17 +56,8 @@ export function DemoModeToggle() {
   );
 }
 
-/** Collapses sidebar while demo presenter mode is active. */
+/** Presenter mode applies body class; TopNav hides nav strip when active. */
 export function DemoPresenterController() {
-  const { presenterMode } = useDemoMode();
-  const { setOpen, setOpenMobile } = useSidebar();
-
-  useEffect(() => {
-    if (!presenterMode) return;
-    setOpen(false);
-    setOpenMobile(false);
-  }, [presenterMode, setOpen, setOpenMobile]);
-
   return null;
 }
 
@@ -166,7 +156,7 @@ export function DemoModePanel() {
           </SheetTrigger>
           <SheetContent side="left" className="w-[min(400px,90vw)] p-0">
             <SheetHeader className="p-4 border-b border-border">
-              <SheetTitle className="text-sm">3-minute demo path</SheetTitle>
+              <SheetTitle className="text-sm">5-minute demo path</SheetTitle>
               <SheetDescription className="text-xs">
                 Pre-curated clicks — Uganda, Senior Decision-Maker, Transport sector (~
                 {Math.round(DEMO_DURATION_SECONDS / 60)} min).
@@ -222,7 +212,7 @@ export function DemoModePanel() {
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
-              Temporarily show sidebar navigation
+              Temporarily show top navigation
             </TooltipContent>
           </Tooltip>
         )}

@@ -1,0 +1,884 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-16T01:25:37.171Z",
+  "sourceFile": "/Users/sherpster/Desktop/UoM/UN/ndc-data-explorer/data/sources/Uganda_key_docs_2026-06-11-1549.csv",
+  "count": 86,
+  "topics": [
+    {
+      "id": "Q557",
+      "label": "adaptation/resilience",
+      "passageCount": 771,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1831",
+      "label": "terrestrial adaptation",
+      "passageCount": 442,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q779",
+      "label": "finance and insurance sector",
+      "passageCount": 326,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q786",
+      "label": "agriculture sector",
+      "passageCount": 294,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q775",
+      "label": "public sector",
+      "passageCount": 248,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q767",
+      "label": "hospitality sector",
+      "passageCount": 208,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q47",
+      "label": "just transition",
+      "passageCount": 195,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q774",
+      "label": "education sector",
+      "passageCount": 193,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q704",
+      "label": "women and minority genders",
+      "passageCount": 189,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q638",
+      "label": "fossil fuel",
+      "passageCount": 170,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1282",
+      "label": "zoning and spatial planning",
+      "passageCount": 167,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1829",
+      "label": "finance flow",
+      "passageCount": 150,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000"
+      ]
+    },
+    {
+      "id": "Q769",
+      "label": "information communication technology sector",
+      "passageCount": 147,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q766",
+      "label": "transportation and logistics sector",
+      "passageCount": 130,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q765",
+      "label": "trade sector",
+      "passageCount": 128,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1167",
+      "label": "people with limited assets",
+      "passageCount": 120,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q404",
+      "label": "terrestrial risk",
+      "passageCount": 120,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q695",
+      "label": "youth",
+      "passageCount": 109,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q715",
+      "label": "tax",
+      "passageCount": 109,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q639",
+      "label": "oil",
+      "passageCount": 108,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q788",
+      "label": "fishing sector",
+      "passageCount": 105,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q761",
+      "label": "manufacturing sector",
+      "passageCount": 99,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q2008",
+      "label": "water adaptation",
+      "passageCount": 88,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q567",
+      "label": "renewable energy",
+      "passageCount": 86,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q764",
+      "label": "construction sector",
+      "passageCount": 84,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1832",
+      "label": "freshwater adaptation",
+      "passageCount": 80,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q218",
+      "label": "greenhouse gas",
+      "passageCount": 79,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q973",
+      "label": "slow onset event",
+      "passageCount": 72,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q763",
+      "label": "environmental management sector",
+      "passageCount": 71,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q374",
+      "label": "extreme weather",
+      "passageCount": 70,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1833",
+      "label": "health adaptation",
+      "passageCount": 64,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q676",
+      "label": "marginalized ethnicity",
+      "passageCount": 59,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q684",
+      "label": "indigenous people",
+      "passageCount": 58,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q1273",
+      "label": "loan",
+      "passageCount": 57,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q701",
+      "label": "people on the move",
+      "passageCount": 57,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q53",
+      "label": "social protection",
+      "passageCount": 55,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q787",
+      "label": "forestry sector",
+      "passageCount": 55,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q818",
+      "label": "water management sector",
+      "passageCount": 53,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1276",
+      "label": "direct investment",
+      "passageCount": 51,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q650",
+      "label": "gas",
+      "passageCount": 50,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q762",
+      "label": "energy supply sector",
+      "passageCount": 48,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q68",
+      "label": "decent work",
+      "passageCount": 44,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1830",
+      "label": "adaptation enabling factor",
+      "passageCount": 43,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q768",
+      "label": "media sector",
+      "passageCount": 42,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q956",
+      "label": "societal impact",
+      "passageCount": 42,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q760",
+      "label": "extractive sector",
+      "passageCount": 41,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1836",
+      "label": "societal and economic adaptation",
+      "passageCount": 40,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q58",
+      "label": "social inclusion",
+      "passageCount": 38,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q757",
+      "label": "informal sector",
+      "passageCount": 35,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q955",
+      "label": "chemical impact",
+      "passageCount": 35,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q1277",
+      "label": "fees and charges",
+      "passageCount": 30,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q1651",
+      "label": "unknown",
+      "passageCount": 29,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1278",
+      "label": "insurance",
+      "passageCount": 26,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000"
+      ]
+    },
+    {
+      "id": "Q572",
+      "label": "bioenergy",
+      "passageCount": 26,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1274",
+      "label": "subsidy",
+      "passageCount": 22,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q856",
+      "label": "healthcare sector",
+      "passageCount": 22,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1754",
+      "label": "aligning skills",
+      "passageCount": 21,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q385",
+      "label": "drought",
+      "passageCount": 21,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1362",
+      "label": "climate fund",
+      "passageCount": 17,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q986",
+      "label": "geohazard",
+      "passageCount": 17,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q412",
+      "label": "air pollution risk",
+      "passageCount": 14,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q69",
+      "label": "green jobs",
+      "passageCount": 14,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q954",
+      "label": "technological impact",
+      "passageCount": 14,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1834",
+      "label": "infrastructure and settlements adaptation",
+      "passageCount": 13,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q690",
+      "label": "people with health conditions",
+      "passageCount": 12,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q1280",
+      "label": "tradable permit",
+      "passageCount": 11,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1286",
+      "label": "early warning system",
+      "passageCount": 11,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000"
+      ]
+    },
+    {
+      "id": "Q1369",
+      "label": "central bank",
+      "passageCount": 9,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000"
+      ]
+    },
+    {
+      "id": "Q1744",
+      "label": "legal safeguards for vulnerable groups",
+      "passageCount": 9,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q1269",
+      "label": "tax advantage",
+      "passageCount": 8,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q606",
+      "label": "hydropower",
+      "passageCount": 8,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1285",
+      "label": "ban",
+      "passageCount": 5,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "CCLW.document.i00009252.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q1652",
+      "label": "unknown",
+      "passageCount": 5,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "UNFCCC.document.i00006033.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1837",
+      "label": "cultural and natural heritage resilience",
+      "passageCount": 5,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q223",
+      "label": "carbon dioxide",
+      "passageCount": 5,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "CCLW.document.i00009252.n0000"
+      ]
+    },
+    {
+      "id": "Q1281",
+      "label": "codes and standards",
+      "passageCount": 4,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000"
+      ]
+    },
+    {
+      "id": "Q1835",
+      "label": "coastal zone and marine adaptation",
+      "passageCount": 4,
+      "documentIds": [
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q226",
+      "label": "methane",
+      "passageCount": 4,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q661",
+      "label": "coal",
+      "passageCount": 4,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000"
+      ]
+    },
+    {
+      "id": "Q708",
+      "label": "elderly people",
+      "passageCount": 4,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q618",
+      "label": "solar energy",
+      "passageCount": 3,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000"
+      ]
+    },
+    {
+      "id": "Q1345",
+      "label": "adaptation finance",
+      "passageCount": 2,
+      "documentIds": [
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1653",
+      "label": "unknown",
+      "passageCount": 2,
+      "documentIds": [
+        "CCLW.document.i00005356.n0000",
+        "UNFCCC.document.i00006033.n0000"
+      ]
+    },
+    {
+      "id": "Q979",
+      "label": "heavy precipitation",
+      "passageCount": 2,
+      "documentIds": [
+        "CCLW.document.i00008912.n0000",
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q1370",
+      "label": "state-owned enterprise",
+      "passageCount": 1,
+      "documentIds": [
+        "UNFCCC.party.1504.0"
+      ]
+    },
+    {
+      "id": "Q601",
+      "label": "geothermal energy",
+      "passageCount": 1,
+      "documentIds": [
+        "UNFCCC.party.1504.0"
+      ]
+    }
+  ]
+}

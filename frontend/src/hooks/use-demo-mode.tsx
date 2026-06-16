@@ -112,3 +112,8 @@ export function useDemoMode() {
   if (!ctx) throw new Error("useDemoMode must be inside DemoModeProvider");
   return ctx;
 }
+
+/** Safe outside DemoModeProvider (e.g. TopNav). */
+export function useDemoModeOptional() {
+  return useContext(Ctx);
+}

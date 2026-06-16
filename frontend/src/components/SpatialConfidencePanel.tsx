@@ -14,7 +14,7 @@ function titleize(slug: string): string {
 function certaintyTone(pct: number | null): string {
   if (pct == null) return "text-muted-foreground";
   if (pct >= 75) return "text-on-track";
-  if (pct >= 40) return "text-amber-600";
+  if (pct >= 40) return "text-muted-foreground";
   return "text-off-track";
 }
 
@@ -97,7 +97,7 @@ export function SpatialConfidencePanel() {
             <Bar pct={certain} />
             <div className="flex items-center justify-between mt-1.5 text-[10px] text-muted-foreground">
               <span className="text-on-track font-medium">Located ({data.located_source_count} sources · {data.located_aggregation_count} mapped areas)</span>
-              <span className="text-amber-600 font-medium">Proxy-distributed</span>
+              <span className="text-muted-foreground font-medium">Proxy-distributed</span>
             </div>
             {data.truncated && (
               <p className="text-[10px] text-muted-foreground mt-2">
@@ -147,7 +147,7 @@ export function SpatialConfidencePanel() {
 function Bar({ pct, thin }: { pct: number | null; thin?: boolean }) {
   const located = Math.max(0, Math.min(100, pct ?? 0));
   return (
-    <div className={cn("w-full overflow-hidden rounded-full bg-amber-500/30", thin ? "h-1.5" : "h-2.5")}>
+    <div className={cn("w-full overflow-hidden rounded-full bg-muted", thin ? "h-1.5" : "h-2.5")}>
       <div className="h-full rounded-full bg-on-track" style={{ width: `${located}%` }} />
     </div>
   );

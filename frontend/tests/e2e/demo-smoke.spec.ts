@@ -21,6 +21,13 @@ test.describe("Demo smoke tests", () => {
     await expect(page.getByRole("button", { name: /Exit demo/i })).toBeVisible();
   });
 
+  test("Start 5-minute demo from Home navigates to dashboard", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /Start 5-minute demo/i }).click();
+    await expect(page).toHaveURL(/\/dashboard\?.*demo=1.*sector=transport/, { timeout: 30_000 });
+    await expect(page.getByTestId("demo-presenter-toolbar")).toBeVisible({ timeout: 30_000 });
+  });
+
   test("NDC gap panel on Home for Senior Decision-Maker", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("combobox", { name: /Switch active role/i })).toContainText(

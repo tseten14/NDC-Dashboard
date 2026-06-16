@@ -165,7 +165,7 @@ export function MeasuredVsNdcChart({
             ) : (
               <>
                 Measured value is{" "}
-                <span className="font-medium text-at-risk">
+                <span className="font-medium text-muted-foreground">
                   {formatValue(gap)} {unit} below
                 </span>{" "}
                 the NDC starting baseline.

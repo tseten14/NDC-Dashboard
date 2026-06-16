@@ -1,21 +1,26 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { documentsApi } from "@/lib/api";
 import type { PolicyDocument } from "@/lib/policy-documents";
 import {
   QUICK_ACTIONS,
   type AiAnalysisResponse, type QuickActionType,
 } from "@/data/policy-ai-mock";
+import { ClimatePolicyRadarBadge } from "@/components/ClimatePolicyRadarBadge";
+import { CPR_PASSAGE_ATTRIBUTION, resolveCprLink } from "@/lib/policy-lineage";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft, FileText, List, Target, Zap, ExternalLink,
   Loader2, Send, ChevronDown, ChevronUp, AlertCircle,
-  BookOpen,
+  BookOpen, Search, Tags,
 } from "lucide-react";
 
 // ── Icon map ──────────────────────────────────────────────────────────────────
@@ -24,10 +29,158 @@ const ICON_MAP: Record<string, React.ElementType> = {
   FileText, List, Target, Zap,
 };
 
+// ── Passages panel ────────────────────────────────────────────────────────────
+
+function PassagesPanel({ cprDocumentId }: { cprDocumentId: string }) {
+  const [qInput, setQInput] = useState("");
+  const [q, setQ] = useState("");
+  const [topicId, setTopicId] = useState("");
+  const [page, setPage] = useState(0);
+  const limit = 15;
+
+  useEffect(() => {
+    const t = setTimeout(() => setQ(qInput), 300);
+    return () => clearTimeout(t);
+  }, [qInput]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [q, topicId]);
+
+  const topicsQuery = useQuery({
+    queryKey: ["documents", "topics", cprDocumentId],
+    queryFn: () => documentsApi.listTopics(cprDocumentId),
+    staleTime: 1000 * 60 * 60,
+  });
+
+  const passagesQuery = useQuery({
+    queryKey: ["documents", "passages", cprDocumentId, q, topicId, page],
+    queryFn: () =>
+      documentsApi.listPassages(cprDocumentId, {
+        q: q || undefined,
+        topicId: topicId || undefined,
+        limit,
+        offset: page * limit,
+      }),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const total = passagesQuery.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const topics = topicsQuery.data?.topics ?? [];
+
+  return (
+    <div className="flex flex-col h-full border-r border-border">
+      <div className="shrink-0 px-3 py-2 border-b border-border bg-card/50">
+        <p className="text-[10px] font-semibold text-foreground">Passages</p>
+        <p className="text-[9px] text-muted-foreground mt-0.5">{CPR_PASSAGE_ATTRIBUTION}</p>
+        <div className="relative mt-2">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+          <Input
+            placeholder="Search passages…"
+            value={qInput}
+            onChange={(e) => setQInput(e.target.value)}
+            className="h-7 pl-7 text-[10px]"
+          />
+        </div>
+      </div>
+
+      {topics.length > 0 && (
+        <div className="shrink-0 px-3 py-2 border-b border-border bg-muted/20 max-h-28 overflow-y-auto">
+          <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-semibold mb-1 flex items-center gap-1">
+            <Tags className="h-2.5 w-2.5" /> Topics
+          </p>
+          <div className="flex flex-wrap gap-1">
+            <Button
+              size="sm"
+              variant={topicId === "" ? "default" : "outline"}
+              className="h-5 text-[8px] px-1.5"
+              onClick={() => setTopicId("")}
+            >
+              All
+            </Button>
+            {topics.slice(0, 12).map((t) => (
+              <Button
+                key={t.id}
+                size="sm"
+                variant={topicId === t.id ? "default" : "outline"}
+                className="h-5 text-[8px] px-1.5"
+                onClick={() => setTopicId(t.id)}
+              >
+                {t.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <ScrollArea className="flex-1">
+        <div className="p-2 space-y-2">
+          {passagesQuery.isLoading && (
+            <p className="text-[10px] text-muted-foreground p-2">Loading passages…</p>
+          )}
+          {passagesQuery.data?.passages.map((p) => (
+            <Card key={p.id} className="shadow-none border-border">
+              <CardContent className="p-2 space-y-1">
+                <p className="text-[10px] text-foreground leading-relaxed line-clamp-4">{p.text}</p>
+                {p.topicLabels.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {p.topicLabels.map((tl) => (
+                      <Badge key={`${p.id}-${tl.id}`} variant="outline" className="text-[7px] h-3.5 px-1">
+                        {tl.label}
+                        {tl.isFullParagraph && " · full ¶"}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                {p.topicLabellers.includes("bert") && (
+                  <p className="text-[8px] text-muted-foreground italic">
+                    Topic match may be full paragraph (BERT classifier)
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+          {!passagesQuery.isLoading && passagesQuery.data?.passages.length === 0 && (
+            <p className="text-[10px] text-muted-foreground p-2">No passages match.</p>
+          )}
+        </div>
+      </ScrollArea>
+
+      {total > limit && (
+        <div className="shrink-0 flex items-center justify-between px-2 py-1.5 border-t border-border">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 text-[9px]"
+            disabled={page <= 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+          >
+            Prev
+          </Button>
+          <span className="text-[9px] text-muted-foreground">
+            {page + 1}/{totalPages}
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 text-[9px]"
+            disabled={page + 1 >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── AI response renderer ──────────────────────────────────────────────────────
 
 function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisResponse; onFollowUp: (q: string) => void; doc?: PolicyDocument }) {
   const [openSections, setOpenSections] = useState<Set<number>>(new Set([0, 1, 2, 3]));
+  const cprLink = doc ? resolveCprLink(doc) : null;
 
   const toggleSection = (i: number) => {
     setOpenSections((s) => {
@@ -41,7 +194,6 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
   return (
     <Card className="border-border shadow-none">
       <CardContent className="p-4 space-y-3">
-        {/* Title + confidence */}
         <div className="flex items-center justify-between gap-2">
           <h4 className="text-xs font-bold text-foreground">{response.title}</h4>
           <Badge
@@ -56,7 +208,6 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
           </Badge>
         </div>
 
-        {/* Sections */}
         {response.sections.map((section, si) => (
           <div key={si} className="space-y-1.5">
             {section.heading && (
@@ -74,7 +225,7 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
                 {section.lines.map((line, li) => (
                   <li key={li} className="flex items-start gap-2 text-xs text-foreground leading-relaxed">
                     <span className="mt-1.5 h-1 w-1 rounded-full bg-muted-foreground/40 shrink-0" />
-                    <RichLine line={typeof line === "string" ? line : line.text} documentUrl={doc?.documentUrl} />
+                    <RichLine line={typeof line === "string" ? line : line.text} documentUrl={cprLink ?? doc?.documentUrl} />
                   </li>
                 ))}
               </ul>
@@ -83,7 +234,7 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
               <div className="flex flex-wrap gap-1 pl-3">
                 {section.page_refs.filter((ref) => /p\.?\s*\d+/i.test(ref) && !/^§/.test(ref)).map((ref) => {
                   const pageNum = ref.match(/p\.?\s*(\d+)/i)?.[1];
-                  const href = pageNum && doc?.documentUrl ? `${doc.documentUrl}#page=${pageNum}` : null;
+                  const href = pageNum && cprLink ? `${cprLink}#page=${pageNum}` : null;
                   const label = pageNum ? `page ${pageNum} ↗` : ref;
                   return href ? (
                     <a
@@ -106,14 +257,13 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
           </div>
         ))}
 
-        {/* Verified source */}
         {doc && (
           <div className="flex items-center gap-2 pt-1 border-t border-border">
             <span className="text-[9px] text-muted-foreground uppercase tracking-wide font-semibold shrink-0">Source</span>
             <div className="flex items-center gap-1.5 min-w-0">
-              {doc.documentUrl ? (
+              {cprLink ? (
                 <a
-                  href={doc.documentUrl}
+                  href={cprLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[10px] text-primary hover:underline truncate font-medium"
@@ -130,20 +280,18 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
                   rel="noopener noreferrer"
                   className="text-[9px] text-muted-foreground hover:text-foreground shrink-0 underline"
                 >
-                  CPR ↗
+                  PDF ↗
                 </a>
               )}
             </div>
           </div>
         )}
 
-        {/* Disclaimer */}
         <div className="flex items-start gap-1.5 border-t border-border pt-1">
           <AlertCircle className="h-3 w-3 text-muted-foreground/60 shrink-0 mt-0.5" />
           <p className="text-[10px] text-muted-foreground leading-relaxed">{response.disclaimer}</p>
         </div>
 
-        {/* Suggested follow-ups */}
         {response.suggested_follow_ups.length > 0 && (
           <div className="space-y-1">
             <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Follow-up questions</p>
@@ -173,7 +321,6 @@ function RichLine({ line, documentUrl }: { line: string; documentUrl?: string })
       {parts.map((part, i) => {
         if (/^\[(?:p\.?\s*\d+|§[\w.]+)\]$/.test(part)) {
           const pageNum = part.match(/p\.?\s*(\d+)/i)?.[1];
-          // Section refs (§) have no linkable target — drop them silently.
           if (!pageNum) return null;
           const href = documentUrl ? `${documentUrl}#page=${pageNum}` : null;
           if (href) {
@@ -224,7 +371,7 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contentUrl: doc.contentUrl,
-        documentUrl: doc.documentUrl,
+        documentUrl: resolveCprLink(doc) ?? doc.documentUrl,
         title: doc.title,
         action,
         question,
@@ -257,7 +404,7 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
         confidence: "low", disclaimer: "", suggested_follow_ups: [],
       }}]);
     }).finally(() => setIsLoading(false));
-  }, [doc, isLoading, callAnalyzeApi]);
+  }, [isLoading, callAnalyzeApi]);
 
   const runChat = useCallback((question: string) => {
     const q = question.trim();
@@ -281,11 +428,10 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
         confidence: "low", disclaimer: "", suggested_follow_ups: [],
       }}]);
     }).finally(() => setIsLoading(false));
-  }, [doc, isLoading, callAnalyzeApi]);
+  }, [isLoading, callAnalyzeApi]);
 
   return (
     <div className="flex flex-col h-full">
-      {/* Panel header */}
       <div className="shrink-0 px-4 py-3 border-b border-border bg-card">
         <div className="flex items-center gap-2">
           <BookOpen className="h-3.5 w-3.5 text-primary" />
@@ -296,7 +442,6 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
         </p>
       </div>
 
-      {/* Quick-action buttons */}
       <div className="shrink-0 px-4 pt-3 pb-2 border-b border-border bg-muted/20">
         <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Quick analysis</p>
         <div className="grid grid-cols-2 gap-2">
@@ -325,7 +470,6 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
         </div>
       </div>
 
-      {/* Response scroll area */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
           {entries.length === 0 && (
@@ -365,7 +509,6 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
         </div>
       </ScrollArea>
 
-      {/* "Ask the PDF" input */}
       <div className="shrink-0 px-4 py-3 border-t border-border bg-card">
         <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Ask the document</p>
         <div className="flex gap-2 items-end">
@@ -399,12 +542,91 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-export default function PolicyDocumentView() {
+function useResolvedDocument(): {
+  doc: PolicyDocument | undefined;
+  isLoading: boolean;
+  error: boolean;
+} {
   const { state } = useLocation();
-  const navigate = useNavigate();
-  const doc = state?.doc as PolicyDocument | undefined;
+  const [searchParams] = useSearchParams();
+  const stateDoc = state?.doc as PolicyDocument | undefined;
+  const catalogId = searchParams.get("catalogId");
+  const cprDocumentId = searchParams.get("cprDocumentId");
 
-  if (!doc) {
+  const catalogQuery = useQuery({
+    queryKey: ["documents", "catalog", catalogId],
+    queryFn: () => documentsApi.getCatalogDocument(catalogId!),
+    enabled: !stateDoc?.title && !!catalogId,
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const cprQuery = useQuery({
+    queryKey: ["documents", "cpr", cprDocumentId],
+    queryFn: () => documentsApi.getPassageDocument(cprDocumentId!),
+    enabled: !stateDoc?.title && !catalogId && !!cprDocumentId,
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const doc = useMemo(() => {
+    if (stateDoc?.title && (stateDoc.documentUrl || stateDoc.cprUrl || stateDoc.contentUrl)) {
+      return stateDoc;
+    }
+    if (catalogQuery.data?.document) {
+      return catalogQuery.data.document;
+    }
+    if (cprQuery.data) {
+      const p = cprQuery.data;
+      return {
+        id: p.catalogId ?? p.cprDocumentId,
+        title: p.title,
+        familyName: p.title,
+        familySummary: p.familySummary,
+        familyDate: null,
+        familyUrl: p.cprUrl,
+        documentUrl: p.cprUrl,
+        contentUrl: null,
+        documentType: null,
+        category: "Executive",
+        source: null,
+        geographies: ["UGA"],
+        languages: "English",
+        hasPassages: true,
+        cprDocumentId: p.cprDocumentId,
+        passageCount: p.passageCount,
+        taggedPassageCount: p.taggedPassageCount,
+        cprUrl: p.cprUrl,
+        slug: p.slug,
+      } satisfies PolicyDocument;
+    }
+    return stateDoc;
+  }, [stateDoc, catalogQuery.data, cprQuery.data]);
+
+  const isLoading =
+    (!doc?.title && !!catalogId && catalogQuery.isLoading) ||
+    (!doc?.title && !catalogId && !!cprDocumentId && cprQuery.isLoading);
+
+  const error =
+    (!doc?.title && !!catalogId && catalogQuery.isError) ||
+    (!doc?.title && !catalogId && !!cprDocumentId && cprQuery.isError);
+
+  return { doc, isLoading, error };
+}
+
+export default function PolicyDocumentView() {
+  const navigate = useNavigate();
+  const { doc, isLoading, error } = useResolvedDocument();
+  const cprLink = doc ? resolveCprLink(doc) : null;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full gap-2 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <span className="text-sm">Loading document…</span>
+      </div>
+    );
+  }
+
+  if (!doc || error) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 p-8 text-center">
         <AlertCircle className="h-8 w-8 text-muted-foreground/40" />
@@ -416,9 +638,10 @@ export default function PolicyDocumentView() {
     );
   }
 
+  const showPassages = !!doc.cprDocumentId && doc.hasPassages;
+
   return (
     <div className="flex flex-col h-full">
-      {/* Top bar */}
       <div className="shrink-0 px-4 py-2 border-b border-border bg-muted/30 flex items-center gap-2">
         <Button
           variant="ghost"
@@ -431,11 +654,12 @@ export default function PolicyDocumentView() {
         </Button>
         <Separator orientation="vertical" className="h-4" />
         <p className="text-xs text-muted-foreground truncate flex-1">{doc.title}</p>
+        <ClimatePolicyRadarBadge className="hidden sm:inline-flex items-center gap-1 shrink-0 rounded border border-primary/25 bg-primary/8 px-2 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/12 transition-colors" />
         <div className="flex gap-1 shrink-0">
-          {doc.documentUrl && (
+          {cprLink && (
             <Button size="sm" variant="outline" className="h-7 text-[10px]" asChild>
-              <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-3 w-3 mr-1" />CPR
+              <a href={cprLink} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-3 w-3 mr-1" />View on CPR
               </a>
             </Button>
           )}
@@ -449,9 +673,15 @@ export default function PolicyDocumentView() {
         </div>
       </div>
 
-      {/* AI panel fills full height */}
-      <div className="flex-1 min-h-0">
-        <AiPanel doc={doc} />
+      <div className="flex-1 min-h-0 flex">
+        {showPassages && doc.cprDocumentId && (
+          <div className="w-[38%] min-w-[240px] max-w-md shrink-0 hidden md:block">
+            <PassagesPanel cprDocumentId={doc.cprDocumentId} />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <AiPanel doc={doc} />
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { type NDCTarget, type ObservedDataSet, type QAQCStatus, getObservedDataForTarget, bau2030ForTarget } from "@/data/uganda-ndc-data";
+import { type NDCTarget, type ObservedDataSet, getObservedDataForTarget, bau2030ForTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import {
   buildLiveObservedDataSet,
@@ -29,7 +29,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, CheckCircle2, XCircle, Database, Satellite, MapPin, CodeXml, ExternalLink } from "lucide-react";
+import { Database, Satellite, MapPin, CodeXml, ExternalLink } from "lucide-react";
 import { DataProvenancePanel } from "@/components/DataProvenancePanel";
 import { ViewSourceModal } from "@/components/ViewSourceModal";
 import { CLIMATE_TRACE_API_DOCS_URL } from "@/lib/data-lineage";
@@ -389,22 +389,9 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
           )}
 
           {hasNullGaps && (
-            <p className="text-[11px] text-at-risk leading-relaxed">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
               Some years have no observed data — gaps are shown as empty, not estimated.
             </p>
-          )}
-
-          {observedData.provenance.qaqcStatus !== "ok" && (
-            <div className="flex items-start gap-2 p-2 rounded-md bg-at-risk/10 border border-at-risk/30">
-              <AlertTriangle className="h-3.5 w-3.5 text-at-risk shrink-0 mt-0.5" />
-              <div>
-                <p className="text-[10px] font-medium text-at-risk">
-                  {observedData.provenance.qaqcStatus === "warning" && "Data quality check flagged possible issues."}
-                  {observedData.provenance.qaqcStatus === "missing" && "No quality review has been completed yet."}
-                  {observedData.provenance.qaqcStatus === "inconsistent" && "Data from different sources does not fully agree."}
-                </p>
-              </div>
-            </div>
           )}
 
           <Card className="dash-card-hover dash-fade-up">
@@ -444,7 +431,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                     </Badge>
                   )}
                   {latestVsNdc === "below" && !isCapChart && (
-                    <Badge variant="outline" className="text-[8px] h-4 bg-at-risk/10 text-at-risk border-at-risk/30">
+                    <Badge variant="outline" className="text-[8px] h-4 bg-muted/50 text-muted-foreground border-border">
                       Below goal path
                     </Badge>
                   )}
@@ -537,7 +524,6 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                     </span>
                   </>
                 )}
-                <QAQCBadge status={observedData.provenance.qaqcStatus} />
               </div>
             </CardContent>
           </Card>
@@ -576,20 +562,6 @@ function ClimateTraceApiBadge() {
   );
 }
 
-function QAQCBadge({ status }: { status: QAQCStatus }) {
-  const config: Record<QAQCStatus, { label: string; className: string; icon: typeof CheckCircle2 }> = {
-    ok: { label: "OK", className: "bg-on-track/10 text-on-track border-on-track/30", icon: CheckCircle2 },
-    warning: { label: "Warning", className: "bg-at-risk/10 text-at-risk border-at-risk/30", icon: AlertTriangle },
-    missing: { label: "Missing", className: "bg-off-track/10 text-off-track border-off-track/30", icon: XCircle },
-    inconsistent: { label: "Inconsistent", className: "bg-at-risk/10 text-at-risk border-at-risk/30", icon: AlertTriangle },
-  };
-  const { label, className, icon: Icon } = config[status];
-  return (
-    <Badge variant="outline" className={cn("text-[9px] h-4", className)}>
-      <Icon className="h-2.5 w-2.5 mr-0.5" />{label}
-    </Badge>
-  );
-}
 
 function sourceTypeLabel(type: string): string {
   const map: Record<string, string> = {

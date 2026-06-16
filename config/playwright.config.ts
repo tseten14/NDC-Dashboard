@@ -18,7 +18,7 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "npm run dev:all",
+    command: "npm run dev",
     url: "http://localhost:8080/api/health",
     reuseExistingServer: !process.env.CI,
     timeout: 240_000,

@@ -3,9 +3,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useCountry } from "@/context/CountryContext";
 import { useCurrentRole } from "@/hooks/use-current-role";
+import { useDemoModeOptional } from "@/hooks/use-demo-mode";
 import { isPrimaryNavVisible } from "@/lib/role-capabilities";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { DemoModeToggle } from "@/components/DemoModePanel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -81,6 +83,8 @@ export function TopNav() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { activeRole } = useCurrentRole();
+  const demo = useDemoModeOptional();
+  const hideNavStrip = demo?.presenterMode && !demo?.sidebarPeek;
   const visiblePrimary = primary.filter((item) => isPrimaryNavVisible(activeRole, item.url));
 
   // Condense the header once page content (in any nested scroll container) scrolls down.
@@ -195,12 +199,19 @@ export function TopNav() {
           <div className="w-px h-4 bg-border" />
           <ThemeToggle />
           <div className="w-px h-4 bg-border" />
+          <DemoModeToggle />
+          <div className="w-px h-4 bg-border" />
           <RoleSwitcher />
         </div>
       </div>
 
       {/* Nav links strip with sliding active/hover indicator */}
-      <div className="overflow-x-auto scrollbar-none">
+      <div
+        className={cn(
+          "overflow-x-auto scrollbar-none transition-[height,opacity] duration-300",
+          hideNavStrip ? "h-0 opacity-0 overflow-hidden" : "h-auto opacity-100",
+        )}
+      >
         <nav
           ref={navRef}
           className="relative flex items-center gap-0 px-4 min-w-max"

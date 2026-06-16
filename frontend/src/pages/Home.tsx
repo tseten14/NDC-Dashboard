@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useCountry } from "@/context/CountryContext";
+import { useDemoMode } from "@/hooks/use-demo-mode";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
 import { HERO_GRADIENT_TEXT } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight, Globe2, LayoutDashboard, Sparkles, Target,
-  Upload, Satellite, ChevronRight, Scale, Workflow, Briefcase,
+  Upload, Satellite, ChevronRight, Scale, Workflow, Briefcase, Presentation,
 } from "lucide-react";
 
 const FEATURES = [
@@ -62,6 +63,7 @@ const FEATURES = [
 export default function Home() {
   const { country, clearCountry } = useCountry();
   const navigate = useNavigate();
+  const { startDemoPresentation } = useDemoMode();
   const [searchParams] = useSearchParams();
   const featuresReveal = useScrollReveal();
   const bannerReveal = useScrollReveal();
@@ -105,7 +107,15 @@ export default function Home() {
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2.5">
-              <Button asChild size="default" className="gap-1.5 shadow-sm">
+              <Button
+                size="default"
+                className="gap-1.5 shadow-sm"
+                onClick={() => startDemoPresentation()}
+              >
+                <Presentation className="h-4 w-4" />
+                Start 5-minute demo
+              </Button>
+              <Button asChild size="default" variant="secondary" className="gap-1.5">
                 <Link to="/dashboard">
                   <LayoutDashboard className="h-4 w-4" />
                   Open Dashboard

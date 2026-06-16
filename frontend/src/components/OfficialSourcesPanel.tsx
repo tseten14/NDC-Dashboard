@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { documentsApi } from "@/lib/api";
 import type { SectorId } from "@/data/uganda-ndc-data";
+import { ClimatePolicyRadarBadge } from "@/components/ClimatePolicyRadarBadge";
+import { CPR_PASSAGE_ATTRIBUTION, resolveCprLink } from "@/lib/policy-lineage";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ExternalLink, ChevronDown } from "lucide-react";
@@ -29,8 +31,11 @@ export function OfficialSourcesPanel({ sectorId, className }: OfficialSourcesPan
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-2 rounded-md border border-border bg-card/80 px-2.5 py-2 space-y-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <ClimatePolicyRadarBadge className="inline-flex items-center gap-1 shrink-0 rounded border border-primary/25 bg-primary/8 px-2 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/12 transition-colors" />
+        </div>
         <p className="text-[10px] text-muted-foreground leading-snug">
-          Laws, NDC submissions, and national plans (Climate Policy Radar export). Evidence only — not MRV.
+          Laws, NDC submissions, and national plans ({CPR_PASSAGE_ATTRIBUTION}) Evidence only — not MRV.
         </p>
         {curatedQuery.isLoading && (
           <p className="text-[10px] text-muted-foreground">Loading…</p>
@@ -42,7 +47,7 @@ export function OfficialSourcesPanel({ sectorId, className }: OfficialSourcesPan
           {docs.map((doc) => (
             <li key={doc.id} className="text-xs leading-snug">
               <a
-                href={doc.documentUrl}
+                href={resolveCprLink(doc) ?? doc.documentUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline inline-flex items-start gap-1"

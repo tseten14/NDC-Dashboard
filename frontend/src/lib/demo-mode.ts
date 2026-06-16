@@ -2,7 +2,7 @@
 
 export const DEMO_MODE_KEY = "uganda-ndc-demo-mode";
 export const DEMO_PRESENTER_BODY_CLASS = "demo-presenter-mode";
-export const DEMO_DURATION_SECONDS = 180;
+export const DEMO_DURATION_SECONDS = 300;
 
 /** Bookmark / one-click start URL for live presentations. */
 export const DEMO_START_PATH = "/dashboard?demo=1&sector=transport";
@@ -22,49 +22,84 @@ export interface DemoStep {
   script: string;
 }
 
-/** Curated 3-minute click path (bookmark: /dashboard?demo=1&sector=transport). */
+/** Curated 5-minute click path (bookmark: /dashboard?demo=1&sector=transport). */
 export const DEMO_CLICK_PATH: DemoStep[] = [
   {
     time: "0:00",
     route: "/dashboard?sector=transport",
     label: "Opening — national cockpit",
     script:
-      "What does it take to make an NDC usable for day-to-day decision-making? Today this still requires weeks of manually assembling fragmented data.",
+      "Governments don't lack climate ambition — they lack a live picture of delivery. This cockpit answers that in one workspace.",
   },
   {
-    time: "0:50",
+    time: "0:25",
+    route: "/dashboard?sector=transport",
+    label: "Live evidence banner",
+    script:
+      "Not a static PDF — observed emissions updated from satellite and facility data.",
+  },
+  {
+    time: "0:40",
     route: "/dashboard?sector=transport",
     label: "Five policy questions",
     script:
-      "Across ministries we heard the same operational questions — emissions, impact, scenarios, gaps, priorities.",
+      "Ministries ask five operational questions: where we are, what moves the needle, policy impact, gaps, and priorities.",
   },
   {
-    time: "1:20",
+    time: "1:00",
     route: "/dashboard?sector=transport",
-    label: "Screen 1 — emissions & progress",
+    label: "Progress & timeseries",
     script:
-      "Here we move from static reporting to a live, integrated view of emissions and sector performance — NDC pledges reconciled against observed data.",
+      "Transport target, pledges, and progress in one view — targets linked to evidence.",
   },
   {
-    time: "1:45",
-    route: "/documents?tab=pathway",
-    label: "Screen 2 — intervention pathway",
+    time: "1:25",
+    route: "/map",
+    label: "Emissions map",
     script:
-      "The system connects emissions data with policy and sector-level information, identifying where interventions can have the greatest impact.",
+      "Spatial layer — see where emissions come from, down to assets and districts.",
   },
   {
     time: "2:00",
-    route: "/climate-finance",
-    label: "Screen 3 — compare options",
+    route: "/documents?tab=pathway",
+    label: "Policy pathway",
     script:
-      "Policymakers can compare options — not in abstract terms, but in expected outcomes and trade-offs.",
+      "Policies trace back to NDC outcomes — documents and measures linked to targets.",
   },
   {
-    time: "2:10",
-    route: "/dashboard?sector=transport",
-    label: "Punchline — return to dashboard",
+    time: "2:25",
+    route: "/climate-finance",
+    label: "Climate finance",
     script:
-      "From data to insight. From reporting to decision support. From static NDCs to operational systems for implementation.",
+      "Compare options by cost, abatement, and trade-offs — not abstract targets.",
+  },
+  {
+    time: "2:55",
+    route: "/dashboard?sector=transport",
+    label: "NDC AI briefing",
+    script:
+      "Ask in plain language — 'Are we on track for transport?' — grounded in this country's data.",
+  },
+  {
+    time: "3:35",
+    route: "/dashboard?sector=transport",
+    label: "Punchline",
+    script:
+      "From reporting to decision support. From fragmented files to one operational system.",
+  },
+  {
+    time: "4:00",
+    route: "/dashboard?sector=transport",
+    label: "Challenges (verbal)",
+    script:
+      "Mixed sources, API warm-up, ministry adoption — briefing tool, not UNFCCC submission.",
+  },
+  {
+    time: "4:25",
+    route: "/dashboard?sector=transport",
+    label: "Future (verbal)",
+    script:
+      "Next: searchable policy corpus per country, and a mobile app for field MRV.",
   },
 ];
 

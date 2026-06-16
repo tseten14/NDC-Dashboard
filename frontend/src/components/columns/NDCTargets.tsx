@@ -22,7 +22,7 @@ interface NDCTargetsProps {
 
 const conditionalityColors: Record<string, string> = {
   Unconditional: "bg-on-track/15 text-on-track border-on-track/30",
-  Conditional: "bg-at-risk/15 text-at-risk border-at-risk/30",
+  Conditional: "bg-muted text-muted-foreground border-border",
   Mixed: "bg-chart-4/15 text-chart-4 border-chart-4/30",
 };
 

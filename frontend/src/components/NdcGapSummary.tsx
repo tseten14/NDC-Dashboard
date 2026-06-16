@@ -48,14 +48,14 @@ const STATUS_LABEL: Record<ProgressStatus, string> = {
 
 const STATUS_CLS: Record<ProgressStatus, string> = {
   "on-track": "bg-on-track/10 text-on-track border-on-track/30",
-  "at-risk": "bg-at-risk/10 text-at-risk border-at-risk/30",
+  "at-risk": "bg-muted text-muted-foreground border-border",
   "off-track": "bg-off-track/10 text-off-track border-off-track/30",
   unknown: "bg-muted text-muted-foreground border-border",
 };
 
 const STATUS_DOT: Record<ProgressStatus, string> = {
   "on-track": "bg-on-track",
-  "at-risk": "bg-at-risk",
+  "at-risk": "bg-muted-foreground",
   "off-track": "bg-off-track",
   unknown: "bg-muted-foreground",
 };
@@ -346,7 +346,7 @@ function DataModeBadge({ live }: { live: boolean }) {
       variant="outline"
       className={cn(
         "text-[10px] h-5 shrink-0",
-        live ? "text-on-track border-on-track/30" : "text-at-risk border-at-risk/30",
+        live ? "text-on-track border-on-track/30" : "text-muted-foreground border-border",
       )}
     >
       {live ? "Live · Climate TRACE" : "Indicative · fallback data"}
@@ -367,7 +367,7 @@ function HeadlinePill({
 }) {
   const items = [
     { label: "On track", value: onTrack, icon: CheckCircle2, cls: "text-on-track" },
-    { label: "At risk", value: atRisk, icon: AlertTriangle, cls: "text-at-risk" },
+    { label: "At risk", value: atRisk, icon: AlertTriangle, cls: "text-muted-foreground" },
     { label: "Off track", value: offTrack, icon: TrendingDown, cls: "text-off-track" },
   ];
   return (
@@ -528,7 +528,7 @@ function ModeChip({ mode }: { mode: "live" | "indicative" }) {
       variant="outline"
       className={cn(
         "text-[8px] h-3.5 px-1 font-normal leading-none",
-        mode === "live" ? "text-on-track border-on-track/30" : "text-at-risk border-at-risk/30",
+        mode === "live" ? "text-on-track border-on-track/30" : "text-muted-foreground border-border",
       )}
       title={mode === "live" ? "Observed Climate TRACE data" : "Catalog or fallback estimates"}
     >

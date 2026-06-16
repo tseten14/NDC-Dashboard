@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-16T01:25:37.171Z",
+  "sourceFile": "/Users/sherpster/Desktop/UoM/UN/ndc-data-explorer/data/sources/Uganda_key_docs_2026-06-11-1549.csv",
+  "source": "climate_policy_radar_passage_export",
+  "count": 5,
+  "documents": [
+    {
+      "cprDocumentId": "CCLW.document.i00008912.n0000",
+      "slug": "fourth-national-development-plan-ndpi-2025-26-2029-30_d631",
+      "title": "Fourth National Development Plan (NDPI) 2025/26 - 2029/30",
+      "familyId": "CCLW.family.i00008911.n0000",
+      "familySummary": "<p>The plan aims to promote sustainable socioeconomic development nationally, building on the aims and achievements of the previous three National Development Plan cycles. It acknowledges climate as a major threat to sustainable development, and among its solutions emphasises appropriate land administration, forest and wetland restoration, wide-ranging rural and urban adaptation, improving capacity to access climate finance, and promoting clean cooking fuels to replace wood biomass. For climate adaptation, which receives particular emphasis, key measures include enhanced irrigation and increasing water storage capacity by around 20% over the 2025-2029 period.</p>",
+      "cprUrl": "https://app.climatepolicyradar.org/documents/fourth-national-development-plan-ndpi-2025-26-2029-30_d631",
+      "catalogId": "85442c5657c8a980",
+      "passageCount": 738,
+      "taggedPassageCount": 282
+    },
+    {
+      "cprDocumentId": "CCLW.document.i00005356.n0000",
+      "slug": "the-national-climate-change-climate-change-mechanisms-regulations-2025_4cae",
+      "title": "The National Climate Change (Climate Change Mechanisms) Regulations, 2025",
+      "familyId": "CCLW.family.i00005355.n0000",
+      "familySummary": "<p>The National Climate Change (Climate Change Mechanisms) Regulations, 2025 provide an administrative framework to operationalise national and international climate commitments in Uganda, following the legal framework given in the National Climate Change Act 2021. These regulations define the roles and sequential protocol for verifiers of emissions reduction units, as well as mechanisms projects and the operation of emissions trading.</p>",
+      "cprUrl": "https://app.climatepolicyradar.org/documents/the-national-climate-change-climate-change-mechanisms-regulations-2025_4cae",
+      "catalogId": "5ba3d7ca7050139f",
+      "passageCount": 201,
+      "taggedPassageCount": 30
+    },
+    {
+      "cprDocumentId": "CCLW.document.i00009252.n0000",
+      "slug": "uganda-national-agroforestry-strategy_301e",
+      "title": "Uganda National Agroforestry Strategy",
+      "familyId": "CCLW.family.i00009251.n0000",
+      "familySummary": "<p>This strategy seeks to promote agroforestry techniques in Uganda over the long term, aiming to reduce land degradation, increase forest carbon stocks and support sustainable rural livelihoods alongside economic growth. It notes the threat of climate change to farming systems using less sustainable methods, and notes the opportunity to integrate agroforestry with carbon credit schemes to secure external funding. The strategy promotes the expansion and establishment of agroforestry tree nurseries, training for farmers, integration of a communications strategy, domestic agroforestry research funding, and the integration of this process with international research and financing systems.</p>",
+      "cprUrl": "https://app.climatepolicyradar.org/documents/uganda-national-agroforestry-strategy_301e",
+      "catalogId": "275f8e47b8bd88c7",
+      "passageCount": 220,
+      "taggedPassageCount": 151
+    },
+    {
+      "cprDocumentId": "UNFCCC.document.i00006033.n0000",
+      "slug": "uganda-national-biodiversity-strategy-and-action-plan-nbsap-2025_ec0b",
+      "title": "Uganda National Biodiversity Strategy and Action Plan. NBSAP (2025)",
+      "familyId": "UNFCCC.family.i00006032.n0000",
+      "familySummary": "<p>Uganda National Biodiversity Strategy and Action Plan. NBSAP (2025)</p>",
+      "cprUrl": "https://app.climatepolicyradar.org/documents/uganda-national-biodiversity-strategy-and-action-plan-nbsap-2025_ec0b",
+      "catalogId": "63a721e77d35caa2",
+      "passageCount": 625,
+      "taggedPassageCount": 283
+    },
+    {
+      "cprDocumentId": "UNFCCC.party.1504.0",
+      "slug": "uganda-nationally-determined-contribution-ndc1-updated-2022_d4ec",
+      "title": "Uganda Nationally Determined Contribution. NDC1 (Updated 2022)",
+      "familyId": "UNFCCC.family.1504.0",
+      "familySummary": "<p>Uganda's Updated NDC, Nationally Determined Contribution from Uganda in 2022</p>",
+      "cprUrl": "https://app.climatepolicyradar.org/documents/uganda-nationally-determined-contribution-ndc1-updated-2022_d4ec",
+      "catalogId": "e3642b688afc72ce",
+      "passageCount": 301,
+      "taggedPassageCount": 134
+    }
+  ]
+}

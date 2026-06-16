@@ -4,6 +4,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { getPassageEnrichment } from "./policyPassages.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_PATH = join(__dirname, "..", "data", "uganda-policy-documents.json");
@@ -47,6 +48,12 @@ function matchesQuery(doc, q) {
   return hay.includes(needle);
 }
 
+function enrichDoc(doc) {
+  const passage = getPassageEnrichment(doc.id);
+  if (!passage) return doc;
+  return { ...doc, ...passage };
+}
+
 /**
  * @param {{ category?: string, source?: string, q?: string, limit?: number, offset?: number }} opts
  */
@@ -62,7 +69,7 @@ export function listDocuments(opts = {}) {
   if (q?.trim()) rows = rows.filter((d) => matchesQuery(d, q.trim()));
 
   const total = rows.length;
-  const documents = rows.slice(offset, offset + limit);
+  const documents = rows.slice(offset, offset + limit).map(enrichDoc);
 
   return {
     documents,
@@ -107,7 +114,7 @@ export function getCurated(opts = {}) {
     ids = [...new Set([...ids, ...financeIds])];
   }
 
-  const documents = ids.map((id) => byId.get(id)).filter(Boolean);
+  const documents = ids.map((id) => byId.get(id)).filter(Boolean).map(enrichDoc);
   return {
     sectorId,
     context,
@@ -118,5 +125,6 @@ export function getCurated(opts = {}) {
 
 export function getDocumentById(id) {
   loadCorpus();
-  return byId.get(id) ?? null;
+  const doc = byId.get(id) ?? null;
+  return doc ? enrichDoc(doc) : null;
 }

@@ -28,7 +28,7 @@ export const DataLineageChip = memo(function DataLineageChip({ lineage, classNam
         as of {asOfLabel}
       </Badge>
       {lineage.isEstimated && (
-        <Badge variant="outline" className="text-[8px] h-4 px-1 font-normal text-at-risk border-at-risk/30">
+        <Badge variant="outline" className="text-[8px] h-4 px-1 font-normal text-muted-foreground border-border">
           estimated
         </Badge>
       )}

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { type NDCTarget, type ProgressStatus, type QAQCStatus } from "@/data/uganda-ndc-data";
+import { type NDCTarget, type ProgressStatus } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import {
   getClimateTraceSectorForTarget,
@@ -230,8 +230,8 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
           )}
 
           {baselineMismatch && pr && (
-            <div className="p-2 rounded-md bg-at-risk/10 border border-at-risk/30 text-xs">
-              <p className="font-medium text-at-risk">Note: two different ways of counting emissions</p>
+            <div className="p-2 rounded-md bg-muted/40 border border-border text-xs">
+              <p className="font-medium text-foreground">Note: two different ways of counting emissions</p>
               <p className="text-muted-foreground mt-0.5 leading-relaxed">
                 Uganda&apos;s official inventory baseline ({pr.baseline_value} Mt) and Climate TRACE&apos;s estimate (
                 {pr.latest_value} Mt in {pr.latest_year}) use different methods — that is expected. Progress uses
@@ -324,16 +324,6 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
               </div>
             </CardContent>
           </Card>
-
-          {observedForData && observedForData.provenance.qaqcStatus !== "ok" && (
-            <Card className="border-at-risk/30">
-              <CardContent className="p-3">
-                <p className="text-[10px] text-at-risk font-medium">
-                  {qaqcProgressNote(observedForData.provenance.qaqcStatus)}
-                </p>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </ScrollArea>
     </div>
@@ -370,19 +360,6 @@ function ProgressFormulaBlock({
       <p className="text-[10px] text-foreground whitespace-nowrap overflow-x-auto">{template}</p>
     </div>
   );
-}
-
-function qaqcProgressNote(status: QAQCStatus): string {
-  if (status === "warning") {
-    return "Some Climate TRACE source categories are incomplete or the cache may be stale — progress is indicative.";
-  }
-  if (status === "inconsistent") {
-    return "Sector totals do not fully match the national reconciliation — progress status may be conservative.";
-  }
-  if (status === "missing") {
-    return "No quality review is on file for this indicator yet — progress may show as unknown.";
-  }
-  return "Data quality concerns may affect the progress status.";
 }
 
 /** Visual scale: latest vs NDC ceiling vs no-policy BAU (lower is better). */

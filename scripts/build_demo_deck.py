@@ -1,34 +1,40 @@
 #!/usr/bin/env python3
-"""Generate June 17 NDC Data Explorer demo PowerPoint."""
+"""Generate June 17 NDC Data Explorer demo PowerPoint (diagrams + Climate TRACE)."""
 
 from pathlib import Path
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
-from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE
+from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE, MSO_CONNECTOR
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs" / "Uganda-NDC-Data-Explorer-Demo-June-17-2026.pptx"
+SCREENSHOTS = ROOT / "docs" / "demo-screenshots"
 OUT.parent.mkdir(parents=True, exist_ok=True)
+
+LIVE_URL = "https://ndc-data-explorer-e051f914.vercel.app"
+CLIMATE_TRACE_API = "https://api.climatetrace.org/v7"
 
 # Theme (app greens)
 DARK = RGBColor(30, 42, 36)
 ACCENT = RGBColor(57, 107, 79)
+ACCENT_LIGHT = RGBColor(72, 130, 95)
 LIGHT = RGBColor(247, 249, 248)
 WHITE = RGBColor(255, 255, 255)
 MUTED = RGBColor(95, 110, 100)
 PALE = RGBColor(220, 228, 224)
 SUBTITLE = RGBColor(180, 200, 190)
+OCEAN = RGBColor(46, 120, 160)
+AMBER = RGBColor(180, 130, 40)
 
-# Standard 16:9 (Keynote / PowerPoint default)
 SLIDE_W = Inches(10)
 SLIDE_H = Inches(5.625)
 
 MARGIN_L = Inches(0.5)
 MARGIN_R = Inches(0.5)
-CONTENT_W = SLIDE_W - MARGIN_L - MARGIN_R  # 9"
+CONTENT_W = SLIDE_W - MARGIN_L - MARGIN_R
 
 HEADER_H = Inches(0.72)
 FOOTER_TOP = Inches(5.18)
@@ -48,14 +54,14 @@ def blank_slide(prs):
     return prs.slides.add_slide(prs.slide_layouts[6])
 
 
-def add_rect(slide, left, top, width, height, fill, line=None):
-    shape = slide.shapes.add_shape(
-        MSO_AUTO_SHAPE_TYPE.RECTANGLE, left, top, width, height
-    )
+def add_rect(slide, left, top, width, height, fill, line=None, *, radius=None):
+    kind = MSO_AUTO_SHAPE_TYPE.ROUNDED_RECTANGLE if radius else MSO_AUTO_SHAPE_TYPE.RECTANGLE
+    shape = slide.shapes.add_shape(kind, left, top, width, height)
     shape.fill.solid()
     shape.fill.fore_color.rgb = fill
     if line:
         shape.line.color.rgb = line
+        shape.line.width = Pt(1)
     else:
         shape.line.fill.background()
     return shape
@@ -94,7 +100,7 @@ def add_footer(slide, num):
     add_rect(slide, Inches(0), FOOTER_TOP, SLIDE_W, FOOTER_H, DARK)
     styled_textbox(
         slide, MARGIN_L, FOOTER_TOP + Inches(0.06), Inches(7.5), Inches(0.28),
-        "Uganda NDC Data Explorer  ·  Demo 17 June 2026",
+        "Uganda NDC Data Explorer  ·  Demo 17 June 2026  ·  Data: Climate TRACE API v7",
         size=8, color=SUBTITLE,
     )
     styled_textbox(
@@ -118,7 +124,6 @@ def col_widths(n: int, gap=Inches(0.22)):
 
 
 def add_three_cards(slide, cards, top=BODY_TOP, card_h=None):
-    """cards: list of (header, body)"""
     lefts, w, _ = col_widths(3)
     if card_h is None:
         card_h = BODY_BOTTOM - top
@@ -133,76 +138,6 @@ def add_three_cards(slide, cards, top=BODY_TOP, card_h=None):
             slide, left + Inches(0.12), top + Inches(0.48), w - Inches(0.24), card_h - Inches(0.56),
             body, size=9, color=DARK,
         )
-
-
-def add_numbered_cards(slide, cards, top=BODY_TOP):
-    """cards: list of (num, title, body)"""
-    lefts, w, _ = col_widths(3)
-    card_h = Inches(3.55)
-    for left, (num, title, body) in zip(lefts, cards):
-        add_rect(slide, left, top, w, card_h, WHITE, PALE)
-        # number badge
-        badge = slide.shapes.add_shape(
-            MSO_AUTO_SHAPE_TYPE.OVAL, left + Inches(0.12), top + Inches(0.12),
-            Inches(0.28), Inches(0.28),
-        )
-        badge.fill.solid()
-        badge.fill.fore_color.rgb = ACCENT
-        badge.line.fill.background()
-        styled_textbox(
-            slide, left + Inches(0.12), top + Inches(0.14), Inches(0.28), Inches(0.24),
-            str(num), size=11, bold=True, color=WHITE, align=PP_ALIGN.CENTER,
-        )
-        styled_textbox(
-            slide, left + Inches(0.48), top + Inches(0.1), w - Inches(0.6), Inches(0.32),
-            title, size=11, bold=True, color=DARK,
-        )
-        styled_textbox(
-            slide, left + Inches(0.12), top + Inches(0.48), w - Inches(0.24), card_h - Inches(0.58),
-            body, size=9, color=MUTED,
-        )
-
-
-def add_bullet_list(slide, items, top=BODY_TOP, size=11):
-    styled_textbox(
-        slide, MARGIN_L + Inches(0.08), top, CONTENT_W - Inches(0.16),
-        BODY_BOTTOM - top,
-        "\n\n".join(f"•  {item}" for item in items),
-        size=size, color=DARK,
-    )
-
-
-def add_table_rows(slide, rows, top=BODY_TOP):
-    row_h = Inches(0.62)
-    col1_w = Inches(1.55)
-    col2_w = Inches(3.35)
-    col3_w = CONTENT_W - col1_w - col2_w - Inches(0.16)
-    x1 = MARGIN_L + Inches(0.08)
-    x2 = x1 + col1_w
-    x3 = x2 + col2_w
-    y = top
-    for layer, tech, role in rows:
-        add_rect(slide, MARGIN_L, y, CONTENT_W, row_h, WHITE, PALE)
-        styled_textbox(slide, x1, y + Inches(0.1), col1_w, row_h - Inches(0.12), layer, size=10, bold=True)
-        styled_textbox(slide, x2, y + Inches(0.1), col2_w, row_h - Inches(0.12), tech, size=9, color=MUTED)
-        styled_textbox(slide, x3, y + Inches(0.1), col3_w, row_h - Inches(0.12), role, size=9, color=MUTED)
-        y += row_h + Inches(0.06)
-
-
-def add_path_rows(slide, rows, top=BODY_TOP):
-    row_h = Inches(0.58)
-    y = top
-    for path, desc in rows:
-        add_rect(slide, MARGIN_L, y, CONTENT_W, row_h, WHITE, PALE)
-        styled_textbox(
-            slide, MARGIN_L + Inches(0.1), y + Inches(0.08), Inches(3.5), row_h - Inches(0.1),
-            path, size=8, bold=True, color=ACCENT,
-        )
-        styled_textbox(
-            slide, MARGIN_L + Inches(3.65), y + Inches(0.08), Inches(5.2), row_h - Inches(0.1),
-            desc, size=9, color=DARK,
-        )
-        y += row_h + Inches(0.05)
 
 
 def add_challenge_rows(slide, rows, top=BODY_TOP):
@@ -221,20 +156,427 @@ def add_challenge_rows(slide, rows, top=BODY_TOP):
         y += row_h + Inches(0.06)
 
 
-def add_demo_placeholder(slide, label, caption, num):
-    add_header(slide, "Live demo", label)
-    add_rect(slide, MARGIN_L, BODY_TOP, CONTENT_W, BODY_BOTTOM - BODY_TOP, LIGHT, ACCENT)
+def add_flow_node(slide, left, top, width, height, title, subtitle, *, fill=WHITE, accent=ACCENT, title_color=DARK):
+    add_rect(slide, left, top, width, height, fill, PALE, radius=True)
+    add_rect(slide, left, top, width, Inches(0.06), accent)
     styled_textbox(
-        slide, MARGIN_L, Inches(2.35), CONTENT_W, Inches(0.6),
-        f"[ Screenshot: {caption} ]",
-        size=14, color=MUTED, align=PP_ALIGN.CENTER,
+        slide, left + Inches(0.08), top + Inches(0.14), width - Inches(0.16), Inches(0.32),
+        title, size=10, bold=True, color=title_color, align=PP_ALIGN.CENTER,
     )
+    if subtitle:
+        styled_textbox(
+            slide, left + Inches(0.08), top + Inches(0.44), width - Inches(0.16), height - Inches(0.52),
+            subtitle, size=8, color=MUTED, align=PP_ALIGN.CENTER,
+        )
+
+
+def add_h_arrow(slide, left, top, width):
+    arrow = slide.shapes.add_shape(
+        MSO_AUTO_SHAPE_TYPE.RIGHT_ARROW, left, top, width, Inches(0.22),
+    )
+    arrow.fill.solid()
+    arrow.fill.fore_color.rgb = ACCENT_LIGHT
+    arrow.line.fill.background()
+
+
+def add_v_arrow(slide, left, top, height):
+    arrow = slide.shapes.add_shape(
+        MSO_AUTO_SHAPE_TYPE.DOWN_ARROW, left, top, Inches(0.22), height,
+    )
+    arrow.fill.solid()
+    arrow.fill.fore_color.rgb = ACCENT_LIGHT
+    arrow.line.fill.background()
+
+
+def add_connector_line(slide, x1, y1, x2, y2):
+    conn = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, x1, y1, x2, y2)
+    conn.line.color.rgb = ACCENT_LIGHT
+    conn.line.width = Pt(1.5)
+
+
+def add_pipeline_row(slide, nodes, top, *, node_w=Inches(1.45), node_h=Inches(0.95), gap=Inches(0.28)):
+    """Horizontal pipeline: list of (title, subtitle)."""
+    arrow_w = gap
+    total = len(nodes) * node_w + (len(nodes) - 1) * arrow_w
+    left = MARGIN_L + (CONTENT_W - total) / 2
+    x = left
+    for i, (title, sub) in enumerate(nodes):
+        add_flow_node(slide, x, top, node_w, node_h, title, sub)
+        if i < len(nodes) - 1:
+            add_h_arrow(slide, x + node_w, top + node_h / 2 - Inches(0.11), arrow_w)
+        x += node_w + arrow_w
+
+
+def add_screenshot(slide, filename, caption, num, *, subtitle=None, width=None, left=None):
+    add_header(slide, "Live product", subtitle or caption)
+    img_path = SCREENSHOTS / filename
+    body_h = BODY_BOTTOM - BODY_TOP
+    w = width or CONTENT_W
+    l = left or MARGIN_L
+    if img_path.exists():
+        slide.shapes.add_picture(str(img_path), l, BODY_TOP, width=w)
+        pic = slide.shapes[-1]
+        scale = min(w / pic.width, body_h / pic.height)
+        pic.width = int(pic.width * scale)
+        pic.height = int(pic.height * scale)
+        pic.left = int(l + (w - pic.width) / 2)
+        pic.top = int(BODY_TOP + (body_h - pic.height) / 2)
+    else:
+        add_rect(slide, l, BODY_TOP, w, body_h, LIGHT, ACCENT)
+        styled_textbox(
+            slide, l, BODY_TOP + body_h / 2, w, Inches(0.3),
+            f"[ Screenshot: {caption} ]", size=11, color=MUTED, align=PP_ALIGN.CENTER,
+        )
+    add_footer(slide, num)
+
+
+def slide_problem_flow(prs, num):
+    s = content_slide(prs, "The problem", "From static NDCs to operational delivery", num)
+    add_rect(s, MARGIN_L, BODY_TOP, CONTENT_W, BODY_BOTTOM - BODY_TOP, LIGHT)
     styled_textbox(
-        slide, MARGIN_L, Inches(4.75), CONTENT_W, Inches(0.3),
-        "Replace with capture from npm run dev before presenting.",
+        s, MARGIN_L + Inches(0.15), BODY_TOP + Inches(0.12), CONTENT_W - Inches(0.3), Inches(0.35),
+        "Today: ministries assemble answers manually", size=11, bold=True, color=DARK,
+    )
+    nodes = [
+        ("NDC PDFs", "Targets & pledges"),
+        ("Spreadsheets", "Sector data silos"),
+        ("Email / MRV", "Fragmented evidence"),
+        ("Weeks of work", "Before any briefing"),
+    ]
+    add_pipeline_row(s, nodes, BODY_TOP + Inches(0.55), node_w=Inches(1.85), node_h=Inches(0.88), gap=Inches(0.2))
+
+    mid_y = BODY_TOP + Inches(1.65)
+    add_v_arrow(s, MARGIN_L + CONTENT_W / 2 - Inches(0.11), mid_y, Inches(0.35))
+    styled_textbox(
+        s, MARGIN_L, mid_y + Inches(0.42), CONTENT_W, Inches(0.3),
+        "Five operational questions — unanswered in real time", size=10, bold=True, color=ACCENT, align=PP_ALIGN.CENTER,
+    )
+
+    questions = [
+        "Where are we today?",
+        "What moves the needle?",
+        "Policy impact?",
+        "Gaps vs target?",
+        "What to prioritise?",
+    ]
+    qw = Inches(1.55)
+    qgap = Inches(0.12)
+    qtotal = len(questions) * qw + (len(questions) - 1) * qgap
+    qx = MARGIN_L + (CONTENT_W - qtotal) / 2
+    qy = mid_y + Inches(0.78)
+    for q in questions:
+        add_rect(s, qx, qy, qw, Inches(0.62), WHITE, ACCENT, radius=True)
+        styled_textbox(s, qx + Inches(0.06), qy + Inches(0.18), qw - Inches(0.12), Inches(0.35),
+                       q, size=8, color=DARK, align=PP_ALIGN.CENTER)
+        qx += qw + qgap
+
+    styled_textbox(
+        s, MARGIN_L + Inches(0.15), BODY_BOTTOM - Inches(0.55), CONTENT_W - Inches(0.3), Inches(0.45),
+        "Our answer: link Uganda's NDC layer to live observed emissions via the Climate TRACE API — "
+        "not another static report.",
+        size=9, color=MUTED,
+    )
+    return s
+
+
+def slide_cockpit_architecture(prs, num):
+    s = content_slide(prs, "Cockpit architecture", "Five linked columns — one decision workspace", num)
+    add_rect(s, MARGIN_L, BODY_TOP, CONTENT_W, Inches(3.55), LIGHT)
+    cols = [
+        ("1 · Targets", "NDC pledges\nSector filters"),
+        ("2 · Activities", "Measures & owners\nImplementation catalog"),
+        ("3 · Observed", "Climate TRACE API\nLive MtCO₂e"),
+        ("4 · Progress", "On-track scoring\nGap vs 2030"),
+        ("5 · Options", "Mitigation paths\nFinance scenarios"),
+    ]
+    cw = Inches(1.55)
+    cg = Inches(0.12)
+    cx = MARGIN_L + Inches(0.35)
+    cy = BODY_TOP + Inches(0.35)
+    for title, sub in cols:
+        fill = RGBColor(235, 245, 238) if "Observed" in title else WHITE
+        accent = OCEAN if "Observed" in title else ACCENT
+        add_flow_node(s, cx, cy, cw, Inches(1.35), title, sub, fill=fill, accent=accent)
+        if title != cols[-1][0]:
+            add_h_arrow(s, cx + cw, cy + Inches(0.56), cg)
+        cx += cw + cg
+
+    # Vertical feeds below
+    feeds = [
+        (MARGIN_L + Inches(0.2), "Uganda NDC catalog", "Curated targets & strategies"),
+        (MARGIN_L + Inches(2.45), "Climate TRACE v7", "api.climatetrace.org"),
+        (MARGIN_L + Inches(4.7), "3D GIS map tab", "Satellite terrain\nEmission bubbles"),
+        (MARGIN_L + Inches(6.95), "NDC AI chatbot", "Grounded briefing\nOpenAI + citations"),
+    ]
+    fy = BODY_TOP + Inches(2.05)
+    fw = Inches(2.05)
+    for fx, ft, fs in feeds:
+        accent = OCEAN if "TRACE" in ft else (AMBER if "AI" in ft else ACCENT_LIGHT)
+        add_flow_node(s, fx, fy, fw, Inches(0.88), ft, fs, fill=WHITE, accent=accent)
+
+    for fx in [MARGIN_L + Inches(1.2), MARGIN_L + Inches(3.45), MARGIN_L + Inches(5.7)]:
+        add_connector_line(s, fx, fy, fx, cy + Inches(1.35))
+
+    styled_textbox(
+        s, MARGIN_L + Inches(0.15), BODY_TOP + Inches(3.15), CONTENT_W - Inches(0.3), Inches(0.55),
+        "Observed column + Emissions Map + NDC AI share one Climate TRACE pipeline — "
+        "charts, 3D GIS bubbles, and chat answers cite the same live API data.",
+        size=9, color=DARK,
+    )
+    return s
+
+
+def slide_climate_trace_pipeline(prs, num):
+    s = content_slide(prs, "Climate TRACE data pipeline", "Live observed emissions — API v7 (CC BY 4.0)", num)
+    add_rect(s, MARGIN_L, BODY_TOP, CONTENT_W, BODY_BOTTOM - BODY_TOP, LIGHT)
+
+    # Source layer
+    styled_textbox(s, MARGIN_L + Inches(0.12), BODY_TOP + Inches(0.1), Inches(2), Inches(0.25),
+                   "EMISSIONS SOURCES", size=8, bold=True, color=MUTED)
+    sources = [
+        ("Satellite EO", "Land & power"),
+        ("Facility data", "Power & industry"),
+        ("Transport", "Road & aviation"),
+        ("AFOLU models", "Land use"),
+    ]
+    sx = MARGIN_L + Inches(0.12)
+    sy = BODY_TOP + Inches(0.38)
+    for title, sub in sources:
+        add_flow_node(s, sx, sy, Inches(1.95), Inches(0.72), title, sub, fill=RGBColor(230, 242, 248), accent=OCEAN)
+        sy += Inches(0.82)
+
+    # API box (centre hero)
+    api_l = MARGIN_L + Inches(2.55)
+    api_t = BODY_TOP + Inches(0.55)
+    api_w = Inches(3.35)
+    api_h = Inches(2.65)
+    add_rect(s, api_l, api_t, api_w, api_h, WHITE, OCEAN, radius=True)
+    add_rect(s, api_l, api_t, api_w, Inches(0.42), OCEAN)
+    styled_textbox(s, api_l + Inches(0.12), api_t + Inches(0.08), api_w - Inches(0.24), Inches(0.3),
+                   "Climate TRACE API v7", size=13, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+    endpoints = [
+        "GET /v7/sources/emissions — sector timeseries",
+        "GET /v7/sources — asset-level map points",
+        "GET /v7/rankings/countries — national totals",
+        "GADM2 districts — Uganda disaggregation",
+    ]
+    styled_textbox(
+        s, api_l + Inches(0.15), api_t + Inches(0.52), api_w - Inches(0.3), api_h - Inches(0.6),
+        "\n".join(f"•  {e}" for e in endpoints),
+        size=8, color=DARK,
+    )
+    styled_textbox(s, api_l + Inches(0.15), api_t + api_h - Inches(0.38), api_w - Inches(0.3), Inches(0.3),
+                   CLIMATE_TRACE_API, size=7, color=OCEAN, align=PP_ALIGN.CENTER)
+
+    # Arrows sources → API
+    for i in range(4):
+        y = BODY_TOP + Inches(0.74) + i * Inches(0.82)
+        add_connector_line(s, MARGIN_L + Inches(2.07), y, api_l, api_t + Inches(1.3))
+
+    # Our backend
+    back_l = MARGIN_L + Inches(6.35)
+    back_nodes = [
+        ("Express API", "Node.js backend\nCache & provenance"),
+        ("Postgres / seed", "MtCO₂e store\n/api/v1/provenance"),
+        ("React cockpit", "Dashboard · 3D GIS\nNDC AI chatbot"),
+    ]
+    by = BODY_TOP + Inches(0.38)
+    for title, sub in back_nodes:
+        add_flow_node(s, back_l, by, Inches(2.45), Inches(0.88), title, sub)
+        add_h_arrow(s, api_l + api_w, by + Inches(0.33), Inches(0.42))
+        by += Inches(1.02)
+
+    styled_textbox(
+        s, MARGIN_L + Inches(0.12), BODY_BOTTOM - Inches(0.62), CONTENT_W - Inches(0.24), Inches(0.5),
+        "In the app: every observed chart shows Climate TRACE provenance — click a bar to trace the source. "
+        "Not a national inventory replacement; open observed layer for briefing.",
+        size=8, color=MUTED,
+    )
+    return s
+
+
+def slide_ai_and_3d_gis(prs, num):
+    """NDC AI chatbot + Emissions Map 3D GIS representation tab."""
+    s = content_slide(prs, "NDC AI & 3D GIS", "Intelligence and spatial views on Climate TRACE data", num)
+    add_rect(s, MARGIN_L, BODY_TOP, CONTENT_W, BODY_BOTTOM - BODY_TOP, LIGHT)
+
+    half = CONTENT_W / 2 - Inches(0.1)
+    left = MARGIN_L
+    right = MARGIN_L + half + Inches(0.2)
+    panel_h = Inches(3.55)
+    panel_t = BODY_TOP + Inches(0.12)
+
+    # ── Left: 3D GIS Representation (Emissions Map tab) ──
+    add_rect(s, left, panel_t, half, panel_h, WHITE, OCEAN, radius=True)
+    add_rect(s, left, panel_t, half, Inches(0.36), OCEAN)
+    styled_textbox(s, left + Inches(0.12), panel_t + Inches(0.06), half - Inches(0.24), Inches(0.28),
+                   "3D GIS representation — Emissions Map", size=11, bold=True, color=WHITE)
+    gis_flow = [
+        ("Climate TRACE\n/v7/sources", "Asset geo-points\nper sector"),
+        ("MapLibre GL", "Satellite imagery\nTerrain DEM 3D"),
+        ("GIS bubbles", "Size ∝ MtCO₂e\nDistrict overlay"),
+    ]
+    gx = left + Inches(0.15)
+    gy = panel_t + Inches(0.48)
+    gw = Inches(1.35)
+    for title, sub in gis_flow:
+        add_flow_node(s, gx, gy, gw, Inches(0.78), title, sub, fill=RGBColor(230, 242, 248), accent=OCEAN)
+        if title != gis_flow[-1][0]:
+            add_h_arrow(s, gx + gw, gy + Inches(0.28), Inches(0.1))
+        gx += gw + Inches(0.1)
+
+    img_path = SCREENSHOTS / "map-uganda.png"
+    img_l = left + Inches(0.15)
+    img_t = panel_t + Inches(1.38)
+    img_w = half - Inches(0.3)
+    img_h = panel_h - Inches(1.5)
+    add_rect(s, img_l, img_t, img_w, img_h, RGBColor(12, 16, 24), PALE, radius=True)
+    if img_path.exists():
+        s.shapes.add_picture(str(img_path), img_l + Inches(0.04), img_t + Inches(0.04), width=img_w - Inches(0.08))
+        pic = s.shapes[-1]
+        scale = min((img_w - Inches(0.08)) / pic.width, (img_h - Inches(0.08)) / pic.height)
+        pic.width = int(pic.width * scale)
+        pic.height = int(pic.height * scale)
+        pic.left = int(img_l + (img_w - pic.width) / 2)
+        pic.top = int(img_t + (img_h - pic.height) / 2)
+    else:
+        styled_textbox(s, img_l, img_t + img_h / 2, img_w, Inches(0.25),
+                       "[ Emissions Map — 3D GIS ]", size=9, color=MUTED, align=PP_ALIGN.CENTER)
+
+    # ── Right: NDC AI chatbot ──
+    add_rect(s, right, panel_t, half, panel_h, WHITE, ACCENT, radius=True)
+    add_rect(s, right, panel_t, half, Inches(0.36), ACCENT)
+    styled_textbox(s, right + Inches(0.12), panel_t + Inches(0.06), half - Inches(0.24), Inches(0.28),
+                   "NDC AI chatbot — dashboard sidebar", size=11, bold=True, color=WHITE)
+
+    ai_flow = [
+        ("User question", "Plain language\n'Transport on track?'"),
+        ("Context pack", "Sector · target\nTRACE progress"),
+        ("OpenAI API", "Grounded answer\nWith citations"),
+    ]
+    ax = right + Inches(0.15)
+    ay = panel_t + Inches(0.48)
+    for title, sub in ai_flow:
+        add_flow_node(s, ax, ay, gw, Inches(0.78), title, sub, fill=RGBColor(235, 245, 238), accent=ACCENT)
+        if title != ai_flow[-1][0]:
+            add_h_arrow(s, ax + gw, ay + Inches(0.28), Inches(0.1))
+        ax += gw + Inches(0.1)
+
+    ai_bullets = [
+        "Opens from Progress column → NDC AI button",
+        "Tab key fills an example question",
+        "Answers cite Climate TRACE + NDC panels",
+        "Senior Decision-Maker briefing mode",
+        "Not a generic chatbot — country-specific context",
+    ]
+    add_rect(s, right + Inches(0.15), panel_t + Inches(1.38), half - Inches(0.3), img_h, RGBColor(248, 250, 249), PALE, radius=True)
+    styled_textbox(
+        s, right + Inches(0.28), panel_t + Inches(1.52), half - Inches(0.55), img_h - Inches(0.2),
+        "\n".join(f"▸  {b}" for b in ai_bullets),
+        size=8, color=DARK,
+    )
+
+    styled_textbox(
+        s, MARGIN_L + Inches(0.12), BODY_BOTTOM - Inches(0.48), CONTENT_W - Inches(0.24), Inches(0.38),
+        "Both modules sit on the same Climate TRACE API v7 feed — spatial GIS for where emissions occur, "
+        "NDC AI for why it matters against Uganda's pledges.",
         size=8, color=MUTED, align=PP_ALIGN.CENTER,
     )
-    add_footer(slide, num)
+    return s
+
+
+def slide_satellite_to_decision(prs, num):
+    s = content_slide(prs, "From satellite to decision", "How observed data reaches the dashboard", num)
+    steps = [
+        ("Climate TRACE\ningests signals", "Monthly updates\n100+ countries"),
+        ("API v7 serves\nUganda sectors", "Transport · Energy\nAFOLU · Waste…"),
+        ("App reconciles\nvs NDC targets", "Progress % · gaps\nDistrict views"),
+        ("Decision-maker\nbriefing", "Dashboard · Map\nNDC AI · Finance"),
+    ]
+    add_pipeline_row(s, steps, BODY_TOP + Inches(0.25), node_w=Inches(1.95), node_h=Inches(1.05), gap=Inches(0.18))
+
+    # Screenshot inset
+    img_path = SCREENSHOTS / "map-uganda.png"
+    inset_l = MARGIN_L + Inches(0.15)
+    inset_t = BODY_TOP + Inches(1.55)
+    inset_w = Inches(4.2)
+    inset_h = BODY_BOTTOM - inset_t - Inches(0.15)
+    add_rect(s, inset_l, inset_t, inset_w, inset_h, WHITE, PALE, radius=True)
+    if img_path.exists():
+        s.shapes.add_picture(str(img_path), inset_l + Inches(0.08), inset_t + Inches(0.08),
+                             width=inset_w - Inches(0.16))
+        pic = s.shapes[-1]
+        scale = min((inset_w - Inches(0.16)) / pic.width, (inset_h - Inches(0.16)) / pic.height)
+        pic.width = int(pic.width * scale)
+        pic.height = int(pic.height * scale)
+        pic.left = int(inset_l + (inset_w - pic.width) / 2)
+        pic.top = int(inset_t + (inset_h - pic.height) / 2)
+    else:
+        styled_textbox(s, inset_l, inset_t + inset_h / 2, inset_w, Inches(0.3),
+                       "[ Emissions map ]", size=10, color=MUTED, align=PP_ALIGN.CENTER)
+
+    legend_l = MARGIN_L + Inches(4.55)
+    legend_t = inset_t
+    legend_w = CONTENT_W - Inches(4.7)
+    add_rect(s, legend_l, legend_t, legend_w, inset_h, WHITE, ACCENT, radius=True)
+    styled_textbox(s, legend_l + Inches(0.15), legend_t + Inches(0.15), legend_w - Inches(0.3), Inches(0.3),
+                   "What users see", size=11, bold=True, color=ACCENT)
+    bullets = [
+        "Live Climate TRACE banner on dashboard",
+        "Sector timeseries charts (MtCO₂e)",
+        "3D GIS map — satellite terrain + emission bubbles",
+        "NDC AI chatbot — grounded briefing with citations",
+        "Progress ring vs 2030 NDC pledge",
+    ]
+    styled_textbox(s, legend_l + Inches(0.15), legend_t + Inches(0.5), legend_w - Inches(0.3), inset_h - Inches(0.6),
+                   "\n\n".join(f"▸  {b}" for b in bullets), size=9, color=DARK)
+    return s
+
+
+def slide_demo_journey(prs, num):
+    s = content_slide(prs, "5-minute demo journey", "Presenter flow — Uganda · Transport sector", num)
+    add_rect(s, MARGIN_L, BODY_TOP, CONTENT_W, BODY_BOTTOM - BODY_TOP, LIGHT)
+    journey = [
+        ("0:00", "Dashboard", "Transport sector\nClimate TRACE data"),
+        ("1:00", "3D GIS map", "Emissions Map tab\nSatellite · bubbles"),
+        ("1:45", "Documents", "Policy pathway\nNDC linkage"),
+        ("2:10", "Finance", "Cost & abatement\nMAC chart"),
+        ("2:40", "NDC AI", "Chatbot briefing\nTab → ask"),
+    ]
+    jw = Inches(1.55)
+    jh = Inches(1.15)
+    jgap = Inches(0.14)
+    jx = MARGIN_L + Inches(0.2)
+    jy = BODY_TOP + Inches(0.35)
+    for time, title, sub in journey:
+        add_rect(s, jx, jy, jw, jh, WHITE, ACCENT, radius=True)
+        add_rect(s, jx, jy, jw, Inches(0.28), ACCENT)
+        styled_textbox(s, jx, jy + Inches(0.04), jw, Inches(0.22), time, size=9, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+        styled_textbox(s, jx + Inches(0.06), jy + Inches(0.34), jw - Inches(0.12), Inches(0.3), title, size=9, bold=True, color=DARK, align=PP_ALIGN.CENTER)
+        styled_textbox(s, jx + Inches(0.06), jy + Inches(0.62), jw - Inches(0.12), Inches(0.45), sub, size=7, color=MUTED, align=PP_ALIGN.CENTER)
+        if title != journey[-1][1]:
+            add_h_arrow(s, jx + jw, jy + jh / 2 - Inches(0.11), jgap)
+        jx += jw + jgap
+
+    styled_textbox(
+        s, MARGIN_L + Inches(0.2), BODY_TOP + Inches(1.75), CONTENT_W - Inches(0.4), Inches(0.35),
+        "Punchline: from reporting to decision support — one operational system for NDC delivery.",
+        size=10, bold=True, color=ACCENT, align=PP_ALIGN.CENTER,
+    )
+
+    # Bottom row: future
+    future = [
+        ("Challenges", "Mixed sources · API warm-up\nNot UNFCCC submission"),
+        ("Future", "Policy corpus per country\nMobile MRV app"),
+        ("Live URL", LIVE_URL.replace("https://", "")),
+    ]
+    fx = MARGIN_L + Inches(0.2)
+    fy = BODY_TOP + Inches(2.25)
+    fw = Inches(2.75)
+    for title, sub in future:
+        add_flow_node(s, fx, fy, fw, Inches(0.95), title, sub)
+        fx += fw + Inches(0.2)
+    return s
 
 
 def build():
@@ -247,129 +589,92 @@ def build():
     styled_textbox(s, MARGIN_L, Inches(1.35), CONTENT_W, Inches(0.7),
                    "Uganda NDC Data Explorer", size=32, bold=True, color=WHITE)
     styled_textbox(s, MARGIN_L, Inches(2.05), CONTENT_W, Inches(0.45),
-                   "Decision-support cockpit for NDC implementation", size=14, color=SUBTITLE)
+                   "Decision-support cockpit · powered by Climate TRACE API v7", size=14, color=SUBTITLE)
+    styled_textbox(s, MARGIN_L, Inches(2.65), CONTENT_W, Inches(0.55),
+                   "Climate TRACE API  →  3D GIS map  →  NDC AI chatbot  →  policy decisions",
+                   size=11, color=SUBTITLE)
     styled_textbox(s, MARGIN_L, Inches(4.25), CONTENT_W, Inches(0.9),
-                   "Date: 17 June 2026\nPresented by: Tseten Sherpa  ·  [Team member]",
+                   "Date: 17 June 2026\nPresented by: Tseten Sherpa",
                    size=11, color=WHITE)
 
-    # 02 Three pillars
-    s = content_slide(prs, "Uganda NDC Data Explorer", "One workspace for climate delivery", 2)
-    add_numbered_cards(s, [
-        (1, "NDC Layer (Home)",
-         "Five linked columns:\nTargets → Activities → Observed data → Progress → Mitigation options.\n\nFilter by sector and geography."),
-        (2, "Delivery cockpit",
-         "Executive Overview\nDelivery & Accountability\nEvidence & MRV\nFinance & Investment"),
-        (3, "Climate Risk",
-         "District hotspots\nScreening map\nDrill-down\n\nConnect adaptation risk to programme geography."),
-    ])
-    styled_textbox(
-        s, MARGIN_L, Inches(4.48), CONTENT_W, Inches(0.55),
-        "From NDC commitments to delivery, evidence, and risk — in one place.\n"
-        "Supports coordination and briefing; does not replace official UNFCCC submissions.",
-        size=9, color=DARK,
-    )
+    # 02 Problem flow
+    slide_problem_flow(prs, 2)
 
-    # 03 Motivation
-    s = content_slide(prs, "Motivation & user needs", "Uganda NDC Data Explorer", 3)
-    add_three_cards(s, [
-        ("The problem",
-         "NDC targets, strategies, indicators, and MRV evidence live in PDFs and siloed spreadsheets.\n\n"
-         "Hard to answer:\n• Are we on track?\n• What must change?\n• Who owns what?"),
-        ("The solution",
-         "A web cockpit linking:\n• What Uganda committed\n• What is being delivered\n• What evidence exists\n• How progress looks\n\n"
-         "Optional Climate TRACE observed signals."),
-        ("User impact",
-         "Ministry staff — coordinated delivery\n\n"
-         "MRV focal points — indicators in one place\n\n"
-         "Decision-makers — executive tiles & risk hotspots"),
-    ])
+    # 03 Cockpit architecture
+    slide_cockpit_architecture(prs, 3)
 
-    # 04 Tech stack
-    s = content_slide(prs, "Technology stack", "Uganda NDC Data Explorer", 4)
-    add_table_rows(s, [
-        ("Frontend", "Vite + React + TypeScript", "UI, maps, charts, exports"),
-        ("Backend", "Express API", "Climate TRACE v7 + bundled catalog"),
-        ("Emissions API", "Express + Climate TRACE v7", "Timeseries, provenance"),
-        ("Uganda data", "Curated NDC / strategy layers", "Targets, districts, risk"),
-        ("Demo mode", "USE_MOCK_DATA=true", "Reliable demo without live API"),
-    ])
-    styled_textbox(s, MARGIN_L, Inches(4.82), CONTENT_W, Inches(0.28),
-                   "Climate TRACE v7: CC BY 4.0 · District via /v7/sources (GADM2)", size=8, color=MUTED)
+    # 04 Climate TRACE pipeline (hero technical slide)
+    slide_climate_trace_pipeline(prs, 4)
 
-    # 05 Architecture
-    s = content_slide(prs, "Where the application lives", "Repository layout", 5)
-    add_path_rows(s, [
-        ("NDCLayer.tsx", "Home — five-column cockpit"),
-        ("ExecutiveOverview.tsx", "Leadership tiles + what must change"),
-        ("pages/risk/*", "Map, screening, drilldown"),
-        ("server.js / emissions.js", "API: timeseries, progress, provenance"),
-        ("database/migrations/", "Postgres schema"),
-        ("seed_emissions.js", "Climate TRACE seed script"),
-    ])
+    # 05 Dashboard screenshot
+    s = blank_slide(prs)
+    add_screenshot(s, "dashboard-transport.png", "Transport sector with live Climate TRACE data", 5,
+                   subtitle="NDC Dashboard — observed emissions linked to targets")
 
-    # 06–09 Demos
-    for num, label, cap in [
-        (6, "NDC Layer (Home)", "Five columns + sector filter"),
-        (7, "Observed & progress", "Live banner + Climate TRACE charts"),
-        (8, "Executive Overview", "Four tiles + what must change"),
-        (9, "Climate Risk", "Hotspots + district map"),
+    # 06 NDC AI + 3D GIS (dedicated)
+    slide_ai_and_3d_gis(prs, 6)
+
+    # 07 End-to-end user value
+    slide_satellite_to_decision(prs, 7)
+
+    # 08 Policy & finance (screenshot + mini flow)
+    s = content_slide(prs, "Policy & finance modules", "From evidence to investment scenarios", 8)
+    half_w = CONTENT_W / 2 - Inches(0.12)
+    mid = MARGIN_L + half_w + Inches(0.24)
+    body_h = BODY_BOTTOM - BODY_TOP
+    for path, left, label in [
+        (SCREENSHOTS / "documents-pathway.png", MARGIN_L, "Policy pathway"),
+        (SCREENSHOTS / "climate-finance.png", mid, "Climate finance"),
     ]:
-        s = blank_slide(prs)
-        add_demo_placeholder(s, label, cap, num)
+        add_rect(s, left, BODY_TOP, half_w, body_h - Inches(0.35), WHITE, PALE, radius=True)
+        if path.exists():
+            s.shapes.add_picture(str(path), left + Inches(0.06), BODY_TOP + Inches(0.06), width=half_w - Inches(0.12))
+            pic = s.shapes[-1]
+            scale = min((half_w - Inches(0.12)) / pic.width, (body_h - Inches(0.5)) / pic.height)
+            pic.width = int(pic.width * scale)
+            pic.height = int(pic.height * scale)
+            pic.left = int(left + (half_w - pic.width) / 2)
+            pic.top = int(BODY_TOP + Inches(0.06))
+        else:
+            styled_textbox(s, left, BODY_TOP + body_h / 2, half_w, Inches(0.3),
+                           f"[ {label} ]", size=10, color=MUTED, align=PP_ALIGN.CENTER)
+    add_pipeline_row(s, [
+        ("Climate TRACE", "Observed gaps"),
+        ("Policy docs", "Intervention map"),
+        ("Finance MAC", "Abatement cost"),
+    ], BODY_BOTTOM - Inches(0.42), node_w=Inches(2.55), node_h=Inches(0.55), gap=Inches(0.35))
+
+    # 09 Demo journey flowchart
+    slide_demo_journey(prs, 9)
 
     # 10 Challenges
-    s = content_slide(prs, "Challenges & mitigations", "Uganda NDC Data Explorer", 10)
+    s = content_slide(prs, "Challenges & mitigations", "Honest limits of a prototype", 10)
     add_challenge_rows(s, [
-        ("Mixed data sources", "State curated vs API-backed panels clearly"),
-        ("Climate TRACE scope", "National sectors only for that source"),
-        ("Demo reliability", "Pre-login, migrations, mock or seeded API"),
-        ("Many modules", "Demo Cockpit + Risk; Advanced = roadmap"),
+        ("Climate TRACE ≠ inventory", "Open observed layer; label provenance clearly"),
+        ("API cold starts", "Pre-warm dashboard, 3D GIS map, and NDC AI before stage"),
+        ("NDC AI availability", "Requires OPENAI_API_KEY on API server"),
+        ("Mixed data sources", "Curated NDC catalog + live API panels"),
         ("Official reporting", "Briefing tool — not UNFCCC submission"),
     ])
 
-    # 11 Policy
-    s = content_slide(prs, "Policy context", "Why an NDC data explorer?", 11)
-    add_bullet_list(s, [
-        "Paris Agreement — countries publish NDCs: targets and implementation measures.",
-        "Uganda aligns NDC with NDP IV, Vision 2040, and sector strategies.",
-        "Many actors need a shared picture: ministries, districts, MRV, partners.",
-        "App navigates commitments, activities, indicators, and risk — not a new policy doc.",
-        "Users: coordinators, MRV focal points, programme managers, executive briefings.",
-    ], size=10)
-
-    # 12 Data sources
-    s = content_slide(prs, "Data sources & trust", "Transparency for technical audiences", 12)
+    # 11 Future + close
+    s = content_slide(prs, "Future roadmap", "Scaling beyond Uganda", 11)
     add_three_cards(s, [
-        ("In-app Uganda data",
-         "NDC targets & sectors\nStrategy library\nDistrict geography\nIndicator registry"),
-        ("Climate TRACE",
-         "Open API v7\nMtCO₂e in Postgres\nCC BY 4.0\n≠ national inventory"),
-        ("Operations",
-         "/api/v1/provenance\nExcel & PDF exports\nLocal activity storage\nGaps, not guesses"),
-    ], card_h=Inches(3.9))
-
-    # 13 Reflections
-    s = content_slide(prs, "What we built & learned", "Project reflections", 13)
-    add_three_cards(s, [
-        ("Delivered",
-         "• NDC cockpit\n• Executive pages\n• Climate risk map\n• Role switcher\n• TRACE API pipeline"),
-        ("Challenges",
-         "• 20+ routes\n• Climate TRACE v7 wiring\n• Policy UX depth\n• Demo stability"),
-        ("Learned",
-         "• Columns > tables\n• Commitment / delivery / evidence\n• Provenance builds trust"),
-    ], card_h=Inches(3.9))
-
-    # 14 Q&A
-    s = blank_slide(prs)
-    add_rect(s, Inches(0), Inches(0), SLIDE_W, SLIDE_H, DARK)
-    styled_textbox(s, MARGIN_L, Inches(1.5), CONTENT_W, Inches(0.8),
-                   "Questions?", size=36, bold=True, color=WHITE)
-    styled_textbox(s, MARGIN_L, Inches(2.45), CONTENT_W, Inches(2.5),
-                   "Repository: ndc-data-explorer-e051f914\n\n"
-                   "npm install → cp .env.example .env → npm run dev\n"
-                   "http://localhost:8080\n\n"
-                   "Optional: npm run start:api",
-                   size=12, color=SUBTITLE)
+        ("Policy paper database",
+         "Searchable national policy corpus per country.\n\n"
+         "Full-text search linked to NDC targets and Climate TRACE sectors."),
+        ("Mobile application",
+         "Field MRV capture and district briefings.\n\n"
+         "Offline views when API is unavailable."),
+        ("Multi-country scale",
+         "Replicate cockpit for other NDCs.\n\n"
+         "Shared Climate TRACE v7 pipeline; country strategy layers."),
+    ], card_h=Inches(3.2))
+    styled_textbox(
+        s, MARGIN_L, Inches(4.72), CONTENT_W, Inches(0.38),
+        f"Questions?  ·  {LIVE_URL}",
+        size=9, color=MUTED, align=PP_ALIGN.CENTER,
+    )
 
     prs.save(OUT)
     import shutil

@@ -12,9 +12,15 @@
 
 import type { IndicatorPanelEntry } from "./emissions-integration";
 import type {
+  PolicyCatalogDocumentResponse,
+  PolicyPassageCorpusMetaResponse,
+  PolicyPassageDocument,
+  PolicyPassagesListResponse,
+  PolicyPassagesSearchResponse,
   PolicyDocumentsCuratedResponse,
   PolicyDocumentsListResponse,
   PolicyDocumentsMetaResponse,
+  PolicyTopicsResponse,
 } from "./policy-documents";
 import type { ZodType } from "zod";
 import {
@@ -818,4 +824,43 @@ export const documentsApi = {
     getJSON<PolicyDocumentsCuratedResponse>(
       `/api/v1/documents/curated?sectorId=${encodeURIComponent(sectorId)}&context=${context}`,
     ),
+  passageCorpusMeta: () =>
+    getJSON<PolicyPassageCorpusMetaResponse>("/api/v1/documents/passage-corpus/meta"),
+  getCatalogDocument: (catalogId: string) =>
+    getJSON<PolicyCatalogDocumentResponse>(
+      `/api/v1/documents/catalog/${encodeURIComponent(catalogId)}`,
+    ),
+  getPassageDocument: (cprDocumentId: string) =>
+    getJSON<PolicyPassageDocument>(
+      `/api/v1/documents/${encodeURIComponent(cprDocumentId)}`,
+    ),
+  listPassages: (
+    cprDocumentId: string,
+    params?: { q?: string; topicId?: string; limit?: number; offset?: number },
+  ) => {
+    const sp = new URLSearchParams();
+    if (params?.q) sp.set("q", params.q);
+    if (params?.topicId) sp.set("topicId", params.topicId);
+    if (params?.limit != null) sp.set("limit", String(params.limit));
+    if (params?.offset != null) sp.set("offset", String(params.offset));
+    const qs = sp.toString();
+    return getJSON<PolicyPassagesListResponse>(
+      `/api/v1/documents/${encodeURIComponent(cprDocumentId)}/passages${qs ? `?${qs}` : ""}`,
+    );
+  },
+  listTopics: (documentId?: string) => {
+    const qs = documentId ? `?documentId=${encodeURIComponent(documentId)}` : "";
+    return getJSON<PolicyTopicsResponse>(`/api/v1/documents/topics${qs}`);
+  },
+  searchPassages: (params?: { q?: string; topicId?: string; limit?: number; offset?: number }) => {
+    const sp = new URLSearchParams();
+    if (params?.q) sp.set("q", params.q);
+    if (params?.topicId) sp.set("topicId", params.topicId);
+    if (params?.limit != null) sp.set("limit", String(params.limit));
+    if (params?.offset != null) sp.set("offset", String(params.offset));
+    const qs = sp.toString();
+    return getJSON<PolicyPassagesSearchResponse>(
+      `/api/v1/documents/passages/search${qs ? `?${qs}` : ""}`,
+    );
+  },
 };

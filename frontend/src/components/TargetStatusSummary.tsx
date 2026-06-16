@@ -107,7 +107,7 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
         <div className="flex items-center gap-2">
           <Stat icon={<CheckCircle2 className="h-3 w-3 text-on-track" />} label="On-track" value={onTrack} index={0} />
           <Stat icon={<AlertTriangle className="h-3 w-3 text-off-track" />} label="Off-track" value={offTrack} index={1} />
-          <Stat icon={<Database className="h-3 w-3 text-at-risk" />} label="Activity gaps" value={implGaps} hint="Targets with no linked activities" index={2} />
+          <Stat icon={<Database className="h-3 w-3 text-muted-foreground" />} label="Activity gaps" value={implGaps} hint="Targets with no linked activities" index={2} />
           <Stat icon={<Database className="h-3 w-3 text-muted-foreground" />} label="Data gaps" value={mrvGaps} hint="Targets missing observed data" index={3} />
         </div>
 
@@ -164,7 +164,7 @@ function Stat({ icon, label, value, hint, index = 0 }: { icon: React.ReactNode; 
 function GapBadge({ kind }: { kind: GapKind }) {
   const cls = cn(
     "text-[8px] uppercase tracking-wide px-1 py-0 h-3.5 leading-none",
-    kind === "implementation" && "bg-at-risk/15 text-at-risk border-at-risk/30",
+    kind === "implementation" && "bg-muted text-muted-foreground border-border",
     kind === "delivery" && "bg-off-track/15 text-off-track border-off-track/30",
     kind === "mrv" && "bg-muted text-muted-foreground border-border",
   );

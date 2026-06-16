@@ -5,7 +5,10 @@
     "e3642b688afc72ce",
     "bc02432a9bd936e2",
     "20599c0aa062229c",
-    "3f111582cd3dc467"
+    "3f111582cd3dc467",
+    "85442c5657c8a980",
+    "63a721e77d35caa2",
+    "5ba3d7ca7050139f"
   ],
   "dashboard": {
     "AFOLU": [
@@ -13,33 +16,40 @@
       "bc02432a9bd936e2",
       "20599c0aa062229c",
       "3f111582cd3dc467",
-      "275f8e47b8bd88c7"
+      "275f8e47b8bd88c7",
+      "63a721e77d35caa2",
+      "85442c5657c8a980"
     ],
     "Energy": [
       "e3642b688afc72ce",
       "bc02432a9bd936e2",
       "20599c0aa062229c",
       "3f111582cd3dc467",
-      "8c220ce7dd77cda9"
+      "8c220ce7dd77cda9",
+      "85442c5657c8a980",
+      "5ba3d7ca7050139f"
     ],
     "Transport": [
       "e3642b688afc72ce",
       "bc02432a9bd936e2",
       "20599c0aa062229c",
-      "3f111582cd3dc467"
+      "3f111582cd3dc467",
+      "85442c5657c8a980"
     ],
     "IPPU": [
       "e3642b688afc72ce",
       "bc02432a9bd936e2",
       "20599c0aa062229c",
-      "3f111582cd3dc467"
+      "3f111582cd3dc467",
+      "5ba3d7ca7050139f"
     ],
     "Agriculture": [
       "e3642b688afc72ce",
       "bc02432a9bd936e2",
       "20599c0aa062229c",
       "3f111582cd3dc467",
-      "275f8e47b8bd88c7"
+      "275f8e47b8bd88c7",
+      "85442c5657c8a980"
     ],
     "Waste": [
       "e3642b688afc72ce",
@@ -51,21 +61,37 @@
   "finance": {
     "default": [
       "3f111582cd3dc467",
-      "8c220ce7dd77cda9"
+      "8c220ce7dd77cda9",
+      "5ba3d7ca7050139f"
     ],
     "AFOLU": [
       "3f111582cd3dc467",
       "20599c0aa062229c",
-      "275f8e47b8bd88c7"
+      "275f8e47b8bd88c7",
+      "63a721e77d35caa2"
     ],
     "Energy": [
-      "8c220ce7dd77cda9"
+      "8c220ce7dd77cda9",
+      "5ba3d7ca7050139f"
+    ]
+  },
+  "passageCorpus": {
+    "cprDocumentIds": [
+      "UNFCCC.party.1504.0",
+      "CCLW.document.i00008912.n0000",
+      "UNFCCC.document.i00006033.n0000",
+      "CCLW.document.i00009252.n0000",
+      "CCLW.document.i00005356.n0000"
     ]
   },
   "resolved": {
     "ndc": "Uganda Nationally Determined Contribution. NDC1 (Updated 2022)",
     "bur": "Uganda’s Second Biennial Update Report To The UNFCCC",
     "wetland": "National Wetland Strategic Plan 2026-2036",
-    "redd": "Uganda REDD+ RBP for results period 2016 - 2017"
+    "redd": "Uganda REDD+ RBP for results period 2016 - 2017",
+    "ndpi": "Fourth National Development Plan (NDPI) 2025/26 - 2029/30",
+    "nbsap": "Uganda National Biodiversity Strategy and Action Plan. NBSAP (2025)",
+    "climateRegulations": "The National Climate Change (Climate Change Mechanisms) Regulations, 2025",
+    "agroforestry": "Uganda National Agroforestry Strategy"
   }
 }
