@@ -4,14 +4,13 @@ import { useCurrentRole } from "@/hooks/use-current-role";
 import {
   listActivitiesByCreator,
   listActivitiesByWorkflow,
-  listOutputsWithActivityTitle,
 } from "@/lib/activities-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { WorkflowBadge, ValidationBadge } from "@/components/WorkflowBadge";
+import { WorkflowBadge } from "@/components/WorkflowBadge";
 import { listUploads, type UploadedFile } from "@/lib/uploaded-files-store";
-import { Plus, ShieldCheck, ClipboardList, Network, Eye, Loader2, FileText } from "lucide-react";
+import { Plus, ClipboardList, Network, Eye, Loader2, FileText } from "lucide-react";
 
 function fmtBytes(n: number): string {
   if (n < 1024) return `${n} B`;
@@ -24,7 +23,6 @@ export default function MyWork() {
   const nav = useNavigate();
   const [activities, setActivities] = useState<ReturnType<typeof listActivitiesByCreator>>([]);
   const [submittedForReview, setSubmittedForReview] = useState<ReturnType<typeof listActivitiesByWorkflow>>([]);
-  const [outputsAwaiting, setOutputsAwaiting] = useState<ReturnType<typeof listOutputsWithActivityTitle>>([]);
   const [uploads, setUploads] = useState<UploadedFile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,11 +48,6 @@ export default function MyWork() {
       setSubmittedForReview([]);
     }
 
-    if (activeRole === "MRVOfficer" || activeRole === "Admin") {
-      setOutputsAwaiting(listOutputsWithActivityTitle());
-    } else {
-      setOutputsAwaiting([]);
-    }
     setLoading(false);
   }, [user, activeRole]);
 
@@ -134,28 +127,6 @@ export default function MyWork() {
                 <Link key={a.id} to={`/activities/${a.id}`} className="flex items-center gap-2 p-2 rounded border border-border hover:bg-muted/50">
                   <span className="text-[11px] flex-1 truncate">{a.title}</span>
                   <span className="text-[10px] text-muted-foreground">{a.organization || "—"}</span>
-                </Link>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {(activeRole === "MRVOfficer" || activeRole === "Admin") && (
-          <Card>
-            <CardHeader className="py-3 flex flex-row items-center gap-2 space-y-0">
-              <ShieldCheck className="h-4 w-4 text-on-track" />
-              <div>
-                <CardTitle className="text-xs uppercase tracking-wide">Validation & QA queue</CardTitle>
-                <CardDescription className="text-[10px]">Outputs awaiting MRV validation.</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-1.5">
-              {outputsAwaiting.length === 0 && <p className="text-[11px] text-muted-foreground">No outputs to review.</p>}
-              {outputsAwaiting.slice(0, 15).map((o) => (
-                <Link key={o.id} to={`/activities/${o.activity_id}`} className="flex items-center gap-2 p-2 rounded border border-border hover:bg-muted/50">
-                  <span className="text-[11px] flex-1 truncate"><strong>{o.metric_name}</strong>: {o.value} {o.unit}</span>
-                  <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">{o.activities?.title}</span>
-                  <ValidationBadge status="Uploaded" />
                 </Link>
               ))}
             </CardContent>
