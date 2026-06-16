@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { type NDCTarget, type ProgressStatus } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import {
@@ -12,16 +12,18 @@ import { ColumnLoadingState, NoDataPlaceholder, SelectTargetPlaceholder } from "
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { bau2030ForTarget } from "@/data/uganda-ndc-data";
 import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
 import { capTargetPosition } from "@/lib/progress";
-import { getTargetPlainLanguage } from "@/lib/target-plain-language";
 
 interface ProgressProps {
   selectedTarget: NDCTarget | null;
+  /** Rendered at the end of the scroll content (e.g. Data & insights list). */
+  footer?: ReactNode;
+  /** When false, render at natural height (no internal scroll) for a shared page scroll. */
+  scroll?: boolean;
 }
 
 const statusConfig: Record<ProgressStatus, { label: string; color: string; bg: string; ring: string }> = {
@@ -31,8 +33,11 @@ const statusConfig: Record<ProgressStatus, { label: string; color: string; bg: s
   unknown: { label: "Unknown", color: "text-muted-foreground", bg: "bg-muted-foreground", ring: "ring-muted" },
 };
 
-export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
+export function ProgressTowardTargetColumn({ selectedTarget, footer, scroll = true }: ProgressProps) {
   const emissions = useEmissionsData();
+  const rootCls = cn("flex flex-col", scroll && "h-full");
+  const wrap = (children: ReactNode) =>
+    scroll ? <ScrollArea className="flex-1">{children}</ScrollArea> : <div>{children}</div>;
 
   const indEntry =
     selectedTarget && isIndicatorPanelTarget(selectedTarget)
@@ -111,25 +116,6 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
 
   const bau2030 = pr?.bau_2030 ?? bau2030ForTarget(selectedTarget);
 
-  // Plain-language description of this specific target's progress — wording for
-  // a non-technical reader rather than formulas and numbers.
-  const plain = getTargetPlainLanguage(selectedTarget);
-
-  const statusNarrative =
-    status === "on-track"
-      ? "Uganda is on track to meet this 2030 pledge. Keeping the measures already in place should hold it on course."
-      : status === "at-risk"
-        ? "Progress has started, but this pledge is at risk — stronger or faster action is needed to reach the 2030 goal."
-        : status === "off-track"
-          ? "This pledge is off track. Current efforts are not yet bending the numbers toward the 2030 goal."
-          : "There isn't enough recent data to say whether this pledge is on track for 2030.";
-
-  const howItWorks = isEmissionsCapTarget
-    ? "Because Uganda's economy is growing, the aim isn't to cut emissions below today's level — it's to keep them below where they would have climbed without new climate action."
-    : selectedTarget.metricType === "emissions-reduction"
-      ? "The aim here is to bring emissions down from where they are today."
-      : "The aim here is to grow this measure toward its 2030 target.";
-
   const capPosition =
     isEmissionsCapTarget && bau2030 != null && liveLatest != null
       ? capTargetPosition(liveLatest.value, selectedTarget.targetValue, bau2030)
@@ -152,13 +138,38 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
       />
     ) : null;
 
+  // Non-cap targets (growth metrics like forest/wetland cover, or true emission
+  // reductions): show a starting-point → latest → goal scale, mirroring the cap card.
+  const goalProgressBar =
+    !isEmissionsCapTarget && liveLatest != null ? (
+      <GoalProgressScale
+        latest={liveLatest.value}
+        baseline={selectedTarget.baselineValue}
+        goal={selectedTarget.targetValue}
+        baselineYear={selectedTarget.baselineYear}
+        targetYear={selectedTarget.targetYear}
+        unit={selectedTarget.unit}
+        status={status}
+      />
+    ) : null;
+
+  // One concise plain-language sentence on where this pledge stands.
+  const statusNarrative =
+    status === "on-track"
+      ? "On track to meet this 2030 pledge — keeping current measures should hold the course."
+      : status === "at-risk"
+        ? "Progress has begun, but stronger or faster action is needed to reach the 2030 goal."
+        : status === "off-track"
+          ? "Off track — current efforts are not yet bending the numbers toward the 2030 goal."
+          : "Not enough recent data to judge progress toward the 2030 goal.";
+
   if (!hasProgressData) {
     return (
-      <div className="flex flex-col h-full">
+      <div className={rootCls}>
         <div className="px-3 py-2 border-b border-border bg-muted/50">
           <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Progress</h3>
         </div>
-        <ScrollArea className="flex-1">
+        {wrap(
           <div className="p-4 space-y-3">
             {districtNote}
             <NoDataPlaceholder
@@ -172,18 +183,19 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
               selectedTarget={selectedTarget}
               isEmissionsCapTarget={isEmissionsCapTarget}
             />
-          </div>
-        </ScrollArea>
+            {footer}
+          </div>,
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className={rootCls}>
       <div className="px-3 py-2.5 border-b border-border dash-section-header">
         <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Progress</h3>
       </div>
-      <ScrollArea className="flex-1">
+      {wrap(
         <div className="p-3 space-y-3">
           {districtNote}
 
@@ -229,7 +241,12 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
                 <p className="mt-1 text-[11px] text-muted-foreground">Not enough data to score progress</p>
               )}
 
+              <p className="mt-2 max-w-[240px] text-[11px] text-muted-foreground leading-snug">
+                {statusNarrative}
+              </p>
+
               {capProgressBar}
+              {goalProgressBar}
 
               <ProgressFormulaBlock
                 selectedTarget={selectedTarget}
@@ -238,20 +255,9 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-3 text-xs space-y-2">
-              <p className="font-semibold text-foreground">What this pledge means</p>
-              <p className="text-muted-foreground leading-relaxed">{plain.summary}</p>
-              <p className="font-semibold text-foreground pt-1">Where things stand</p>
-              <p className="text-muted-foreground leading-relaxed">{statusNarrative}</p>
-              <p className="font-semibold text-foreground pt-1">How to read this</p>
-              <p className="text-muted-foreground leading-relaxed">{howItWorks}</p>
-              {pr?.scope_note && <p className="text-muted-foreground leading-relaxed">{pr.scope_note}</p>}
-            </CardContent>
-          </Card>
-
-        </div>
-      </ScrollArea>
+          {footer}
+        </div>,
+      )}
     </div>
   );
 }
@@ -279,16 +285,21 @@ function ProgressFormulaBlock({
   }
 
   return (
-    <div className="mt-3 w-full px-2.5 py-2 rounded-md bg-muted/40 border border-border text-center">
+    <div className="mt-3 w-full min-w-0 px-2.5 py-2 rounded-md bg-muted/40 border border-border text-center">
       <p className="text-[9px] uppercase tracking-wide font-semibold text-muted-foreground mb-1">
         Progress formula
       </p>
-      <p className="text-[10px] text-foreground whitespace-nowrap overflow-x-auto">{template}</p>
+      <p className="text-[10px] text-foreground break-words leading-relaxed">{template}</p>
     </div>
   );
 }
 
-/** Visual scale: latest vs NDC ceiling vs no-policy BAU (lower is better). */
+/**
+ * Visual scale comparing today's emissions to the NDC ceiling and the no-policy
+ * (BAU) level. Lower is better: staying at or below the red ceiling = meeting the
+ * pledge. Designed to be readable without hovering — every line is labelled and a
+ * plain-language legend sits below.
+ */
 function CapProgressScale({
   latest,
   cap,
@@ -300,59 +311,128 @@ function CapProgressScale({
   bau: number;
   unit: string;
 }) {
+  // Keep the no-policy (BAU) level in the scale maths so the bar proportions stay
+  // sensible, but it is no longer shown as its own legend row or marker.
   const max = Math.max(bau, cap, latest) * 1.05;
-  const pct = (v: number) => `${Math.min(100, Math.max(0, (v / max) * 100))}%`;
+  const leftPct = (v: number) => Math.min(100, Math.max(0, (v / max) * 100));
+
+  // Lower emissions are better. Colour the current bar by where it sits.
+  const tone =
+    latest <= cap
+      ? { bar: "bg-on-track", text: "text-on-track" }
+      : latest <= bau
+        ? { bar: "bg-at-risk", text: "text-at-risk" }
+        : { bar: "bg-off-track", text: "text-off-track" };
+
+  const fmt = (v: number) => `${v.toLocaleString(undefined, { maximumFractionDigits: 1 })}`;
+
   return (
-    <div className="w-full max-w-[240px] mt-2 text-left">
-      <div className="relative h-2 rounded-full bg-muted overflow-hidden">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className="absolute top-0 bottom-0 w-0.5 bg-chart-3 z-10 cursor-help"
-              style={{ left: pct(bau) }}
-            />
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-[220px] p-2.5 space-y-1">
-            <p className="text-xs font-semibold">No-Policy Level (BAU): {bau} {unit}</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Projected emissions if no additional climate policies are enacted — the
-              Business-As-Usual baseline. Progress is measured relative to this line.
-            </p>
-          </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className="absolute top-0 bottom-0 w-0.5 bg-chart-2 z-10 cursor-help"
-              style={{ left: pct(cap) }}
-            />
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-[220px] p-2.5 space-y-1">
-            <p className="text-xs font-semibold">NDC Ceiling: {cap} {unit}</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              The maximum allowable emissions under the NDC commitment. Staying at or
-              below this level by 2030 counts as meeting the national climate pledge.
-            </p>
-          </TooltipContent>
-        </Tooltip>
+    <div className="w-full max-w-[250px] mt-3 text-left">
+      <p className="text-[10px] font-semibold text-foreground">
+        Today's emissions vs the 2030 pledge
+      </p>
+      <p className="text-[9px] text-muted-foreground mb-2">Lower is better — stay at or below the ceiling.</p>
+
+      {/* Track: 0 (left) → no-policy level (right) */}
+      <div className="relative h-3 rounded-full bg-muted overflow-visible">
+        {/* current emissions fill */}
         <div
-          className="absolute top-0 bottom-0 h-full bg-chart-4/80 rounded-full"
-          style={{ width: pct(latest) }}
+          className={cn("absolute top-0 bottom-0 left-0 rounded-full transition-all", tone.bar)}
+          style={{ width: `${leftPct(latest)}%` }}
+        />
+        {/* NDC ceiling marker */}
+        <div
+          className="absolute -top-1 -bottom-1 w-[2px] bg-off-track z-10"
+          style={{ left: `${leftPct(cap)}%` }}
         />
       </div>
-      <div className="flex justify-between text-[9px] text-muted-foreground mt-1">
-        <span>0</span>
-        <span className="text-chart-4">Latest {latest}</span>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="text-chart-2 cursor-help underline decoration-dotted underline-offset-2">
-              Cap {cap}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[200px] p-2">
-            <p className="text-xs">NDC ceiling: max allowable emissions ({cap} {unit}) under the pledge.</p>
-          </TooltipContent>
-        </Tooltip>
+
+      {/* Plain-language legend with values */}
+      <div className="mt-2.5 space-y-1">
+        <LegendRow swatch={<span className={cn("h-2 w-2 rounded-full", tone.bar)} />} label="Latest emissions" value={`${fmt(latest)} ${unit}`} valueClass={tone.text} />
+        <LegendRow swatch={<span className="h-2.5 w-[2px] bg-off-track" />} label="NDC ceiling (2030 target)" value={`${fmt(cap)} ${unit}`} valueClass="text-off-track" />
+      </div>
+    </div>
+  );
+}
+
+function LegendRow({
+  swatch,
+  label,
+  value,
+  valueClass,
+}: {
+  swatch: ReactNode;
+  label: string;
+  value: string;
+  valueClass?: string;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 text-[10px]">
+      <span className="flex h-2.5 w-2.5 items-center justify-center shrink-0">{swatch}</span>
+      <span className="text-muted-foreground">{label}</span>
+      <span className={cn("ml-auto font-semibold tabular-nums", valueClass)}>{value}</span>
+    </div>
+  );
+}
+
+/**
+ * Scale for non-cap targets: how far the latest value has moved from the starting
+ * point toward the 2030 goal. Reads left→right (start → goal) for both growth and
+ * reduction targets, with a labelled legend and verdict — mirrors CapProgressScale.
+ */
+function GoalProgressScale({
+  latest,
+  baseline,
+  goal,
+  baselineYear,
+  targetYear,
+  unit,
+  status,
+}: {
+  latest: number;
+  baseline: number;
+  goal: number;
+  baselineYear: number;
+  targetYear: number;
+  unit: string;
+  status: ProgressStatus;
+}) {
+  const higherIsBetter = goal >= baseline;
+  const denom = goal - baseline || 1;
+  const frac = (latest - baseline) / denom; // 0 at start, 1 at goal
+  const fillPct = Math.min(100, Math.max(0, frac * 100));
+
+  const tone =
+    status === "on-track"
+      ? { bar: "bg-on-track", text: "text-on-track" }
+      : status === "at-risk"
+        ? { bar: "bg-at-risk", text: "text-at-risk" }
+        : status === "off-track"
+          ? { bar: "bg-off-track", text: "text-off-track" }
+          : { bar: "bg-muted-foreground", text: "text-muted-foreground" };
+
+  const fmt = (v: number) =>
+    `${v.toLocaleString(undefined, { maximumFractionDigits: unit.includes("%") ? 1 : 1 })}${unit.includes("%") ? "%" : ` ${unit}`}`;
+
+  return (
+    <div className="w-full max-w-[250px] mt-3 text-left">
+      <p className="text-[10px] font-semibold text-foreground">Progress toward the 2030 goal</p>
+      <p className="text-[9px] text-muted-foreground mb-2">
+        {higherIsBetter ? "Higher is better — grow toward the goal." : "Lower is better — bring it down to the goal."}
+      </p>
+
+      {/* Track: starting point (left) → 2030 goal (right) */}
+      <div className="relative h-3 rounded-full bg-muted overflow-visible">
+        <div className={cn("absolute top-0 bottom-0 left-0 rounded-full transition-all", tone.bar)} style={{ width: `${fillPct}%` }} />
+        {/* goal marker at right edge */}
+        <div className="absolute -top-1 -bottom-1 right-0 w-[2px] bg-on-track z-10" />
+      </div>
+
+      <div className="mt-2.5 space-y-1">
+        <LegendRow swatch={<span className={cn("h-2 w-2 rounded-full", tone.bar)} />} label={`Latest (${targetYear > baselineYear ? "now" : baselineYear})`} value={fmt(latest)} valueClass={tone.text} />
+        <LegendRow swatch={<span className="h-2.5 w-[2px] bg-on-track" />} label={`2030 goal`} value={fmt(goal)} valueClass="text-on-track" />
+        <LegendRow swatch={<span className="h-2 w-2 rounded-full bg-muted-foreground/50" />} label={`Starting point (${baselineYear})`} value={fmt(baseline)} valueClass="text-muted-foreground" />
       </div>
     </div>
   );

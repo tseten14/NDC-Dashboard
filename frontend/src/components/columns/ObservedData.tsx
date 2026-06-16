@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { type NDCTarget, type ObservedDataSet, getObservedDataForTarget, bau2030ForTarget } from "@/data/uganda-ndc-data";
+import { useState, type ReactNode } from "react";
+import { type NDCTarget, type ObservedDataSet, type TimeMode, getObservedDataForTarget, bau2030ForTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import {
   buildLiveObservedDataSet,
@@ -18,6 +18,7 @@ import { emissionsChartDisplay } from "@/lib/emissions-units";
 import {
   ObservedProjectedComposedChart,
   ObservedProjectedLegend,
+  buildObservedProjectedRows,
   chartYAxisUnit,
   filterBarChartYears,
 } from "@/components/dashboard/ChartObservedProjected";
@@ -27,6 +28,8 @@ import { ClimateTraceEstimationFlow } from "@/components/dashboard/ClimateTraceE
 import { ColumnLoadingState, NoDataPlaceholder, SelectTargetPlaceholder } from "@/components/dashboard/DashboardStates";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Database, Satellite, MapPin, CodeXml, ExternalLink } from "lucide-react";
@@ -39,10 +42,16 @@ import { cn } from "@/lib/utils";
 interface ObservedDataProps {
   selectedTarget: NDCTarget | null;
   selectedMitigationOptions: string[];
+  timeMode?: TimeMode;
+  /** When false, render at natural height (no internal scroll) for a shared page scroll. */
+  scroll?: boolean;
 }
 
-export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: _omit }: ObservedDataProps) {
+export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: _omit, timeMode = "historical", scroll = true }: ObservedDataProps) {
   const emissions = useEmissionsData();
+  const rootCls = cn("flex flex-col", scroll && "h-full");
+  const wrap = (children: ReactNode) =>
+    scroll ? <ScrollArea className="flex-1">{children}</ScrollArea> : <div>{children}</div>;
   const [clickedPoint, setClickedPoint] = useState<{ year: number; value: number } | null>(null);
   const [viewSourceOpen, setViewSourceOpen] = useState(false);
   const obsQuery = useTargetObservations(
@@ -190,7 +199,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
 
   if (!observedData || !hasObservedValues) {
     return (
-      <div className="flex flex-col h-full">
+      <div className={rootCls}>
         <div className="px-3 py-2 border-b border-border bg-muted/50">
           <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Observed Data</h3>
         </div>
@@ -265,6 +274,36 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
     bauPath: d.bauPath != null ? d.bauPath * chartDisplay.scale : null,
   }));
 
+  // Projected view: extend the measured series with the modelled path to 2030,
+  // plus the NDC target path and (for cap targets) the no-extra-action line.
+  const isProjected = timeMode === "projection";
+  const scaledProjectedRows = buildObservedProjectedRows(
+    observedData.historicalData,
+    observedData.projectionBaseline,
+  ).map((r) => ({
+    year: r.year,
+    observedValue: r.observedValue != null ? r.observedValue * chartDisplay.scale : null,
+    projectedValue: r.projectedValue != null ? r.projectedValue * chartDisplay.scale : null,
+    target: isDistrictView || r.target == null ? null : r.target * chartDisplay.scale,
+    bauPath: isDistrictView || r.bauPath == null ? null : r.bauPath * chartDisplay.scale,
+  }));
+  const hasProjectionPath = scaledProjectedRows.some(
+    (r) => r.projectedValue != null && r.observedValue == null,
+  );
+  const showProjection = isProjected && hasProjectionPath;
+  // NDC "path to 2030 goal" target line removed by request — keep the projection clean.
+  const projectionShowTarget = false;
+  const projectionShowBau = isProjected && isCapChart && !isDistrictView;
+  const chartRows = isProjected
+    ? scaledProjectedRows
+    : scaledChartData.map(({ year, observedValue }) => ({
+        year,
+        observedValue,
+        projectedValue: null as number | null,
+        target: null as number | null,
+        bauPath: null as number | null,
+      }));
+
   const latestVsNdc =
     latestObserved?.value != null && ndcGoal != null
       ? isCapChart
@@ -277,9 +316,11 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
       : null;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className={rootCls}>
       <div className="px-3 py-2.5 border-b border-border dash-section-header flex items-center justify-between gap-2">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Observed Data</h3>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
+          {isProjected ? "Projected Path" : "Observed Data"}
+        </h3>
         {/* District badge — direct CT or proxy CT (both are real per-district data) */}
         {emissions.isDistrictView && emissions.districtName && (!!apiSector || usingProxyData) && (
           <Badge variant="outline" className="text-[8px] h-4 gap-0.5 shrink-0">
@@ -313,7 +354,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
           </button>
         )}
       </div>
-      <ScrollArea className="flex-1">
+      {wrap(
         <div className="p-3 space-y-2.5">
           <div className="flex flex-wrap gap-1 items-center">
             {observedData.dataProviders.map(provider => (
@@ -389,6 +430,17 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             </p>
           )}
 
+          {isProjected && (
+            <div className="p-2 rounded-md bg-[hsl(var(--chart-1))]/10 border border-[hsl(var(--chart-1))]/30 text-xs leading-snug">
+              <p className="text-foreground font-medium">Projected path to 2030</p>
+              <p className="text-muted-foreground mt-0.5">
+                The solid line is measured data; the dashed line extends it to {selectedTarget.targetYear} on a
+                straight-line trajectory{projectionShowTarget ? ", shown against the NDC pledge path" : ""}. This is
+                an illustrative projection, not a forecast.
+              </p>
+            </div>
+          )}
+
           <Card className="dash-card-hover dash-fade-up">
             <CardContent className="p-2 pt-3 pb-2">
               {showNdcTarget && latestObserved?.value != null && ndcGoal != null && (
@@ -433,16 +485,15 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                 </div>
               )}
               <ObservedProjectedComposedChart
-                data={scaledChartData.map(({ year, observedValue }) => ({
-                  year,
-                  observedValue,
-                  projectedValue: null,
-                  target: null,
-                  bauPath: null,
-                }))}
+                data={chartRows}
                 yUnit={chartDisplay.unitLabel}
                 formatTick={chartDisplay.formatValue}
                 observedSeriesLabel={observedSeriesLabel}
+                compareLines={isProjected}
+                showProjection={showProjection}
+                showTarget={projectionShowTarget}
+                showBauPath={projectionShowBau}
+                capTarget={isCapChart}
                 onBarClick={
                   apiSector || usingProxyData
                     ? (point) =>
@@ -455,8 +506,11 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
               />
               <ObservedProjectedLegend
                 className="mt-1 px-1"
-                showTarget={false}
-                showProjected={false}
+                compareLines={isProjected}
+                showTarget={projectionShowTarget}
+                showBauPath={projectionShowBau}
+                showProjected={showProjection}
+                capTarget={isCapChart}
                 dataSourceHref={
                   observedMode === "live" &&
                   (apiSector ||
@@ -468,7 +522,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
               />
               {(apiSector || usingProxyData) && !clickedPoint && (
                 <p className="text-[9px] text-muted-foreground/60 mt-1 px-1">
-                  Click any bar to trace its data source
+                  Click any {isProjected ? "measured point" : "bar"} to trace its data source
                 </p>
               )}
             </CardContent>
@@ -524,13 +578,37 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
           </Card>
 
           {(apiSector || usingProxyData) && (
-            <div className="space-y-4 pt-1">
-              <ClimateTraceDatasetOverview />
-              <ClimateTraceEstimationFlow />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="justify-start text-xs gap-1.5 h-8">
+                    <Database className="h-3.5 w-3.5" /> What's in Climate TRACE
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-sm">What&apos;s in Climate TRACE&apos;s dataset</DialogTitle>
+                  </DialogHeader>
+                  <ClimateTraceDatasetOverview />
+                </DialogContent>
+              </Dialog>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="justify-start text-xs gap-1.5 h-8">
+                    <Satellite className="h-3.5 w-3.5" /> How the estimate is made
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-sm">How Climate TRACE estimates emissions</DialogTitle>
+                  </DialogHeader>
+                  <ClimateTraceEstimationFlow />
+                </DialogContent>
+              </Dialog>
             </div>
           )}
-        </div>
-      </ScrollArea>
+        </div>,
+      )}
 
       <ViewSourceModal
         open={viewSourceOpen}

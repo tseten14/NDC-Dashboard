@@ -80,12 +80,20 @@ export function climateFinanceHrefFromPolicyImpact(params: {
   sector: string;
   projectId?: string;
   mitigationOptionId?: string;
+  /** Intervention type/label and objective planned in Policy Impact. */
+  intervention?: string;
+  objective?: string;
+  /** Scale slider value (1 = baseline) used to estimate funding need. */
+  scale?: number;
 }): string {
   const sp = new URLSearchParams();
   const sectorId = SECTOR_LABEL_TO_ID[params.sector] ?? "afolu";
   sp.set("sector", sectorId);
   const projectId = params.mitigationOptionId ?? params.projectId;
   if (projectId) sp.set("projectId", projectId);
+  if (params.intervention) sp.set("intervention", params.intervention);
+  if (params.objective) sp.set("objective", params.objective);
+  if (params.scale != null) sp.set("scale", String(params.scale));
   sp.set("from", "policy-impact");
   return `/climate-finance?${sp.toString()}`;
 }

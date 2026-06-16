@@ -535,9 +535,18 @@ export function progressFromLiveApiFields(
   });
 }
 
-/** National NDC progress is not scored against district-only TRACE slices. */
+/**
+ * National NDC progress is not scored against a single district. NDC targets are
+ * national pledges (e.g. "12% wetland coverage by 2030") with no district-level
+ * target value, so a per-district progress % cannot be computed honestly — the
+ * district's observed data is shown for local context instead.
+ *
+ * Exceptions: indicator-panel and economy-wide targets are explicitly national —
+ * district selection has no effect, so their (national) score is kept and labelled
+ * as such rather than blocked.
+ */
 export function isDistrictProgressBlocked(target: NDCTarget, isDistrictView: boolean): boolean {
   if (!isDistrictView) return false;
   if (isIndicatorPanelTarget(target) || target.sectorId === "economy-wide") return false;
-  return getClimateTraceSectorForTarget(target) != null;
+  return true;
 }

@@ -17,7 +17,8 @@ import {
 import ugandaGeo from "@/data/uganda-adm2.geo.json";
 
 const GEO = ugandaGeo as unknown as FeatureCollection;
-const YEARS = [2021, 2022, 2023, 2024];
+// Climate TRACE v7 (March 2026 dataset) is confirmed through 2025.
+const YEARS = [2021, 2022, 2023, 2024, 2025];
 
 /** Climate-tech sector palette — saturated for crisp map bubbles */
 const SECTOR_COLORS: Record<string, string> = {
@@ -65,7 +66,7 @@ function findDistrictIndex(lng: number, lat: number): number {
 }
 
 export default function MapExplorer() {
-  const [year, setYear] = useState<number>(2024);
+  const [year, setYear] = useState<number>(2025);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [highlightedSector, setHighlightedSector] = useState<string | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<MapSourcePoint | null>(null);

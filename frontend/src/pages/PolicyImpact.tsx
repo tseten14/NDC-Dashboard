@@ -684,8 +684,15 @@ export default function PolicyImpact() {
                 Adjust parameters
               </Button>
               <Button variant="outline" size="sm" className="text-xs" asChild>
-                <Link to={climateFinanceHrefFromPolicyImpact({ sector })}>
-                  <Coins className="h-3 w-3 mr-1" /> Policy suggestions (Climate Finance)
+                <Link
+                  to={climateFinanceHrefFromPolicyImpact({
+                    sector,
+                    intervention: intervention?.label ?? intervention?.intervention_type,
+                    objective: customObjective.trim() || objective,
+                    scale,
+                  })}
+                >
+                  <Coins className="h-3 w-3 mr-1" /> Find funding (Climate Finance)
                 </Link>
               </Button>
             </div>

@@ -16,6 +16,8 @@ interface NDCTargetsProps {
   selectedSector: SectorId;
   selectedTargetId: string | null;
   onSelectTarget: (id: string) => void;
+  /** When false, render at natural height (no internal scroll) for a shared page scroll. */
+  scroll?: boolean;
 }
 
 const conditionalityColors: Record<string, string> = {
@@ -38,7 +40,7 @@ const metricLabels: Record<string, string> = {
   "electricity-capacity": "Power capacity",
 };
 
-export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTarget }: NDCTargetsProps) {
+export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTarget, scroll = true }: NDCTargetsProps) {
   const [expandedTargetId, setExpandedTargetId] = useState<string | null>(selectedTargetId);
   const targets = getTargetsForSector(selectedSector);
 
@@ -68,13 +70,16 @@ export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTar
     setExpandedTargetId((prev) => (prev === targetId ? null : targetId));
   };
 
+  const wrap = (children: React.ReactNode) =>
+    scroll ? <ScrollArea className="flex-1">{children}</ScrollArea> : <div>{children}</div>;
+
   return (
-    <div className="flex flex-col h-full">
+    <div className={cn("flex flex-col", scroll && "h-full")}>
       <div className="px-3 py-2.5 border-b border-border dash-section-header">
         <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">NDC Targets</h3>
         <p className="text-[10px] text-muted-foreground mt-0.5">{targets.length} target{targets.length !== 1 ? "s" : ""}</p>
       </div>
-      <ScrollArea className="flex-1">
+      {wrap(
         <div className="p-3 space-y-3">
           {grouped.map(({ sector, targets: sectorTargets }) => (
             <div key={sector.id}>
@@ -96,8 +101,8 @@ export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTar
               ))}
             </div>
           ))}
-        </div>
-      </ScrollArea>
+        </div>,
+      )}
     </div>
   );
 }

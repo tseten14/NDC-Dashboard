@@ -1,58 +1,43 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import {
-  BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid,
-  Tooltip as RTooltip, ResponsiveContainer, ReferenceLine,
-} from "recharts";
-import { emissionsApi, cockpitApi, type SectorPrediction } from "@/lib/api";
-import { mitigationOptions as localOptions, type MitigationOption } from "@/data/uganda-ndc-data";
-import { activities, type InvestmentReadiness } from "@/data/uganda-strategy-data";
+import { emissionsApi } from "@/lib/api";
+import { sectorDefinitions, type SectorId } from "@/data/uganda-ndc-data";
 import { useAppContext } from "@/hooks/use-app-state";
+import { formatUSD, formatMt } from "@/lib/climate-finance";
 import {
-  DEFAULT_ASSUMPTIONS, ASSUMPTION_BOUNDS, type FinanceAssumptions,
-  computeProjectEconomics, buildMaccCurve, investmentToCloseGap,
-  formatUSD, formatPerT, formatMt, type ProjectEconomics,
-} from "@/lib/climate-finance";
+  currentClimateFinance,
+  summariseClimateFinance,
+  financeForSector,
+  type ActiveFinance,
+} from "@/data/uganda-climate-finance";
 import {
-  UGANDA_FINANCE_CONTEXT,
-  buildProjectRecommendation,
-  getUgandaSequencingGuidance,
-  assessPortfolioDataQuality,
+  screenFundsForIntervention,
+  estimateInterventionNeedUSD,
   type FundFit,
+  type FundMatch,
+  type FinanceChallenge,
 } from "@/lib/climate-finance-pathways";
+import { FundingProposalDialog, type ProposalContext } from "@/components/finance/FundingProposalDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import {
-  Coins, Download, TrendingUp, MapPin, Leaf, Banknote, CheckCircle2, Info,
-  Route, AlertTriangle, Landmark,
+  Coins, MapPin, Landmark, Info, AlertTriangle, FileText, ArrowRight,
+  Banknote, Sparkles, Building2, CheckCircle2, Target, ExternalLink,
 } from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import type { SectorId } from "@/data/uganda-ndc-data";
 
-/** Plain-language names for funding channels, for readers new to climate finance. */
-const CHANNEL_PLAIN_NAME: Record<string, string> = {
-  "gcf-readiness": "Preparation grant (GCF)",
-  "gcf-sap": "Green Climate Fund — smaller projects",
-  "gcf-full": "Green Climate Fund — large projects",
-  "gef-cc": "Global Environment Facility (GEF)",
-  "wb-ida": "World Bank",
-  afdb: "African Development Bank",
-  "carbon-market": "Selling carbon credits",
-  "bilateral-ta": "Donor country support",
-  "national-budget": "Uganda government budget",
-  "ldcf-adaptation": "Adaptation fund (LDCF)",
+const FUNDER_TONE: Record<string, string> = {
+  "World Bank": "bg-sky-500/10 text-sky-600 border-sky-500/30",
+  GCF: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
+  AfDB: "bg-amber-500/10 text-amber-600 border-amber-500/30",
+  GEF: "bg-violet-500/10 text-violet-600 border-violet-500/30",
+  Bilateral: "bg-rose-500/10 text-rose-600 border-rose-500/30",
+  "Other MDB": "bg-muted text-muted-foreground border-border",
 };
 
-/** One-line plain-language reason per fit level (carbon market keeps its own). */
 const FIT_PLAIN_WHY: Record<FundFit, string> = {
   high: "Right size for this project.",
   medium: "Could work — check the size limits and rules.",
@@ -60,146 +45,77 @@ const FIT_PLAIN_WHY: Record<FundFit, string> = {
   ineligible: "Not available for this project.",
 };
 
-const READINESS_ORDER: InvestmentReadiness[] = ["NotReady", "Emerging", "Pipeline", "Bankable"];
-const READINESS_LABEL: Record<InvestmentReadiness, string> = {
-  NotReady: "Early idea",
-  Emerging: "In development",
-  Pipeline: "Investment-ready",
-  Bankable: "Bankable",
-};
-const READINESS_STYLE: Record<InvestmentReadiness, string> = {
-  NotReady: "bg-muted text-muted-foreground border-border",
-  Emerging: "bg-amber-500/10 text-amber-600 border-amber-500/30",
-  Pipeline: "bg-sky-500/10 text-sky-600 border-sky-500/30",
-  Bankable: "bg-on-track/10 text-on-track border-on-track/30",
-};
 
 export default function ClimateFinance() {
   const { geographyLevel, selectedDistrictId, selectedSector } = useAppContext();
   const [searchParams] = useSearchParams();
   const districtName = geographyLevel === "district" && selectedDistrictId ? selectedDistrictId : null;
   const geoKey = districtName ?? "national";
+
   const sectorParam = searchParams.get("sector") as SectorId | null;
-  const projectParam = searchParams.get("projectId");
+  const interventionParam = searchParams.get("intervention");
+  const objectiveParam = searchParams.get("objective");
+  const scaleParam = Number(searchParams.get("scale")) || 1;
   const fromPolicyImpact = searchParams.get("from") === "policy-impact";
 
-  const [assumptions, setAssumptions] = useState<FinanceAssumptions>(DEFAULT_ASSUMPTIONS);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projectParam);
-  const setA = (patch: Partial<FinanceAssumptions>) => setAssumptions((a) => ({ ...a, ...patch }));
+  const focusSectorId = (sectorParam ?? (selectedSector as SectorId | null)) ?? null;
+  const hasIntervention = fromPolicyImpact && !!focusSectorId;
 
-  useEffect(() => {
-    if (projectParam) setSelectedProjectId(projectParam);
-  }, [projectParam]);
+  const [showAllFinance, setShowAllFinance] = useState(!hasIntervention);
+  const [proposalOpen, setProposalOpen] = useState(false);
 
+  // Live 2030 gap for the focus sector (used only to contextualise the ask).
   const predQuery = useQuery({
     queryKey: ["emissions", "predictions", geoKey],
     queryFn: () => emissionsApi.predictions(districtName ? { district: districtName } : undefined),
     staleTime: 1000 * 60 * 30,
   });
+  const predData = predQuery.data;
+  const focusGap = useMemo(() => {
+    if (!predData || !focusSectorId) return null;
+    const p = predData.predictions[focusSectorId as keyof typeof predData.predictions];
+    return p ? { label: p.label, gapMt: p.gap ?? 0 } : null;
+  }, [predData, focusSectorId]);
 
-  const mitQuery = useQuery({
-    queryKey: ["catalog", "mitigation"],
-    queryFn: async () => {
-      try {
-        const res = await cockpitApi.catalogMitigationOptions();
-        const opts = res.options?.map((r) => r.body as unknown as MitigationOption).filter((o) => o && o.id);
-        return opts && opts.length ? opts : localOptions;
-      } catch {
-        return localOptions;
-      }
-    },
-    staleTime: 1000 * 60 * 60,
-  });
+  const sectorLabel =
+    sectorDefinitions.find((s) => s.id === focusSectorId)?.name ?? focusGap?.label ?? "your sector";
 
-  const options = mitQuery.data ?? localOptions;
-  const pred = predQuery.data;
-
-  const macc = useMemo(() => buildMaccCurve(options, assumptions), [options, assumptions]);
-
-  const focusSectorKey = sectorParam ?? selectedSector ?? null;
-
-  const focusSectorGap = useMemo(() => {
-    if (!pred || !focusSectorKey) return null;
-    const p = pred.predictions[focusSectorKey as keyof typeof pred.predictions];
-    if (!p) return null;
-    return { key: focusSectorKey, label: p.label, gapMt: p.gap ?? 0 };
-  }, [pred, focusSectorKey]);
-
-  const sectorRows = useMemo(() => {
-    if (!pred) return [];
-    return (Object.entries(pred.predictions) as [string, SectorPrediction][])
-      .map(([key, p]) => {
-        const gapMt = p.gap ?? 0;
-        const secOpts = options.filter((o) => String(o.sectorId) === key);
-        const closure = investmentToCloseGap(gapMt > 0 ? gapMt : 0, secOpts, assumptions);
-        const econ = secOpts.map((o) => computeProjectEconomics(o, assumptions));
-        const cheapest = econ.length
-          ? econ.reduce((a, b) => ((a.costToAbateUSDPerT ?? Infinity) < (b.costToAbateUSDPerT ?? Infinity) ? a : b))
-          : null;
-        return { key, label: p.label, gapMt, optionCount: secOpts.length, closure, cheapest };
-      })
-      .sort((a, b) => b.gapMt - a.gapMt);
-  }, [pred, options, assumptions]);
-
-  const summary = useMemo(() => {
-    const totalGapMt = sectorRows.reduce((s, r) => s + Math.max(0, r.gapMt), 0);
-    const investment = sectorRows.reduce((s, r) => s + (r.gapMt > 0 ? r.closure.fundingNeedUSD : 0), 0);
-    const annualRevenue = macc.reduce((s, e) => s + e.annualRevenueUSD, 0);
-    const selfFunding = macc.filter((e) => e.carbonCoversCost).length;
-    return { totalGapMt, investment, annualRevenue, selfFunding };
-  }, [sectorRows, macc]);
-
-  const dealCards = useMemo(() => [...macc].sort((a, b) => b.netAnnualUSD - a.netAnnualUSD), [macc]);
-
-  const dataWarnings = useMemo(
-    () => assessPortfolioDataQuality(summary.totalGapMt, macc),
-    [summary.totalGapMt, macc],
+  // ── Q1: current finance ──────────────────────────────────────────────
+  const totals = useMemo(() => summariseClimateFinance(), []);
+  const financeRows = useMemo<ActiveFinance[]>(
+    () => (showAllFinance ? currentClimateFinance : financeForSector(focusSectorId)),
+    [showAllFinance, focusSectorId],
+  );
+  const sectorFinanceTotal = useMemo(
+    () => financeForSector(focusSectorId).reduce((s, r) => s + r.amountUSD, 0),
+    [focusSectorId],
   );
 
-  const selectedEcon = useMemo(
-    () => macc.find((e) => e.id === selectedProjectId) ?? dealCards[0] ?? null,
-    [macc, dealCards, selectedProjectId],
+  // ── Q2: opportunities for the planned intervention ───────────────────
+  const estimatedNeedUSD = focusSectorId ? estimateInterventionNeedUSD(focusSectorId, scaleParam) : 0;
+  const screening = useMemo(
+    () =>
+      hasIntervention && focusSectorId
+        ? screenFundsForIntervention({
+            sectorId: focusSectorId,
+            estimatedNeedUSD,
+            interventionLabel: interventionParam ?? undefined,
+          })
+        : null,
+    [hasIntervention, focusSectorId, estimatedNeedUSD, interventionParam],
   );
 
-  const selectedRec = useMemo(
-    () => (selectedEcon ? buildProjectRecommendation(selectedEcon, assumptions.carbonPrice) : null),
-    [selectedEcon, assumptions.carbonPrice],
-  );
-
-  const sequencing = useMemo(() => getUgandaSequencingGuidance(), []);
-
-  function handleCsv() {
-    const header = [
-      "Project", "Sector", "Abatement_MtCO2e_yr", "Abatement_Unit", "CostToAbate_USD_per_t",
-      "CostToAbate_Low_USD_per_t", "CostToAbate_High_USD_per_t", "Investment_USD",
-      "AnnualCarbonRevenue_USD", "NetAnnualValue_USD", "CarbonCoversCost", "Confidence",
-      "Abatement_Source", "Cost_Source",
-    ];
-    const rows = macc.map((e) => [
-      JSON.stringify(e.title), e.sectorId, e.abatementMtPerYr, JSON.stringify(e.abatementUnit),
-      e.costToAbateUSDPerT?.toFixed(2) ?? "", e.costToAbateLowUSDPerT?.toFixed(2) ?? "",
-      e.costToAbateHighUSDPerT?.toFixed(2) ?? "", Math.round(e.fundingNeedUSD),
-      Math.round(e.annualRevenueUSD), Math.round(e.netAnnualUSD), e.carbonCoversCost ? "yes" : "no",
-      e.confidence, JSON.stringify(e.abatementSource), JSON.stringify(e.costSource),
-    ]);
-    const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `climate-finance-${geoKey}-cp${assumptions.carbonPrice}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  const chartData = macc.map((e) => ({
-    name: e.title.length > 22 ? e.title.slice(0, 20) + "…" : e.title,
-    cost: e.costToAbateUSDPerT ?? 0,
-    covers: e.carbonCoversCost,
-  }));
+  const proposalContext: ProposalContext = {
+    projectName: objectiveParam || (interventionParam ? `${interventionParam}` : `${sectorLabel} climate project`),
+    sectorLabel,
+    interventionLabel: interventionParam ?? undefined,
+    targetFunder: screening?.matches[0]?.window.name,
+    estimatedNeedUSD: estimatedNeedUSD || undefined,
+  };
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-4 space-y-4 max-w-5xl">
+      <div className="p-4 space-y-5 max-w-5xl">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
@@ -207,395 +123,243 @@ export default function ClimateFinance() {
               <Coins className="h-4 w-4 text-primary" />
               Climate Finance
             </h2>
-            <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
-              Compare climate projects by cost, possible carbon-credit income, and how much emissions Uganda still needs
-              to cut by 2030 — then see which funding channels might fit.
-            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-[10px] h-6 gap-1">
-              {districtName ? <MapPin className="h-3 w-3" /> : null}
-              {districtName ? districtName : "National"}
-            </Badge>
-            <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" onClick={handleCsv} aria-label="Export CSV">
-              <Download className="h-3.5 w-3.5" /> Export
-            </Button>
-          </div>
+          <Badge variant="outline" className="text-[10px] h-6 gap-1">
+            {districtName ? <MapPin className="h-3 w-3" /> : null}
+            {districtName ? districtName : "National"}
+          </Badge>
         </div>
 
-        {fromPolicyImpact && focusSectorGap && (
+        {/* From Policy Impact context banner */}
+        {hasIntervention && (
           <Card className="border-sky-500/30 bg-sky-500/5">
             <CardContent className="p-3 flex flex-wrap items-center justify-between gap-2 text-[11px]">
               <div className="flex items-start gap-2">
-                <Info className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
+                <Target className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
                 <span>
-                  <span className="font-semibold">From Policy Impact — {focusSectorGap.label}</span>
-                  {" · "}
-                  Emissions still to cut by 2030:{" "}
-                  {focusSectorGap.gapMt > 0 ? (
-                    <span className="text-off-track font-semibold">+{formatMt(focusSectorGap.gapMt, 1)}</span>
-                  ) : (
-                    <span className="text-on-track font-semibold">on track</span>
+                  <span className="font-semibold">Planning for: {proposalContext.projectName}</span>
+                  {interventionParam ? <> · {interventionParam}</> : null} · {sectorLabel}
+                  {focusGap && focusGap.gapMt > 0 && (
+                    <> · still to cut by 2030: <span className="text-off-track font-semibold">+{formatMt(focusGap.gapMt, 1)}</span></>
                   )}
-                  {" "}(from Policy Impact — same live data as the dashboard)
                 </span>
               </div>
               <Button asChild size="sm" variant="outline" className="h-7 text-[10px]">
-                <Link to={`/dashboard?sector=${focusSectorGap.key}`}>Open sector on Dashboard</Link>
+                <Link to="/policy-impact">Change intervention</Link>
               </Button>
             </CardContent>
           </Card>
         )}
 
-        {/* Plain-language explainer */}
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-3 flex gap-2.5">
-            <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-            <div className="text-[11px] text-foreground/90 leading-relaxed">
-              <span className="font-semibold">In short:</span> each project shows what it costs to cut one tonne of
-              emissions. Set a credit price below — if the project costs{" "}
-              <span className="font-semibold text-on-track">less per tonne than that price</span>, selling credits could
-              cover the cost. All figures are planning estimates from Uganda&apos;s climate pledge, not final prices or
-              investment advice.
-            </div>
-          </CardContent>
-        </Card>
+        {/* ───────────────── Q1: Current climate finance ───────────────── */}
+        <section className="space-y-3">
+          <div>
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+              <Building2 className="h-4 w-4 text-primary" />
+              What climate finance is in Uganda now?
+            </h3>
+            <p className="text-[11px] text-muted-foreground">
+              Large active grants and concessional programmes from the major funders.
+            </p>
+          </div>
 
-        <Collapsible>
-          <Card className="border-border/80">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <Tile label="Total committed" value={formatUSD(totals.totalUSD)} sub={`${totals.count} programmes`} icon={Banknote} />
+            <Tile label="Active now" value={formatUSD(totals.activeUSD)} sub="Disbursing" icon={CheckCircle2} tone="text-on-track" />
+            <Tile label="In pipeline" value={formatUSD(totals.pipelineUSD)} sub="Approved / proposed" icon={ArrowRight} />
+            <Tile
+              label={hasIntervention ? `In ${sectorLabel}` : "Top funder"}
+              value={hasIntervention ? formatUSD(sectorFinanceTotal) : (totals.byFunderType[0]?.type ?? "—")}
+              sub={hasIntervention ? "Your sector" : formatUSD(totals.byFunderType[0]?.amountUSD ?? 0)}
+              icon={Landmark}
+            />
+          </div>
+
+          {/* Funder mix bar */}
+          <Card>
             <CardContent className="p-3">
-              <CollapsibleTrigger className="text-xs font-bold text-primary hover:underline">
-                How are these numbers calculated?
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 text-[10px] leading-relaxed">
-                <div>
-                  <p className="font-semibold text-foreground mb-1">From Uganda&apos;s climate plans</p>
-                  <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
-                    <li>Emissions cuts and project costs from the 2022 NDC</li>
-                    <li>Cost ranges widen when data quality is lower (±10–35%)</li>
-                    <li>Fund sizes are public guidelines — not approval decisions</li>
-                  </ul>
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground mb-1">From your settings above</p>
-                  <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
-                    <li>Cost per tonne = upfront + running costs spread over the project life</li>
-                    <li>Gap closure picks the cheapest projects first until the gap is filled</li>
-                    <li>Chart ranking uses the high end of the range when confidence is low</li>
-                  </ul>
-                </div>
-              </CollapsibleContent>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">By funder</p>
+              <div className="flex h-3 w-full overflow-hidden rounded-full border border-border">
+                {totals.byFunderType.map((f) => (
+                  <div
+                    key={f.type}
+                    className={cn("h-full", FUNDER_TONE[f.type]?.split(" ")[0] ?? "bg-muted")}
+                    style={{ width: `${(f.amountUSD / totals.totalUSD) * 100}%` }}
+                    title={`${f.type}: ${formatUSD(f.amountUSD)}`}
+                  />
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+                {totals.byFunderType.map((f) => (
+                  <span key={f.type} className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <span className={cn("inline-block h-2 w-2 rounded-sm", FUNDER_TONE[f.type]?.split(" ")[0] ?? "bg-muted")} />
+                    {f.type} · {formatUSD(f.amountUSD)}
+                  </span>
+                ))}
+              </div>
             </CardContent>
           </Card>
-        </Collapsible>
 
-        {/* Data accuracy warnings */}
-        <div className="space-y-2">
-          {dataWarnings.map((w) => (
-            <Card
-              key={w.id}
-              className={cn(w.severity === "warn" ? "border-amber-500/40 bg-amber-500/5" : "border-border/60")}
-            >
-              <CardContent className="p-2.5 flex gap-2 text-[11px] leading-relaxed">
-                {w.severity === "warn" ? (
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
-                ) : (
-                  <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                )}
-                <span className={w.severity === "warn" ? "text-amber-900 dark:text-amber-100" : "text-muted-foreground"}>
-                  {w.message}
-                </span>
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] text-muted-foreground">
+              {showAllFinance ? "All active programmes" : `Programmes in ${sectorLabel}`}
+            </p>
+            {hasIntervention && (
+              <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => setShowAllFinance((s) => !s)}>
+                {showAllFinance ? "Show only my sector" : "Show all sectors"}
+              </Button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {financeRows.map((r) => (
+              <FinanceCard key={r.id} f={r} />
+            ))}
+            {financeRows.length === 0 && (
+              <Card><CardContent className="p-4 text-[11px] text-muted-foreground">No major programmes recorded for this sector yet.</CardContent></Card>
+            )}
+          </div>
+        </section>
+
+        {/* ──────────── Q2: Opportunities for your intervention ─────────── */}
+        <section className="space-y-3">
+          <div>
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Funding opportunities for your policy intervention
+            </h3>
+            <p className="text-[11px] text-muted-foreground">
+              We screen the large MDBs and climate funds against your planned intervention, flag the likely
+              challenges, and help you start a proposal.
+            </p>
+          </div>
+
+          {!hasIntervention ? (
+            <Card className="border-dashed">
+              <CardContent className="p-4 flex flex-col items-start gap-2">
+                <p className="text-xs text-foreground font-medium">Plan an intervention first</p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed max-w-xl">
+                  Go to the Policy Impact tool, choose your sector and policy intervention, then click
+                  <span className="font-medium text-foreground"> “Find funding”</span>. We'll match it to funders here.
+                </p>
+                <Button asChild size="sm" className="h-7 text-xs gap-1.5 mt-1">
+                  <Link to="/policy-impact">Open Policy Impact <ArrowRight className="h-3 w-3" /></Link>
+                </Button>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          ) : (
+            <>
+              {/* Ask summary + proposal CTA */}
+              <Card className="border-primary/25">
+                <CardContent className="p-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-[11px]">
+                    <p className="text-foreground">
+                      Estimated funding need:{" "}
+                      <span className="font-bold tabular-nums">{formatUSD(estimatedNeedUSD)}</span>
+                    </p>
+                    <p className="text-muted-foreground">
+                      Rough order-of-magnitude for a {sectorLabel.toLowerCase()} programme at this scale — refine in the proposal.
+                    </p>
+                  </div>
+                  <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setProposalOpen(true)}>
+                    <FileText className="h-3.5 w-3.5" />
+                    Prepare funding proposal
+                  </Button>
+                </CardContent>
+              </Card>
 
-        {/* Assumptions */}
-        <Card>
-          <CardContent className="p-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <SliderControl label="Credit price per tonne" value={assumptions.carbonPrice} suffix=" $/t"
-              bounds={ASSUMPTION_BOUNDS.carbonPrice} onChange={(v) => setA({ carbonPrice: v })} />
-            <SliderControl label="Project lifespan" value={assumptions.lifetimeYears} suffix=" yrs"
-              bounds={ASSUMPTION_BOUNDS.lifetimeYears} onChange={(v) => setA({ lifetimeYears: v })} />
-            <SliderControl label="Costing interest rate" value={assumptions.discountRate}
-              display={`${(assumptions.discountRate * 100).toFixed(1)}%`}
-              bounds={ASSUMPTION_BOUNDS.discountRate} onChange={(v) => setA({ discountRate: v })} />
-          </CardContent>
-        </Card>
-
-        {predQuery.isLoading && (
-          <Card><CardContent className="p-4"><div className="h-20 animate-pulse rounded bg-muted/40" /></CardContent></Card>
-        )}
-        {predQuery.isError && (
-          <Card className="border-off-track/30">
-            <CardContent className="p-3 text-xs text-off-track">
-              Couldn't load the 2030 emissions gap. The project economics below still work; only the per-sector gap
-              needs the prediction service.
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Summary tiles */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <Tile label="Still to cut by 2030" value={formatMt(summary.totalGapMt, 1)} sub="Based on live emissions trends" icon={Leaf} tone="text-off-track" />
-          <Tile label="Rough investment needed" value={formatUSD(summary.investment)} sub="From NDC cost estimates" icon={Banknote} />
-          <Tile label="Possible credit income / yr" value={formatUSD(summary.annualRevenue)} sub={`If credits sell at $${assumptions.carbonPrice}/tonne`} icon={TrendingUp} tone="text-on-track" />
-          <Tile label="Self-paying projects" value={`${summary.selfFunding} of ${macc.length}`} sub="Credits cover cost at your price" icon={CheckCircle2} />
-        </div>
-
-        {/* Sector gap -> opportunity */}
-        <Card>
-          <CardContent className="p-3">
-            <h3 className="text-xs font-bold text-foreground mb-0.5">Opportunity by sector</h3>
-            <p className="text-[10px] text-muted-foreground mb-2">How far each sector is from its 2030 goal, and which projects could help close the gap.</p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-[11px]">
-                <thead>
-                  <tr className="border-b border-border text-muted-foreground">
-                    <th className="text-left py-1 px-1 font-semibold">Sector</th>
-                    <th className="text-right py-1 px-1 font-semibold">Still to cut</th>
-                    <th className="text-center py-1 px-1 font-semibold">Projects</th>
-                    <th className="text-right py-1 px-1 font-semibold">Lowest $/tonne</th>
-                    <th className="text-right py-1 px-1 font-semibold">Investment</th>
-                    <th className="text-right py-1 px-1 font-semibold">Credit income / yr</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sectorRows.map((r) => (
-                    <tr
-                      key={r.key}
-                      className={cn(
-                        "border-b border-border/20",
-                        focusSectorKey === r.key && "bg-primary/5 ring-1 ring-inset ring-primary/20",
-                      )}
-                    >
-                      <td className="py-1.5 px-1 font-medium text-foreground">{r.label}</td>
-                      <td className="py-1.5 px-1 text-right">
-                        {r.gapMt > 0 ? (
-                          <span className="text-off-track tabular-nums">+{formatMt(r.gapMt, 1)}</span>
-                        ) : (
-                          <Badge variant="outline" className="text-[8px] h-4 bg-on-track/10 text-on-track border-on-track/30">on track</Badge>
-                        )}
-                      </td>
-                      <td className="py-1.5 px-1 text-center text-muted-foreground">{r.optionCount || "—"}</td>
-                      <td className="py-1.5 px-1 text-right tabular-nums">{r.cheapest ? formatPerT(r.cheapest.costToAbateUSDPerT) : "—"}</td>
-                      <td className="py-1.5 px-1 text-right tabular-nums">{r.gapMt > 0 && r.optionCount ? formatUSD(r.closure.fundingNeedUSD) : "—"}</td>
-                      <td className="py-1.5 px-1 text-right tabular-nums text-on-track">{r.gapMt > 0 && r.optionCount ? formatUSD(r.closure.annualRevenueUSD) : "—"}</td>
-                    </tr>
+              {/* Matched funders */}
+              <div>
+                <p className="text-[11px] font-semibold text-foreground mb-1.5">Funders that could fit</p>
+                <div className="space-y-2">
+                  {screening?.matches.map((m, i) => (
+                    <FundMatchRow key={m.window.id} m={m} primary={i === 0} />
                   ))}
-                  {sectorRows.length === 0 && (
-                    <tr><td colSpan={6} className="py-3 text-center text-muted-foreground">No sector gap data.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+              </div>
 
-        {/* Cost-to-abate chart */}
-        <Card>
-          <CardContent className="p-3">
-            <h3 className="text-xs font-bold text-foreground mb-0.5">Cost per tonne, by project</h3>
-            <p className="text-[10px] text-muted-foreground mb-2">
-              <span className="text-on-track font-medium">Green bars</span> cost less per tonne than your credit price — credits could cover the cost.
-            </p>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={chartData} margin={{ bottom: 44 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-30} textAnchor="end" interval={0} stroke="hsl(var(--muted-foreground))" />
-                <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))"
-                  label={{ value: "$ per tonne CO₂e", angle: -90, position: "insideLeft", offset: 10, style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" } }} />
-                <RTooltip
-                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "6px", fontSize: 11 }}
-                  formatter={(v: unknown) => [formatPerT(v as number), "Cost to abate"]} />
-                <ReferenceLine y={assumptions.carbonPrice} stroke="hsl(var(--chart-2))" strokeDasharray="4 4" />
-                <Bar dataKey="cost" radius={[2, 2, 0, 0]}>
-                  {chartData.map((d, i) => (
-                    <Cell key={i} fill={d.covers ? "hsl(var(--on-track))" : "hsl(var(--chart-1))"} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            <div className="flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground mt-2 px-1">
-              <span className="inline-flex items-center gap-1">
-                <span className="inline-block h-2.5 w-3 rounded-sm bg-[hsl(var(--on-track))]" aria-hidden />
-                Below credit price
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="inline-block h-2.5 w-3 rounded-sm bg-[hsl(var(--chart-1))]" aria-hidden />
-                Above credit price
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-2))]" aria-hidden />
-                Credit price (${assumptions.carbonPrice}/tonne)
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Financing pathways (NAPX-inspired) */}
-        <Card className="border-primary/15">
-          <CardContent className="p-3 space-y-3">
-            <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <Route className="h-3.5 w-3.5 text-primary" />
-              Where to look for funding — {UGANDA_FINANCE_CONTEXT.classification}
-            </h3>
-            <p className="text-[10px] text-muted-foreground leading-relaxed">
-              {UGANDA_FINANCE_CONTEXT.sequencingPrinciple} Based on {UGANDA_FINANCE_CONTEXT.ndcAnchor}.
-            </p>
-            <ul className="text-[10px] text-foreground/90 space-y-1 list-disc pl-4">
-              {sequencing.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        {/* Investor opportunity cards */}
-        <div>
-          <h3 className="text-xs font-bold text-foreground mb-0.5">Top opportunities</h3>
-          <p className="text-[10px] text-muted-foreground mb-2">
-            Projects with the best payback. Click one to see where the money could come from.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {dealCards.slice(0, 6).map((e) => (
-              <DealCard
-                key={e.id}
-                e={e}
-                carbonPrice={assumptions.carbonPrice}
-                selected={selectedEcon?.id === e.id}
-                onSelect={() => setSelectedProjectId(e.id)}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Matched funding + recommendations for selected project */}
-        {selectedRec && selectedEcon && (
-          <Card className="border-primary/25 shadow-sm">
-            <CardContent className="p-3 space-y-3">
-              <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <Landmark className="h-3.5 w-3.5 text-primary" />
-                Where could the money come from? — {selectedEcon.title}
-              </h3>
-
-              {selectedRec.primaryWindow && (
-                <div className="rounded-md border border-primary/30 bg-primary/5 px-2.5 py-2 text-[11px]">
-                  <span className="font-semibold text-primary">Start here: </span>
-                  {CHANNEL_PLAIN_NAME[selectedRec.primaryWindow.window.id] ?? selectedRec.primaryWindow.window.name}
-                  <span className="text-muted-foreground">
-                    {" — "}
-                    {selectedRec.primaryWindow.window.id === "carbon-market"
-                      ? selectedRec.primaryWindow.rationale
-                      : FIT_PLAIN_WHY[selectedRec.primaryWindow.fit]}
-                  </span>
+              {/* Challenges */}
+              {screening && screening.challenges.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                    Potential challenges to flag early
+                  </p>
+                  <div className="space-y-2">
+                    {screening.challenges.map((c) => (
+                      <ChallengeCard key={c.id} c={c} />
+                    ))}
+                  </div>
                 </div>
               )}
+            </>
+          )}
+        </section>
 
-              <div className="space-y-1.5">
-                {selectedRec.matches
-                  .filter((m) => m.window.id !== selectedRec.primaryWindow?.window.id)
-                  .slice(0, 3)
-                  .map((m) => (
-                    <div
-                      key={m.window.id}
-                      className="flex items-center gap-2 rounded-md border border-border/60 px-2.5 py-1.5 text-[10px]"
-                    >
-                      <span className="font-medium text-foreground">
-                        {CHANNEL_PLAIN_NAME[m.window.id] ?? m.window.name}
-                      </span>
-                      <FitBadge fit={m.fit} />
-                      <span className="text-muted-foreground hidden sm:inline truncate">
-                        {m.window.id === "carbon-market" ? m.rationale : FIT_PLAIN_WHY[m.fit]}
-                      </span>
-                    </div>
-                  ))}
-              </div>
+        {/* ──────────── Article 6 carbon-credit revenue estimate ───────────── */}
+        <CarbonCreditEstimate sectorLabel={sectorLabel} gapMt={focusGap?.gapMt ?? null} hasIntervention={hasIntervention} />
 
-              <div>
-                <p className="text-[10px] font-semibold text-foreground mb-1">What to do next</p>
-                <ol className="text-[10px] text-muted-foreground space-y-1 list-decimal pl-4">
-                  {selectedRec.nextSteps
-                    .filter((step) => !step.startsWith("Best-fit funding channel"))
-                    .slice(0, 3)
-                    .map((step) => (
-                      <li key={step}>{step}</li>
-                    ))}
-                </ol>
-              </div>
-
-              <p className="text-[10px] text-muted-foreground">
-                Big projects usually need government sign-off, an approved delivery partner, and some matching money
-                from Uganda&apos;s own budget or private partners.
-              </p>
-
-              <Collapsible>
-                <CollapsibleTrigger className="text-[10px] text-primary hover:underline">
-                  Where these figures come from
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-1.5 rounded-md border border-border/60 bg-muted/20 px-2.5 py-2 text-[10px] space-y-1 text-muted-foreground">
-                  <p>{selectedRec.dataCaveat}</p>
-                  <p><span className="font-semibold text-foreground">Emissions data: </span>{selectedEcon.abatementSource}</p>
-                  <p><span className="font-semibold text-foreground">Cost data: </span>{selectedEcon.costSource}</p>
-                </CollapsibleContent>
-              </Collapsible>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Project readiness */}
-        <Card>
-          <CardContent className="p-3">
-            <h3 className="text-xs font-bold text-foreground mb-0.5">How ready are projects?</h3>
-            <p className="text-[10px] text-muted-foreground mb-2">How close each activity is to being ready for investment.</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {READINESS_ORDER.map((stage) => {
-                const items = activities.filter((a) => a.investment_readiness_level === stage);
-                return (
-                  <div key={stage} className="rounded-md border border-border/60 p-2">
-                    <Badge variant="outline" className={cn("text-[9px] h-5 mb-1.5", READINESS_STYLE[stage])}>{READINESS_LABEL[stage]}</Badge>
-                    {items.length === 0 ? (
-                      <p className="text-[10px] text-muted-foreground">—</p>
-                    ) : (
-                      items.map((a) => (
-                        <div key={a.id} className="mb-1.5 last:mb-0">
-                          <p className="text-[10px] font-medium text-foreground leading-tight">{a.title}</p>
-                          <p className="text-[9px] text-muted-foreground">{a.sector}</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        <p className="text-[10px] text-muted-foreground leading-relaxed">
-          Screening tool for Uganda&apos;s climate projects — not investment advice. The 2030 gap uses live emissions
-          data vs official goals; costs come from NDC planning figures; credit income assumes sellable reductions at $
-          {assumptions.carbonPrice}/tonne.
+        <p className="text-[10px] text-muted-foreground leading-relaxed flex items-start gap-1.5">
+          <Info className="h-3 w-3 shrink-0 mt-0.5" />
+          Screening tool for Uganda's climate projects — not investment advice. Current-finance figures are compiled
+          from public funder portals (linked per programme) and are approximate; fund sizes are eligibility
+          guidelines, not approval decisions. Verify against each funder's portal before use.
         </p>
       </div>
+
+      {hasIntervention && (
+        <FundingProposalDialog open={proposalOpen} onOpenChange={setProposalOpen} context={proposalContext} />
+      )}
     </ScrollArea>
   );
 }
 
-function SliderControl({
-  label, value, suffix, display, bounds, onChange,
+/** Rough indicative carbon-credit revenue under Article 6.2 / 6.4. */
+function CarbonCreditEstimate({
+  sectorLabel,
+  gapMt,
+  hasIntervention,
 }: {
-  label: string; value: number; suffix?: string; display?: string;
-  bounds: { min: number; max: number; step: number }; onChange: (v: number) => void;
+  sectorLabel: string;
+  gapMt: number | null;
+  hasIntervention: boolean;
 }) {
+  // Assume credits could certify ~10% of the sector's remaining 2030 gap per year;
+  // fall back to a small standalone project where no gap figure is available.
+  const annualMt = gapMt && gapMt > 0 ? Math.max(0.05, gapMt * 0.1) : 0.2;
+  const tonnes = annualMt * 1e6;
+  const prices: { label: string; usd: number }[] = [
+    { label: "Low", usd: 5 },
+    { label: "Mid", usd: 12 },
+    { label: "High", usd: 25 },
+  ];
   return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
-        <span className="text-xs font-bold text-foreground tabular-nums">{display ?? `${value}${suffix ?? ""}`}</span>
-      </div>
-      <Slider value={[value]} min={bounds.min} max={bounds.max} step={bounds.step}
-        onValueChange={(v) => onChange(v[0])} aria-label={label} />
-    </div>
+    <Card className="border-primary/20">
+      <CardContent className="p-3 space-y-2">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+          <Coins className="h-4 w-4 text-primary" />
+          Carbon-credit revenue (Article 6.2 / 6.4)
+        </h3>
+        <p className="text-[11px] text-muted-foreground leading-snug">
+          Rough estimate of annual revenue if {hasIntervention ? `${sectorLabel} ` : ""}reductions are certified and
+          sold as credits — assuming ~{formatMt(annualMt, 2)}/yr of verified abatement
+          {gapMt && gapMt > 0 ? ` (about 10% of the sector's remaining 2030 gap)` : ` (a small standalone project)`}.
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {prices.map((p) => (
+            <div key={p.label} className="rounded-md border border-border/60 p-2 text-center">
+              <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{p.label} · ${p.usd}/t</p>
+              <p className="text-sm font-bold tabular-nums text-on-track">{formatUSD(tonnes * p.usd)}</p>
+              <p className="text-[8px] text-muted-foreground">per year</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-muted-foreground leading-snug">
+          Indicative only. Real revenue depends on Article 6 eligibility, an approved methodology, MRV, buyer demand,
+          and corresponding adjustments to avoid double-counting against Uganda's own NDC.
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -618,6 +382,45 @@ function Tile({
   );
 }
 
+function FinanceCard({ f }: { f: ActiveFinance }) {
+  return (
+    <Card className="hover:border-primary/30 transition-colors">
+      <CardContent className="p-3 space-y-1.5">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-xs font-bold text-foreground leading-tight">{f.programme}</p>
+          <span className="text-sm font-bold tabular-nums text-foreground shrink-0">{formatUSD(f.amountUSD)}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="outline" className={cn("text-[9px] h-4", FUNDER_TONE[f.funderType] ?? "")}>{f.funder}</Badge>
+          <Badge variant="outline" className="text-[9px] h-4">{f.sectorLabel}</Badge>
+          <Badge variant="outline" className="text-[9px] h-4">{f.instrument}</Badge>
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-[9px] h-4",
+              f.status === "Active" ? "bg-on-track/10 text-on-track border-on-track/30"
+                : f.status === "Pipeline" ? "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                  : "bg-sky-500/10 text-sky-600 border-sky-500/30",
+            )}
+          >
+            {f.status} · {f.period}
+          </Badge>
+        </div>
+        <p className="text-[10px] text-muted-foreground leading-snug">{f.focus}</p>
+        <a
+          href={f.sourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-0.5 text-[10px] font-medium text-primary hover:underline"
+        >
+          Source: {f.sourceLabel}
+          <ExternalLink className="h-2.5 w-2.5 opacity-70" aria-hidden />
+        </a>
+      </CardContent>
+    </Card>
+  );
+}
+
 function FitBadge({ fit }: { fit: FundFit }) {
   const style: Record<FundFit, string> = {
     high: "bg-on-track/10 text-on-track border-on-track/30",
@@ -625,71 +428,43 @@ function FitBadge({ fit }: { fit: FundFit }) {
     low: "bg-muted text-muted-foreground border-border",
     ineligible: "bg-muted text-muted-foreground border-border",
   };
-  const label: Record<FundFit, string> = {
-    high: "Strong fit",
-    medium: "Possible",
-    low: "Weak fit",
-    ineligible: "N/A",
-  };
+  const label: Record<FundFit, string> = { high: "Strong fit", medium: "Possible", low: "Weak fit", ineligible: "N/A" };
+  return <Badge variant="outline" className={cn("text-[8px] h-4 shrink-0", style[fit])}>{label[fit]}</Badge>;
+}
+
+function FundMatchRow({ m, primary }: { m: FundMatch; primary?: boolean }) {
   return (
-    <Badge variant="outline" className={cn("text-[8px] h-4", style[fit])}>
-      {label[fit]}
-    </Badge>
+    <div className={cn("rounded-md border px-3 py-2 text-[11px]", primary ? "border-primary/40 bg-primary/5" : "border-border/60")}>
+      <div className="flex items-center gap-2">
+        {primary && <Badge variant="outline" className="text-[8px] h-4 border-primary/40 text-primary shrink-0">Start here</Badge>}
+        <span className="font-semibold text-foreground">{m.window.name}</span>
+        <FitBadge fit={m.fit} />
+      </div>
+      <p className="text-muted-foreground mt-1 leading-snug">{FIT_PLAIN_WHY[m.fit]} {m.rationale}</p>
+      <p className="text-[10px] text-muted-foreground/80 mt-1">
+        <span className="font-medium text-foreground/80">Route: </span>{m.window.proposalPath}
+      </p>
+    </div>
   );
 }
 
-function DealCard({
-  e, carbonPrice, selected, onSelect,
-}: {
-  e: ProjectEconomics;
-  carbonPrice: number;
-  selected?: boolean;
-  onSelect?: () => void;
-}) {
-  const gapPerT = e.costToAbateUSDPerT != null ? e.costToAbateUSDPerT - carbonPrice : null;
-  const hasBand = e.costToAbateLowUSDPerT != null && e.costToAbateHighUSDPerT != null && e.confidence !== "high";
+function ChallengeCard({ c }: { c: FinanceChallenge }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
+    <div
       className={cn(
-        "rounded-lg border bg-card p-3 text-left w-full transition-colors hover:border-primary/40",
-        selected && "ring-2 ring-primary/40 border-primary/50",
+        "rounded-md border px-3 py-2 text-[11px] flex gap-2",
+        c.severity === "warn" ? "border-amber-500/40 bg-amber-500/5" : "border-border/60",
       )}
     >
-      <p className="text-xs font-bold text-foreground leading-tight mb-2">{e.title}</p>
-      <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] mb-2">
-        <Metric label="Costs to build" value={formatUSD(e.fundingNeedUSD)} />
-        <Metric label="Earns per year" value={formatUSD(e.annualRevenueUSD)} tone="text-on-track" />
-        <Metric label="Emissions cut" value={`${formatMt(e.abatementMtPerYr)}/yr`} />
-        <Metric
-          label="Cost / tonne"
-          value={
-            hasBand
-              ? `${formatPerT(e.costToAbateLowUSDPerT)} – ${formatPerT(e.costToAbateHighUSDPerT)}`
-              : formatPerT(e.costToAbateUSDPerT)
-          }
-        />
-      </div>
-      {e.carbonCoversCost ? (
-        <div className="flex items-center gap-1.5 rounded-md bg-on-track/10 px-2 py-1 text-[10px] text-on-track">
-          <CheckCircle2 className="h-3 w-3 shrink-0" />
-          <span className="font-medium">Pays for itself (+{formatUSD(e.netAnnualUSD)}/yr)</span>
-        </div>
+      {c.severity === "warn" ? (
+        <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
       ) : (
-        <div className="rounded-md bg-muted px-2 py-1 text-[10px] text-muted-foreground">
-          Needs extra funding ({gapPerT != null ? formatPerT(gapPerT) : "—"}/tonne short)
-        </div>
+        <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
       )}
-    </button>
-  );
-}
-
-function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={cn("font-semibold tabular-nums", tone ?? "text-foreground")}>{value}</span>
+      <div>
+        <p className="font-semibold text-foreground">{c.title}</p>
+        <p className="text-muted-foreground leading-snug mt-0.5">{c.detail}</p>
+      </div>
     </div>
   );
 }

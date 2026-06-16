@@ -22,7 +22,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Download, FileSpreadsheet, FileText, Sparkles, ChevronDown, LayoutList } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Download, FileSpreadsheet, FileText, Sparkles, LayoutList, Activity, TrendingUp } from "lucide-react";
 import { DashboardAnalyzePanel } from "@/components/dashboard/DashboardAnalyzePanel";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { exportNdcDashboardExcel, exportNdcDashboardPdf, exportCrtBtrCsv } from "@/lib/ndc-export";
@@ -257,10 +258,62 @@ export default function NDCLayer() {
           )}
         </div>
 
+        {/* Data view: observed history vs projected trajectory to 2030 */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Data</span>
+          <div className="flex rounded-md border border-input overflow-hidden">
+            <button
+              type="button"
+              onClick={() => state.setTimeMode("historical")}
+              aria-pressed={state.timeMode === "historical"}
+              title="Show measured emissions recorded so far"
+              className={cn(
+                "flex items-center gap-1 px-2 py-0.5 text-xs font-medium transition-colors",
+                state.timeMode === "historical"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background text-muted-foreground hover:bg-muted",
+              )}
+            >
+              <Activity className="h-3 w-3" />
+              Observed
+            </button>
+            <button
+              type="button"
+              onClick={() => state.setTimeMode("projection")}
+              aria-pressed={state.timeMode === "projection"}
+              title="Show the projected path toward the 2030 pledge"
+              className={cn(
+                "flex items-center gap-1 px-2 py-0.5 text-xs font-medium transition-colors border-l border-input",
+                state.timeMode === "projection"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background text-muted-foreground hover:bg-muted",
+              )}
+            >
+              <TrendingUp className="h-3 w-3" />
+              Projected
+            </button>
+          </div>
+        </div>
+
         <div className="flex items-center gap-2 ml-auto">
-          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="gap-1 h-7 text-xs">
-            <RefreshCw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />Refresh
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="default" size="sm" className="gap-1 h-7 text-xs font-semibold">
+                <Sparkles className="h-3 w-3" />NDC AI
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl h-[85vh] p-0 overflow-hidden flex flex-col">
+              <DialogHeader className="px-4 py-3 border-b border-border shrink-0">
+                <DialogTitle className="text-sm">NDC AI</DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 min-h-0">
+                <DashboardAnalyzePanel
+                  selectedSector={state.selectedSector as SectorId}
+                  selectedTarget={selectedTarget}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1 h-7 text-xs"><Download className="h-3 w-3" />Export</Button>
@@ -307,84 +360,63 @@ export default function NDCLayer() {
         <NdcGapSummary variant="compact" onSelectSector={handleGapSectorSelect} />
       )}
 
-      {/* Three-column layout over a slow-drifting climate gradient */}
+      {/* Three-column layout over a slow-drifting climate gradient — one shared scroll */}
       <div className="flex-1 relative isolate overflow-hidden">
         <div aria-hidden className="absolute inset-0 -z-10 dash-animated-bg" />
         <div aria-hidden className="absolute inset-0 -z-10 dash-grid-pattern" />
-        <div className="h-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border">
+        <ScrollArea className="h-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border items-start">
         <div
-          className="overflow-hidden min-w-0 dash-crossfade"
+          className="min-w-0 dash-crossfade"
           key={`targets-${state.selectedSector}-${state.geographyLevel}`}
         >
-          <NDCTargetsColumn selectedSector={state.selectedSector as SectorId} selectedTargetId={state.selectedTargetId} onSelectTarget={handleSelectTarget} />
+          <NDCTargetsColumn scroll={false} selectedSector={state.selectedSector as SectorId} selectedTargetId={state.selectedTargetId} onSelectTarget={handleSelectTarget} />
         </div>
         <div
-          className="overflow-hidden min-w-0 dash-crossfade"
-          key={`observed-${state.selectedTargetId}-${state.selectedSector}-${state.geographyLevel}-${state.selectedDistrictId}`}
+          className="min-w-0 dash-crossfade"
+          key={`observed-${state.selectedTargetId}-${state.selectedSector}-${state.geographyLevel}-${state.selectedDistrictId}-${state.timeMode}`}
         >
-          <ObservedDataColumn selectedTarget={selectedTarget} selectedMitigationOptions={state.selectedMitigationOptions} />
+          <ObservedDataColumn scroll={false} selectedTarget={selectedTarget} selectedMitigationOptions={state.selectedMitigationOptions} timeMode={state.timeMode as TimeMode} />
         </div>
         <div
-          className="overflow-hidden min-w-0 flex flex-col dash-crossfade"
+          className="min-w-0 dash-crossfade"
           key={`progress-${state.selectedTargetId}-${state.selectedSector}-${state.geographyLevel}-${state.selectedDistrictId}`}
         >
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <ProgressTowardTargetColumn selectedTarget={selectedTarget} />
-          </div>
-          <div className="shrink-0 px-3 py-2.5 border-t border-border bg-muted/20 space-y-1.5">
-            {/* NDC AI — primary action */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="w-full justify-start text-xs gap-1.5 font-semibold"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  NDC AI
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl h-[85vh] p-0 overflow-hidden flex flex-col">
-                <DialogHeader className="px-4 py-3 border-b border-border shrink-0">
-                  <DialogTitle className="text-sm">NDC AI</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 min-h-0">
-                  <DashboardAnalyzePanel
-                    selectedSector={state.selectedSector as SectorId}
-                    selectedTarget={selectedTarget}
-                  />
+          <ProgressTowardTargetColumn
+            scroll={false}
+            selectedTarget={selectedTarget}
+            footer={
+              <div className={cn(
+                "mt-1 pt-3 border-t border-border",
+                dashboardPresets.emphasizeMrvPanels && "rounded-md border border-primary/30 ring-1 ring-primary/20 bg-primary/5 p-2",
+              )}>
+                <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                  <LayoutList className="h-3 w-3" />
+                  Data &amp; insights
+                </p>
+                <div className="grid grid-cols-1 gap-1">
+                  {([
+                    ["activities", "📋 Activities / Measures"],
+                    ["sources", "🏭 Top Emitting Sources"],
+                    ["spatial", "🛰️ Spatial Certainty"],
+                    ["trackability", "📡 What Climate TRACE Can Track"],
+                    ["official", "📜 Official sources"],
+                    ...(!readOnly ? [["mitigation", "💡 Mitigation Options"]] : []),
+                  ] as [string, string][]).map(([key, label]) => (
+                    <Button
+                      key={key}
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start text-left text-xs gap-1.5 h-8 whitespace-normal leading-tight"
+                      onClick={() => setActivePanel(key)}
+                    >
+                      {label}
+                    </Button>
+                  ))}
                 </div>
-              </DialogContent>
-            </Dialog>
-
-            {/* Data & insights — detail panels collapsed into one menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-between text-xs gap-1.5",
-                    dashboardPresets.emphasizeMrvPanels && "border-primary ring-1 ring-primary/30 bg-primary/5",
-                  )}
-                >
-                  <span className="flex items-center gap-1.5">
-                    <LayoutList className="h-3.5 w-3.5" />
-                    Data &amp; insights
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] min-w-56">
-                <DropdownMenuItem onSelect={() => setActivePanel("activities")}>📋 Activities / Measures</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setActivePanel("sources")}>🏭 Top Emitting Sources</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setActivePanel("spatial")}>🛰️ Spatial Certainty</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setActivePanel("trackability")}>📡 What Climate TRACE Can Track</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setActivePanel("official")}>📜 Official sources</DropdownMenuItem>
-                {!readOnly && <DropdownMenuItem onSelect={() => setActivePanel("mitigation")}>💡 Mitigation Options</DropdownMenuItem>}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+              </div>
+            }
+          />
 
           {/* Detail dialogs opened from the Data & insights menu */}
           <Dialog open={activePanel === "activities"} onOpenChange={(o) => !o && setActivePanel(null)}>
@@ -467,6 +499,7 @@ export default function NDCLayer() {
           )}
         </div>
         </div>
+        </ScrollArea>
       </div>
     </div>
   );

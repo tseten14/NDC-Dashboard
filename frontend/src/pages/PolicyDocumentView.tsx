@@ -230,30 +230,6 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
                 ))}
               </ul>
             )}
-            {section.page_refs.length > 0 && (
-              <div className="flex flex-wrap gap-1 pl-3">
-                {section.page_refs.filter((ref) => /p\.?\s*\d+/i.test(ref) && !/^§/.test(ref)).map((ref) => {
-                  const pageNum = ref.match(/p\.?\s*(\d+)/i)?.[1];
-                  const href = pageNum && cprLink ? `${cprLink}#page=${pageNum}` : null;
-                  const label = pageNum ? `page ${pageNum} ↗` : ref;
-                  return href ? (
-                    <a
-                      key={ref}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[9px] text-primary/80 bg-primary/8 px-1.5 py-0.5 rounded hover:bg-primary/15 hover:text-primary transition-colors underline-offset-2 hover:underline"
-                    >
-                      {label}
-                    </a>
-                  ) : (
-                    <span key={ref} className="text-[9px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
-                      {label}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
           </div>
         ))}
 
@@ -435,7 +411,7 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
       <div className="shrink-0 px-4 py-3 border-b border-border bg-card">
         <div className="flex items-center gap-2">
           <BookOpen className="h-3.5 w-3.5 text-primary" />
-          <h3 className="text-sm font-bold text-foreground">AI Policy Assistant</h3>
+          <h3 className="text-sm font-bold text-foreground">Policy AI</h3>
         </div>
         <p className="text-[10px] text-muted-foreground mt-0.5">
           Reads the full PDF and answers using Claude AI. Citations link to the source page.

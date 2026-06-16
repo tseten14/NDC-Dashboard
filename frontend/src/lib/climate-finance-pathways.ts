@@ -330,3 +330,119 @@ function formatScale(usd: number): string {
   if (usd >= 1e3) return `$${(usd / 1e3).toFixed(0)}k`;
   return `$${usd.toFixed(0)}`;
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// Intervention-driven screening (connects the Policy Impact feature to funders)
+// ───────────────────────────────────────────────────────────────────────────
+
+export interface FinanceChallenge {
+  id: string;
+  severity: "warn" | "info";
+  title: string;
+  detail: string;
+}
+
+/** Rough order-of-magnitude funding need by sector, scaled by the Policy Impact scale slider (1 = baseline). */
+export function estimateInterventionNeedUSD(sectorId: string, scale = 1): number {
+  const base: Record<string, number> = {
+    energy: 60_000_000,
+    transport: 80_000_000,
+    afolu: 40_000_000,
+    agriculture: 25_000_000,
+    waste: 18_000_000,
+    ippu: 30_000_000,
+    "economy-wide": 50_000_000,
+  };
+  const b = base[sectorId.toLowerCase()] ?? 35_000_000;
+  return Math.round(b * Math.max(0.25, scale));
+}
+
+/**
+ * Screen the major fund windows for a planned policy intervention and flag the
+ * practical challenges Uganda is likely to hit (LDC accreditation, co-finance,
+ * MRV, government sign-off). Works from sector + estimated need rather than full
+ * project economics, so it can be driven directly from Policy Impact.
+ */
+export function screenFundsForIntervention(input: {
+  sectorId: string;
+  estimatedNeedUSD: number;
+  interventionLabel?: string;
+}): { matches: FundMatch[]; challenges: FinanceChallenge[] } {
+  const usd = input.estimatedNeedUSD;
+  const sector = input.sectorId.toLowerCase();
+  const preferred = SECTOR_MDB[sector] ?? [];
+
+  const matches: FundMatch[] = FUNDING_WINDOWS.filter((w) => w.category !== "carbon")
+    .map((window) => {
+      const fit = fitFromScale(usd, window);
+      let rationale = `Estimated need (~${formatScale(usd)}) sits within this window's typical range (${formatScale(window.scaleMinUSD)}–${formatScale(window.scaleMaxUSD)}).`;
+      if (preferred.includes(window.id)) {
+        rationale += ` Similar ${sector} programmes in Uganda have used this channel.`;
+      }
+      return { window, fit, rationale };
+    });
+
+  const order: Record<FundFit, number> = { high: 0, medium: 1, low: 2, ineligible: 3 };
+  const ranked = matches
+    .filter((m) => m.fit !== "ineligible")
+    .sort((a, b) => {
+      const pa = preferred.includes(a.window.id) ? 0 : 1;
+      const pb = preferred.includes(b.window.id) ? 0 : 1;
+      return order[a.fit] - order[b.fit] || pa - pb;
+    });
+
+  const challenges: FinanceChallenge[] = [];
+
+  // Accreditation / government sign-off (always relevant for the big funds)
+  if (ranked.some((m) => m.window.category === "gcf" || m.window.category === "mdb")) {
+    challenges.push({
+      id: "accreditation",
+      severity: "warn",
+      title: "Accredited entity & government no-objection required",
+      detail:
+        "GCF and MDB windows cannot be accessed directly — you need an accredited delivery partner and a no-objection letter from Uganda's National Designated Authority (Ministry of Water & Environment).",
+    });
+  }
+
+  // Co-finance for large asks
+  if (usd >= 20_000_000) {
+    challenges.push({
+      id: "cofinance",
+      severity: "warn",
+      title: "Co-finance expected (20–50%)",
+      detail:
+        "At this scale most funders expect matching finance from the national budget or private partners. Identify and commit co-finance sources before the concept note stage.",
+    });
+  }
+
+  // MRV / monitoring
+  challenges.push({
+    id: "mrv",
+    severity: "info",
+    title: "Measurable results & MRV plan",
+    detail:
+      "Funders need a credible monitoring plan with a baseline, indicators, and a way to report avoided emissions. Reuse the dashboard's Climate TRACE baseline where possible.",
+  });
+
+  // LDC opportunity / readiness
+  challenges.push({
+    id: "ldc-readiness",
+    severity: "info",
+    title: "Use LDC readiness support first",
+    detail:
+      "As an LDC, Uganda is prioritised for GCF readiness and project-preparation grants — these can fund the feasibility study and proposal development before a full application.",
+  });
+
+  // Small-scale note
+  if (usd < 3_000_000) {
+    challenges.push({
+      id: "small-scale",
+      severity: "info",
+      title: "Below most fund minimums",
+      detail:
+        "This is small for the international funds. Start with bilateral technical assistance, a readiness grant, or a national budget line, and bundle with similar projects to reach a fundable size.",
+    });
+  }
+
+  return { matches: ranked.slice(0, 6), challenges };
+}

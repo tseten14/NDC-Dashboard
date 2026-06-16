@@ -99,8 +99,9 @@ Rules:
 - Base answers ONLY on the provided dashboard context — never invent numbers not in the JSON.
 - If data is missing, say so and note what is unavailable.
 - Each bullet is exactly ONE sentence (25–45 words), plain language for government officers.
-- Every line MUST include refs: 1–2 IDs copied exactly from context.source_catalog (e.g. climate_trace_afolu, ndc_target_t1, dashboard_progress_afolu, uganda_ndc_2022).
-- Match refs to the claim in that line — NDC pledge numbers use ndc_target_* or uganda_ndc_2022; measured emissions use climate_trace_* or dashboard_timeseries_*; progress % use dashboard_progress_*.
+- Every line MUST include refs naming the SPECIFIC source the facts in THAT line came from: 1–2 IDs copied exactly from context.source_catalog (e.g. climate_trace_afolu, ndc_target_t1, dashboard_progress_afolu, uganda_ndc_2022).
+- Match refs to the claim in that line — measured/observed emissions use climate_trace_* or dashboard_timeseries_*; progress % use dashboard_progress_*; ONLY cite ndc_target_* / uganda_ndc_2022 when the line states a pledge target, baseline, or commitment value.
+- Do NOT default every line to the NDC pledge. A line about measured data or progress must cite the data source, not the pledge.
 - confidence is "high" only when the answer uses live Climate TRACE + clear NDC fields; "low" if mostly unknown/missing.
 - Return JSON only — no markdown fences.`;
 
