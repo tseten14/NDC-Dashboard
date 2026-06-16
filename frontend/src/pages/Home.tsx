@@ -11,55 +11,43 @@ import { HERO_GRADIENT_TEXT } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight, LayoutDashboard, Sparkles, Target,
-  Upload, Satellite, ChevronRight, Scale, Workflow, Briefcase,
+  Upload, Satellite, Scale, Workflow, Briefcase,
 } from "lucide-react";
 
 const FEATURES = [
   {
     icon: Target,
     title: "Explore NDCs",
-    blurb:
-      "Planners and focal points: browse sector targets, Climate TRACE progress, pledges, and linked measures in one cockpit. Spot which sectors need attention before BTR reporting.",
     to: "/dashboard",
     accent: "from-emerald-500/20 to-emerald-500/5",
   },
   {
     icon: Upload,
     title: "Data Ingestion",
-    blurb:
-      "MRV and GIS teams: quick-scan unknown files or map columns to indicators and publish observations. Ministry data feeds the same charts as satellite observations — with validation first.",
     to: "/ingest",
     accent: "from-amber-500/20 to-amber-500/5",
   },
   {
     icon: Sparkles,
     title: "AI Predictions",
-    blurb:
-      "Strategy and finance teams: forecast 2030 trajectories from observed emissions and review gap cards. Flag emerging shortfalls early so you can reprioritise before the deadline.",
     to: "/ai-2030",
     accent: "from-fuchsia-500/20 to-fuchsia-500/5",
   },
   {
     icon: Scale,
     title: "Policy documents",
-    blurb:
-      "Policy and legal teams: browse the national corpus, search CPR passages in key laws, and follow intervention pathways. Trace how documents link interventions to NDC outcomes.",
     to: "/documents",
     accent: "from-slate-500/20 to-slate-500/5",
   },
   {
     icon: Workflow,
     title: "Policy Impact",
-    blurb:
-      "Socio-economic planners: model policy choices with international case-study analogies and TEF interventions. Stress-test impacts before committing resources — with finance screening links.",
     to: "/policy-impact",
     accent: "from-indigo-500/20 to-indigo-500/5",
   },
   {
     icon: Briefcase,
     title: "My Work",
-    blurb:
-      "Field officers and validators: log delivery activities, manage your approvals queue, and track pending verifications. Keep evidence organized before it counts toward national reporting.",
     to: "/my-work",
     accent: "from-orange-500/20 to-orange-500/5",
   },
@@ -140,7 +128,7 @@ export default function Home() {
                 style={{ "--dash-fade-delay": `${0.04 + i * 0.04}s` } as CSSProperties}
               >
                 <Card className="h-full border-border/80 transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-lg group-hover:shadow-primary/10 group-hover:-translate-y-1">
-                  <CardContent className="p-4">
+                  <CardContent className="flex min-h-[12.25rem] flex-col items-center justify-center p-4 text-center">
                     <div
                       className={cn(
                         "mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ring-1 ring-border/50",
@@ -149,13 +137,9 @@ export default function Home() {
                     >
                       <f.icon className="h-5 w-5 text-foreground/80" />
                     </div>
-                    <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                    <h3 className="text-base font-semibold leading-snug text-foreground group-hover:text-primary transition-colors">
                       {f.title}
                     </h3>
-                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{f.blurb}</p>
-                    <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                      Open <ChevronRight className="h-3 w-3" />
-                    </span>
                   </CardContent>
                 </Card>
               </Link>
