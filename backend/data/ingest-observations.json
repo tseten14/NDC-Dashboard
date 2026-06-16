@@ -1,0 +1,42 @@
+{
+  "targets": [
+    {
+      "id": "daafc25a-0973-5716-9021-e1a0a52e8ff0",
+      "sector": "t2",
+      "baseline_year": 2020,
+      "target_year": 2030,
+      "metric_type": "absolute_level",
+      "baseline_value": 0,
+      "target_value": 100,
+      "unit": "count",
+      "created_at": "2026-06-16T22:45:54.162Z",
+      "updated_at": "2026-06-16T22:45:54.162Z"
+    }
+  ],
+  "observations": [
+    {
+      "id": "b267bb52-d909-422f-8cae-d430c04071b3",
+      "target_id": "daafc25a-0973-5716-9021-e1a0a52e8ff0",
+      "year": 2022,
+      "value": 16.5,
+      "source": "Integration test",
+      "as_of": "2026-06-16",
+      "is_estimated": false,
+      "is_validated": false,
+      "qaqc_status": "ingested",
+      "created_at": "2026-06-16T22:45:54.162Z"
+    },
+    {
+      "id": "0ea42f1f-854f-4039-8f13-d7959370cd6d",
+      "target_id": "daafc25a-0973-5716-9021-e1a0a52e8ff0",
+      "year": 2023,
+      "value": 17.2,
+      "source": "Integration test",
+      "as_of": "2026-06-16",
+      "is_estimated": false,
+      "is_validated": false,
+      "qaqc_status": "ingested",
+      "created_at": "2026-06-16T22:45:54.162Z"
+    }
+  ]
+}

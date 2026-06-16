@@ -15,9 +15,30 @@ Web application for exploring Uganda’s Nationally Determined Contribution (NDC
 
 - **Frontend:** Vite + React + TypeScript + Tailwind / shadcn
 - **Emissions map:** MapLibre GL JS (3D satellite/terrain, token-free Esri World Imagery + AWS terrain tiles)
-- **API:** Express (`server.js`) — Climate TRACE live (API v7) + bundled catalog/risk data
+- **API:** Express (`backend/server.js`) — Climate TRACE live (API v7) + bundled catalog/risk data
 - **Mapped ingest:** Postgres when `DATABASE_URL` is set (indicator targets); otherwise ingest confirm is disabled
 - **Activities / roles:** Browser `localStorage` (demo)
+
+## Project structure
+
+```
+frontend/        React + Vite + TypeScript UI (pages, components, hooks)
+backend/         Server-side code
+  server.js        Express entry (local dev + Vercel)
+  server/          App factory + middleware
+  routes/          HTTP route handlers (/api/v1/*)
+  services/        Business logic (Climate TRACE, ingest, policy, predictions)
+  lib/             Ingest pipeline + parsers
+  ml/              Python ML/data scripts (emissions forecast, ingest analysis) + requirements
+  fastapi/         Standalone Python FastAPI service (parallel implementation)
+database/        Drizzle schema, bootstrap/seed, and SQL migrations/
+api/             Vercel serverless adapter (re-exports the Express app)
+config/          Shared config + data modules (NDC targets, Climate TRACE) used by frontend + backend
+shared/          Cross-cutting helpers + schemas used by frontend + backend
+data/            Bundled static data (policy corpus, seeds, sources)
+scripts/         Build/dev tooling (.mjs) and verifications
+docs/            Architecture, deploy, and user guides
+```
 
 ## Quick start
 
@@ -138,4 +159,4 @@ Exceeded limits return `429` with `{ "error": "rate_limited", "retry_after_secon
 
 ## Deploy
 
-See [docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md). In short: build the frontend (`npm run build`), host `frontend/dist/`, and run `server.js` with same-origin `/api` or set `VITE_API_BASE_URL` to your API host.
+See [docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md). In short: build the frontend (`npm run build`), host `frontend/dist/`, and run `backend/server.js` with same-origin `/api` or set `VITE_API_BASE_URL` to your API host.

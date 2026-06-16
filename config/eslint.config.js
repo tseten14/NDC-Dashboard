@@ -5,15 +5,13 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", "frontend/dist"] },
+  { ignores: ["dist", "node_modules", "frontend/dist", "backend/fastapi/**"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: [
       "frontend/**/*.{ts,tsx}",
-      "services/**/*.js",
-      "routes/**/*.js",
+      "backend/**/*.js",
       "scripts/**/*.js",
-      "server.js",
       "config/ndcTargets.js",
     ],
     languageOptions: {

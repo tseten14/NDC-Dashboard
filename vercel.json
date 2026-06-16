@@ -20,7 +20,7 @@
     "api/index.js": {
       "maxDuration": 60,
       "memory": 1024,
-      "includeFiles": "{db/**,lib/**,data/policy-cases/**,services/**,routes/**,config/**,shared/**}"
+      "includeFiles": "{database/**,backend/lib/**,backend/server/**,backend/services/**,backend/routes/**,data/policy-cases/**,config/**,shared/**}"
     }
   }
 }

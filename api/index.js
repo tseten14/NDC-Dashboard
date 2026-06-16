@@ -7,8 +7,8 @@ import { register } from "tsx/esm/api";
 register();
 
 import express from "express";
-import { createApp } from "../server/createApp.js";
-import { bootstrapDatabase } from "../db/bootstrap.ts";
+import { createApp } from "../backend/server/createApp.js";
+import { bootstrapDatabase } from "../database/bootstrap.ts";
 
 let bootstrapPromise = null;
 let bootstrapFailed = false;
