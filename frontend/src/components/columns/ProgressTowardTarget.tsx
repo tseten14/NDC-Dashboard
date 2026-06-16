@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { bau2030ForTarget } from "@/data/uganda-ndc-data";
 import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
 import { capTargetPosition } from "@/lib/progress";
+import { getTargetPlainLanguage } from "@/lib/target-plain-language";
 
 interface ProgressProps {
   selectedTarget: NDCTarget | null;
@@ -110,38 +111,24 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
 
   const bau2030 = pr?.bau_2030 ?? bau2030ForTarget(selectedTarget);
 
-  const baselineDisplay =
-    source === "api" && pr
-      ? `Starting point (${pr.baseline_year}): ${pr.baseline_value} ${selectedTarget.unit}`
-      : `Starting point (${selectedTarget.baselineYear}): ${selectedTarget.baselineValue} ${selectedTarget.unit}`;
+  // Plain-language description of this specific target's progress — wording for
+  // a non-technical reader rather than formulas and numbers.
+  const plain = getTargetPlainLanguage(selectedTarget);
 
-  const targetDisplay =
-    source === "api" && pr
-      ? isEmissionsCapTarget
-        ? `Emissions limit by ${pr.target_year}: ${pr.target_value} ${selectedTarget.unit}`
-        : `Goal by ${pr.target_year}: ${pr.target_value} ${selectedTarget.unit}`
-      : isEmissionsCapTarget
-        ? `Emissions limit by ${selectedTarget.targetYear}: ${selectedTarget.targetValue} ${selectedTarget.unit}`
-        : `Goal by ${selectedTarget.targetYear}: ${selectedTarget.targetValue} ${selectedTarget.unit}`;
+  const statusNarrative =
+    status === "on-track"
+      ? "Uganda is on track to meet this 2030 pledge. Keeping the measures already in place should hold it on course."
+      : status === "at-risk"
+        ? "Progress has started, but this pledge is at risk — stronger or faster action is needed to reach the 2030 goal."
+        : status === "off-track"
+          ? "This pledge is off track. Current efforts are not yet bending the numbers toward the 2030 goal."
+          : "There isn't enough recent data to say whether this pledge is on track for 2030.";
 
-  const bauDisplay =
-    isEmissionsCapTarget && bau2030 != null
-      ? `Without new policies (2030): ${bau2030} ${selectedTarget.unit}`
-      : null;
-
-  const dataUsedLabel =
-    source === "api"
-      ? "Live satellite estimates + official NDC goals"
-      : source === "catalog"
-        ? "National indicators + official NDC goals"
-        : "Latest reported observations";
-
-  const methodLabel =
-    selectedTarget.metricType === "emissions-reduction"
-      ? isEmissionsCapTarget
-        ? "Compare current emissions to what they would be without new policies, and to the 2030 emissions limit."
-        : "Compare current emissions to the reduction promised in the climate pledge."
-      : "Use a related measure as a stand-in for progress.";
+  const howItWorks = isEmissionsCapTarget
+    ? "Because Uganda's economy is growing, the aim isn't to cut emissions below today's level — it's to keep them below where they would have climbed without new climate action."
+    : selectedTarget.metricType === "emissions-reduction"
+      ? "The aim here is to bring emissions down from where they are today."
+      : "The aim here is to grow this measure toward its 2030 target.";
 
   const baselineMismatch =
     source === "api" &&
@@ -294,15 +281,14 @@ export function ProgressTowardTargetColumn({ selectedTarget }: ProgressProps) {
           </Card>
 
           <Card>
-            <CardContent className="p-3 text-xs space-y-1.5">
-              <p className="font-semibold text-foreground">How progress is calculated</p>
-              <p><span className="text-muted-foreground">Data:</span> {dataUsedLabel}</p>
-              <p className="text-muted-foreground">{baselineDisplay}</p>
-              {bauDisplay && <p className="text-muted-foreground">{bauDisplay}</p>}
-              <p className="text-muted-foreground">{targetDisplay}</p>
-              <p><span className="text-muted-foreground">Method:</span> {methodLabel}</p>
-              {pr?.scope_note && <p className="text-muted-foreground">{pr.scope_note}</p>}
-              <p className="text-muted-foreground">Poor data quality can lower the status. Missing data shows as &ldquo;Unknown.&rdquo;</p>
+            <CardContent className="p-3 text-xs space-y-2">
+              <p className="font-semibold text-foreground">What this pledge means</p>
+              <p className="text-muted-foreground leading-relaxed">{plain.summary}</p>
+              <p className="font-semibold text-foreground pt-1">Where things stand</p>
+              <p className="text-muted-foreground leading-relaxed">{statusNarrative}</p>
+              <p className="font-semibold text-foreground pt-1">How to read this</p>
+              <p className="text-muted-foreground leading-relaxed">{howItWorks}</p>
+              {pr?.scope_note && <p className="text-muted-foreground leading-relaxed">{pr.scope_note}</p>}
             </CardContent>
           </Card>
 

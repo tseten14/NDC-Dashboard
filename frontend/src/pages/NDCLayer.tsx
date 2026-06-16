@@ -313,19 +313,19 @@ export default function NDCLayer() {
         <div aria-hidden className="absolute inset-0 -z-10 dash-grid-pattern" />
         <div className="h-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border">
         <div
-          className="overflow-hidden dash-crossfade"
+          className="overflow-hidden min-w-0 dash-crossfade"
           key={`targets-${state.selectedSector}-${state.geographyLevel}`}
         >
           <NDCTargetsColumn selectedSector={state.selectedSector as SectorId} selectedTargetId={state.selectedTargetId} onSelectTarget={handleSelectTarget} />
         </div>
         <div
-          className="overflow-hidden dash-crossfade"
+          className="overflow-hidden min-w-0 dash-crossfade"
           key={`observed-${state.selectedTargetId}-${state.selectedSector}-${state.geographyLevel}-${state.selectedDistrictId}`}
         >
           <ObservedDataColumn selectedTarget={selectedTarget} selectedMitigationOptions={state.selectedMitigationOptions} />
         </div>
         <div
-          className="overflow-hidden flex flex-col dash-crossfade"
+          className="overflow-hidden min-w-0 flex flex-col dash-crossfade"
           key={`progress-${state.selectedTargetId}-${state.selectedSector}-${state.geographyLevel}-${state.selectedDistrictId}`}
         >
           <div className="flex-1 min-h-0 overflow-hidden">
