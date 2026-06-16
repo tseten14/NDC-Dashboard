@@ -7,8 +7,8 @@ import { fileURLToPath } from "node:url";
 import { getPassageEnrichment } from "./policyPassages.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_PATH = join(__dirname, "..", "data", "uganda-policy-documents.json");
-const CURATED_PATH = join(__dirname, "..", "data", "uganda-policy-curated.json");
+const DATA_PATH = join(__dirname, "..", "data", "policy/documents.json");
+const CURATED_PATH = join(__dirname, "..", "data", "policy/curated.json");
 
 let corpus = null;
 let curated = null;

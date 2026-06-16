@@ -1,12 +1,12 @@
 /**
  * Seed loader — data mirrored from climate-data.ts + uganda-strategy-data.ts
- * via data/persistenceSeedSource.js (Node-safe, no Vite path aliases).
+ * via data/seeds/persistenceSeedSource.js (Node-safe, no Vite path aliases).
  */
 import { getDb, isDatabaseConfigured } from "./index.js";
 import { observations, targets } from "./schema.js";
 import { observationUuid, targetUuid } from "./id.js";
 import { mapClimateSectors, mapStrategyKpis } from "./seedMappings.js";
-import { climateSectorsForSeed, strategyKpis, strategyProgressRecords } from "../data/persistenceSeedSource.js";
+import { climateSectorsForSeed, strategyKpis, strategyProgressRecords } from "../data/seeds/persistenceSeedSource.js";
 
 export async function runSeed(): Promise<{ targets: number; observations: number }> {
   if (!isDatabaseConfigured()) {

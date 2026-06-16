@@ -16,7 +16,7 @@ A2. DATA SOURCES
     and config/ndcTargets.js). All sector numbers, conditionality, and BAU references are from
     the official MWE submission to UNFCCC.
   • NDC strategies: bundled in the application
-  • Policy documents: Climate Policy Radar CSV export → data/uganda-policy-documents.json
+  • Policy documents: Climate Policy Radar CSV export → data/policy/documents.json
     (~207 Uganda rows: laws, executive plans, UN submissions, multilateral fund projects).
     Metadata and CPR/PDF links only — no live CPR API yet. Rebuild with npm run build:documents.
   • Climate risk (demo): illustrative district layers in the repo
@@ -185,7 +185,7 @@ A6c. POLICY DOCUMENTS (/documents)
     • Requires OPENAI_API_KEY in .env (loaded with dotenv override:true)
 
   Dashboard "Official sources" panel (right column): small curated list per sector from
-  data/uganda-policy-curated.json (NDC, BUR, flagship GCF projects, sector plans).
+  data/policy/curated.json (NDC, BUR, flagship GCF projects, sector plans).
 
 A6d-NEW. DATA TRACEABILITY (Dashboard)
 
@@ -330,7 +330,7 @@ A7. FEATURE GUIDE — PURPOSE, HOW IT WORKS, RESULT (non-technical)
 
   CLIMATE RISK (/risk) [Advanced]
     For: Illustrative hazard screening (adaptation).
-    How: data/riskSeed.js demo layers.
+    How: data/seeds/riskSeed.js demo layers.
     Result: Discussion prioritisation — not operational hazard models.
 
 A8. STATUS COLOURS AND BADGES (Dashboard)
@@ -364,7 +364,7 @@ B1. ARCHITECTURE
   routes/       emissions, documents, cockpit catalog, risk, ingest, mock
   services/     Climate TRACE client, emissions aggregation, catalog, policyDocuments
   config/       NDC targets, Climate TRACE helpers, district GADM map, catalog
-  data/         risk seed, uganda-policy-documents.json, uganda-policy-curated.json
+  data/         risk seed, policy/documents.json, policy/curated.json
   scripts/      build_policy_documents.mjs (CPR CSV → JSON)
   frontend/src/data/user-guide-content.ts — source text for in-app /docs (keep in sync with A7)
 
@@ -511,7 +511,7 @@ B3. ENVIRONMENT
 B2c. POLICY DOCUMENT CORPUS
   • Source: Climate Policy Radar export CSV (not committed; path via CLI or ~/Downloads default)
   • Build: npm run build:documents [path/to.csv]
-  • Output: data/uganda-policy-documents.json, data/uganda-policy-curated.json
+  • Output: data/policy/documents.json, data/policy/curated.json
   • Filter: rows with geography UGA; dedupe by Document URL
   • services/policyDocuments.js — load JSON, list/filter/curated
   • routes/documents.js — REST under /api/v1/documents*

@@ -78,11 +78,11 @@ The dashboard covers all mitigation and key adaptation targets from Uganda's Upd
 | District list (56 Uganda districts) | Express → `config/ugandaDistrictGadm.js` (from Climate TRACE GADM) |
 | Top emitting sources (asset/source-level) | Express → Climate TRACE `GET /v7/sources` |
 | Activities & mitigation catalog | Express → `config/ndcCockpitCatalog.js` |
-| Climate risk map | Express → `data/riskSeed.js` |
+| Climate risk map | Express → `data/seeds/riskSeed.js` |
 | My Work / activities | `localStorage` in this browser |
 | Mapped ingest observations | Postgres `observations` table when `DATABASE_URL` set |
 | Policy Impact forecasts | Express → `data/policy-cases/*.json` (KCI analogies, rule-based matching) |
-| Policy documents (CPR export) | `data/uganda-policy-documents.json` via `GET /api/v1/documents/*` |
+| Policy documents (CPR export) | `data/policy/documents.json` via `GET /api/v1/documents/*` |
 
 ### Emissions API geography
 

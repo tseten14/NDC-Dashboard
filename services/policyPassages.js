@@ -6,9 +6,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DOCS_PATH = join(__dirname, "..", "data", "uganda-policy-passage-documents.json");
-const PASSAGES_PATH = join(__dirname, "..", "data", "uganda-policy-passages.json");
-const TOPICS_PATH = join(__dirname, "..", "data", "uganda-policy-topics-index.json");
+const DOCS_PATH = join(__dirname, "..", "data", "policy/passage-documents.json");
+const PASSAGES_PATH = join(__dirname, "..", "data", "policy/passages.json");
+const TOPICS_PATH = join(__dirname, "..", "data", "policy/topics-index.json");
 
 const ATTRIBUTION =
   "Passage topics and summaries from Climate Policy Radar export (not a live API).";

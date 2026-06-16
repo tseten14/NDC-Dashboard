@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Build data/uganda-policy-documents.json from Climate Policy Radar CSV export.
+ * Build data/policy/documents.json from Climate Policy Radar CSV export.
  * Usage: node scripts/build_policy_documents.mjs [path/to/export.csv]
  */
 import { createHash } from "node:crypto";
@@ -214,7 +214,7 @@ function buildCurated(docs) {
 
   return {
     version: 1,
-    description: "Bonn demo curated links — document ids from uganda-policy-documents.json",
+    description: "Bonn demo curated links — document ids from policy/documents.json",
     global,
     dashboard,
     finance,
@@ -266,11 +266,11 @@ function main() {
     documents,
   };
 
-  const outPath = join(ROOT, "data", "uganda-policy-documents.json");
+  const outPath = join(ROOT, "data", "policy/documents.json");
   writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
 
   const curated = buildCurated(documents);
-  const curatedPath = join(ROOT, "data", "uganda-policy-curated.json");
+  const curatedPath = join(ROOT, "data", "policy/curated.json");
   writeFileSync(curatedPath, `${JSON.stringify(curated, null, 2)}\n`, "utf8");
 
   console.log(`Wrote ${documents.length} documents → ${outPath}`);

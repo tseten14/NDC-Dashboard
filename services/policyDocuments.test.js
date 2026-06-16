@@ -20,8 +20,8 @@ describe("policyDocuments", () => {
     expect(bur.documents.length).toBeGreaterThan(0);
   });
 
-  it("resolves all curated ids from uganda-policy-curated.json", () => {
-    const curatedPath = join(__dirname, "..", "data", "uganda-policy-curated.json");
+  it("resolves all curated ids from policy/curated.json", () => {
+    const curatedPath = join(__dirname, "..", "data", "policy/curated.json");
     const curated = JSON.parse(readFileSync(curatedPath, "utf8"));
     const ids = [
       ...(curated.global || []),

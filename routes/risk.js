@@ -4,7 +4,7 @@ import {
   RISK_DISTRICTS,
   RISK_CELLS,
   ADAPTATION_OPTIONS,
-} from "../data/riskSeed.js";
+} from "../data/seeds/riskSeed.js";
 
 const router = express.Router();
 

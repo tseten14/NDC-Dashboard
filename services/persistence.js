@@ -5,7 +5,7 @@ import { ingestJobs, observations, targets } from "../db/schema.ts";
 import { resolveTargetId } from "../db/id.ts";
 import { getPersistenceMode } from "../db/bootstrap.ts";
 import { mapClimateSectors, mapStrategyKpis } from "../db/seedMappings.ts";
-import { climateSectorsForSeed, strategyKpis, strategyProgressRecords } from "../data/persistenceSeedSource.js";
+import { climateSectorsForSeed, strategyKpis, strategyProgressRecords } from "../data/seeds/persistenceSeedSource.js";
 
 export async function getTargets() {
   const { mode } = getPersistenceMode();

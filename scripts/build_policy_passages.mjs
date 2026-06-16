@@ -19,7 +19,7 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const DEFAULT_CSV = join(ROOT, "data", "sources", "Uganda_key_docs_2026-06-11-1549.csv");
-const CATALOG_PATH = join(ROOT, "data", "uganda-policy-documents.json");
+const CATALOG_PATH = join(ROOT, "data", "policy/documents.json");
 
 const PASSAGE_HEADERS = [
   "DOCUMENT_ID",
@@ -245,9 +245,9 @@ function main() {
     topics,
   };
 
-  const docsOut = join(ROOT, "data", "uganda-policy-passage-documents.json");
-  const passagesOut = join(ROOT, "data", "uganda-policy-passages.json");
-  const topicsOut = join(ROOT, "data", "uganda-policy-topics-index.json");
+  const docsOut = join(ROOT, "data", "policy/passage-documents.json");
+  const passagesOut = join(ROOT, "data", "policy/passages.json");
+  const topicsOut = join(ROOT, "data", "policy/topics-index.json");
 
   writeFileSync(docsOut, `${JSON.stringify(docsPayload, null, 2)}\n`, "utf8");
   writeFileSync(passagesOut, `${JSON.stringify(passagesPayload, null, 2)}\n`, "utf8");

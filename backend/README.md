@@ -20,7 +20,7 @@ npm run dev:all
 | ------------ | ------ |
 | `/api/v1/emissions/*` | Climate TRACE (live via API v7, cached in memory). Includes `sources`, `map`, `predictions`, `spatial-confidence`, `trackability`. "v7" is the API version, not the data version (data updates monthly). |
 | `/api/v1/indicators/*`, `/api/v1/catalog/*` | Bundled `config/ndcCockpitCatalog.js` |
-| `/api/v1/risk/*` | Bundled `data/riskSeed.js` |
+| `/api/v1/risk/*` | Bundled `data/seeds/riskSeed.js` |
 | `/api/v1/mock/*` | Fixtures when `USE_MOCK_DATA=true` |
 | `/api/v1/ingest/*` | Upload scan (CSV/JSON/PDF/TXT); tabular charts use **pandas** when installed |
 

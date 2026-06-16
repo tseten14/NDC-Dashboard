@@ -19,8 +19,8 @@ Figures are converted to MtCO₂e for display only. Sector reconciliation rules 
 
 | Data | File | Shown in UI | Honesty |
 | ---- | ---- | ----------- | ------- |
-| Laws, UN submissions, MCF projects | `data/uganda-policy-documents.json` (from CSV via `npm run build:documents`) | `/documents`, Dashboard “Official sources”, Climate Finance MCF panel | Metadata + CPR/PDF links only. Curated ids in `data/uganda-policy-curated.json`. |
-| Passage-level key docs (NDC, NDPIV, NBSAP, Agroforestry, Climate Regulations) | `data/uganda-policy-passage-documents.json`, `uganda-policy-passages.json`, `uganda-policy-topics-index.json` (from `npm run build:passages`) | `/documents` → Key documents (CPR) tab; passage panel in document analyse view | CPR passage export snapshot — not a live API. Topic matches from keyword or BERT classifiers; BERT matches may be the full paragraph. |
+| Laws, UN submissions, MCF projects | `data/policy/documents.json` (from CSV via `npm run build:documents`) | `/documents`, Dashboard “Official sources”, Climate Finance MCF panel | Metadata + CPR/PDF links only. Curated ids in `data/policy/curated.json`. |
+| Passage-level key docs (NDC, NDPIV, NBSAP, Agroforestry, Climate Regulations) | `data/policy/passage-documents.json`, `policy/passages.json`, `policy/topics-index.json` (from `npm run build:passages`) | `/documents` → Key documents (CPR) tab; passage panel in document analyse view | CPR passage export snapshot — not a live API. Topic matches from keyword or BERT classifiers; BERT matches may be the full paragraph. |
 
 Build passage corpus: `npm run build:passages` (source CSV in `data/sources/Uganda_key_docs_2026-06-11-1549.csv`). API endpoints: `/api/v1/documents/passage-corpus/meta`, `/documents/:cprDocumentId/passages`, `/documents/topics`, `/documents/passages/search`. For the full Uganda export (~70k rows), the same JSON schema applies; search may move to SQLite/Postgres without changing the API shape.
 
