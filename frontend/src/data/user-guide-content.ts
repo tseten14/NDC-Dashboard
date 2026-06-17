@@ -209,7 +209,7 @@ export const BASIC_FEATURES: FeatureGuide[] = [
       "Tab Intervention pathway: read the urban transport logic model (interventions → behaviour → outcomes).",
     ],
     howItWorks:
-      "Document library: CPR export (~207 Uganda documents) as searchable metadata. Key documents tab: passage corpus from npm run build:passages — topic search with deduplicated labels. MCF tab: ~167 fund projects from npm run build:mcf. Document AI fetches the actual PDF (contentUrl resolved via catalogId when needed), sends up to 8,000 characters to OpenAI GPT-4o-mini, and returns structured analysis with page citations [p.N].",
+      "Document library: CPR export (~207 Uganda documents) as searchable metadata. Key documents tab: passage corpus from npm run build:passages — topic search with deduplicated labels. MCF tab: ~167 fund projects from npm run build:mcf. Document AI fetches the actual PDF (contentUrl resolved via catalogId when needed), sends up to 8,000 characters to Claude, and returns structured analysis with page citations [p.N].",
     result:
       "Fast access to 200+ document titles with official links, plus AI-generated structured briefs grounded in the real PDF — helping users digest dense policy documents in minutes.",
     limitations: "AI reads up to 8,000 characters of the PDF (first 70% + last 20% — very long documents may miss the middle). Always verify AI responses against the original document. Intervention pathway is illustrative, not attribution of CO₂ reductions.",
@@ -396,7 +396,7 @@ export const DASHBOARD_PANELS = [
   },
   {
     name: "NDC AI",
-    text: "Perplexity-style analysis of the current dashboard view. Open via the sparkle button. Each paragraph cites verified sources — Climate TRACE v7 API endpoints for measured emissions and the UNFCCC NDC PDF for pledge values. Requires OPENAI_API_KEY on the server.",
+    text: "Perplexity-style analysis of the current dashboard view. Open via the sparkle button. It retrieves real sources first (Climate TRACE structured data plus Claude's web search restricted to trusted climate domains), then verifies every cited figure before linking it; claims with no verifiable source are shown as 'source unavailable' rather than linked. Requires ANTHROPIC_API_KEY on the server.",
   },
   {
     name: "Status summary strip",
@@ -446,7 +446,7 @@ export const DATA_SOURCES_TABLE = [
   { area: "NDC targets & activities", source: "Uganda Updated NDC 2022 (bundled)", whatYouGet: "Official pledge text, baselines, 2030 goals", caveat: "Updated when config is refreshed" },
   { area: "Mitigation costs / abatement", source: "NDC catalogue (indicative)", whatYouGet: "Screening economics", caveat: "Not audited project costs" },
   { area: "Policy documents", source: "Climate Policy Radar export + passages + MCF build", whatYouGet: "Metadata, CPR/PDF links, searchable passages, fund projects", caveat: "Passage/M CF corpora are build-time snapshots — not live CPR API" },
-  { area: "NDC AI (Dashboard)", source: "OpenAI GPT-4o-mini + fact ledger", whatYouGet: "Cited prose analysis of live dashboard context", caveat: "Quotes only ledger numbers; requires API key; not official UNFCCC text" },
+  { area: "NDC AI (Dashboard)", source: "Claude (Opus 4.8) + web search + Climate TRACE", whatYouGet: "Cited prose with verified external sources per claim", caveat: "Unverifiable figures shown as 'source unavailable'; requires ANTHROPIC_API_KEY" },
   { area: "Your activities in Database", source: "This browser only", whatYouGet: "Personal drafts", caveat: "Not shared nationally" },
   { area: "Climate Risk maps", source: "Illustrative seed data", whatYouGet: "Illustrative prioritisation", caveat: "Not operational hazard models" },
   { area: "Financial Flows (/financial-flow)", source: "Seed-activities registry (illustrative)", whatYouGet: "Committed → disbursed → spent by project", caveat: "Not live IFMS/treasury data — replace for official use" },

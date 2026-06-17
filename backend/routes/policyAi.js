@@ -1,14 +1,16 @@
 /**
  * POST /api/v1/policy/analyze
  *
- * OpenAI-backed PDF analysis for CPR policy documents.
+ * Claude-backed PDF analysis for CPR policy documents.
  * Fetches the PDF from contentUrl, extracts text with page markers,
- * then calls GPT-4o-mini to produce structured analysis.
+ * then calls Claude to produce structured analysis grounded in that text
+ * (page citations come from the [Page N] markers in the supplied document).
  *
- * Requires: OPENAI_API_KEY environment variable.
+ * Requires: ANTHROPIC_API_KEY environment variable.
  */
 import express from "express";
 import NodeCache from "node-cache";
+import Anthropic from "@anthropic-ai/sdk";
 
 const router = express.Router();
 
@@ -41,9 +43,9 @@ function assertAllowedPdfUrl(rawUrl) {
   return parsed.toString();
 }
 
-// ── OpenAI REST API ────────────────────────────────────────────────────────────
+// ── Claude (Anthropic SDK) ───────────────────────────────────────────────────
 
-const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+const POLICY_MODEL = "claude-opus-4-8";
 
 class QuotaError extends Error {
   constructor(msg) {
@@ -52,42 +54,25 @@ class QuotaError extends Error {
   }
 }
 
-async function callOpenAI(apiKey, systemText, userText) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 30_000);
+async function callClaude(apiKey, systemText, userText) {
+  const client = new Anthropic({ apiKey });
   try {
-    const res = await fetch(OPENAI_URL, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemText },
-          { role: "user",   content: userText },
-        ],
-        max_tokens: 3200,
-        temperature: 0.2,
-      }),
+    const res = await client.messages.create({
+      model: POLICY_MODEL,
+      max_tokens: 3200,
+      system: systemText,
+      messages: [{ role: "user", content: userText }],
     });
-
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}));
-      const msg = errBody?.error?.message ?? `HTTP ${res.status}`;
-      console.error("[policyAi] OpenAI error:", res.status, msg);
-      if (res.status === 429) {
-        throw new QuotaError("The AI service rate limit has been reached. Please wait a moment and try again.");
-      }
-      throw new Error(`OpenAI ${res.status}: ${msg}`);
+    return (res.content ?? [])
+      .filter((b) => b.type === "text")
+      .map((b) => b.text)
+      .join("");
+  } catch (err) {
+    if (err instanceof Anthropic.RateLimitError) {
+      throw new QuotaError("The AI service rate limit has been reached. Please wait a moment and try again.");
     }
-
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content ?? "";
-  } finally {
-    clearTimeout(timer);
+    console.error("[policyAi] Anthropic error:", err?.status ?? "", err?.message ?? err);
+    throw err;
   }
 }
 
@@ -227,10 +212,10 @@ router.post("/policy/analyze", async (req, res) => {
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.ANTHROPIC_API_KEY) {
     return res
       .status(503)
-      .json({ error: "AI analysis is not available on this server (OPENAI_API_KEY not set)." });
+      .json({ error: "AI analysis is not available on this server (ANTHROPIC_API_KEY not set)." });
   }
 
   const cacheKey = question
@@ -244,7 +229,7 @@ router.post("/policy/analyze", async (req, res) => {
     const { text: pdfText } = await getPdfText(safeContentUrl);
     const userMessage = buildUserMessage(title ?? "Policy Document", action, question, pdfText);
 
-    const raw = await callOpenAI(process.env.OPENAI_API_KEY, SYSTEM_PROMPT, userMessage);
+    const raw = await callClaude(process.env.ANTHROPIC_API_KEY, SYSTEM_PROMPT, userMessage);
 
     let parsed;
     try {

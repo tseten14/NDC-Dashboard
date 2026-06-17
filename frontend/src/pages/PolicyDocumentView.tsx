@@ -368,7 +368,7 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
       setEntries((prev) => prev.filter((e) => e.kind !== "loading"));
       setEntries((prev) => [...prev, { kind: "action", type, response: {
         type, title: "Analysis unavailable",
-        sections: [{ lines: [err.message || "Could not reach the AI service. Check OPENAI_API_KEY is set on the API server."], page_refs: [] }],
+        sections: [{ lines: [err.message || "Could not reach the AI service. Check ANTHROPIC_API_KEY is set on the API server."], page_refs: [] }],
         confidence: "low", disclaimer: "", suggested_follow_ups: [],
       }}]);
     }).finally(() => setIsLoading(false));
@@ -406,7 +406,7 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
           <h3 className="text-sm font-bold text-foreground">Policy AI</h3>
         </div>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          Reads the full PDF and answers using OpenAI. Citations link to the source page.
+          Reads the full PDF and answers using Claude. Citations link to the source page.
         </p>
       </div>
 
