@@ -14,8 +14,10 @@ import { SECTOR_LINEAGE, CLIMATE_TRACE_API_DOCS_URL } from "@/lib/data-lineage";
 import type { DashboardAnalyzeContext } from "@/lib/dashboard-ai-context";
 import type { AiSourceLink } from "@/data/policy-ai-mock";
 
+// Uganda's Updated NDC (Sept 2022) on the UNFCCC NDC Registry. The earlier
+// 2022-08 path 404s — this 2022-09 file is the one UNFCCC actually publishes.
 export const UNFCCC_UGANDA_NDC_PDF =
-  "https://unfccc.int/sites/default/files/NDC/2022-08/Uganda%20Updated%20NDC%202022_Final.pdf";
+  "https://unfccc.int/sites/default/files/NDC/2022-09/Updated%20NDC%20_Uganda_2022%20Final.pdf";
 
 export const UNFCCC_NDC_REGISTRY = "https://unfccc.int/NDCREG";
 

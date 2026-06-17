@@ -35,17 +35,42 @@ export const VERIFICATION_MODEL = "claude-haiku-4-5";
  */
 export const WEB_SEARCH_TOOL_VERSION = "web_search_20260209";
 
-/** Only the model may cite these external sources. Config constant — extend freely. */
+/**
+ * Trusted climate sources the model is allowed to cite via web search.
+ * Config constant — extend freely. A bare domain also matches its subdomains
+ * (e.g. "worldbank.org" covers data.worldbank.org). Curated from authoritative
+ * emissions/measurement, NDC/policy, and Uganda-official sources.
+ */
 export const ALLOWED_DOMAINS = [
+  // Measured / inventory emissions
   "climatetrace.org",
+  "edgar.jrc.ec.europa.eu", // EDGAR (EU Joint Research Centre)
+  "globalcarbonproject.org",
+  "globalcarbonatlas.org",
+  "ourworldindata.org",
+  "climatewatchdata.org", // WRI Climate Watch / CAIT
+  "fao.org", // FAOSTAT — AFOLU / land use
+  // Targets, pledges & policy
+  "unfccc.int", // NDC Registry, synthesis reports
   "climatepolicyradar.org",
   "app.climatepolicyradar.org",
-  "unfccc.int",
-  "iea.org",
-  "data.worldbank.org",
-  "ourworldindata.org",
+  "climateactiontracker.org",
+  "ndcpartnership.org",
+  "unep.org", // UNEP Emissions Gap Report
+  // Context / methodology / comparative
   "ipcc.ch",
-  "globalcarbonproject.org",
+  "iea.org",
+  "worldbank.org",
+  "data.worldbank.org",
+  "climateknowledgeportal.worldbank.org",
+  "wri.org", // World Resources Institute
+  "globalforestwatch.org",
+  "irena.org", // renewable energy
+  "carbonbrief.org",
+  // Uganda-official statistics & environment
+  "mwe.go.ug", // Ministry of Water and Environment
+  "nema.go.ug", // National Environment Management Authority
+  "ubos.org", // Uganda Bureau of Statistics
 ];
 
 // ---------------------------------------------------------------------------

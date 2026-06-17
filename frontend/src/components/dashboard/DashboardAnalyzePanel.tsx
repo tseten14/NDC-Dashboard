@@ -40,64 +40,11 @@ function uniqueByUrl(citations: GroundedCitation[]): GroundedCitation[] {
   return Array.from(byUrl.values());
 }
 
-/** A single verified citation chip — real external link with a hover popover. */
-function CitationChip({ citation }: { citation: GroundedCitation }) {
-  const slug = citationDomainSlug(citation.source_url);
-  return (
-    <span className="group relative inline-flex align-baseline">
-      <a
-        href={citation.source_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-0.5 ml-1 rounded-md bg-muted/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors no-underline whitespace-nowrap"
-      >
-        {slug}
-        <ExternalLink className="h-2 w-2 opacity-60" aria-hidden />
-      </a>
-      <span
-        role="tooltip"
-        className="pointer-events-none absolute bottom-full left-0 z-50 mb-1 hidden w-64 rounded-md border border-border bg-popover p-2 text-left shadow-md group-hover:block group-focus-within:block"
-      >
-        <span className="block text-[10px] font-semibold text-foreground">
-          {citation.source_title}
-        </span>
-        {citation.supporting_snippet && (
-          <span className="mt-1 block text-[10px] leading-relaxed text-muted-foreground line-clamp-5">
-            “{citation.supporting_snippet}”
-          </span>
-        )}
-        <span className="mt-1 block truncate text-[9px] text-muted-foreground/70">
-          {citation.source_url}
-        </span>
-      </span>
-    </span>
-  );
-}
-
-/** Non-clickable, visibly distinct chip for a claim with no verifiable source. */
-function SourceUnavailableChip() {
-  return (
-    <span
-      title="No external source could be found that contains this exact figure."
-      className="inline-flex items-center gap-0.5 ml-1 rounded-md border border-dashed border-amber-500/50 bg-amber-500/5 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-500 align-baseline whitespace-nowrap cursor-not-allowed select-none"
-    >
-      <ShieldAlert className="h-2.5 w-2.5" aria-hidden />
-      source unavailable
-    </span>
-  );
-}
-
+// Per-claim inline citation chips were removed by request — all sources are
+// shown once in the aggregated footer below. The per-card "could not be
+// grounded" banner still surfaces unverified claims at the card level.
 function SegmentParagraph({ segment }: { segment: AnswerSegment }) {
-  const verified = uniqueByUrl(segment.citations);
-  return (
-    <p className="text-xs text-foreground leading-relaxed">
-      {segment.text}
-      {verified.map((c) => (
-        <CitationChip key={c.source_url} citation={c} />
-      ))}
-      {segment.unverified && verified.length === 0 && <SourceUnavailableChip />}
-    </p>
-  );
+  return <p className="text-xs text-foreground leading-relaxed">{segment.text}</p>;
 }
 
 function SourcesFooter({ response }: { response: GroundedAnalysisResponse }) {
