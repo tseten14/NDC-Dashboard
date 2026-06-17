@@ -19,9 +19,13 @@ A2. DATA SOURCES
   • Policy documents: Climate Policy Radar CSV export → data/policy/documents.json
     (~207 Uganda rows: laws, executive plans, UN submissions, multilateral fund projects).
     Metadata and CPR/PDF links only — no live CPR API yet. Rebuild with npm run build:documents.
-  • Climate risk (demo): illustrative district layers in the repo
+  • Climate risk (illustrative): district hazard layers in the repo — not operational models
   • Delivery activities: saved in the user’s browser (localStorage)
   • Mitigation economics (Climate Finance): indicative costs/abatement from NDC catalogue — not audited
+  • CPR passage corpus: Climate Policy Radar passage export for key national documents
+    (NDC, NDPIV, NBSAP, etc.) — built with npm run build:passages; searchable topics/passages
+  • MCF project corpus: multilateral climate fund projects — built with npm run build:mcf
+    (~167 Uganda-linked projects in data/policy/mcf-projects.json)
 
   Note on versions: the application uses Climate TRACE API v7. "v7" is the API
   version (which endpoints exist), NOT the data version. Climate TRACE updates the
@@ -31,7 +35,7 @@ A2. DATA SOURCES
 
 A3. USERS
   Ministry staff, MRV focal points, programme managers, and executive briefings
-  (role switcher in the UI — demo mode, no remote sign-in).
+  (role switcher in the UI — local permissions only; no remote sign-in).
 
 A4. NATIONAL VS DISTRICT VIEW  (plain-language guide)
   On the main NDC dashboard there is a "Geography" switch with two choices:
@@ -92,23 +96,35 @@ A5b. TOP EMITTING SOURCES (asset-level drill-down)
 
 A6a. MAIN SCREENS AND ROUTES (2026)
 
-  The sidebar is organised around five decision questions, each a collapsible group:
+  Top navigation bar (always visible on main app shell):
+    Home → Emissions Map → Dashboard → Data Ingestion → AI 2030 Projection →
+    Policy Impact → Climate Finance → Policy Documents → Database → Documentation
 
-  Always visible (top):
+  The left sidebar is organised around five decision questions, each a collapsible group:
+
+  Always visible (sidebar primary):
     /              Home — landing + Decision Cockpit quick-links
-    /ingest        Data ingestion — Quick Scan live; mapped import WIP
-    /documents     Policy corpus + intervention pathway diagram
-    /documents/view Policy document split-pane viewer + AI Policy Assistant (opened via Analyse button)
+    /map           Emissions Map — 3D satellite map of Climate TRACE sources
+    /dashboard     NDC cockpit — targets vs observed emissions (core workspace)
+    /ingest        Data ingestion — Quick Scan + mapped import (Postgres)
+    /ai-2030       2030 sector trend forecast (indicative, with uncertainty)
+    /policy-impact Policy Impact wizard (KCI analogies)
+    /climate-finance Climate Finance screening + MCF document links
+    /documents     Policy corpus + CPR passages + MCF projects + pathway diagram
+    /documents/view Policy document split-pane viewer + AI Policy Assistant
+    /docs          In-app user guide + system design (this documentation)
+
+  Advanced sidebar (collapsible):
     /my-work       Personal activity drafts (localStorage)
+    /library       Strategy Library
+    /risk          Climate Risk (illustrative hazard screening)
     /executive     Executive overview briefing
-    /brazil-chat   Brazil Climate Intelligence — Perplexity-style research chatbot (demo, mock data)
+    …              Other legacy cockpit slices (delivery, finance, indicators, etc.)
 
   Q1 — Are we on track?
-    /dashboard     NDC cockpit — targets vs observed emissions (core workspace)
     /indicators    Indicator registry + KPI tracking
     /evidence      Evidence & MRV — provenance, QA flags, confidence, export
     /projections   Scenario projections and growth path sliders
-    /map           Geolocated emission sources on Uganda map
 
   Q2 — Which interventions work?
     /project-check       Project registry and output tracking
@@ -168,6 +184,18 @@ A6c. POLICY DOCUMENTS (/documents)
     • "Analyse" button on each row → opens /documents/view in a split-pane with AI Policy Assistant
     • Result: fast access to national evidence for meetings (Bonn, MRV, finance)
 
+  Tab "Key documents (CPR)":
+    • Searchable passage corpus from Climate Policy Radar export (NDC, NDPIV, NBSAP, etc.)
+    • Passage list hidden until user searches or selects a topic — avoids overwhelming empty browse
+    • Results grouped by document with preview + "See all" link to full passage list
+    • Topic labels deduplicated at build time (npm run build:passages); topic IDs not shown in UI
+    • API: /api/v1/documents/passages/search, /documents/topics, /documents/:id/passages
+
+  Tab "Climate fund projects":
+    • Searchable MCF corpus (~167 projects) from npm run build:mcf
+    • Sector-filtered links from Climate Finance MCF panel
+    • API: /api/v1/documents/mcf/search, /documents/mcf/meta, /documents/mcf/:projectId
+
   Tab "Intervention pathway":
     • Six-column diagram (urban transport example from NDC Align / data-driven transitions materials)
     • "Related documents" on an intervention jumps to library search
@@ -176,13 +204,14 @@ A6c. POLICY DOCUMENTS (/documents)
   Policy Document View (/documents/view):
     • Stacked vertical layout: document metadata preview on top; AI Policy Assistant below (draggable divider)
     • Metadata panel shows title, date, source, category, summary — "Type" field removed
-    • AI Policy Assistant uses OpenAI GPT-4o-mini via REST (routes/policyAi.js): fetches and parses the
-      actual PDF, smart-truncates to 8,000 chars (first 70% + last 20%), calls GPT-4o-mini, returns
-      structured JSON analysis with real page citations [p.N]
+    • AI Policy Assistant uses OpenAI GPT-4o-mini via REST (routes/policyAi.js): resolves contentUrl
+      from catalog catalogId when needed; fetches and parses the actual PDF, smart-truncates to
+      8,000 chars (first 70% + last 20%), calls GPT-4o-mini, returns structured JSON analysis
+      with real page citations [p.N]
     • Each AI bullet = 2 sentences: key fact + plain-language explanation for non-specialists
     • Quick-action buttons (2×2 grid): Executive Summary, Key Items, Targets, Actions
     • "Ask the document" free-form chat: PDF text sent to OpenAI; responses grounded in the real document
-    • Requires OPENAI_API_KEY in .env (loaded with dotenv override:true)
+    • Requires OPENAI_API_KEY on the API server
 
   Dashboard "Official sources" panel (right column): small curated list per sector from
   data/policy/curated.json (NDC, BUR, flagship GCF projects, sector plans).
@@ -220,16 +249,26 @@ A6d-NEW. DATA TRACEABILITY (Dashboard)
     • CapProgressScale markers (BAU, Cap) have cursor-help tooltips
     • "Cap {N}" label has underline decoration and tooltip
 
-A6e-NEW. BRAZIL CLIMATE INTELLIGENCE (/brazil-chat)
+A6e-NEW. NDC AI (Dashboard dialog)
 
-  Perplexity-style research chatbot for Brazil climate data (demo, mock data):
-    • Answers grounded in SEEG 11.0, INPE PRODES, Climate TRACE, MMA, UNFCCC, IBGE, MCTI figures
-    • Inline citation chips [N] auto-open References panel when clicked
-    • "Sources Verified" pill badges + animated source-search loading state
-    • "Data Provenance" collapsible panel with full dataset names
-    • 5 keyword-matched response topics: overview, LULUCF, agriculture, energy, NDC targets
-    • All data is mock/template-driven — no live LLM or API calls
-    • Clearly labelled "Demo · Mock Data" in the header
+  Open from the "NDC AI" button on /dashboard — Perplexity-style analysis of the current
+  dashboard view (selected target, sector, geography, live Climate TRACE + NDC context).
+
+  How it works:
+    • Client builds a fact_ledger (frontend/src/lib/dashboard-ai-facts.ts) from live dashboard
+      data before each request — every quotable number has an id, value, claim, and verified URL
+    • POST /api/v1/dashboard/analyze (routes/dashboardAi.js) sends context + fact ledger to
+      OpenAI GPT-4o-mini; model may only quote numbers from quotable_facts
+    • Backend attaches citations deterministically: fact ids → Climate TRACE API endpoints or
+      UNFCCC NDC PDF URLs; numeric claims in each paragraph matched to ledger entries
+    • Per-paragraph inline citation pills (e.g. climatetrace, unfccc +1) link to the exact source
+    • Requires OPENAI_API_KEY on the API server; responses cached ~30 minutes
+
+  Quick actions: Progress check, Gap vs pledge, Sector emissions, Top priorities.
+  Free-form chat: Ask about NDC progress vs Climate TRACE for the selected target.
+
+  Not: a web search engine, forecasts, or official UNFCCC submission text. Citations point to
+  Climate TRACE v7 API URLs (api.climatetrace.org/v7/...) and the Uganda NDC 2022 PDF on UNFCCC.
 
 A6d. DASHBOARD POP-UP TOOLS (right column buttons)
 
@@ -274,7 +313,8 @@ A7. FEATURE GUIDE — PURPOSE, HOW IT WORKS, RESULT (non-technical)
   DASHBOARD (/dashboard)
     For: Compare NDC 2022 pledges to observed emissions; executive and MRV briefings.
     Steps: Pick sector → click one target (single click) → read centre chart and right progress;
-           optional District geography; Export if needed; open pop-ups for activities/sources.
+           optional District geography; open NDC AI for Perplexity-style cited analysis;
+           Export if needed; open pop-ups for activities/sources.
     How: Targets from bundled NDC config; observed series from Climate TRACE API aggregated
          to national or GADM district; progress rules compare latest year to 2030 ceiling
          (BAU-relative framing for growing sectors).
@@ -313,9 +353,12 @@ A7. FEATURE GUIDE — PURPOSE, HOW IT WORKS, RESULT (non-technical)
 
   EMISSIONS MAP (/map)
     For: Geographic view of major sources for a year/sector.
-    Steps: Set filters; pan/zoom; read tooltips and side totals.
-    How: Climate TRACE geolocated sources via GET /api/v1/emissions/map.
-    Result: Map briefing aid.
+    Steps: Set filters; pan/zoom/tilt the 3D satellite map; hover for tooltip; click a bubble
+           for a compact pinned popup (name, sector, MtCO₂e).
+    How: MapLibre GL JS with Esri World Imagery + AWS terrain DEM (no Mapbox token).
+         Climate TRACE geolocated sources via GET /api/v1/emissions/map; GPU circle layer.
+         Public inventory links use climatetrace.org/inventory?country=UGA&sector=...
+    Result: Map briefing aid with real satellite context.
     Not: Every tonne appears as a bubble (see Spatial Certainty).
 
   STRATEGY LIBRARY (/library) [Advanced]
@@ -340,10 +383,10 @@ A8. STATUS COLOURS AND BADGES (Dashboard)
   MRV GAPS — activities exist but observed data weak or missing.
   Target badges: Unconditional, Conditional, Mixed; Emissions Reduction (MtCO2e) vs physical indicators.
 
-A9. ROLES (demo, top-right)
+A9. ROLES (top-right)
 
   Role switcher changes edit permissions (e.g. create activities vs read-only). Does NOT change
-  national totals or Climate TRACE figures.
+  national totals or Climate TRACE figures. No remote authentication — local permissions only.
 
 A6. EXPORTING DATA
   The "Export" button on the dashboard produces:
@@ -389,6 +432,15 @@ B2. EXPRESS API
   GET  /api/v1/documents              (params: category, source, q, limit, offset)
   GET  /api/v1/documents/meta         (category and source counts)
   GET  /api/v1/documents/curated      (params: sectorId, context=dashboard|finance)
+  GET  /api/v1/documents/passage-corpus/meta
+  GET  /api/v1/documents/topics
+  GET  /api/v1/documents/passages/search   (params: q, topic, documentId, limit)
+  GET  /api/v1/documents/:cprDocumentId/passages
+  GET  /api/v1/documents/mcf/meta
+  GET  /api/v1/documents/mcf/search
+  GET  /api/v1/documents/mcf/:projectId
+  POST /api/v1/dashboard/analyze      (NDC AI — requires OPENAI_API_KEY; body: action, question, context)
+  POST /api/v1/policy-ai/analyze      (Policy document AI — requires OPENAI_API_KEY)
   GET  /api/v1/risk/*
 
   Geography parameters (national is the default):
@@ -421,8 +473,8 @@ B2a. DISTRICT MAPPING + DATA ACCURACY
         (mineral-extraction is reconciliation-only, not a UI card)
   • National reconciliation: sum of all slugs == Climate TRACE country total
     (delta 0). District totals use Climate TRACE's exact all-sector total.
-  • Subnational data starts 2021; national starts 2015. Latest year is capped
-    at 2024 (config/climateTrace.js) until the 2025 dataset is confirmed.
+  • Subnational data starts 2021; national starts 2015. Latest inventory year capped at
+    2025 in config/climateTrace.js (CT v7 March 2026 dataset confirmed through 2025).
 
 B2b-NDC. NDC TARGET CONFIGURATION (Uganda Updated NDC, September 2022)
   Source file: config/ndcTargets.js (backend) + frontend/src/data/uganda-ndc-data.ts
@@ -524,6 +576,7 @@ B2d. DATA TRACEABILITY LAYER
   • frontend/src/lib/data-lineage.ts — SECTOR_LINEAGE record: 7 sectors × full lineage metadata
     (API endpoint, raw table, harmonised view, methodology, uncertainty, pipeline stages,
     primary sources, refresh cadence, Climate TRACE public URL)
+    Public inventory base URL: https://climatetrace.org/inventory?country=UGA
   • frontend/src/components/DataProvenancePanel.tsx — inline provenance card (below chart after
     bar click); props: year, value, unit, sector, sectorLabel, onDismiss
   • frontend/src/components/ViewSourceModal.tsx — full-page Data Lineage modal triggered by
@@ -531,11 +584,22 @@ B2d. DATA TRACEABILITY LAYER
   • frontend/src/components/columns/ObservedData.tsx — Bar onClick sets clickedPoint state;
     CodeXml Source button sets viewSourceOpen state
 
-B2e. BRAZIL DEMO LAYER
-  • frontend/src/data/brazil-mock-data.ts — DATA_SOURCES, BRAZIL_SECTOR_TIMESERIES,
-    MOCK_RESPONSES (5 topics), queryBrazilData() keyword scorer, SUGGESTED_QUESTIONS
-  • frontend/src/pages/BrazilChatbot.tsx — full chatbot UI (searching animation,
-    inline citations, references section, data provenance panel)
+B2e. NDC AI FACT LEDGER + CITATIONS
+  • frontend/src/lib/dashboard-ai-facts.ts — buildDashboardFactLedger(): maps live dashboard
+    progress/timeseries/NDC targets to quotable facts with exact source_url (Climate TRACE v7
+    API endpoints or UNFCCC NDC PDF) and viewer_url (climatetrace.org inventory pages)
+  • frontend/src/lib/dashboard-ai-context.ts — attaches fact_ledger + quotable_facts to AI context
+  • backend/services/dashboardAiCitations.js — enrichCitationsFromFacts(): resolves fact ids,
+    matches paragraph numbers to ledger, flags unverified figures
+  • backend/routes/dashboardAi.js — POST /dashboard/analyze (OpenAI GPT-4o-mini, 30-min cache)
+  • frontend/src/components/dashboard/DashboardAnalyzePanel.tsx — Perplexity-style UI
+
+B2f. CPR PASSAGES + MCF CORPUS
+  • scripts/build_policy_passages.mjs — npm run build:passages → data/policy/passages.json,
+    passage-documents.json, topics-index.json
+  • scripts/build_mcf_fulltext.mjs — npm run build:mcf → data/policy/mcf-projects.json
+  • backend/services/policyPassages.js, mcfProjects.js — search/list APIs
+  • frontend/src/pages/PolicyDocuments.tsx — Key documents (CPR) + Climate fund projects tabs
 
 B4. NPM SCRIPTS
 
@@ -543,6 +607,8 @@ B4. NPM SCRIPTS
   npm run start:api        — API only
   npm run build            — production frontend build
   npm run build:documents  — regenerate policy JSON from CPR CSV export
+  npm run build:passages   — rebuild CPR passage corpus for Key documents tab
+  npm run build:mcf        — rebuild MCF projects corpus
 
 B6. REPOSITORY DOCUMENTATION (2026)
 

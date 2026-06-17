@@ -3,12 +3,12 @@ import { Leaf, Satellite } from "lucide-react";
 export function Footer() {
   return (
     <footer className="relative z-10 shrink-0 border-t border-border bg-slate-900 text-slate-300 dark:bg-background dark:text-muted-foreground">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-emerald-500 to-teal-600 ring-1 ring-emerald-400/30 shrink-0">
-            <Leaf className="h-4 w-4 text-white" />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-emerald-500 to-teal-600 ring-1 ring-emerald-400/30 shrink-0">
+            <Leaf className="h-3.5 w-3.5 text-white" />
           </div>
-          <p className="text-sm text-slate-400 dark:text-muted-foreground">
+          <p className="text-xs text-slate-400 dark:text-muted-foreground">
             © {new Date().getFullYear()} <span className="text-slate-200 dark:text-foreground font-semibold font-brand">NDC Data Explorer</span>
           </p>
         </div>

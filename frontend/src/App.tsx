@@ -35,7 +35,6 @@ const ClimateFinance = lazy(() => import("./pages/ClimateFinance.tsx"));
 const PolicyDocuments = lazy(() => import("./pages/PolicyDocuments.tsx"));
 const Documentation = lazy(() => import("./pages/Documentation.tsx"));
 const PolicyImpact = lazy(() => import("./pages/PolicyImpact.tsx"));
-const BrazilChatbot = lazy(() => import("./pages/BrazilChatbot.tsx"));
 const PolicyDocumentView = lazy(() => import("./pages/PolicyDocumentView.tsx"));
 
 const MapExplorer = lazy(() => import("./pages/MapExplorer.tsx"));
@@ -117,7 +116,6 @@ function ProtectedShell() {
                   <Route path="/finance" element={<LazyPage><FinanceInvestment /></LazyPage>} />
                   <Route path="/ingest" element={<LazyPage><DataIngestion /></LazyPage>} />
                   <Route path="/ai-2030" element={<LazyPage><Ai2030Prediction /></LazyPage>} />
-                  <Route path="/brazil-chat" element={<LazyPage><BrazilChatbot /></LazyPage>} />
                   <Route path="/climate-finance" element={<LazyPage><ClimateFinance /></LazyPage>} />
                   <Route path="/documents" element={<LazyPage><PolicyDocuments /></LazyPage>} />
                   <Route path="/documents/view" element={<LazyPage><PolicyDocumentView /></LazyPage>} />

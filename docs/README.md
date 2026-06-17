@@ -49,8 +49,9 @@ The `/docs` tab has two views: **User guide** (`frontend/src/data/user-guide-con
 
 When adding a **primary** sidebar route or API:
 
-1. `frontend/src/App.tsx`, `AppSidebar.tsx`
+1. `frontend/src/App.tsx`, `AppSidebar.tsx`, `TopNav.tsx`
 2. `PROJECT_DOCUMENTATION.txt` (A6a routes, A7 feature entry, Part B API)
 3. `docs/dev/system-design.md`, `docs/dev/architecture.md`, `README.md`
 4. `frontend/src/data/user-guide-content.ts` (in-app /docs)
 5. `docs/guide/data.md` if data honesty changes
+6. `docs/CHANGELOG.md` for notable releases

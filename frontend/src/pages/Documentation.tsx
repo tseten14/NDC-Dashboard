@@ -118,15 +118,20 @@ export default function Documentation() {
 
         {/* Navigation structure callout */}
         <section className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 space-y-1.5">
-          <p className="text-xs font-bold text-foreground">How the sidebar is organised</p>
+          <p className="text-xs font-bold text-foreground">How navigation is organised</p>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            The left sidebar is grouped into <strong className="text-foreground">five decision questions</strong> (Q1–Q5).
-            Each group is collapsible and starts open. A page may appear in more than one group.
-            Always-visible items (Home, Data Ingestion, Database, Executive Overview, Policy documents) sit above the groups.
+            The <strong className="text-foreground">top bar</strong> lists primary tools in order:
+            Home → Emissions Map → Dashboard → Data Ingestion → AI 2030 → Policy Impact →
+            Climate Finance → Policy Documents → Database → Documentation.
+          </p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            The <strong className="text-foreground">left sidebar</strong> groups deeper pages into{" "}
+            <strong className="text-foreground">five decision questions</strong> (Q1–Q5). Each group is
+            collapsible. Advanced pages (Strategy Library, Climate Risk, etc.) sit below the primary list.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1 pt-1">
             {[
-              { q: "Q1", label: "Are we on track?", pages: "Dashboard · Indicators · Evidence & MRV · Projections · Map" },
+              { q: "Q1", label: "Are we on track?", pages: "Dashboard · Indicators · Evidence & MRV · Projections" },
               { q: "Q2", label: "Which interventions work?", pages: "Project Check · Delivery · Causal Chains · Cost Effectiveness" },
               { q: "Q3", label: "Where are the bottlenecks?", pages: "Delivery · Finance · Climate Finance · Financial Flows · Ownership" },
               { q: "Q4", label: "Where do we invest next?", pages: "AI 2030 · Investment Templates · Tenfold · Policy Impact" },
@@ -173,7 +178,9 @@ export default function Documentation() {
           <p className="text-xs text-muted-foreground leading-relaxed">
             Three columns: <strong className="text-foreground">promised</strong> (left) →{" "}
             <strong className="text-foreground">measured</strong> (centre) →{" "}
-            <strong className="text-foreground">on course?</strong> (right).
+            <strong className="text-foreground">on course?</strong> (right). Use the{" "}
+            <strong className="text-foreground">NDC AI</strong> button for Perplexity-style cited analysis
+            of the current target (requires OpenAI on the server).
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">

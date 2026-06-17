@@ -45,7 +45,7 @@ export function buildTargetLineage(
 
   const obs = getObservedDataForTarget(target.id);
   return {
-    source: obs?.dataProviders[0] ?? "Demo / MRV seed",
+    source: obs?.dataProviders[0] ?? "Bundled / MRV seed",
     asOf: obs?.provenance.lastUpdated ?? emissions.dashboardLastRefreshIso,
     isEstimated: true,
     isValidated: obs?.provenance.isValidated ?? false,

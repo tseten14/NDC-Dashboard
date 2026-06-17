@@ -17,7 +17,7 @@ Web application for exploring Uganda’s Nationally Determined Contribution (NDC
 - **Emissions map:** MapLibre GL JS (3D satellite/terrain, token-free Esri World Imagery + AWS terrain tiles)
 - **API:** Express (`backend/server.js`) — Climate TRACE live (API v7) + bundled catalog/risk data
 - **Mapped ingest:** Postgres when `DATABASE_URL` is set (indicator targets); otherwise ingest confirm is disabled
-- **Activities / roles:** Browser `localStorage` (demo)
+- **Activities / roles:** Browser `localStorage` (personal drafts + role preference)
 
 ## Project structure
 
@@ -53,21 +53,21 @@ npm run dev:all
 - **App:** http://localhost:8080  
 - **API:** http://localhost:8787 (proxied as `/api` from Vite in dev)
 
-Pick a country, choose a demo role from the top bar, and explore. **Home** (`/`) is the landing page; the main NDC workspace is **Dashboard** (`/dashboard`).
+Pick a country, choose a role from the top bar, and explore. **Home** (`/`) is the landing page; **Emissions Map** (`/map`) and **Dashboard** (`/dashboard`) are the primary analysis screens.
 
-## Navigation (primary)
+## Navigation (primary top bar)
 
 | Route | Screen |
 | ----- | ------ |
 | `/` | Home (NDC gap priorities panel for decision-makers) |
-| `/dashboard` | NDC cockpit (sectors, targets, observed, progress, compact gap panel) |
-| `/policy-impact` | Socio-economic impact forecasting (KCI case analogies) |
+| `/map` | Emissions map — 3D satellite/terrain basemap (MapLibre GL) |
+| `/dashboard` | NDC cockpit (targets, observed, progress, **NDC AI**) |
 | `/ingest` | Data ingestion (mapped import → Postgres; quick scan profiling) |
+| `/ai-2030` | 2030 sector predictions |
+| `/policy-impact` | Socio-economic impact forecasting (KCI case analogies) |
 | `/climate-finance` | Indicative finance / fund screening |
-| `/ai-2030` | 2030 sector predictions (positioned immediately after Climate Finance in the nav) |
-| `/documents` | Policy corpus (laws, UN submissions, MCF projects) |
-| `/map` | Emissions map — Climate TRACE sources as bubbles over a 3D satellite/terrain basemap (MapLibre GL) |
-| `/docs` | User guide (non-technical) |
+| `/documents` | Policy corpus + CPR passages + MCF projects |
+| `/docs` | User guide + system design |
 
 Advanced sidebar: Strategy Library, My Work, Climate Risk, and legacy cockpit pages.
 

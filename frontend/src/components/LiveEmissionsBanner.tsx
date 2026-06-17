@@ -23,7 +23,7 @@ const STATUS_CLS: Record<string, string> = {
 export function LiveEmissionsBanner() {
   const { summary: data, summaryIsLoading: isLoading, summaryError: error, health, reconciliation, dashboardLastRefreshIso } =
     useEmissionsData();
-  const isDemoSource = !!data?.data_source && /bundled|mock/i.test(data.data_source);
+  const isBundledSource = !!data?.data_source && /bundled|mock/i.test(data.data_source);
 
   if (error) {
     const isDev = import.meta.env.DEV;
@@ -69,7 +69,7 @@ export function LiveEmissionsBanner() {
       <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto min-w-0">
         <Satellite className="h-3.5 w-3.5 text-primary" />
         <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
-          {isDemoSource ? "Climate Data (Demo Source)" : "Live Climate TRACE"}
+          {isBundledSource ? "Bundled climate data" : "Live Climate TRACE"}
         </span>
         {health?.status === "ok" && (
           <span className="inline-flex items-center gap-1 text-[10px] text-[hsl(var(--on-track))]">
@@ -145,9 +145,9 @@ export function LiveEmissionsBanner() {
                 cached
               </Badge>
             )}
-            {isDemoSource && (
+            {isBundledSource && (
               <Badge variant="outline" className="h-4 text-[10px]">
-                demo data
+                bundled
               </Badge>
             )}
             {refreshLabel && <span title="Dashboard cache refresh">Updated {refreshLabel}</span>}

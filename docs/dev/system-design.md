@@ -8,7 +8,7 @@ End-to-end architecture and workflows for the application. For file-level layout
 
 **Purpose:** Decision-support cockpit for Uganda’s climate commitments — compare official NDC targets to observed emissions, explore policy and finance options, and support MRV-style workflows (ingest, export, risk views).
 
-**Primary users (demo roles, no real SSO):**
+**Primary users (local roles, no remote SSO):**
 
 | Role | Typical use |
 |------|-------------|
@@ -117,6 +117,7 @@ flowchart TB
     REm[emissions]
     RIn[ingest]
     RPi[policyImpact]
+    RDAi[dashboardAi]
     RCk[ndcCockpit]
     SCT[TRACE client]
     SPers[persistence]
@@ -282,14 +283,82 @@ flowchart TB
 
 ### 5.6 Emissions map
 
-**Entry:** `/map`
+**Entry:** `/map` (primary nav: immediately after Home)
 
-- `GET /v1/emissions/map` — geolocated sources from Climate TRACE `GET /v7/sources`
-- District/national via same geography params as dashboard
+```mermaid
+flowchart TB
+  User[User]
+  Map[MapExplorer]
+  API[GET /emissions/map]
+  CT[Climate TRACE /v7/sources]
+  ML[MapLibre GL JS]
+  Tiles[Esri imagery + AWS terrain]
+
+  User --> Map --> API --> CT
+  Map --> ML --> Tiles
+```
+
+- **Basemap:** MapLibre GL JS with Esri World Imagery + AWS terrarium DEM (no Mapbox token).
+- **Rendering:** GPU circle layer (`EmissionsMap3D.tsx`) — bubble radius ∝ √emissions, colour by sector.
+- **Data:** `GET /api/v1/emissions/map` wraps Climate TRACE `GET /v7/sources` (geolocated centroids).
+- **Interactions:** Hover tooltip; click opens compact pinned popup (name, sector, MtCO₂e).
+- **Public links:** `https://climatetrace.org/inventory?country=UGA&sector=...` (see `data-lineage.ts`).
+
+District/national via same geography params as dashboard. Totals on the map page may exceed sum of visible bubbles — spatially uncertain emissions are in aggregates, not every point.
 
 ---
 
-### 5.7 My Work (activities)
+### 5.7 NDC AI (Dashboard)
+
+**Entry:** `/dashboard` → **NDC AI** dialog (`DashboardAnalyzePanel.tsx`)
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant SPA as Dashboard
+  participant Facts as fact_ledger
+  participant API as POST /dashboard/analyze
+  participant OAI as OpenAI GPT-4o-mini
+  participant Cit as dashboardAiCitations
+
+  User->>SPA: Quick action or chat question
+  SPA->>Facts: buildDashboardFactLedger (client)
+  SPA->>API: context + fact_ledger + quotable_facts
+  API->>OAI: Structured JSON prompt
+  OAI-->>API: paragraphs + fact id refs
+  API->>Cit: enrichCitationsFromFacts
+  Cit-->>SPA: Perplexity-style pills + source footer
+  SPA-->>User: Cited analysis
+```
+
+**Accuracy model:**
+
+1. Client builds `fact_ledger` from live dashboard state — each fact has `id`, `value`, `claim`, `source_url` (Climate TRACE v7 API endpoint or UNFCCC NDC PDF), and `viewer_url` (public inventory page).
+2. Model is instructed to quote **only** numbers in `quotable_facts` and cite matching `fact_*` ids per paragraph.
+3. Backend **deterministically** resolves citations and matches numeric claims to ledger entries; unverified numbers lower confidence.
+
+**Requires:** `OPENAI_API_KEY`. Responses cached ~30 minutes (`dashboardAi.js`).
+
+**Not:** web search, forecasts, or generic “dashboard” links — citations must be verifiable external URLs.
+
+---
+
+### 5.8 Policy documents (CPR + passages + MCF)
+
+**Entry:** `/documents`
+
+| Tab | Data | Build |
+|-----|------|-------|
+| Document library | `data/policy/documents.json` | `npm run build:documents` |
+| Key documents (CPR) | `passages.json`, `topics-index.json` | `npm run build:passages` |
+| Climate fund projects | `mcf-projects.json` | `npm run build:mcf` |
+| Intervention pathway | `transport-theory-of-change.ts` | bundled |
+
+Passage search is hidden until query/topic active; results group by document. Document AI (`/documents/view`) uses `routes/policyAi.js` with PDF fetch + GPT-4o-mini.
+
+---
+
+### 5.9 My Work (activities)
 
 **Entry:** `/my-work`, activity forms
 
@@ -298,7 +367,7 @@ flowchart TB
 
 ---
 
-### 5.8 Export
+### 5.10 Export
 
 **Entry:** Dashboard export menu → `frontend/src/lib/ndc-export.ts`
 
@@ -318,8 +387,10 @@ Uses live `EmissionsDataContext` when API is reachable.
 |-------|--------|----------------|
 | Health | `/v1/health`, `/v1/health/full` | Liveness, CT latency, persistence mode |
 | Emissions | `/v1/emissions/*` | Dashboard, timeseries, progress, map, predictions |
+| Dashboard AI | `POST /v1/dashboard/analyze` | NDC AI over fact ledger (OpenAI) |
 | Cockpit | `/v1/indicators/panel`, `/v1/catalog/*` | Indicator targets, activities, mitigation |
-| Documents | `/v1/documents/*` | Policy corpus (CPR export) |
+| Documents | `/v1/documents/*` | Policy corpus, CPR passages, MCF projects |
+| Policy AI | `POST /v1/policy-ai/*` | PDF document analysis (OpenAI) |
 | Policy Impact | `/v1/policy-impact/*` | Forecast + case library |
 | Ingest | `/v1/ingest/*` | Scan, confirm, jobs (writes need API key) |
 | Persistence | `/v1/targets/:id/observations` | Postgres-backed observations |
@@ -415,7 +486,8 @@ Client recalculates from live API fields in `progressFromLiveApiFields` so stale
 
 | Concern | Approach |
 |---------|----------|
-| Authentication | Demo only — `AuthGate` is a no-op; roles gate UI features |
+| Authentication | Local roles only — `AuthGate` is a no-op; roles gate UI features |
+| AI features | `OPENAI_API_KEY` required for NDC AI (`/dashboard/analyze`) and Policy document AI |
 | Ingest writes | `x-api-key` header (`INGEST_API_KEY`) |
 | CORS | `FRONTEND_ORIGIN` allowlist |
 | Rate limits | Read vs ingest-write limiters on `/v1` |
@@ -468,4 +540,4 @@ ndc-data-explorer/
 
 ---
 
-*Last aligned with repo structure: NDC 2022 targets, Climate TRACE v7, Drizzle Postgres ingest, client-side progress recalculation.*
+*Last aligned: June 2026 — NDC 2022 targets, Climate TRACE v7 (through 2025), NDC AI fact ledger, CPR passages + MCF corpus, MapLibre emissions map, demo/Brazil chat removed.*

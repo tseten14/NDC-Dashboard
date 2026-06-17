@@ -35,57 +35,100 @@ function lineCitations(line: string | AnalysisLine): AiSourceLink[] {
   return typeof line === "string" ? [] : (line.citations ?? []);
 }
 
-/** Accurate short label for an inline citation pill — names the real source per line. */
-function citationPillLabel(source: AiSourceLink): string {
-  if (source.id === "uganda_ndc_2022" || source.url.includes("unfccc")) return "NDC 2022";
-  if (source.id.startsWith("climate_trace_") || source.url.includes("climatetrace")) return "Climate TRACE";
-  if (source.id.startsWith("ndc_target_")) return "NDC target";
-  if (source.id.startsWith("dashboard_progress_")) return "Dashboard";
-  if (source.id.startsWith("dashboard_timeseries_")) return "TRACE API";
-  if (source.id === "policy_documents") return "Policies";
-  if (source.id === "climate_trace_api") return "TRACE API";
+/** Perplexity-style domain slug from a source URL (e.g. unfccc.int → unfccc). */
+function citationDomainSlug(url: string): string {
   try {
-    const host = new URL(source.url, window.location.origin).hostname.replace(/^www\./, "");
-    return host.split(".")[0] || "source";
+    const host = new URL(url).hostname.replace(/^www\.|^api\./, "");
+    const parts = host.split(".");
+    if (host.includes("climatetrace")) return "climatetrace";
+    if (host.includes("climatepolicyradar")) return "climatepolicyradar";
+    if (host.includes("unfccc")) return "unfccc";
+    return parts.length >= 2 ? parts[parts.length - 2] : parts[0] || "source";
   } catch {
     return "source";
   }
 }
 
-/**
- * Inline per-line source links — each bullet links to where its facts came from.
- * Duplicate labels are de-duplicated so a line shows each distinct source once.
- */
-function InlineCitationPills({ citations }: { citations: AiSourceLink[] }) {
-  if (citations.length === 0) return null;
-
+function uniqueCitationsByDomain(citations: AiSourceLink[]): AiSourceLink[] {
   const seen = new Set<string>();
-  const unique = citations.filter((c) => {
-    const key = citationPillLabel(c);
-    if (seen.has(key)) return false;
-    seen.add(key);
+  return citations.filter((c) => {
+    const slug = c.domain ?? citationDomainSlug(c.url);
+    if (seen.has(slug)) return false;
+    seen.add(slug);
     return true;
   });
+}
+
+/** Perplexity-style inline citation — links to verified source; tooltip shows exact claim + API. */
+function PerplexityCitationPill({ citations }: { citations: AiSourceLink[] }) {
+  const unique = uniqueCitationsByDomain(citations);
+  if (unique.length === 0) return null;
+
+  const [primary, ...rest] = unique;
+  const slug = (primary as AiSourceLink & { domain?: string }).domain ?? citationDomainSlug(primary.url);
+  const href =
+    primary.viewer_url && primary.domain === "climatetrace" ? primary.viewer_url : primary.url;
+  const tooltip = [
+    primary.claim ?? primary.label,
+    primary.url !== href ? `API: ${primary.url}` : primary.url,
+    ...rest.map((c) => c.claim ?? c.label),
+  ].join(" · ");
 
   return (
-    <span className="inline-flex flex-wrap gap-1 ml-1 align-middle">
-      {unique.map((c) => {
-        const external = c.url.startsWith("http");
-        return (
-          <a
-            key={c.id}
-            href={c.url}
-            target={external ? "_blank" : undefined}
-            rel={external ? "noopener noreferrer" : undefined}
-            title={c.label}
-            className="inline-flex items-center gap-0.5 rounded-md border border-border/70 bg-muted/80 px-1.5 py-px text-[9px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors whitespace-nowrap"
-          >
-            {citationPillLabel(c)}
-            {external && <ExternalLink className="h-2 w-2 opacity-70" aria-hidden />}
-          </a>
-        );
-      })}
-    </span>
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={tooltip}
+      className="inline-flex items-center gap-0.5 ml-1 rounded-md bg-muted/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors align-baseline no-underline whitespace-nowrap"
+    >
+      {slug}
+      {rest.length > 0 && <span className="text-muted-foreground/70">+{rest.length}</span>}
+    </a>
+  );
+}
+
+function collectResponseSources(response: AiAnalysisResponse): AiSourceLink[] {
+  const byId = new Map<string, AiSourceLink>();
+  for (const s of response.sources ?? []) byId.set(s.id, s);
+  for (const section of response.sections) {
+    for (const line of section.lines) {
+      for (const c of lineCitations(line)) byId.set(c.id, c);
+    }
+    for (const c of section.citations ?? []) byId.set(c.id, c);
+  }
+  return Array.from(byId.values());
+}
+
+function SourcesFooter({ sources }: { sources: AiSourceLink[] }) {
+  const unique = uniqueCitationsByDomain(sources);
+  if (unique.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/60">
+      <span className="text-[10px] text-muted-foreground shrink-0">
+        {unique.length} source{unique.length === 1 ? "" : "s"}
+      </span>
+      <div className="flex flex-wrap gap-1">
+        {unique.map((c) => {
+          const slug = c.domain ?? citationDomainSlug(c.url);
+          const href = c.viewer_url && c.domain === "climatetrace" ? c.viewer_url : c.url;
+          return (
+            <a
+              key={c.id}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`${c.claim ?? c.label}${c.url !== href ? ` · API: ${c.url}` : ""}`}
+              className="inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              {slug}
+              <ExternalLink className="h-2 w-2 opacity-60" aria-hidden />
+            </a>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -109,7 +152,8 @@ function AnalysisCard({
   response: AiAnalysisResponse;
   onFollowUp: (q: string) => void;
 }) {
-  const [openSections, setOpenSections] = useState<Set<number>>(new Set([0, 1, 2, 3]));
+  const [openSections, setOpenSections] = useState<Set<number>>(new Set([0, 1, 2, 3, 4]));
+  const allSources = useMemo(() => collectResponseSources(response), [response]);
 
   const toggleSection = (i: number) => {
     setOpenSections((s) => {
@@ -142,42 +186,41 @@ function AnalysisCard({
         </div>
 
         {response.sections.map((section, si) => (
-          <div key={si} className="space-y-1.5">
+          <div key={si} className="space-y-2">
             {section.heading && (
               <button
                 type="button"
                 onClick={() => toggleSection(si)}
-                className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+                className="flex items-center gap-1 text-[11px] font-semibold text-foreground hover:text-primary transition-colors w-full text-left"
               >
                 {openSections.has(si) ? (
-                  <ChevronUp className="h-3 w-3" />
+                  <ChevronUp className="h-3 w-3 text-muted-foreground" />
                 ) : (
-                  <ChevronDown className="h-3 w-3" />
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
                 )}
                 {section.heading}
               </button>
             )}
             {(!section.heading || openSections.has(si)) && (
-              <ul className="space-y-1.5">
+              <div className="space-y-2.5">
                 {section.lines.map((line, li) => {
                   const citations = lineCitations(line);
                   return (
-                    <li
+                    <p
                       key={li}
-                      className="flex items-start gap-2 text-xs text-foreground leading-relaxed"
+                      className="text-xs text-foreground leading-relaxed"
                     >
-                      <span className="mt-1.5 h-1 w-1 rounded-full bg-muted-foreground/40 shrink-0" />
-                      <span>
-                        {lineText(line)}
-                        <InlineCitationPills citations={citations} />
-                      </span>
-                    </li>
+                      {lineText(line)}
+                      <PerplexityCitationPill citations={citations} />
+                    </p>
                   );
                 })}
-              </ul>
+              </div>
             )}
           </div>
         ))}
+
+        <SourcesFooter sources={allSources} />
 
         <div className="flex items-start gap-1.5 border-t border-border pt-1">
           <AlertCircle className="h-3 w-3 text-muted-foreground/60 shrink-0 mt-0.5" />
@@ -357,8 +400,7 @@ export function DashboardAnalyzePanel({ selectedSector, selectedTarget }: Dashbo
           <h3 className="text-sm font-bold text-foreground">NDC AI</h3>
         </div>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          Answers from Climate TRACE observations, NDC targets, and progress on this dashboard — not
-          forecasts.
+          Per-paragraph citations to Climate TRACE, UNFCCC NDC, and other public sources — not forecasts.
         </p>
         {selectedTarget && (
           <p className="text-[10px] text-foreground/80 mt-1 line-clamp-2">

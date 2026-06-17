@@ -35,7 +35,7 @@ const statusConfig: Record<ProgressStatus, { label: string; color: string; bg: s
 
 export function ProgressTowardTargetColumn({ selectedTarget, footer, scroll = true }: ProgressProps) {
   const emissions = useEmissionsData();
-  const rootCls = cn("flex flex-col", scroll && "h-full");
+  const rootCls = "flex flex-col h-full";
   const wrap = (children: ReactNode) =>
     scroll ? <ScrollArea className="flex-1">{children}</ScrollArea> : <div>{children}</div>;
 

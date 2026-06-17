@@ -69,7 +69,7 @@ export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTar
     scroll ? <ScrollArea className="flex-1">{children}</ScrollArea> : <div>{children}</div>;
 
   return (
-    <div className={cn("flex flex-col", scroll && "h-full")}>
+    <div className="flex flex-col h-full">
       <div className="px-3 py-2.5 border-b border-border dash-section-header">
         <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">NDC Targets</h3>
         <p className="text-[10px] text-muted-foreground mt-0.5">{targets.length} target{targets.length !== 1 ? "s" : ""}</p>

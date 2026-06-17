@@ -56,6 +56,10 @@ Build/validate corpus: `npm run build:policy-cases` (`scripts/build_policy_cases
 
 `frontend/src/components/NdcGapSummary.tsx` on Home and Dashboard uses live Climate TRACE predictions where available and labels indicator-only targets as **Indicative**. Chips distinguish live emissions sectors from physical indicators.
 
+## NDC AI (Dashboard)
+
+`POST /api/v1/dashboard/analyze` with client-built `fact_ledger` (`frontend/src/lib/dashboard-ai-facts.ts`). OpenAI GPT-4o-mini; citations resolved to Climate TRACE v7 API URLs or UNFCCC NDC PDF. Requires `OPENAI_API_KEY`. Not web search.
+
 ## Mapped ingest (Postgres)
 
 | Mode | Persists? | Dashboard effect |
@@ -70,7 +74,7 @@ Does **not** replace Climate TRACE MtCO₂e on emissions sectors. Requires `INGE
 | Data | Storage | Notes |
 | ---- | ------- | ----- |
 | User-created activities | `localStorage` | Per browser |
-| Role selection | `localStorage` | Demo |
+| Role selection | `localStorage` | Local UI permissions only |
 
 ## Mock mode
 

@@ -98,7 +98,7 @@ export function NdcGapSummary({ variant = "full", onSelectSector }: NdcGapSummar
     enabled: emissions.isApiReachable || !emissions.summaryIsLoading,
   });
 
-  const isDemoSource =
+  const isBundledSource =
     !!emissions.summary?.data_source && /bundled|mock/i.test(emissions.summary.data_source);
 
   const sectorRows = useMemo((): SectorRow[] => {
@@ -117,7 +117,7 @@ export function NdcGapSummary({ variant = "full", onSelectSector }: NdcGapSummar
         !!pr &&
         !emissions.sectorError[apiSector] &&
         emissions.isApiReachable &&
-        !isDemoSource;
+        !isBundledSource;
       const pred = predQuery.data?.predictions?.[apiSector as NdcSectorKey];
 
       return {
@@ -136,7 +136,7 @@ export function NdcGapSummary({ variant = "full", onSelectSector }: NdcGapSummar
         dataMode: hasLiveProgress ? "live" : "indicative",
       };
     });
-  }, [emissions, predQuery.data, isDemoSource]);
+  }, [emissions, predQuery.data, isBundledSource]);
 
   const statusCounts = useMemo(() => {
     const counts = { onTrack: 0, atRisk: 0, offTrack: 0, unknown: 0 };
@@ -217,7 +217,7 @@ export function NdcGapSummary({ variant = "full", onSelectSector }: NdcGapSummar
             compact
           />
           <span className="text-[9px] text-muted-foreground hidden sm:inline">
-            {isDemoSource ? "Indicative" : "Live TRACE"}
+            {isBundledSource ? "Indicative" : "Live TRACE"}
           </span>
           <div className="flex flex-wrap items-center gap-1 min-w-0 flex-1">
             <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">
@@ -261,7 +261,7 @@ export function NdcGapSummary({ variant = "full", onSelectSector }: NdcGapSummar
               progress and sector gaps.
             </p>
           </div>
-          <DataModeBadge live={!isDemoSource && emissions.isApiReachable} />
+          <DataModeBadge live={!isBundledSource && emissions.isApiReachable} />
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">

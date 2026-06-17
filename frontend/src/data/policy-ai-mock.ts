@@ -12,6 +12,9 @@ export interface AiSourceLink {
   id: string;
   label: string;
   url: string;
+  viewer_url?: string;
+  domain?: string;
+  claim?: string;
 }
 
 export interface AnalysisLine {

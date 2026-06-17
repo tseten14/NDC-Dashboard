@@ -17,13 +17,13 @@ type NavItem = { title: string; url: string; icon: React.ElementType };
 
 const primary: NavItem[] = [
   { title: "Home",               url: "/",               icon: Home },
+  { title: "Emissions Map",      url: "/map",            icon: MapIcon },
   { title: "Dashboard",          url: "/dashboard",      icon: Target },
   { title: "Data Ingestion",     url: "/ingest",         icon: Upload },
   { title: "AI 2030 Projection", url: "/ai-2030",        icon: Sparkles },
   { title: "Policy Impact",      url: "/policy-impact",  icon: Workflow },
   { title: "Climate Finance",    url: "/climate-finance",icon: Coins },
   { title: "Policy Documents",   url: "/documents",      icon: Scale },
-  { title: "Emissions Map",      url: "/map",            icon: MapIcon },
   { title: "Database",           url: "/my-work",        icon: Briefcase },
   { title: "Documentation",      url: "/docs",           icon: BookOpen },
 ];
@@ -32,7 +32,7 @@ export function TopNav() {
   const { country, clearCountry } = useCountry();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { activeRole } = useCurrentRole();
+  const { activeRole, loading: roleLoading } = useCurrentRole();
   const visiblePrimary = primary.filter((item) => isPrimaryNavVisible(activeRole, item.url));
 
   // Condense the header once page content (in any nested scroll container) scrolls down.
@@ -72,6 +72,7 @@ export function TopNav() {
   const linkRefs = useRef(new Map<string, HTMLAnchorElement>());
   const navRef = useRef<HTMLElement>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [hoverEnabled, setHoverEnabled] = useState(false);
   const [indicator, setIndicator] = useState<{ left: number; width: number; visible: boolean }>({
     left: 0,
     width: 0,
@@ -81,9 +82,14 @@ export function TopNav() {
   const activeUrl =
     visiblePrimary.find((p) => (p.url === "/" ? pathname === "/" : pathname.startsWith(p.url)))?.url ?? null;
 
+  useEffect(() => {
+    setHovered(null);
+    setHoverEnabled(false);
+  }, [pathname]);
+
   useLayoutEffect(() => {
     const measure = () => {
-      const targetUrl = hovered ?? activeUrl;
+      const targetUrl = hoverEnabled && hovered ? hovered : activeUrl;
       const el = targetUrl != null ? linkRefs.current.get(targetUrl) : undefined;
       const nav = navRef.current;
       if (!el || !nav) {
@@ -95,12 +101,23 @@ export function TopNav() {
       setIndicator({ left: box.left - navBox.left + 8, width: box.width - 16, visible: true });
     };
     measure();
+    const raf = requestAnimationFrame(() => requestAnimationFrame(measure));
     // The condense transition slides the brand mark + links over 300ms, so the
     // first measurement reads a mid-transition position. Re-measure once it
     // settles; the indicator's own CSS transition keeps the move smooth.
     const t = window.setTimeout(measure, 320);
-    return () => window.clearTimeout(t);
-  }, [hovered, activeUrl, pathname, visiblePrimary.length, condensed]);
+    const ro = typeof ResizeObserver !== "undefined" && navRef.current
+      ? new ResizeObserver(() => measure())
+      : null;
+    if (ro && navRef.current) ro.observe(navRef.current);
+    const fontsReady = document.fonts?.ready?.then(() => measure());
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t);
+      ro?.disconnect();
+      void fontsReady;
+    };
+  }, [hovered, hoverEnabled, activeUrl, pathname, visiblePrimary.length, condensed, roleLoading]);
 
   return (
     <header
@@ -160,7 +177,11 @@ export function TopNav() {
         <nav
           ref={navRef}
           className="relative flex items-center gap-0 px-4 min-w-max"
-          onMouseLeave={() => setHovered(null)}
+          onMouseLeave={() => {
+            setHovered(null);
+            setHoverEnabled(false);
+          }}
+          onMouseMove={() => setHoverEnabled(true)}
         >
           {/* Sliding underline */}
           <span

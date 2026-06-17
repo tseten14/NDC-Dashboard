@@ -8,6 +8,7 @@
  */
 import express from "express";
 import NodeCache from "node-cache";
+import { enrichCitationsFromFacts } from "../services/dashboardAiCitations.js";
 
 const router = express.Router();
 const analysisCache = new NodeCache({ stdTTL: 1800 });
@@ -62,18 +63,20 @@ async function callOpenAI(apiKey, systemText, userText) {
 
 const ACTION_PROMPTS = {
   progress_check:
-    "Explain how the currently selected NDC target is progressing — use measured Climate TRACE data vs the pledge. One clear section on status, one on what the numbers mean for a non-specialist.",
+    "Write 3–4 prose sections on the selected NDC target. Use ONLY numbers from context.quotable_facts. Each paragraph refs must list fact ids for every number you mention.",
   gap_analysis:
-    "Compare latest measured values to the NDC pledge (and baseline where relevant). Quantify the gap in plain language and say whether Uganda is ahead or behind on the selected target.",
+    "Write 3–4 prose sections comparing Climate TRACE measurements to the NDC pledge. Cite fact_trace_* for observed values and fact_ndc_* for pledge values — never mix them on one ref list incorrectly.",
   sector_emissions:
-    "Summarize Climate TRACE emissions for the selected sector and geography: latest level, recent trend, and how it relates to the NDC target.",
+    "Write 3–4 prose sections on sector emissions and trends. Every numeric claim must match a fact in context.quotable_facts and cite that fact id.",
   priorities:
-    "Across all targets in the context, which 3–4 need the most attention and why? Rank by delivery risk and data gaps.",
+    "Write 3–4 prose sections ranking targets by risk. Only use numbers from context.quotable_facts with matching fact id refs.",
 };
 
 const SYSTEM_PROMPT = `You are a plain-language climate analyst for Uganda's NDC Dashboard.
 
-You receive a JSON snapshot of the live dashboard: NDC targets, Climate TRACE observed emissions, progress percentages, geography (national or district), and reconciliation notes.
+You receive JSON with live dashboard data plus a fact_ledger: every number you may quote is pre-listed with an exact id, value, and verified source URL.
+
+Write like Perplexity: prose paragraphs with precise inline citations — each paragraph cites ONLY the fact ids backing the numbers in THAT paragraph.
 
 Respond ONLY with valid JSON:
 
@@ -85,8 +88,8 @@ Respond ONLY with valid JSON:
       "heading": "<section heading>",
       "lines": [
         {
-          "text": "<one rich sentence per bullet>",
-          "refs": ["<1–2 source_catalog ids backing this sentence>"]
+          "text": "<one prose paragraph: 2–3 sentences, 40–80 words>",
+          "refs": ["<fact id from context.quotable_facts or fact_ledger — one per number cited>"]
         }
       ]
     }
@@ -95,89 +98,16 @@ Respond ONLY with valid JSON:
   "suggested_follow_ups": ["<question 1>", "<question 2>"]
 }
 
-Rules:
-- Base answers ONLY on the provided dashboard context — never invent numbers not in the JSON.
-- If data is missing, say so and note what is unavailable.
-- Each bullet is exactly ONE sentence (25–45 words), plain language for government officers.
-- Every line MUST include refs naming the SPECIFIC source the facts in THAT line came from: 1–2 IDs copied exactly from context.source_catalog (e.g. climate_trace_afolu, ndc_target_t1, dashboard_progress_afolu, uganda_ndc_2022).
-- Match refs to the claim in that line — measured/observed emissions use climate_trace_* or dashboard_timeseries_*; progress % use dashboard_progress_*; ONLY cite ndc_target_* / uganda_ndc_2022 when the line states a pledge target, baseline, or commitment value.
-- Do NOT default every line to the NDC pledge. A line about measured data or progress must cite the data source, not the pledge.
-- confidence is "high" only when the answer uses live Climate TRACE + clear NDC fields; "low" if mostly unknown/missing.
+Critical rules:
+- ONLY use numbers that appear in context.quotable_facts (value field). Never invent, round differently, or estimate.
+- Every number in text MUST have a matching fact id in refs for that paragraph.
+- refs must be copied exactly from context.fact_ledger[].id (e.g. fact_trace_afolu_latest_2024, fact_ndc_t1_baseline, fact_ndc_t1_target).
+- Climate TRACE emissions → fact_trace_* ids. NDC baselines/targets/BAU → fact_ndc_* ids.
+- Do NOT cite generic sources (unfccc, CPR, dashboard). Cite the specific fact id.
+- If data is missing from quotable_facts, say it is unavailable — do not guess.
+- 3–5 sections, 1–2 paragraphs each, no bullet lists.
+- confidence is "high" only when all numbers map to quotable_facts.
 - Return JSON only — no markdown fences.`;
-
-const SOURCE_ALIASES = {
-  "climate trace": "climate_trace_api",
-  "climate trace api": "climate_trace_api",
-  "ndc pledge": "uganda_ndc_2022",
-  "ndc target": "uganda_ndc_2022",
-  "dashboard progress": "dashboard_emissions",
-  "dashboard": "dashboard_view",
-};
-
-function resolveSourceId(ref, catalogMap) {
-  if (!ref || typeof ref !== "string") return null;
-  const trimmed = ref.trim();
-  if (catalogMap.has(trimmed)) return trimmed;
-  const lower = trimmed.toLowerCase();
-  if (SOURCE_ALIASES[lower] && catalogMap.has(SOURCE_ALIASES[lower])) {
-    return SOURCE_ALIASES[lower];
-  }
-  for (const [id] of catalogMap) {
-    if (lower.includes(id.replace(/_/g, " ")) || id.includes(lower.replace(/\s+/g, "_"))) {
-      return id;
-    }
-  }
-  for (const [id, source] of catalogMap) {
-    if (lower.includes(source.label.toLowerCase().slice(0, 24))) return id;
-  }
-  return null;
-}
-
-function resolveCitations(refs, catalogMap, used) {
-  return (refs ?? [])
-    .map((ref) => {
-      const id = resolveSourceId(ref, catalogMap);
-      if (!id) return null;
-      const source = catalogMap.get(id);
-      const link = { id, label: source.label, url: source.url };
-      used.set(id, link);
-      return link;
-    })
-    .filter(Boolean);
-}
-
-function normalizeLine(line, sectionRefs) {
-  if (typeof line === "string") {
-    return { text: line, refs: sectionRefs ?? [] };
-  }
-  return {
-    text: line?.text ?? "",
-    refs: line?.refs?.length ? line.refs : sectionRefs ?? [],
-  };
-}
-
-function enrichCitations(parsed, catalog = []) {
-  const catalogMap = new Map(catalog.map((s) => [s.id, s]));
-  const used = new Map();
-
-  const sections = (parsed.sections ?? []).map((section) => {
-    const sectionRefs = section.page_refs ?? [];
-    const lines = (section.lines ?? []).map((line) => {
-      const { text, refs } = normalizeLine(line, sectionRefs);
-      const citations = resolveCitations(refs, catalogMap, used);
-      return { text, refs, citations };
-    });
-    const sectionCitations = resolveCitations(
-      [...new Set(lines.flatMap((l) => l.refs))],
-      catalogMap,
-      used,
-    );
-    return { ...section, lines, page_refs: sectionRefs, citations: sectionCitations };
-  });
-
-  const sources = Array.from(used.values());
-  return { ...parsed, sections, sources };
-}
 
 function buildUserMessage({ action, question, context }) {
   const contextJson = JSON.stringify(context, null, 2);
@@ -206,8 +136,8 @@ router.post("/dashboard/analyze", async (req, res) => {
   }
 
   const cacheKey = question
-    ? `dash:chat:${question.slice(0, 80)}:${context.selected_target?.id ?? "none"}:${context.geography}`
-    : `dash:${action ?? "progress_check"}:${context.selected_target?.id ?? "none"}:${context.geography}`;
+    ? `dash:v2:chat:${question.slice(0, 80)}:${context.selected_target?.id ?? "none"}:${context.geography}`
+    : `dash:v2:${action ?? "progress_check"}:${context.selected_target?.id ?? "none"}:${context.geography}`;
 
   const cached = analysisCache.get(cacheKey);
   if (cached) return res.json({ ...cached, from_cache: true });
@@ -224,16 +154,22 @@ router.post("/dashboard/analyze", async (req, res) => {
       parsed = JSON.parse(stripped);
     }
 
-    const enriched = enrichCitations(parsed, context.source_catalog ?? []);
+    const enriched = enrichCitationsFromFacts(parsed, context);
+    const confidence =
+      enriched.has_unverified_numbers
+        ? "low"
+        : enriched.confidence ?? "medium";
     const result = {
       type: question ? "chat" : action ?? "progress_check",
       title: enriched.title ?? "Dashboard analysis",
       sections: enriched.sections ?? [],
       sources: enriched.sources ?? [],
-      confidence: enriched.confidence ?? "medium",
+      confidence,
       disclaimer:
         enriched.disclaimer ??
-        "AI-generated summary of dashboard data. Verify against official NDC and MRV sources before official use.",
+        (enriched.has_unverified_numbers
+          ? "Some figures could not be matched to verified dashboard facts — treat with caution."
+          : "Figures are tied to Climate TRACE API and UNFCCC NDC sources listed in citations."),
       suggested_follow_ups: enriched.suggested_follow_ups ?? [],
     };
 

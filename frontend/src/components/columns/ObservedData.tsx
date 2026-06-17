@@ -49,7 +49,7 @@ interface ObservedDataProps {
 
 export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: _omit, timeMode = "historical", scroll = true }: ObservedDataProps) {
   const emissions = useEmissionsData();
-  const rootCls = cn("flex flex-col", scroll && "h-full");
+  const rootCls = "flex flex-col h-full";
   const wrap = (children: ReactNode) =>
     scroll ? <ScrollArea className="flex-1">{children}</ScrollArea> : <div>{children}</div>;
   const [clickedPoint, setClickedPoint] = useState<{ year: number; value: number } | null>(null);

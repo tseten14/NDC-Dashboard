@@ -328,21 +328,21 @@ export default function NDCLayer() {
         <div aria-hidden className="absolute inset-0 -z-10 dash-animated-bg" />
         <div aria-hidden className="absolute inset-0 -z-10 dash-grid-pattern" />
         <ScrollArea className="h-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <div
-          className="min-w-0 dash-crossfade"
+          className="min-w-0 h-full flex flex-col dash-crossfade border-border border-b md:border-b-0 md:border-r lg:border-r"
           key={`targets-${state.selectedSector}-${state.geographyLevel}`}
         >
           <NDCTargetsColumn scroll={false} selectedSector={state.selectedSector as SectorId} selectedTargetId={state.selectedTargetId} onSelectTarget={handleSelectTarget} />
         </div>
         <div
-          className="min-w-0 dash-crossfade"
+          className="min-w-0 h-full flex flex-col dash-crossfade border-border border-b md:border-b-0 lg:border-r"
           key={`observed-${state.selectedTargetId}-${state.selectedSector}-${state.geographyLevel}-${state.selectedDistrictId}-${state.timeMode}`}
         >
           <ObservedDataColumn scroll={false} selectedTarget={selectedTarget} selectedMitigationOptions={state.selectedMitigationOptions} timeMode={state.timeMode as TimeMode} />
         </div>
         <div
-          className="min-w-0 dash-crossfade"
+          className="min-w-0 h-full flex flex-col dash-crossfade border-border md:border-t lg:border-t-0"
           key={`progress-${state.selectedTargetId}-${state.selectedSector}-${state.geographyLevel}-${state.selectedDistrictId}`}
         >
           <ProgressTowardTargetColumn

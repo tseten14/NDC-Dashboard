@@ -4,6 +4,39 @@ All notable changes to the Uganda NDC Data Explorer are documented here.
 
 ## [Unreleased]
 
+### NDC AI — verified citations (Dashboard)
+
+- **Fact ledger** (`frontend/src/lib/dashboard-ai-facts.ts`): every quotable dashboard number is pre-mapped to an exact Climate TRACE v7 API URL or UNFCCC NDC PDF before the AI runs.
+- **POST `/api/v1/dashboard/analyze`** (`routes/dashboardAi.js`, `services/dashboardAiCitations.js`): Perplexity-style prose with per-paragraph citation pills; backend resolves `fact_*` ids deterministically and flags unverified numbers.
+- **UI:** `DashboardAnalyzePanel.tsx` — quick actions + chat; sources footer lists domains used.
+
+### Policy documents — CPR passages + MCF
+
+- **Key documents (CPR) tab:** passage/topic search from `npm run build:passages`; empty list until search; grouped results by document.
+- **Climate fund projects tab:** searchable MCF corpus from `npm run build:mcf` (~167 projects).
+- **Document AI:** `contentUrl` resolved via `catalogId`; improved error copy when PDF missing.
+
+### Demo removal
+
+- Removed presenter/demo mode, Brazil Climate Intelligence (`/brazil-chat`), and all demo UI badges.
+- Role switcher is local permissions only (no “demo mode” labelling).
+
+### Navigation
+
+- **Top nav order:** Home → **Emissions Map** → Dashboard → … (Emissions Map moved next to Home).
+- Footer height reduced slightly.
+
+### Emissions map
+
+- Click popup: compact frosted card; removed generic “distributed area emissions” footer line.
+- Climate TRACE public inventory URLs fixed to `climatetrace.org/inventory?country=UGA&sector=...`.
+
+### Documentation
+
+- Updated `PROJECT_DOCUMENTATION.txt`, `docs/dev/system-design.md`, `user-guide-content.ts`, `architecture.md`.
+
+## [Unreleased — prior]
+
 ### Emissions Map — 3D overhaul (`/map`)
 
 - **Replaced the Three.js / `globe.gl` 3D globe with MapLibre GL JS.** The old globe
@@ -46,7 +79,7 @@ All notable changes to the Uganda NDC Data Explorer are documented here.
   animation (kept opacity/translate).
 - **Smaller initial bundle / faster hydration.** Heavy secondary pages
   (AI 2030 Prediction, Climate Finance, Policy Impact, Policy Documents, Policy
-  Document View, Documentation, Brazil Chatbot) are now `React.lazy` code-split
+  Document View, Documentation) are now `React.lazy` code-split
   instead of eagerly imported, so they no longer block first paint.
 - Scroll reveals continue to use `IntersectionObserver` (`use-scroll-reveal`) and all
   changes respect `prefers-reduced-motion`.

@@ -19,7 +19,7 @@ export interface SectorLineage {
 }
 
 const CT_BASE = "https://climatetrace.org";
-const CT_INVENTORY_BASE = `${CT_BASE}/inventory/UGA`;
+const CT_INVENTORY_BASE = `${CT_BASE}/inventory?country=UGA`;
 
 /** Public Climate TRACE HTTP API documentation (v7). */
 export const CLIMATE_TRACE_API_DOCS_URL = "https://api.climatetrace.org/v7/docs/index.html";
@@ -28,7 +28,7 @@ export const SECTOR_LINEAGE: Record<ClimatetraceApiSector | "economy-wide", Sect
   energy: {
     sectorSlug: "energy",
     sectorLabel: "Energy",
-    ctPublicUrl: `${CT_INVENTORY_BASE}?sector=energy`,
+    ctPublicUrl: `${CT_INVENTORY_BASE}&sector=energy`,
     apiEndpoint: "GET /api/v1/emissions/timeseries?country=UGA&sector=energy",
     rawTable: "ct_raw_v7.energy_sector_timeseries_uga",
     harmonisedView: "ct_harmonised.energy_by_country_annual",
@@ -49,7 +49,7 @@ export const SECTOR_LINEAGE: Record<ClimatetraceApiSector | "economy-wide", Sect
   afolu: {
     sectorSlug: "afolu",
     sectorLabel: "AFOLU (Forestry & Land Use)",
-    ctPublicUrl: `${CT_INVENTORY_BASE}?sector=forestry-and-land-use`,
+    ctPublicUrl: `${CT_INVENTORY_BASE}&sector=forestry-and-land-use`,
     apiEndpoint: "GET /api/v1/emissions/timeseries?country=UGA&sector=afolu",
     rawTable: "ct_raw_v7.afolu_sector_timeseries_uga",
     harmonisedView: "ct_harmonised.afolu_by_country_annual",
@@ -70,7 +70,7 @@ export const SECTOR_LINEAGE: Record<ClimatetraceApiSector | "economy-wide", Sect
   agriculture: {
     sectorSlug: "agriculture",
     sectorLabel: "Agriculture",
-    ctPublicUrl: `${CT_INVENTORY_BASE}?sector=agriculture`,
+    ctPublicUrl: `${CT_INVENTORY_BASE}&sector=agriculture`,
     apiEndpoint: "GET /api/v1/emissions/timeseries?country=UGA&sector=agriculture",
     rawTable: "ct_raw_v7.agriculture_sector_timeseries_uga",
     harmonisedView: "ct_harmonised.agriculture_by_country_annual",
@@ -91,7 +91,7 @@ export const SECTOR_LINEAGE: Record<ClimatetraceApiSector | "economy-wide", Sect
   transport: {
     sectorSlug: "transport",
     sectorLabel: "Transport",
-    ctPublicUrl: `${CT_INVENTORY_BASE}?sector=transportation`,
+    ctPublicUrl: `${CT_INVENTORY_BASE}&sector=transportation`,
     apiEndpoint: "GET /api/v1/emissions/timeseries?country=UGA&sector=transport",
     rawTable: "ct_raw_v7.transport_sector_timeseries_uga",
     harmonisedView: "ct_harmonised.transport_by_country_annual",
@@ -112,7 +112,7 @@ export const SECTOR_LINEAGE: Record<ClimatetraceApiSector | "economy-wide", Sect
   waste: {
     sectorSlug: "waste",
     sectorLabel: "Waste",
-    ctPublicUrl: `${CT_INVENTORY_BASE}?sector=waste`,
+    ctPublicUrl: `${CT_INVENTORY_BASE}&sector=waste`,
     apiEndpoint: "GET /api/v1/emissions/timeseries?country=UGA&sector=waste",
     rawTable: "ct_raw_v7.waste_sector_timeseries_uga",
     harmonisedView: "ct_harmonised.waste_by_country_annual",
@@ -133,7 +133,7 @@ export const SECTOR_LINEAGE: Record<ClimatetraceApiSector | "economy-wide", Sect
   ippu: {
     sectorSlug: "ippu",
     sectorLabel: "Industrial Processes (IPPU)",
-    ctPublicUrl: `${CT_INVENTORY_BASE}?sector=manufacturing`,
+    ctPublicUrl: `${CT_INVENTORY_BASE}&sector=manufacturing`,
     apiEndpoint: "GET /api/v1/emissions/timeseries?country=UGA&sector=ippu",
     rawTable: "ct_raw_v7.ippu_sector_timeseries_uga",
     harmonisedView: "ct_harmonised.ippu_by_country_annual",

@@ -9,7 +9,9 @@ Browser (Vite, port 8080)
 
 Express (server.js, port 8787)
   ├── routes/emissions.js      Climate TRACE aggregation, map, predictions
-  ├── routes/documents.js      Policy document corpus (CPR export JSON)
+  ├── routes/documents.js      Policy corpus, CPR passages, MCF projects
+  ├── routes/dashboardAi.js    NDC AI (OpenAI over fact ledger)
+  ├── routes/policyAi.js       Policy document PDF analysis (OpenAI)
   ├── routes/ndcCockpit.js     Catalog (activities, mitigation)
   ├── routes/ingest.js         File upload / scan / confirm (writes need API key + Postgres)
   ├── routes/policyImpact.js   KCI case matching + TEF forecast
@@ -24,58 +26,62 @@ Production may serve `frontend/dist` and the API on one host (Vercel) so the bro
 | ---- | ---- | ----- |
 | `/select-country` | Country gate | Uganda only fully supported |
 | `/` | Home | Landing; legacy `?target=` redirects to `/dashboard` |
-| `/dashboard` | NDC cockpit | Main three-column workspace |
+| `/map` | Emissions map | MapLibre 3D satellite map — **second item in top nav** |
+| `/dashboard` | NDC cockpit | Three-column workspace + NDC AI dialog |
 | `/ingest` | Data ingestion | Mapped import → Postgres; quick scan profiling |
 | `/policy-impact` | Policy Impact wizard | KCI analogies + TEF intervention forecast |
 | `/ai-2030` | 2030 forecast | Sector predictions vs targets |
-| `/climate-finance` | Finance screening | Indicative MAC / fund matching; links from Policy Impact |
-| `/documents` | Policy documents | CPR export corpus (laws, UN, MCF) |
-| `/map` | Emissions map | Geolocated sources choropleth + bubbles |
-| `/docs` | User guide | Non-technical documentation |
+| `/climate-finance` | Finance screening | Indicative MAC / fund matching; MCF links |
+| `/documents` | Policy documents | Library + CPR passages + MCF + pathway |
+| `/documents/view` | Document AI | Split-pane PDF analysis |
+| `/docs` | Documentation | User guide + system design (bundled markdown) |
 | `/library`, `/my-work`, `/risk/*` | Advanced | Strategy, workbench, risk module |
 | `/executive`, `/delivery`, … | Legacy advanced | Older cockpit slices |
+
+**Removed:** `/brazil-chat` (Brazil mock chatbot) and presenter/demo mode — no longer in the app.
 
 ## Key frontend directories
 
 | Path | Role |
 | ---- | ---- |
 | `frontend/src/pages/` | Route-level screens |
-| `frontend/src/components/columns/` | Dashboard columns (targets, observed, progress, activities, mitigation) |
+| `frontend/src/components/columns/` | Dashboard columns (targets, observed, progress) |
+| `frontend/src/components/dashboard/DashboardAnalyzePanel.tsx` | NDC AI UI |
+| `frontend/src/components/map/EmissionsMap3D.tsx` | MapLibre emissions map |
 | `frontend/src/context/EmissionsDataContext.tsx` | Fetches and caches Climate TRACE via API |
-| `frontend/src/data/uganda-ndc-data.ts` | Bundled NDC targets, activities seed, mitigation seed |
-| `frontend/src/lib/emissions-integration.ts` | Maps NDC targets → Climate TRACE sectors / indicator panel |
-| `frontend/src/lib/climate-finance*.ts` | Indicative finance economics + fund pathways |
-| `frontend/src/data/user-guide-content.ts` | In-app Documentation tab copy (sync with PROJECT_DOCUMENTATION.txt § A7) |
-| `frontend/src/data/transport-theory-of-change.ts` | Intervention pathway model for `/documents` |
-| `data/policy/documents.json` | CPR export corpus (built by `npm run build:documents`) |
-| `config/ndcTargets.js` | Server-side NDC target config (source of truth for API logic) |
-| `config/ndcCockpitCatalog.js` | Activities + mitigation catalog bodies |
-| `config/ugandaDistrictGadm.js` | District name ↔ GADM id |
+| `frontend/src/lib/dashboard-ai-facts.ts` | Fact ledger for NDC AI citations |
+| `frontend/src/lib/dashboard-ai-context.ts` | AI analyze context builder |
+| `frontend/src/lib/data-lineage.ts` | Climate TRACE sector lineage + public URLs |
+| `frontend/src/data/user-guide-content.ts` | In-app Documentation tab copy |
+| `data/policy/documents.json` | CPR export corpus (`npm run build:documents`) |
+| `data/policy/passages.json` | CPR passage corpus (`npm run build:passages`) |
+| `data/policy/mcf-projects.json` | MCF projects (`npm run build:mcf`) |
+| `config/ndcTargets.js` | Server-side NDC target config |
 | `services/climatetrace.js` | Climate TRACE HTTP client + caching |
+| `services/dashboardAiCitations.js` | Deterministic NDC AI citation resolver |
 
 ## Application state
 
-- **`useAppState`** (`frontend/src/hooks/use-app-state.ts`): sector, selected target, geography, time mode — shared across dashboard.
+- **`useAppState`**: sector, selected target, geography, time mode — shared across dashboard.
 - **`EmissionsDataProvider`**: React Query loads dashboard, timeseries, progress, catalog, indicators per geography.
 - **`CountryContext`**: selected country code (session).
-- **`CurrentRoleProvider`**: demo roles (permissions only; no real auth).
+- **`CurrentRoleProvider`**: local roles (permissions only; no real auth).
 
 Target selection must call `setSelectedSector(..., { preserveTarget: true })` when updating sector from URL or target click so the centre/right columns do not reset.
 
-## Emissions API (additions)
-
-Beyond dashboard endpoints, see `routes/emissions.js`:
+## API (additions beyond dashboard)
 
 | Endpoint | Purpose |
 | -------- | ------- |
 | `GET /api/v1/emissions/map` | Points for map (`year`, `gadm_id` / `district`) |
+| `POST /api/v1/dashboard/analyze` | NDC AI — body includes `fact_ledger`, `quotable_facts` |
+| `GET /api/v1/documents/passages/search` | CPR passage search |
+| `GET /api/v1/documents/mcf/search` | MCF project search |
+| `POST /api/v1/policy-ai/analyze` | Policy document PDF AI |
 | `GET /api/v1/emissions/predictions` | 2030 sector forecast bundle |
 | `GET /api/v1/emissions/spatial-confidence` | Located vs distributed emissions share |
 | `GET /api/v1/emissions/trackability` | Measurable variables vs Climate TRACE |
-| `GET /api/v1/documents` | Policy corpus list (`category`, `source`, `q`, pagination) |
-| `GET /api/v1/documents/meta` | Category/source facet counts |
-| `GET /api/v1/documents/curated` | Bonn demo links per sector |
 
 ## Dev proxy
 
-`frontend/vite.config.ts` proxies `/api` → `http://localhost:${API_PORT}`. The client uses same-origin `/api/v1` in dev when `VITE_API_BASE_URL` is unset (`frontend/src/lib/api.ts`).
+Vite proxies `/api` → `http://localhost:8787` when using `npm run dev:all`.

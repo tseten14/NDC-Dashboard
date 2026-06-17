@@ -89,12 +89,6 @@ function buildPopupHtml(
   const color = sectorColor(sector);
   const sub = pr.subsector ? ` · ${escapeHtml(titleizeLabel(String(pr.subsector)))}` : "";
   const mt = pr.mtco2e == null ? null : Number(pr.mtco2e);
-  const isAsset = pr.is_asset === true || pr.is_asset === "true";
-  const kind = isAsset ? "Facility / asset" : "Distributed area emissions";
-  const lat = Number(pr.lat);
-  const lng = Number(pr.lng);
-  const coords =
-    Number.isFinite(lat) && Number.isFinite(lng) ? `${lat.toFixed(3)}, ${lng.toFixed(3)}` : "—";
 
   return `
     <div class="emap-pop">
@@ -104,7 +98,6 @@ function buildPopupHtml(
         <span>${escapeHtml(titleizeLabel(sector))}${sub}</span>
       </div>
       <div class="emap-pop-value">${fmtMtValue(mt)}<span class="emap-pop-unit"> MtCO₂e / yr</span></div>
-      <div class="emap-pop-meta">${kind} · ${coords}</div>
     </div>`;
 }
 
@@ -363,8 +356,8 @@ export function EmissionsMap3D({
           closeButton: true,
           closeOnClick: false,
           className: "emap-popup",
-          maxWidth: "260px",
-          offset: 10,
+          maxWidth: "200px",
+          offset: 8,
         });
         popupRef.current = popup;
         map.on("click", BUBBLE_LAYER, (e: MapLayerMouseEvent) => {

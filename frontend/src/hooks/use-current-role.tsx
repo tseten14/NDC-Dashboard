@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { DEMO_USER, DEMO_ROLES } from "@/lib/auth-config";
+import { LOCAL_USER, DEFAULT_ROLES } from "@/lib/auth-config";
 import {
   canExport as canExportFmt,
   canUseIngest as canUseIngestRole,
@@ -30,13 +30,13 @@ export const ALL_ROLES: { id: AppRole; label: string; description: string }[] = 
   { id: "Admin", label: "Admin", description: "System configuration" },
 ];
 
-export interface DemoUser {
+export interface AppUser {
   id: string;
   email: string;
 }
 
 interface RoleCtx {
-  user: DemoUser | null;
+  user: AppUser | null;
   loading: boolean;
   activeRole: AppRole | null;
   availableRoles: AppRole[];
@@ -72,11 +72,11 @@ function loadStoredRoles(): AppRole[] {
   } catch {
     /* ignore */
   }
-  return [...DEMO_ROLES];
+  return [...DEFAULT_ROLES];
 }
 
 export function CurrentRoleProvider({ children }: { children: ReactNode }) {
-  const [user] = useState<DemoUser>(DEMO_USER);
+  const [user] = useState<AppUser>(LOCAL_USER);
   const [loading, setLoading] = useState(true);
   const [availableRoles, setAvailableRoles] = useState<AppRole[]>([]);
   const [activeRole, setActiveRoleState] = useState<AppRole | null>(null);
