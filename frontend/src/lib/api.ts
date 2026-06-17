@@ -21,6 +21,8 @@ import type {
   PolicyDocumentsListResponse,
   PolicyDocumentsMetaResponse,
   PolicyTopicsResponse,
+  McfProjectsMetaResponse,
+  McfProjectsSearchResponse,
 } from "./policy-documents";
 import type { ZodType } from "zod";
 import {
@@ -861,6 +863,27 @@ export const documentsApi = {
     const qs = sp.toString();
     return getJSON<PolicyPassagesSearchResponse>(
       `/api/v1/documents/passages/search${qs ? `?${qs}` : ""}`,
+    );
+  },
+  mcfMeta: () => getJSON<McfProjectsMetaResponse>("/api/v1/documents/mcf/meta"),
+  searchMcfProjects: (params?: {
+    q?: string;
+    funder?: string;
+    sector?: string;
+    minAmount?: number;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const sp = new URLSearchParams();
+    if (params?.q) sp.set("q", params.q);
+    if (params?.funder) sp.set("funder", params.funder);
+    if (params?.sector) sp.set("sector", params.sector);
+    if (params?.minAmount != null) sp.set("minAmount", String(params.minAmount));
+    if (params?.limit != null) sp.set("limit", String(params.limit));
+    if (params?.offset != null) sp.set("offset", String(params.offset));
+    const qs = sp.toString();
+    return getJSON<McfProjectsSearchResponse>(
+      `/api/v1/documents/mcf/search${qs ? `?${qs}` : ""}`,
     );
   },
 };

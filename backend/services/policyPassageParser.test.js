@@ -47,14 +47,15 @@ describe("policyPassageParser", () => {
     expect(bert[1].type).toBe("keyword");
   });
 
-  it("builds topic labels with BERT full-paragraph flag per aligned labeller", () => {
-    const ids = parseTopicIds("Q1829, Q1277");
+  it("deduplicates duplicate topic IDs while preserving first labeller alignment", () => {
+    const ids = ["Q1829", "Q1829", "Q1277"];
     const labellers = parseTopicLabellers(
-      '["BertBasedClassifier(\\"finance flow\\")"], ["KeywordClassifier(\\"fees\\")"]',
+      '["BertBasedClassifier(\\"finance flow\\")"], ["KeywordClassifier(\\"duplicate\\")"], ["KeywordClassifier(\\"fees\\")"]',
     );
     const labels = buildTopicLabels(ids, "Full paragraph text", labellers);
     expect(labels).toHaveLength(2);
+    expect(labels.map((l) => l.id)).toEqual(["Q1829", "Q1277"]);
+    expect(labels[0].label).toBe("finance flow");
     expect(labels[0].isFullParagraph).toBe(true);
-    expect(labels[1].isFullParagraph).toBe(false);
   });
 });

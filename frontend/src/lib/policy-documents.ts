@@ -66,6 +66,12 @@ export interface PolicyPassageDocument {
   catalogId: string | null;
   passageCount: number;
   taggedPassageCount: number;
+  contentUrl?: string | null;
+  documentUrl?: string | null;
+  category?: string | null;
+  source?: string | null;
+  data_source?: string;
+  attribution?: string;
 }
 
 export interface PolicyTopicIndexEntry {
@@ -136,4 +142,75 @@ export interface PolicyDocumentsCuratedResponse {
   context: string;
   documents: PolicyDocument[];
   data_source: string;
+}
+
+export function uniqueTopicLabels(labels: PolicyPassageTopicLabel[]): PolicyPassageTopicLabel[] {
+  const seen = new Set<string>();
+  return labels.filter((tl) => {
+    if (seen.has(tl.id)) return false;
+    seen.add(tl.id);
+    return true;
+  });
+}
+
+export interface PassageDocumentGroup {
+  cprDocumentId: string;
+  documentTitle: string | null;
+  catalogId: string | null;
+  cprUrl: string | null;
+  passages: PolicyPassage[];
+}
+
+/** Preserve first-seen document order from flat search results. */
+export function groupPassagesByDocument(passages: PolicyPassage[]): PassageDocumentGroup[] {
+  const order: string[] = [];
+  const map = new Map<string, PassageDocumentGroup>();
+  for (const p of passages) {
+    let g = map.get(p.cprDocumentId);
+    if (!g) {
+      g = {
+        cprDocumentId: p.cprDocumentId,
+        documentTitle: p.documentTitle ?? null,
+        catalogId: p.catalogId ?? null,
+        cprUrl: p.cprUrl ?? null,
+        passages: [],
+      };
+      map.set(p.cprDocumentId, g);
+      order.push(p.cprDocumentId);
+    }
+    g.passages.push(p);
+  }
+  return order.map((id) => map.get(id)!);
+}
+
+export interface McfProject {
+  id: string;
+  title: string;
+  funder: string | null;
+  amountUsd: number | null;
+  familyDate: string | null;
+  documentUrl: string;
+  contentUrl: string | null;
+  geographies: string[];
+  searchableText: string;
+  fullText: string | null;
+  catalogId: string;
+  snippet?: string;
+}
+
+export interface McfProjectsMetaResponse {
+  count: number;
+  withAmount: number;
+  funders: Record<string, number>;
+  data_source: string;
+  attribution: string;
+}
+
+export interface McfProjectsSearchResponse {
+  projects: McfProject[];
+  total: number;
+  limit: number;
+  offset: number;
+  data_source: string;
+  attribution: string;
 }

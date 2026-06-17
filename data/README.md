@@ -11,7 +11,8 @@ data/
 │   ├── curated.json            Hand-picked document ids surfaced in the UI
 │   ├── passage-documents.json  Per-document passage metadata (counts, slug, CPR links)
 │   ├── passages.json           Passage-level text (the bulk of the corpus, ~19 MB)
-│   └── topics-index.json       Topic → passage index for filtering
+│   ├── topics-index.json       Topic → passage index for filtering
+│   └── mcf-projects.json       MCF searchable corpus (metadata + summary text)
 │
 ├── policy-cases/    UNFCCC KCI case studies for the Policy Impact engine
 │   ├── index.json              Corpus index
@@ -36,6 +37,7 @@ data/
 | ------------- | ------- | ----- |
 | `policy/documents.json`, `policy/curated.json` | `services/policyDocuments.js` → `/api/v1/documents/*` | Document library + "Official sources" |
 | `policy/passage-documents.json`, `policy/passages.json`, `policy/topics-index.json` | `services/policyPassages.js` → `/api/v1/documents/passage-corpus/*` | Key-documents passage panel |
+| `policy/mcf-projects.json` | `services/mcfProjects.js` → `/api/v1/documents/mcf/*` | Climate fund projects tab + Climate Finance panel |
 | `policy-cases/*.json` | `services/policyCaseData.js` → `/api/v1/policy-cases` | Policy Impact wizard |
 | `seeds/persistenceSeedSource.js` | `db/seed.ts`, `services/persistence.js` | Postgres seed + file fallback |
 | `seeds/riskSeed.js` | `routes/risk.js` → `/api/v1/risk/*` | Illustrative risk choropleth |
@@ -47,6 +49,7 @@ The `policy/` JSON is generated from the CSVs in `sources/` — do not hand-edit
 ```sh
 npm run build:documents    # sources/*.csv  -> policy/documents.json + curated.json
 npm run build:passages     # sources/*.csv  -> policy/passage-documents.json, passages.json, topics-index.json
+npm run build:mcf          # policy/documents.json -> policy/mcf-projects.json (+ optional partner JSON)
 npm run build:policy-cases  # validate policy-cases/*.json against the Zod schema
 ```
 

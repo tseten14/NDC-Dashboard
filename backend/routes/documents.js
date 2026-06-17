@@ -8,8 +8,39 @@ import {
   listTopics,
   searchPassages,
 } from "../services/policyPassages.js";
+import { getMcfMeta, getMcfProject, searchMcfProjects } from "../services/mcfProjects.js";
 
 const router = express.Router();
+
+router.get("/documents/mcf/meta", (_req, res) => {
+  try {
+    return res.json(getMcfMeta());
+  } catch (err) {
+    _req.log?.error({ err }, "mcf_meta_failed");
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/documents/mcf/search", (req, res) => {
+  try {
+    const { q, funder, sector, minAmount, limit, offset } = req.query;
+    return res.json(searchMcfProjects({ q, funder, sector, minAmount, limit, offset }));
+  } catch (err) {
+    req.log?.error({ err }, "mcf_search_failed");
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/documents/mcf/:projectId", (req, res) => {
+  try {
+    const project = getMcfProject(req.params.projectId);
+    if (!project) return res.status(404).json({ error: "MCF project not found" });
+    return res.json(project);
+  } catch (err) {
+    req.log?.error({ err }, "mcf_get_failed");
+    return res.status(500).json({ error: err.message });
+  }
+});
 
 router.get("/documents/passage-corpus/meta", (_req, res) => {
   try {

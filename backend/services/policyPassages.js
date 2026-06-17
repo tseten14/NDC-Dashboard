@@ -9,6 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DOCS_PATH = join(__dirname, "..", "..", "data", "policy/passage-documents.json");
 const PASSAGES_PATH = join(__dirname, "..", "..", "data", "policy/passages.json");
 const TOPICS_PATH = join(__dirname, "..", "..", "data", "policy/topics-index.json");
+const CATALOG_PATH = join(__dirname, "..", "..", "data", "policy/documents.json");
 
 const ATTRIBUTION =
   "Passage topics and summaries from Climate Policy Radar export (not a live API).";
@@ -20,6 +21,13 @@ let topics = null;
 let byCprDocumentId = null;
 let byCatalogId = null;
 let passagesByDoc = null;
+let catalogById = null;
+
+function loadCatalog() {
+  if (catalogById) return;
+  const raw = JSON.parse(readFileSync(CATALOG_PATH, "utf8"));
+  catalogById = new Map((raw.documents ?? []).map((d) => [d.id, d]));
+}
 
 function load() {
   if (passageDocs) return;
@@ -107,8 +115,14 @@ export function getPassageDocument(cprDocumentId) {
   load();
   const doc = byCprDocumentId.get(cprDocumentId);
   if (!doc) return null;
+  loadCatalog();
+  const catalog = doc.catalogId ? catalogById.get(doc.catalogId) : null;
   return {
     ...doc,
+    contentUrl: catalog?.contentUrl ?? null,
+    documentUrl: catalog?.documentUrl ?? doc.cprUrl,
+    category: catalog?.category ?? null,
+    source: catalog?.source ?? null,
     data_source: DATA_SOURCE,
     attribution: ATTRIBUTION,
   };

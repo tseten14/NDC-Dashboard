@@ -18,6 +18,18 @@ export function parseTopicIds(raw) {
     .filter(Boolean);
 }
 
+/** Keep first occurrence of each topic ID (CPR export may repeat IDs on one passage). */
+export function dedupeTopicIds(ids) {
+  const seen = new Set();
+  const out = [];
+  for (const id of ids) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
 /** @deprecated Use parseTopicIds — kept for tests documenting semicolon groups if CPR adds them. */
 export function parseTopicIdGroups(raw) {
   if (!raw?.trim()) return [];
@@ -83,17 +95,29 @@ function parseMatchedTexts(raw, topicCount) {
 
 /** Build topicLabels aligned index-wise with topic IDs and labellers. */
 export function buildTopicLabels(topicIds, labelledText, labellers) {
-  const ids = Array.isArray(topicIds) ? topicIds : [];
-  if (ids.length === 0) return [];
+  const rawIds = Array.isArray(topicIds) ? topicIds : [];
+  if (rawIds.length === 0) return [];
 
-  const texts = parseMatchedTexts(labelledText, ids.length);
+  const texts = parseMatchedTexts(labelledText, rawIds.length);
+  const seen = new Set();
+  const ids = [];
+  const alignedLabellers = [];
+  const alignedTexts = [];
+
+  rawIds.forEach((id, i) => {
+    if (seen.has(id)) return;
+    seen.add(id);
+    ids.push(id);
+    alignedLabellers.push(labellers[i] ?? null);
+    alignedTexts.push(texts[i] ?? null);
+  });
 
   return ids.map((id, i) => {
-    const labeller = labellers[i] ?? null;
+    const labeller = alignedLabellers[i] ?? null;
     return {
       id,
       label: labeller?.concept ?? labeller?.type ?? "topic",
-      matchedText: texts[i] ?? null,
+      matchedText: alignedTexts[i] ?? null,
       isFullParagraph: labeller?.type === "bert",
     };
   });

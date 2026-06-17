@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { documentsApi } from "@/lib/api";
 import type { PolicyDocument } from "@/lib/policy-documents";
+import { uniqueTopicLabels } from "@/lib/policy-documents";
 import {
   QUICK_ACTIONS,
   type AiAnalysisResponse, type QuickActionType,
@@ -125,7 +126,7 @@ function PassagesPanel({ cprDocumentId }: { cprDocumentId: string }) {
                 <p className="text-[10px] text-foreground leading-relaxed line-clamp-4">{p.text}</p>
                 {p.topicLabels.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {p.topicLabels.map((tl) => (
+                    {uniqueTopicLabels(p.topicLabels).map((tl) => (
                       <Badge key={`${p.id}-${tl.id}`} variant="outline" className="text-[7px] h-3.5 px-1">
                         {tl.label}
                         {tl.isFullParagraph && " · full ¶"}
@@ -342,6 +343,9 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
   }, [entries]);
 
   const callAnalyzeApi = useCallback(async (action?: QuickActionType, question?: string): Promise<AiAnalysisResponse> => {
+    if (!doc.contentUrl) {
+      throw new Error("PDF not available for AI analysis on this document.");
+    }
     const res = await fetch("/api/v1/policy/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -376,7 +380,7 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
       setEntries((prev) => prev.filter((e) => e.kind !== "loading"));
       setEntries((prev) => [...prev, { kind: "action", type, response: {
         type, title: "Analysis unavailable",
-        sections: [{ lines: [err.message || "Could not reach the AI service. Check ANTHROPIC_API_KEY is set."], page_refs: [] }],
+        sections: [{ lines: [err.message || "Could not reach the AI service. Check OPENAI_API_KEY is set on the API server."], page_refs: [] }],
         confidence: "low", disclaimer: "", suggested_follow_ups: [],
       }}]);
     }).finally(() => setIsLoading(false));
@@ -414,10 +418,19 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
           <h3 className="text-sm font-bold text-foreground">Policy AI</h3>
         </div>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          Reads the full PDF and answers using Claude AI. Citations link to the source page.
+          Reads the full PDF and answers using OpenAI. Citations link to the source page.
         </p>
       </div>
 
+      {!doc.contentUrl ? (
+        <div className="flex-1 flex items-center justify-center p-6 text-center">
+          <p className="text-xs text-muted-foreground max-w-sm">
+            No PDF is linked for this document, so Policy AI cannot run. Open a document from the
+            library with a PDF link, or use CPR passages for text search.
+          </p>
+        </div>
+      ) : (
+        <>
       <div className="shrink-0 px-4 pt-3 pb-2 border-b border-border bg-muted/20">
         <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Quick analysis</p>
         <div className="grid grid-cols-2 gap-2">
@@ -512,6 +525,8 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
           Enter to send · responses include section references where available
         </p>
       </div>
+        </>
+      )}
     </div>
   );
 }
@@ -532,23 +547,42 @@ function useResolvedDocument(): {
   const catalogQuery = useQuery({
     queryKey: ["documents", "catalog", catalogId],
     queryFn: () => documentsApi.getCatalogDocument(catalogId!),
-    enabled: !stateDoc?.title && !!catalogId,
+    enabled: !!catalogId && !stateDoc?.contentUrl,
     staleTime: 1000 * 60 * 30,
   });
 
   const cprQuery = useQuery({
     queryKey: ["documents", "cpr", cprDocumentId],
     queryFn: () => documentsApi.getPassageDocument(cprDocumentId!),
-    enabled: !stateDoc?.title && !catalogId && !!cprDocumentId,
+    enabled: !!cprDocumentId && !stateDoc?.title,
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const catalogFromPassageQuery = useQuery({
+    queryKey: ["documents", "catalog", cprQuery.data?.catalogId],
+    queryFn: () => documentsApi.getCatalogDocument(cprQuery.data!.catalogId!),
+    enabled: !catalogId && !!cprQuery.data?.catalogId && !stateDoc?.contentUrl,
     staleTime: 1000 * 60 * 30,
   });
 
   const doc = useMemo(() => {
-    if (stateDoc?.title && (stateDoc.documentUrl || stateDoc.cprUrl || stateDoc.contentUrl)) {
-      return stateDoc;
-    }
-    if (catalogQuery.data?.document) {
-      return catalogQuery.data.document;
+    if (stateDoc?.contentUrl) return stateDoc;
+    const catalogDoc =
+      catalogQuery.data?.document ?? catalogFromPassageQuery.data?.document ?? null;
+    if (catalogDoc) {
+      const p = cprQuery.data;
+      if (p) {
+        return {
+          ...catalogDoc,
+          hasPassages: true,
+          cprDocumentId: p.cprDocumentId,
+          passageCount: p.passageCount,
+          taggedPassageCount: p.taggedPassageCount,
+          cprUrl: p.cprUrl ?? catalogDoc.cprUrl,
+          slug: p.slug ?? catalogDoc.slug,
+        } satisfies PolicyDocument;
+      }
+      return catalogDoc;
     }
     if (cprQuery.data) {
       const p = cprQuery.data;
@@ -559,11 +593,11 @@ function useResolvedDocument(): {
         familySummary: p.familySummary,
         familyDate: null,
         familyUrl: p.cprUrl,
-        documentUrl: p.cprUrl,
-        contentUrl: null,
+        documentUrl: p.documentUrl ?? p.cprUrl,
+        contentUrl: p.contentUrl ?? null,
         documentType: null,
-        category: "Executive",
-        source: null,
+        category: p.category ?? "Executive",
+        source: p.source ?? null,
         geographies: ["UGA"],
         languages: "English",
         hasPassages: true,
@@ -575,15 +609,16 @@ function useResolvedDocument(): {
       } satisfies PolicyDocument;
     }
     return stateDoc;
-  }, [stateDoc, catalogQuery.data, cprQuery.data]);
+  }, [stateDoc, catalogQuery.data, catalogFromPassageQuery.data, cprQuery.data]);
 
   const isLoading =
     (!doc?.title && !!catalogId && catalogQuery.isLoading) ||
-    (!doc?.title && !catalogId && !!cprDocumentId && cprQuery.isLoading);
+    (!doc?.contentUrl && !catalogId && !!cprDocumentId && (cprQuery.isLoading || catalogFromPassageQuery.isLoading)) ||
+    (!doc?.title && !!cprDocumentId && cprQuery.isLoading);
 
   const error =
     (!doc?.title && !!catalogId && catalogQuery.isError) ||
-    (!doc?.title && !catalogId && !!cprDocumentId && cprQuery.isError);
+    (!doc?.title && !!cprDocumentId && cprQuery.isError);
 
   return { doc, isLoading, error };
 }

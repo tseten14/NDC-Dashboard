@@ -19,6 +19,7 @@ import {
   type FinanceChallenge,
 } from "@/lib/climate-finance-pathways";
 import { FundingProposalDialog, type ProposalContext } from "@/components/finance/FundingProposalDialog";
+import { McfDocumentsPanel } from "@/components/McfDocumentsPanel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -295,6 +296,22 @@ export default function ClimateFinance() {
             </>
           )}
         </section>
+
+        {/* ──────────── MCF policy corpus (sector-matched) ───────────── */}
+        {focusSectorId && (
+          <section className="space-y-2">
+            <div>
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                <FileText className="h-4 w-4 text-primary" />
+                Related fund project documents
+              </h3>
+              <p className="text-[11px] text-muted-foreground">
+                CPR multilateral fund projects with searchable text — open for AI analysis or full-text search.
+              </p>
+            </div>
+            <McfDocumentsPanel sectorId={focusSectorId} />
+          </section>
+        )}
 
         {/* ──────────── Article 6 carbon-credit revenue estimate ───────────── */}
         <CarbonCreditEstimate sectorLabel={sectorLabel} gapMt={focusGap?.gapMt ?? null} hasIntervention={hasIntervention} />

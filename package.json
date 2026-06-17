@@ -22,6 +22,7 @@
     "setup:ingest-python": "pip3 install -r backend/ml/requirements-ingest.txt",
     "build:documents": "node scripts/build_policy_documents.mjs",
     "build:passages": "node scripts/build_policy_passages.mjs",
+    "build:mcf": "node scripts/build_mcf_fulltext.mjs",
     "build:policy-cases": "node scripts/build_policy_cases.mjs",
     "verify:climatetrace": "node scripts/verify_climatetrace_v7.mjs",
     "verify:predictions": "node --import tsx scripts/verify_predictions.mjs",
