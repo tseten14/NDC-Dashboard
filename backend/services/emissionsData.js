@@ -60,7 +60,7 @@ function priorFromSeries(series, beforeYear) {
 function traceYoYPct(series, latestYear, latestValue) {
   if (latestValue == null || latestYear == null) return null;
   const prior = priorFromSeries(series, latestYear);
-  if (!prior?.value || prior.value === 0) return null;
+  if (prior?.value == null || prior.value === 0) return null;
   return +(((latestValue - prior.value) / prior.value) * 100).toFixed(1);
 }
 
@@ -261,12 +261,12 @@ export async function getEmissionsDashboard(since, to, options = {}) {
     // and includes sectors like mineral-extraction not shown as UI cards).
     total_co2e_mtco2e = await getLocationTotalMt(refYear, gadmId);
     if (total_co2e_mtco2e == null) {
-      const districtTotals = SECTOR_KEYS
-        .map((s) => sectors[s].latest_value)
-        .filter((v) => v != null);
-      total_co2e_mtco2e = districtTotals.length
-        ? +districtTotals.reduce((a, b) => a + b, 0).toFixed(2)
-        : null;
+      const districtSectorValues = SECTOR_KEYS.map((s) => sectors[s].latest_value);
+      total_co2e_mtco2e =
+        districtSectorValues.length === SECTOR_KEYS.length &&
+        districtSectorValues.every((v) => v != null)
+          ? +districtSectorValues.reduce((a, b) => a + b, 0).toFixed(2)
+          : null;
     }
     reconciliation = undefined;
   } else {

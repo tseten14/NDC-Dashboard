@@ -129,7 +129,7 @@ function jsForecastSector(points, meta, targetYear) {
     }
   }
 
-  if (candidates.length === 0) {
+  if (!candidates.length) {
     return {
       label: meta.label,
       unit: meta.unit ?? "MtCO2e",
@@ -144,7 +144,7 @@ function jsForecastSector(points, meta, targetYear) {
       model: null,
       r2: null,
       n_points: clean.length,
-      note: "Could not fit a trend to the observed series.",
+      note: "Could not fit a forecast model to the observed series.",
     };
   }
 
@@ -318,3 +318,5 @@ export async function getSectorPredictions(options = {}) {
 export function clearPredictionCache() {
   cache.flushAll();
 }
+
+export { jsForecastSector };
