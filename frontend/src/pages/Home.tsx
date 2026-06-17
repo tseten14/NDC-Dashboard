@@ -10,9 +10,10 @@ import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
 import { HERO_GRADIENT_TEXT } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 import {
-  ArrowRight, LayoutDashboard, Sparkles, Target,
-  Upload, Satellite, Scale, Workflow, Briefcase,
+  LayoutDashboard, Sparkles, Target,
+  Upload, Satellite, Scale, Workflow, Briefcase, Presentation,
 } from "lucide-react";
+import { useDemoMode } from "@/hooks/use-demo-mode";
 
 const FEATURES = [
   {
@@ -55,6 +56,7 @@ const FEATURES = [
 
 export default function Home() {
   const { country } = useCountry();
+  const { startDemoPresentation } = useDemoMode();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const featuresReveal = useScrollReveal();
@@ -99,7 +101,16 @@ export default function Home() {
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2.5">
-              <Button asChild size="default" className="gap-1.5 shadow-sm">
+              <Button
+                type="button"
+                size="default"
+                className="gap-1.5 shadow-sm"
+                onClick={startDemoPresentation}
+              >
+                <Presentation className="h-4 w-4" />
+                Start 3-minute demo
+              </Button>
+              <Button asChild size="default" variant="outline" className="gap-1.5">
                 <Link to="/dashboard">
                   <LayoutDashboard className="h-4 w-4" />
                   Open Dashboard

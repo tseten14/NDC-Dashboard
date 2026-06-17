@@ -23,6 +23,8 @@ import CountrySelect from "./pages/CountrySelect.tsx";
 import ActivityForm from "./pages/ActivityForm.tsx";
 import ActivityDetail from "./pages/ActivityDetail.tsx";
 import Home from "./pages/Home.tsx";
+import { DemoModeProvider } from "@/hooks/use-demo-mode";
+import { DemoModePanel } from "@/components/DemoModePanel";
 
 // Dashboard pulls in recharts + chart components; lazy-load so the landing
 // page bundle stays small and first paint is fast.
@@ -159,6 +161,7 @@ function ProtectedShell() {
                 </ErrorBoundary>
               </main>
             <ScrollToTopButton />
+            <DemoModePanel />
             <Footer />
           </div>
       </CockpitProvider>
@@ -176,6 +179,7 @@ const App = () => (
         <Sonner />
         <CountryProvider>
           <BrowserRouter>
+            <DemoModeProvider>
             <CurrentRoleProvider>
               <Routes>
                 <Route
@@ -198,6 +202,7 @@ const App = () => (
                 />
               </Routes>
             </CurrentRoleProvider>
+            </DemoModeProvider>
           </BrowserRouter>
         </CountryProvider>
       </TooltipProvider>

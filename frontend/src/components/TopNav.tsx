@@ -6,6 +6,7 @@ import { useCurrentRole } from "@/hooks/use-current-role";
 import { isPrimaryNavVisible } from "@/lib/role-capabilities";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { DemoModeToggle } from "@/components/DemoModePanel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -104,6 +105,7 @@ export function TopNav() {
 
   return (
     <header
+      data-top-nav
       className={cn(
         "sticky top-0 z-40 w-full border-b border-border/70",
         // backdrop-blur-md (not -xl): a sticky element's backdrop-filter is
@@ -207,6 +209,7 @@ export function TopNav() {
         </nav>
         </div>
         <div className="flex items-center gap-2 px-3 shrink-0 border-l border-border/40 bg-background/40">
+          <DemoModeToggle />
           <ThemeToggle />
           <RoleSwitcher />
         </div>
