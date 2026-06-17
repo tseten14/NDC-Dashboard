@@ -58,34 +58,8 @@ function uniqueCitationsByDomain(citations: AiSourceLink[]): AiSourceLink[] {
   });
 }
 
-/** Perplexity-style inline citation — links to verified source; tooltip shows exact claim + API. */
-function PerplexityCitationPill({ citations }: { citations: AiSourceLink[] }) {
-  const unique = uniqueCitationsByDomain(citations);
-  if (unique.length === 0) return null;
-
-  const [primary, ...rest] = unique;
-  const slug = (primary as AiSourceLink & { domain?: string }).domain ?? citationDomainSlug(primary.url);
-  const href =
-    primary.viewer_url && primary.domain === "climatetrace" ? primary.viewer_url : primary.url;
-  const tooltip = [
-    primary.claim ?? primary.label,
-    primary.url !== href ? `API: ${primary.url}` : primary.url,
-    ...rest.map((c) => c.claim ?? c.label),
-  ].join(" · ");
-
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      title={tooltip}
-      className="inline-flex items-center gap-0.5 ml-1 rounded-md bg-muted/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors align-baseline no-underline whitespace-nowrap"
-    >
-      {slug}
-      {rest.length > 0 && <span className="text-muted-foreground/70">+{rest.length}</span>}
-    </a>
-  );
-}
+// Inline per-line citation chips were removed by request — all sources are
+// shown once in the aggregated footer (SourcesFooter) below.
 
 function collectResponseSources(response: AiAnalysisResponse): AiSourceLink[] {
   const byId = new Map<string, AiSourceLink>();
@@ -187,18 +161,11 @@ function AnalysisCard({
             )}
             {(!section.heading || openSections.has(si)) && (
               <div className="space-y-2.5">
-                {section.lines.map((line, li) => {
-                  const citations = lineCitations(line);
-                  return (
-                    <p
-                      key={li}
-                      className="text-xs text-foreground leading-relaxed"
-                    >
-                      {lineText(line)}
-                      <PerplexityCitationPill citations={citations} />
-                    </p>
-                  );
-                })}
+                {section.lines.map((line, li) => (
+                  <p key={li} className="text-xs text-foreground leading-relaxed">
+                    {lineText(line)}
+                  </p>
+                ))}
               </div>
             )}
           </div>
