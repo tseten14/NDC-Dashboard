@@ -179,8 +179,8 @@ const App = () => (
         <Sonner />
         <CountryProvider>
           <BrowserRouter>
-            <DemoModeProvider>
             <CurrentRoleProvider>
+            <DemoModeProvider>
               <Routes>
                 <Route
                   path="/select-country"
@@ -201,8 +201,8 @@ const App = () => (
                   }
                 />
               </Routes>
-            </CurrentRoleProvider>
             </DemoModeProvider>
+            </CurrentRoleProvider>
           </BrowserRouter>
         </CountryProvider>
       </TooltipProvider>
