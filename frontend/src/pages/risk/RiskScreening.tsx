@@ -74,7 +74,7 @@ export default function RiskScreening() {
       `Geography: ${districtId === "ALL" ? "National (all placeholder districts)" : districts.find(d => d.id === districtId)?.name}`,
       ``,
       `RISK SCREENING`,
-      ...screening.map(s => `- ${s.hazard.hazard_type}: score ${s.score}/100 (${s.level}), confidence ${s.confidence}`),
+      ...screening.map(s => `- ${s.hazard.hazard_type}: score ${s.score}/100 (${s.level})`),
       ``,
       `RECOMMENDED ADAPTATION OPTIONS`,
       ...recommended.map(o => `- ${o.name}\n    ${o.description}\n    Risk reduction: ${o.expected_risk_reduction}`),
@@ -144,7 +144,6 @@ export default function RiskScreening() {
                 </div>
                 <div className="flex flex-wrap gap-1">
                   <Badge variant="outline" className="text-[9px]">{s.level}</Badge>
-                  <Badge variant="outline" className="text-[9px]">Conf: {s.confidence}</Badge>
                   <Badge variant="outline" className="text-[9px]">{s.hazard.data_status}</Badge>
                 </div>
                 <p className="text-[10px] text-muted-foreground line-clamp-2">{s.hazard.methodology_notes}</p>

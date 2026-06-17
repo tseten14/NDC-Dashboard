@@ -17,7 +17,6 @@ export default function RiskMap() {
 
   const [hazardId, setHazardId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("All");
-  const [confFilter, setConfFilter] = useState<string>("All");
   const [scenarioFilter, setScenarioFilter] = useState<string>("All");
 
   // Default-select first hazard once loaded
@@ -33,9 +32,8 @@ export default function RiskMap() {
   // Apply filters to the visible hazard list
   const filteredHazards = useMemo(() => hazards.filter(h =>
     (statusFilter === "All" || h.data_status === statusFilter) &&
-    (confFilter === "All" || h.confidence_rating === confFilter) &&
     (scenarioFilter === "All" || h.scenario_name === scenarioFilter)
-  ), [hazards, statusFilter, confFilter, scenarioFilter]);
+  ), [hazards, statusFilter, scenarioFilter]);
 
   const selected = hazards.find(h => h.id === hazardId);
 
@@ -110,18 +108,6 @@ export default function RiskMap() {
             </Select>
           </div>
           <div>
-            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Confidence</Label>
-            <Select value={confFilter} onValueChange={setConfFilter}>
-              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All" className="text-xs">All</SelectItem>
-                <SelectItem value="Low" className="text-xs">Low</SelectItem>
-                <SelectItem value="Medium" className="text-xs">Medium</SelectItem>
-                <SelectItem value="High" className="text-xs">High</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
             <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Data status</Label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
@@ -170,7 +156,6 @@ export default function RiskMap() {
                       <th className="text-left font-normal pb-1">Region</th>
                       <th className="text-right font-normal pb-1">Score</th>
                       <th className="text-left font-normal pb-1 pl-3">Level</th>
-                      <th className="text-left font-normal pb-1">Confidence</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -184,7 +169,6 @@ export default function RiskMap() {
                           <td className="py-1 pl-3">
                             {cell ? <Badge variant="outline" className="text-[9px]">{cell.risk_level}</Badge> : "—"}
                           </td>
-                          <td className="py-1 text-muted-foreground">{cell?.confidence ?? "—"}</td>
                         </tr>
                       );
                     })}

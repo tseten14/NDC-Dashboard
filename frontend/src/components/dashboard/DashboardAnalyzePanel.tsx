@@ -9,7 +9,6 @@ import {
 import type { AnalysisLine, AiAnalysisResponse, AiSourceLink } from "@/data/policy-ai-mock";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -168,22 +167,7 @@ function AnalysisCard({
   return (
     <Card className="border-border shadow-none">
       <CardContent className="p-4 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <h4 className="text-xs font-bold text-foreground">{response.title}</h4>
-          <Badge
-            variant="outline"
-            className={cn(
-              "text-[9px] h-4 shrink-0",
-              response.confidence === "high"
-                ? "text-on-track border-on-track/30 bg-on-track/5"
-                : response.confidence === "medium"
-                  ? "text-muted-foreground border-border bg-muted/50"
-                  : "text-muted-foreground",
-            )}
-          >
-            {response.confidence} confidence
-          </Badge>
-        </div>
+        <h4 className="text-xs font-bold text-foreground">{response.title}</h4>
 
         {response.sections.map((section, si) => (
           <div key={si} className="space-y-2">

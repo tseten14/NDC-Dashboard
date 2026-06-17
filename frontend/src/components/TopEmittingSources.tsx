@@ -247,7 +247,7 @@ export function TopEmittingSources() {
                           <TooltipContent side="right" className="max-w-[220px] p-2.5 space-y-1">
                             <p className="text-xs font-semibold">Climate TRACE Verified Source</p>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                              This is a directly-measured emission asset cross-verified by Climate TRACE against satellite imagery and independent global inventories (EDGAR, IEA). Highest confidence tier.
+                              This is a directly-measured emission asset cross-verified by Climate TRACE against satellite imagery and independent global inventories (EDGAR, IEA). Highest verification tier.
                             </p>
                           </TooltipContent>
                         </Tooltip>

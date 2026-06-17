@@ -75,7 +75,6 @@ export default function RiskOverview() {
                   </p>
                   <div className="flex gap-1">
                     <Badge variant="outline" className="text-[9px]">{cell.data_status}</Badge>
-                    <Badge variant="outline" className="text-[9px]">Conf: {cell.confidence}</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -120,7 +119,6 @@ export default function RiskOverview() {
                   <p className="text-[10px] text-muted-foreground line-clamp-2">{h.name}</p>
                   <div className="flex flex-wrap gap-1 pt-1">
                     <Badge variant="outline" className="text-[9px]">{h.data_status}</Badge>
-                    <Badge variant="outline" className="text-[9px]">Conf: {h.confidence_rating}</Badge>
                     <Badge variant="outline" className="text-[9px]">{h.scenario_name}</Badge>
                   </div>
                 </CardContent>

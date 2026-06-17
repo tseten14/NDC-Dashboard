@@ -195,19 +195,7 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
   return (
     <Card className="border-border shadow-none">
       <CardContent className="p-4 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <h4 className="text-xs font-bold text-foreground">{response.title}</h4>
-          <Badge
-            variant="outline"
-            className={cn("text-[9px] h-4 shrink-0",
-              response.confidence === "high" ? "text-on-track border-on-track/30 bg-on-track/5" :
-              response.confidence === "medium" ? "text-amber-600 border-amber-500/30 bg-amber-500/5" :
-              "text-muted-foreground",
-            )}
-          >
-            {response.confidence} confidence
-          </Badge>
-        </div>
+        <h4 className="text-xs font-bold text-foreground">{response.title}</h4>
 
         {response.sections.map((section, si) => (
           <div key={si} className="space-y-1.5">

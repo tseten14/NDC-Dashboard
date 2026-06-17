@@ -99,12 +99,6 @@ const DIRECTION_LABELS: Record<string, string> = {
 
 const HEADLINE_IMPACT_PRIORITY = ["jobs", "gdp", "inequality", "gender", "trade"];
 
-function confidenceLabel(score: number): string {
-  if (score >= 0.75) return "High";
-  if (score >= 0.5) return "Medium";
-  return "Low";
-}
-
 function pickHeadlineImpacts(impacts: PolicyImpactOutcome[], max = 5): PolicyImpactOutcome[] {
   const ranked = [...impacts].sort((a, b) => {
     const priorityA = HEADLINE_IMPACT_PRIORITY.indexOf(a.category);
@@ -493,9 +487,6 @@ export default function PolicyImpact() {
                   {sector}. {sourceCopy.summary}
                 </p>
                 <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <Badge variant="secondary" className="text-[10px]">
-                    Reliability: {confidenceLabel(result.overall_confidence)}
-                  </Badge>
                   <Badge variant="outline" className="text-[10px]">
                     {sourceCopy.badge}
                   </Badge>

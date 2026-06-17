@@ -28,7 +28,6 @@ export function ProvenanceCard({ hazard }: Props) {
           </div>
           <div className="flex gap-1">
             <Badge variant="outline" className="text-[9px]">{hazard.data_status}</Badge>
-            <Badge variant="outline" className="text-[9px]">Confidence: {hazard.confidence_rating}</Badge>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">

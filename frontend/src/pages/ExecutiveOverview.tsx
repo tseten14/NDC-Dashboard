@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useCockpit } from "@/hooks/use-cockpit";
 import {
   applyScope, deliveryConfidence, indicatorRegistry, progressPct, statusColor,
-  whatMustChangeNow, quantificationBacklog, getById, confidenceScore,
+  whatMustChangeNow, quantificationBacklog, getById,
 } from "@/data/indicator-registry";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +40,7 @@ export default function ExecutiveOverview() {
   const emTgt = getById("NDC-MIT-TGT");
   const emBau = getById("NDC-MIT-BAU");
 
-  // Tile 4: Delivery Confidence — trackability ratio
+  // Tile 4: Delivery trackability ratio
   const conf = deliveryConfidence(scoped);
 
   const issues = useMemo(() => whatMustChangeNow(5).filter(i => c.strategies.includes(i.strategy)), [c.strategies]);
@@ -88,7 +88,7 @@ export default function ExecutiveOverview() {
             />
             <Tile
               icon={<ShieldCheck className="h-4 w-4" />}
-              label="Delivery Confidence"
+              label="Delivery trackability"
               hint="Computed trackability"
               primary={`${conf.pct}%`}
               sub={`${conf.trackable} of ${conf.total} indicators in scope are trackable (unit + baseline + target + source + recent update + validated).`}
@@ -107,14 +107,13 @@ export default function ExecutiveOverview() {
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="h-4 w-4 text-at-risk" />
                 <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">What must change now</h2>
-                <span className="text-[10px] text-muted-foreground">Top {issues.length} ranked by salience × (off-track ∨ low confidence)</span>
+                <span className="text-[10px] text-muted-foreground">Top {issues.length} ranked by salience × off-track status</span>
               </div>
               <div className="space-y-1.5">
                 {issues.length === 0 ? (
                   <p className="text-[11px] text-muted-foreground italic">No surfaced priorities for current scope.</p>
                 ) : issues.map(i => {
                   const p = progressPct(i);
-                  const conf = confidenceScore(i);
                   return (
                     <div key={i.id} className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0">
                       <StatusDot p={p} ind={i} />
@@ -122,7 +121,6 @@ export default function ExecutiveOverview() {
                         <p className="text-[11px] font-medium text-foreground truncate">{i.indicator_name}</p>
                         <p className="text-[9px] text-muted-foreground">{i.sector_or_programme} · {i.strategy}</p>
                       </div>
-                      <Badge variant="outline" className="text-[9px] h-4">conf {conf}</Badge>
                       <Badge variant="outline" className="text-[9px] h-4">{i.validation_status}</Badge>
                       {i.political_salience === 3 && <Badge className="text-[9px] h-4 bg-primary text-primary-foreground">headline</Badge>}
                     </div>

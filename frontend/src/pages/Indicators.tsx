@@ -115,7 +115,6 @@ export default function Indicators() {
                 <div><span className="text-muted-foreground">Method:</span> <span className="font-medium text-foreground">{mrvMethodLabel[selected.mrv.mrv_method]}</span></div>
                 <div><span className="text-muted-foreground">Frequency:</span> <span className="font-medium text-foreground">{selected.mrv.update_frequency}</span></div>
                 <div><span className="text-muted-foreground">Owner:</span> <span className="font-medium text-foreground">{selected.mrv.data_owner}</span></div>
-                <div><span className="text-muted-foreground">Confidence:</span> <span className="font-medium text-foreground">{selected.mrv.confidence_level}</span></div>
               </div>
               <div className="text-[10px] text-muted-foreground">Sources: {selected.mrv.primary_data_sources.join(", ")}</div>
             </CardContent></Card>

@@ -84,7 +84,6 @@ export default function RiskDrilldown() {
                     <th className="text-left font-normal pb-1">District</th>
                     <th className="text-right font-normal pb-1">Score</th>
                     <th className="text-left font-normal pb-1 pl-3">Level</th>
-                    <th className="text-left font-normal pb-1">Confidence</th>
                     <th className="text-left font-normal pb-1">Vintage</th>
                     <th className="text-left font-normal pb-1">Notes</th>
                   </tr>
@@ -97,7 +96,6 @@ export default function RiskDrilldown() {
                         <td className="py-1 text-foreground">{d?.name}</td>
                         <td className="py-1 text-right text-foreground">{c.intensity_score_0_100}</td>
                         <td className="py-1 pl-3"><Badge variant="outline" className="text-[9px]">{c.risk_level}</Badge></td>
-                        <td className="py-1 text-muted-foreground">{c.confidence}</td>
                         <td className="py-1 text-muted-foreground">{c.vintage}</td>
                         <td className="py-1 text-muted-foreground">{c.notes}</td>
                       </tr>
@@ -134,7 +132,7 @@ export default function RiskDrilldown() {
             <p className="text-xs font-semibold text-foreground">Side-by-side source comparison</p>
             <p className="text-[11px] text-muted-foreground">
               When multiple providers register hazard layers for the same hazard type, this view will display them
-              side-by-side with provenance, vintage and confidence — without forcing a single canonical truth.
+              side-by-side with provenance and vintage — without forcing a single canonical truth.
               Currently only the prototype seed source is registered.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
@@ -144,7 +142,6 @@ export default function RiskDrilldown() {
                   <p className="text-[10px] text-muted-foreground">{h.source_provider}</p>
                   <div className="flex gap-1">
                     <Badge variant="outline" className="text-[9px]">{h.data_status}</Badge>
-                    <Badge variant="outline" className="text-[9px]">{h.confidence_rating}</Badge>
                     <Badge variant="outline" className="text-[9px]">{h.vintage_date}</Badge>
                   </div>
                 </div>

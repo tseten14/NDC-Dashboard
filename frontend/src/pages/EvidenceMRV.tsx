@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { CockpitBar } from "@/components/CockpitBar";
 import { useCockpit } from "@/hooks/use-cockpit";
-import { applyScope, confidenceScore } from "@/data/indicator-registry";
+import { applyScope } from "@/data/indicator-registry";
 import { runAllRules } from "@/data/qa-rulebook";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,14 +55,12 @@ export default function EvidenceMRV() {
                       <th className="text-left py-1.5 px-2 font-semibold">Owner</th>
                       <th className="text-left py-1.5 px-2 font-semibold">Last update</th>
                       <th className="text-center py-1.5 px-2 font-semibold">Validation</th>
-                      <th className="text-center py-1.5 px-2 font-semibold">Confidence</th>
                       <th className="text-center py-1.5 px-2 font-semibold">QA</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.map(i => {
                       const flags = runAllRules(i);
-                      const conf = confidenceScore(i);
                       const errCount = flags.filter(f => f.severity === "error").length;
                       const warnCount = flags.filter(f => f.severity === "warn").length;
                       return (
@@ -79,9 +77,6 @@ export default function EvidenceMRV() {
                               i.validation_status === "Modelled" && "bg-chart-4/10 text-chart-4 border-chart-4/30",
                               i.validation_status === "Missing" && "bg-off-track/10 text-off-track border-off-track/30",
                             )}>{i.validation_status}</Badge>
-                          </td>
-                          <td className="py-1 px-2 text-center">
-                            <span className={cn("font-bold", conf >= 70 ? "text-on-track" : conf >= 40 ? "text-at-risk" : "text-off-track")}>{conf}</span>
                           </td>
                           <td className="py-1 px-2 text-center">
                             {flags.length === 0 ? <span className="text-muted-foreground">—</span> : (
@@ -103,7 +98,7 @@ export default function EvidenceMRV() {
           <Card className="border-at-risk/30">
             <CardContent className="p-3">
               <p className="text-[10px] uppercase tracking-wider text-at-risk font-semibold mb-1 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Trust principle</p>
-              <p className="text-[10px] text-foreground/80 leading-snug">No indicator with status <strong>Missing</strong> contributes to progress or confidence calculations. Sources, owners and update dates must be visible at all times.</p>
+              <p className="text-[10px] text-foreground/80 leading-snug">No indicator with status <strong>Missing</strong> contributes to progress calculations. Sources, owners and update dates must be visible at all times.</p>
             </CardContent>
           </Card>
 

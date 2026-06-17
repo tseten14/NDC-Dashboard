@@ -89,7 +89,6 @@ export function ChoroplethMap({ districts, cells, selectedHazardId, onSelectDist
             <>
               <div>Score: <strong>{hoveredCell.intensity_score_0_100}</strong> / 100</div>
               <div>Level: {hoveredCell.risk_level}</div>
-              <div className="text-muted-foreground">Confidence: {hoveredCell.confidence}</div>
             </>
           ) : (
             <div className="text-muted-foreground">No data for selected hazard</div>
