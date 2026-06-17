@@ -1004,8 +1004,3 @@
   .text-\[11px\] { font-size: 12px; }
   .text-xs { font-size: 0.8125rem; } /* 12px -> 13px */
 }
-
-/* Demo presenter mode — maximise stage area for live presentations */
-body.demo-presenter-mode [data-top-nav] {
-  display: none;
-}

@@ -6,7 +6,6 @@ import { useCurrentRole } from "@/hooks/use-current-role";
 import { isPrimaryNavVisible } from "@/lib/role-capabilities";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { DemoModeToggle } from "@/components/DemoModePanel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -209,7 +208,6 @@ export function TopNav() {
         </nav>
         </div>
         <div className="flex items-center gap-2 px-3 shrink-0 border-l border-border/40 bg-background/40">
-          <DemoModeToggle />
           <ThemeToggle />
           <RoleSwitcher />
         </div>
