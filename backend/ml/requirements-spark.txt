@@ -1,0 +1,4 @@
+# Data Pipeline clean/filter engine (PySpark) — install: pip install -r requirements-spark.txt
+# Local/dev only: Vercel has no JVM, so this engine is skipped in production (JS fallback runs instead).
+# Requires a JRE/JDK 17+ on PATH in addition to this package.
+pyspark>=3.5.0

@@ -23,6 +23,7 @@ import {
 } from "../services/persistence.js";
 import { createUploadJob, deleteUploadJob, getUploadJob, setUploadJobCleaned } from "../services/ingestUploadStore.js";
 import { runPipelineClean } from "../lib/ingest/pipelineClean.ts";
+import { cleanRowsWithSpark } from "../services/ingestSpark.js";
 import { applyPipelineDefaults } from "../lib/ingest/pipelineDefaults.ts";
 import { parseCsvText } from "../lib/ingest/parsers/csv.ts";
 import { parseJsonText } from "../lib/ingest/parsers/json.ts";
@@ -1078,12 +1079,28 @@ router.post("/ingest/upload", requireWriteApiKey, uploadSingle.single("file"), a
   }
 });
 
+/**
+ * Runs the clean/filter transform with PySpark when available (local/dev hosts with
+ * pyspark installed), falling back to the JavaScript engine otherwise — including
+ * always on Vercel, which has no JVM to run Spark in.
+ */
+async function cleanRowsBestEngine(rows, headers, columnMapping, normalizedFilters) {
+  const sparkResult = await cleanRowsWithSpark({
+    rows,
+    headers,
+    mapping: columnMapping,
+    filters: normalizedFilters,
+  });
+  if (sparkResult) return sparkResult;
+  return runPipelineClean(rows, headers, columnMapping, normalizedFilters);
+}
+
 async function runStagedPipelineClean(jobId, columnMapping, filters = {}) {
   const staged = getUploadJob(jobId);
   if (!staged) {
     return { error: "Upload job not found or expired. Re-upload the file.", status: 404 };
   }
-  const pipelineResult = runPipelineClean(
+  const pipelineResult = await cleanRowsBestEngine(
     staged.parseResult.rows,
     staged.parseResult.headers,
     columnMapping,
@@ -1155,7 +1172,7 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
 
     let sourceRows = staged.parseResult.rows;
     if (pipelineFilters) {
-      const cleaned = runPipelineClean(
+      const cleaned = await cleanRowsBestEngine(
         staged.parseResult.rows,
         staged.parseResult.headers,
         finalColumnMapping,

@@ -20,6 +20,7 @@
     "db:migrate": "node --import tsx database/migrate.ts",
     "db:seed": "SEED_DB=true node --import tsx database/seed.ts",
     "setup:ingest-python": "pip3 install -r backend/ml/requirements-ingest.txt",
+    "setup:ingest-spark": "pip3 install -r backend/ml/requirements-spark.txt",
     "build:documents": "node scripts/build_policy_documents.mjs",
     "build:passages": "node scripts/build_policy_passages.mjs",
     "build:mcf": "node scripts/build_mcf_fulltext.mjs",
