@@ -16,6 +16,7 @@ import { analyzeTabularWithPython, checkPythonIngest } from "../services/ingestP
 import { getPersistenceMode } from "../../database/bootstrap.ts";
 import {
   createIngestJob,
+  findObservationConflicts,
   getRecentIngestJobs,
   inferIngestFileType,
   insertObservationsBatch,
@@ -1115,6 +1116,36 @@ async function runStagedPipelineClean(jobId, columnMapping, filters = {}) {
   return { staged, pipelineResult };
 }
 
+function buildTargetLabels(rows, targetCol) {
+  const targetLabels = new Map();
+  if (!targetCol) return targetLabels;
+  for (const row of rows) {
+    const raw = row[targetCol];
+    if (raw == null || String(raw).trim() === "") continue;
+    const label = String(raw).trim();
+    targetLabels.set(resolveTargetId(label), label);
+  }
+  return targetLabels;
+}
+
+/**
+ * Phase-1 check: does the database already hold data for any (category, year)
+ * pair this upload would touch? Surfaced to the client so it can prompt for
+ * Append vs. Overwrite before Phase 2 (/ingest/confirm) actually writes.
+ */
+async function checkObservationConflicts(cleanedRows, columnMapping) {
+  const { observations } = mapRowsToObservations(cleanedRows, columnMapping, resolveTargetId);
+  if (!observations.length) {
+    return { hasConflicts: false, count: 0, items: [] };
+  }
+  const targetLabels = buildTargetLabels(cleanedRows, columnMapping.target_id);
+  const raw = await findObservationConflicts(observations);
+  return {
+    ...raw,
+    items: raw.items.map((item) => ({ ...item, label: targetLabels.get(item.targetId) ?? item.targetId })),
+  };
+}
+
 async function handlePipelineClean(req, res) {
   try {
     const { jobId, columnMapping, filters } = req.body ?? {};
@@ -1130,10 +1161,13 @@ async function handlePipelineClean(req, res) {
       return res.status(result.status).json({ error: result.error });
     }
 
+    const conflictCheck = await checkObservationConflicts(result.pipelineResult.cleanedRows, columnMapping);
+
     return res.json({
       jobId,
       status: "cleaned",
       ...result.pipelineResult,
+      conflictCheck,
     });
   } catch (err) {
     req.log?.error({ err }, "ingest_pipeline_scan_failed");
@@ -1146,12 +1180,15 @@ router.post("/ingest/clean", requireWriteApiKey, handlePipelineClean);
 
 router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
   try {
-    const { jobId, finalColumnMapping, pipelineFilters } = req.body ?? {};
+    const { jobId, finalColumnMapping, pipelineFilters, executionMode } = req.body ?? {};
     if (!jobId || typeof jobId !== "string") {
       return res.status(400).json({ error: "jobId is required" });
     }
     if (!finalColumnMapping || typeof finalColumnMapping !== "object") {
       return res.status(400).json({ error: "finalColumnMapping is required" });
+    }
+    if (executionMode != null && executionMode !== "append" && executionMode !== "overwrite") {
+      return res.status(400).json({ error: "executionMode must be 'append' or 'overwrite'" });
     }
     const hasValue =
       finalColumnMapping.value ||
@@ -1167,8 +1204,6 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
     if (!staged) {
       return res.status(404).json({ error: "Upload job not found or expired. Re-upload the file." });
     }
-
-    await updateIngestJobStatus(jobId, { status: "processing" });
 
     let sourceRows = staged.parseResult.rows;
     if (pipelineFilters) {
@@ -1195,25 +1230,38 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
       resolveTargetId,
     );
 
-    const targetLabels = new Map();
-    const targetCol = finalColumnMapping.target_id;
-    if (targetCol) {
-      for (const row of sourceRows) {
-        const raw = row[targetCol];
-        if (raw == null || String(raw).trim() === "") continue;
-        const label = String(raw).trim();
-        targetLabels.set(resolveTargetId(label), label);
+    const targetLabels = buildTargetLabels(sourceRows, finalColumnMapping.target_id);
+
+    // Require an explicit Append/Overwrite choice once real conflicts exist — a client
+    // that skips the prompt gets a 409 with the conflict details instead of a silent write.
+    if (!executionMode && observations.length) {
+      const conflictCheck = await findObservationConflicts(observations);
+      if (conflictCheck.hasConflicts) {
+        return res.status(409).json({
+          error: "Existing data found for one or more categories/years — choose append or overwrite.",
+          conflictCheck: {
+            ...conflictCheck,
+            items: conflictCheck.items.map((item) => ({
+              ...item,
+              label: targetLabels.get(item.targetId) ?? item.targetId,
+            })),
+          },
+        });
       }
     }
+
+    await updateIngestJobStatus(jobId, { status: "processing" });
 
     let inserted = 0;
     let storage = null;
     let insertError = null;
+    let skippedConflicts = 0;
     if (observations.length) {
       try {
-        const result = await insertObservationsBatch(observations, targetLabels);
+        const result = await insertObservationsBatch(observations, targetLabels, executionMode ?? "overwrite");
         inserted = result.inserted;
         storage = result.storage;
+        skippedConflicts = result.skippedConflicts ?? 0;
       } catch (err) {
         insertError = err.message || "Database insert failed";
         req.log?.error({ err }, "ingest_observations_insert_failed");
@@ -1242,10 +1290,11 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
       "utf8",
     );
 
+    const allSkippedAsConflicts = observations.length > 0 && inserted === 0 && skippedConflicts === observations.length;
     const failed =
       insertError != null ||
       (observations.length === 0 && sourceRows.length > 0) ||
-      (observations.length > 0 && inserted === 0);
+      (observations.length > 0 && inserted === 0 && !allSkippedAsConflicts);
     await updateIngestJobStatus(jobId, {
       status: failed ? "failed" : "complete",
       rowCount: inserted,
@@ -1256,7 +1305,12 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
           : null,
     });
 
-    deleteUploadJob(jobId);
+    // Nothing was actually written (every row matched existing/protected data) — keep the
+    // staged upload around so the user can retry with the other execution mode without
+    // re-uploading the file.
+    if (!allSkippedAsConflicts) {
+      deleteUploadJob(jobId);
+    }
 
     const { mode: persistenceMode } = getPersistenceMode();
     const years = observations.map((o) => o.year);
@@ -1268,8 +1322,19 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
         persistenceMode === "postgres"
           ? `Saved ${inserted} row(s). New categories were registered as targets automatically. Query observations via API: /api/v1/targets/{category}/observations`
           : `Saved ${inserted} row(s) to local storage (${storage}). Data persists across restarts in data/ingest-observations.json.`;
+      if (skippedConflicts > 0) {
+        dashboardHint +=
+          executionMode === "append"
+            ? ` ${skippedConflicts} row(s) already existed and were left untouched.`
+            : ` ${skippedConflicts} row(s) were left untouched — official/validated data can't be overwritten by upload.`;
+      }
     } else if (insertError) {
       dashboardHint = insertError;
+    } else if (allSkippedAsConflicts) {
+      dashboardHint =
+        executionMode === "append"
+          ? "No new rows — every row already had matching data on file."
+          : "No rows were changed — matching data on file is official/validated and can't be overwritten by upload.";
     } else if (failed) {
       dashboardHint = errors[0]?.message ?? "No rows were stored. Check column mapping and try again.";
     }
@@ -1279,6 +1344,8 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
       status: failed ? "failed" : "complete",
       rowsImported: inserted,
       rowsSkipped: skipped,
+      skippedConflicts,
+      executionMode: executionMode ?? "overwrite",
       errors: insertError
         ? [{ row: 0, message: insertError }, ...errors.slice(0, 99)]
         : errors.slice(0, 100),

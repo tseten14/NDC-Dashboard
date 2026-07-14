@@ -5,6 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   UploadCloud,
   FileSpreadsheet,
   FileJson,
@@ -25,12 +33,15 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   ingestApi,
+  IngestConflictError,
   type IngestJobRow,
   type IngestConfirmResponse,
+  type IngestExecutionMode,
   type IngestUploadResponse,
   type ObservationField,
   type PipelineScanResponse,
   type PipelineFilterOptions,
+  type ConflictCheck,
 } from "@/lib/api";
 
 const ACCEPTED_EXT = [".pdf", ".csv", ".json"];
@@ -75,6 +86,21 @@ function formatCell(value: unknown): string {
   return s.length > 48 ? `${s.slice(0, 48)}…` : s;
 }
 
+function groupConflictItems(items: ConflictCheck["items"]): { label: string; years: number[]; isProtected: boolean }[] {
+  const byLabel = new Map<string, { years: Set<number>; isProtected: boolean }>();
+  for (const item of items) {
+    const entry = byLabel.get(item.label) ?? { years: new Set<number>(), isProtected: false };
+    entry.years.add(item.year);
+    if (item.existingStatus !== "ingested") entry.isProtected = true;
+    byLabel.set(item.label, entry);
+  }
+  return [...byLabel.entries()].map(([label, { years, isProtected }]) => ({
+    label,
+    years: [...years].sort((a, b) => a - b),
+    isProtected,
+  }));
+}
+
 function mappingReady(
   mapping: Partial<Record<ObservationField, string | null>>,
   documentCountMode?: boolean,
@@ -109,6 +135,8 @@ export function FilesIngest() {
   const [confirmResult, setConfirmResult] = useState<IngestConfirmResponse | null>(null);
   const [jobs, setJobs] = useState<IngestJobRow[]>([]);
   const [fileKind, setFileKind] = useState<"policy_catalog" | "indicator" | null>(null);
+  const [conflictCheck, setConflictCheck] = useState<ConflictCheck | null>(null);
+  const [showConflictModal, setShowConflictModal] = useState(false);
 
   const effectiveMapping = (): Partial<Record<ObservationField, string | null>> => {
     if (pipelineFilters.documentCountMode) {
@@ -138,10 +166,13 @@ export function FilesIngest() {
     setImportDone(false);
     setConfirmResult(null);
     setFileKind(null);
+    setConflictCheck(null);
+    setShowConflictModal(false);
   };
 
   const applyCleanResult = (res: PipelineScanResponse, download = false) => {
     setPipelineResult(res);
+    setConflictCheck(res.conflictCheck ?? null);
     if (res.rowsOutput === 0) {
       toast.warning("No rows passed the filters — check your column mapping.");
       return;
@@ -214,7 +245,7 @@ export function FilesIngest() {
     void runClean();
   };
 
-  const onSave = async () => {
+  const doConfirm = async (executionMode?: IngestExecutionMode) => {
     if (!uploadResult || !mappingReady(columnMapping, pipelineFilters.documentCountMode)) return;
     setConfirming(true);
     try {
@@ -222,25 +253,38 @@ export function FilesIngest() {
         jobId: uploadResult.jobId,
         finalColumnMapping: effectiveMapping(),
         pipelineFilters,
+        executionMode,
       });
       setConfirmResult(res);
+      setShowConflictModal(false);
       if (res.status === "complete" && (res.persisted || res.rowsImported > 0)) {
         setImportDone(true);
+        const skippedNote = res.skippedConflicts ? ` (${res.skippedConflicts} row(s) left untouched)` : "";
         toast.success(
           res.storage
-            ? `Saved ${res.rowsImported} row(s) → ${res.storage}`
-            : `Saved ${res.rowsImported} row(s)`,
+            ? `Saved ${res.rowsImported} row(s) → ${res.storage}${skippedNote}`
+            : `Saved ${res.rowsImported} row(s)${skippedNote}`,
         );
+      } else if (res.status === "complete" && res.skippedConflicts) {
+        // Nothing new to write, but not an error — every row matched existing/protected data.
+        toast.info(res.dashboardHint ?? "No new rows — matching data already existed.");
       } else {
         toast.error(res.errors[0]?.message ?? res.dashboardHint ?? "Save failed");
       }
       await loadJobs();
     } catch (err) {
+      if (err instanceof IngestConflictError) {
+        setConflictCheck(err.conflictCheck);
+        setShowConflictModal(true);
+        return;
+      }
       toast.error(err instanceof Error ? err.message : "Save failed");
     } finally {
       setConfirming(false);
     }
   };
+
+  const onSave = () => void doConfirm(undefined);
 
   const headers = uploadResult?.headers ?? [];
   const usedColumns = new Set(
@@ -442,6 +486,14 @@ export function FilesIngest() {
                 </Button>
               </div>
 
+              {conflictCheck?.hasConflicts && (
+                <p className="text-[10px] text-at-risk flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3 shrink-0" />
+                  Existing data found for {conflictCheck.count} categor{conflictCheck.count === 1 ? "y" : "ies"}/year
+                  {conflictCheck.count === 1 ? "" : "s"} — you’ll choose Append or Overwrite when saving.
+                </p>
+              )}
+
               {pipelineResult && (
                 <CleanSummary
                   result={pipelineResult}
@@ -514,6 +566,63 @@ export function FilesIngest() {
           </ul>
         </details>
       )}
+
+      <Dialog open={showConflictModal} onOpenChange={(open) => !confirming && setShowConflictModal(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Existing data found</DialogTitle>
+            <DialogDescription>
+              A dataset for this region/document already exists. Choose how to save the overlapping rows.
+            </DialogDescription>
+          </DialogHeader>
+          {conflictCheck && (
+            <div className="max-h-40 overflow-auto text-xs space-y-1.5 border border-border rounded p-2">
+              {groupConflictItems(conflictCheck.items).map((g) => (
+                <div key={g.label} className="flex justify-between gap-3">
+                  <span className="font-medium text-foreground truncate">{g.label}</span>
+                  <span className="text-muted-foreground shrink-0 text-right">
+                    {g.years.join(", ")}
+                    {g.isProtected ? " — official data, won’t be overwritten" : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-8 text-xs"
+              disabled={confirming}
+              onClick={() => setShowConflictModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs"
+              disabled={confirming}
+              onClick={() => void doConfirm("append")}
+            >
+              {confirming && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+              Append Data
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 text-xs"
+              disabled={confirming}
+              onClick={() => void doConfirm("overwrite")}
+            >
+              {confirming && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+              Overwrite Data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

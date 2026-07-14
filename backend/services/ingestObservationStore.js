@@ -81,6 +81,19 @@ export async function getFileStoreObservations(targetId) {
   return store.observations.filter((o) => o.target_id === targetId);
 }
 
+/**
+ * Bulk lookup for the conflict check (backend/services/persistence.js
+ * findObservationConflicts): given (targetId, year) pairs, returns any matching
+ * rows on file, normalized to the same shape the Postgres query returns.
+ */
+export async function getFileStoreObservationsForPairs(pairs) {
+  const store = await readStore();
+  const wanted = new Set(pairs.map((p) => `${p.targetId}\0${p.year}`));
+  return store.observations
+    .filter((o) => wanted.has(`${o.target_id}\0${o.year}`))
+    .map((o) => ({ targetId: o.target_id, year: o.year, qaqcStatus: o.qaqc_status }));
+}
+
 export async function getFileStoreTargets() {
   const store = await readStore();
   return store.targets;

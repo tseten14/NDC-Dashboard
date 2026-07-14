@@ -598,6 +598,21 @@ export interface PipelineStep {
   detail?: string;
 }
 
+export interface ConflictCheckItem {
+  targetId: string;
+  label: string;
+  year: number;
+  existingStatus: "ingested" | "validated" | "mixed";
+}
+
+export interface ConflictCheck {
+  hasConflicts: boolean;
+  count: number;
+  items: ConflictCheckItem[];
+}
+
+export type IngestExecutionMode = "append" | "overwrite";
+
 export interface PipelineScanResponse {
   jobId: string;
   status: "cleaned";
@@ -608,14 +623,16 @@ export interface PipelineScanResponse {
   preview: Record<string, unknown>[];
   issues: Array<{ row: number; message: string }>;
   geographyColumn: string | null;
-  engine: "javascript";
+  engine: "javascript" | "pyspark";
   filtersApplied: PipelineFilterOptions;
+  conflictCheck?: ConflictCheck;
 }
 
 export interface IngestConfirmPayload {
   jobId: string;
   finalColumnMapping: Partial<Record<ObservationField, string | null>>;
   pipelineFilters?: PipelineFilterOptions;
+  executionMode?: IngestExecutionMode;
 }
 
 export interface IngestConfirmResponse {
@@ -623,6 +640,8 @@ export interface IngestConfirmResponse {
   status: IngestJobStatus;
   rowsImported: number;
   rowsSkipped: number;
+  skippedConflicts?: number;
+  executionMode?: IngestExecutionMode;
   errors: Array<{ row: number; message: string }>;
   persisted: boolean;
   persistenceMode?: "postgres" | "fallback" | "disabled";
@@ -631,6 +650,16 @@ export interface IngestConfirmResponse {
   yearRange?: { min: number; max: number } | null;
   dashboardHint?: string | null;
   auditFile?: string;
+}
+
+/** Thrown by confirmImport when the server requires an explicit Append/Overwrite choice. */
+export class IngestConflictError extends Error {
+  conflictCheck: ConflictCheck;
+  constructor(conflictCheck: ConflictCheck) {
+    super("Existing data found — choose append or overwrite.");
+    this.name = "IngestConflictError";
+    this.conflictCheck = conflictCheck;
+  }
 }
 
 export interface PersistenceObservationRow {
@@ -711,8 +740,26 @@ export const ingestApi = {
     }
     throw new Error("Clean endpoint not available — restart the API server (npm run start:api)");
   },
-  confirmImport: (payload: IngestConfirmPayload) =>
-    postJSON<IngestConfirmResponse>("/api/v1/ingest/confirm", payload, ingestWriteHeaders()),
+  confirmImport: async (payload: IngestConfirmPayload) => {
+    const res = await fetch(`${BASE}/api/v1/ingest/confirm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...ingestWriteHeaders() },
+      body: JSON.stringify(payload),
+    });
+    if (res.status === 409) {
+      const body = await res.json().catch(() => null);
+      if (body?.conflictCheck) throw new IngestConflictError(body.conflictCheck);
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      const detail =
+        body && typeof body === "object" && "error" in body
+          ? String(body.error)
+          : `${res.status} ${res.statusText}`;
+      throw new Error(detail);
+    }
+    return res.json() as Promise<IngestConfirmResponse>;
+  },
   listJobs: (limit = 10) =>
     getJSON<{ jobs: IngestJobRow[]; count: number }>(`/api/v1/ingest/jobs?limit=${limit}`),
 };

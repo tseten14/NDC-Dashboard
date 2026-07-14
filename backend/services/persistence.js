@@ -1,4 +1,4 @@
-import { and, desc, eq, asc } from "drizzle-orm";
+import { and, desc, eq, asc, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "../../database/index.ts";
 import { ingestJobs, observations, targets } from "../../database/schema.ts";
@@ -260,17 +260,101 @@ export async function ensureIngestTargets(targetLabels) {
   }
 }
 
-export async function insertObservationsBatch(observationRows, targetLabels = new Map()) {
+function conflictKey(targetId, year) {
+  return `${targetId}\0${year}`;
+}
+
+/**
+ * Checks whether any of the given (targetId, year) observation pairs already have
+ * data on file, and if so, what qaqc status it holds ("validated" rows are
+ * curated/official and are never silently touched by an upload — see
+ * insertObservationsBatch).
+ */
+export async function findObservationConflicts(observationRows) {
+  if (!observationRows?.length) {
+    return { hasConflicts: false, count: 0, items: [] };
+  }
+
+  const pairs = new Map();
+  for (const o of observationRows) {
+    pairs.set(conflictKey(o.targetId, o.year), { targetId: o.targetId, year: o.year });
+  }
+
+  const { mode } = getPersistenceMode();
+  let existingRows = [];
+  if (mode === "postgres") {
+    const targetIds = [...new Set([...pairs.values()].map((p) => p.targetId))];
+    const years = [...new Set([...pairs.values()].map((p) => p.year))];
+    if (targetIds.length && years.length) {
+      const db = getDb();
+      existingRows = await db
+        .select({
+          targetId: observations.targetId,
+          year: observations.year,
+          qaqcStatus: observations.qaqcStatus,
+        })
+        .from(observations)
+        .where(and(inArray(observations.targetId, targetIds), inArray(observations.year, years)));
+    }
+  } else {
+    const { getFileStoreObservationsForPairs } = await import("./ingestObservationStore.js");
+    existingRows = await getFileStoreObservationsForPairs([...pairs.values()]);
+  }
+
+  const statusesByKey = new Map();
+  for (const row of existingRows) {
+    const key = conflictKey(row.targetId, row.year);
+    if (!pairs.has(key)) continue; // targetIds/years query is a superset — keep exact pairs only
+    const arr = statusesByKey.get(key) ?? [];
+    arr.push(row.qaqcStatus);
+    statusesByKey.set(key, arr);
+  }
+
+  const items = [];
+  for (const [key, { targetId, year }] of pairs) {
+    const statuses = statusesByKey.get(key);
+    if (!statuses?.length) continue;
+    const allSame = statuses.every((s) => s === statuses[0]);
+    items.push({ targetId, year, existingStatus: allSame ? statuses[0] : "mixed" });
+  }
+
+  return { hasConflicts: items.length > 0, count: items.length, items };
+}
+
+export async function insertObservationsBatch(observationRows, targetLabels = new Map(), executionMode = "overwrite") {
   const { mode } = getPersistenceMode();
   if (!observationRows.length) {
-    return { inserted: 0, mode, storage: null };
+    return { inserted: 0, skippedConflicts: 0, mode, storage: null };
   }
+
+  const conflictCheck = await findObservationConflicts(observationRows);
+  // "validated" (curated/official) rows are never silently touched by an upload,
+  // in either mode — only "ingested" rows from a prior upload may be replaced.
+  const protectedKeys = new Set(
+    conflictCheck.items
+      .filter((i) => i.existingStatus === "validated" || i.existingStatus === "mixed")
+      .map((i) => conflictKey(i.targetId, i.year)),
+  );
+  const ingestedConflictKeys = new Set(
+    conflictCheck.items.filter((i) => i.existingStatus === "ingested").map((i) => conflictKey(i.targetId, i.year)),
+  );
+
+  let rowsToInsert;
+  if (executionMode === "append") {
+    // Append: only add rows for pairs with no existing data at all — never touch anything on file.
+    const existingKeys = new Set(conflictCheck.items.map((i) => conflictKey(i.targetId, i.year)));
+    rowsToInsert = observationRows.filter((o) => !existingKeys.has(conflictKey(o.targetId, o.year)));
+  } else {
+    // Overwrite: replace prior "ingested" rows for matching pairs; protected/validated pairs are skipped.
+    rowsToInsert = observationRows.filter((o) => !protectedKeys.has(conflictKey(o.targetId, o.year)));
+  }
+  const skippedConflicts = observationRows.length - rowsToInsert.length;
 
   if (mode === "postgres") {
     await ensureIngestTargets(targetLabels);
     const db = getDb();
     const today = new Date().toISOString().slice(0, 10);
-    const values = observationRows.map((o) => ({
+    const values = rowsToInsert.map((o) => ({
       targetId: o.targetId,
       year: o.year,
       value: String(o.value),
@@ -281,31 +365,35 @@ export async function insertObservationsBatch(observationRows, targetLabels = ne
       qaqcStatus: "ingested",
     }));
 
-    const replaceKeys = new Set();
-    const toReplace = [];
-    for (const v of values) {
-      const key = `${v.targetId}\0${v.year}`;
-      if (replaceKeys.has(key)) continue;
-      replaceKeys.add(key);
-      toReplace.push({ targetId: v.targetId, year: v.year });
-    }
-    for (const { targetId, year } of toReplace) {
-      await db
-        .delete(observations)
-        .where(
-          and(
-            eq(observations.targetId, targetId),
-            eq(observations.year, year),
-            eq(observations.qaqcStatus, "ingested"),
-          ),
-        );
+    if (executionMode !== "append") {
+      const toReplace = new Set(values.map((v) => conflictKey(v.targetId, v.year)));
+      for (const key of toReplace) {
+        if (!ingestedConflictKeys.has(key)) continue; // nothing "ingested" on file for this pair — no delete needed
+        const [targetId, yearStr] = key.split("\0");
+        await db
+          .delete(observations)
+          .where(
+            and(
+              eq(observations.targetId, targetId),
+              eq(observations.year, Number(yearStr)),
+              eq(observations.qaqcStatus, "ingested"),
+            ),
+          );
+      }
     }
 
-    await db.insert(observations).values(values);
-    return { inserted: values.length, mode: "postgres", storage: "postgres.observations" };
+    if (values.length) {
+      await db.insert(observations).values(values);
+    }
+    return { inserted: values.length, skippedConflicts, mode: "postgres", storage: "postgres.observations" };
   }
 
   const { appendIngestedObservations } = await import("./ingestObservationStore.js");
-  const inserted = await appendIngestedObservations(observationRows, targetLabels);
-  return { inserted, mode: mode === "fallback" ? "fallback" : "file", storage: "data/ingest-observations.json" };
+  const inserted = await appendIngestedObservations(rowsToInsert, targetLabels);
+  return {
+    inserted,
+    skippedConflicts,
+    mode: mode === "fallback" ? "fallback" : "file",
+    storage: "data/ingest-observations.json",
+  };
 }
