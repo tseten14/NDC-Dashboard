@@ -1,4 +1,10 @@
 # Data Pipeline clean/filter engine (PySpark) — install: pip install -r requirements-spark.txt
 # Local/dev only: Vercel has no JVM, so this engine is skipped in production (JS fallback runs instead).
-# Requires a JRE/JDK 17+ on PATH in addition to this package.
+#
+# Requires a JDK 17 or 21 (LTS) on PATH or via JAVA_HOME — tested with Homebrew's openjdk@17.
+# Newer JDKs (e.g. 24+) can break Spark's unsafe memory layer at startup
+# (ClassNotFoundException: jdk.internal.ref.Cleaner), since Spark's Platform.java still
+# reflects into JDK-internal classes that later JDKs removed. If the default `brew install
+# openjdk` gives you a too-new version, install `openjdk@17` instead and set:
+#   export JAVA_HOME=/opt/homebrew/opt/openjdk@17
 pyspark>=3.5.0
