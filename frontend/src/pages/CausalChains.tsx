@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronRight, Workflow, FileDown } from "lucide-react";
-import { exportInvestmentNote } from "@/lib/investment-note";
+// Export helpers load on demand — they pull in the PDF/spreadsheet libraries
+// (~235 kB), which no visitor should download unless they actually export.
 import { toast } from "sonner";
 
 export default function CausalChains() {
@@ -23,7 +24,7 @@ export default function CausalChains() {
 
   const handleExport = async () => {
     try {
-      await exportInvestmentNote(chain);
+      await (await import("@/lib/investment-note")).exportInvestmentNote(chain);
       toast.success("Investment note exported");
     } catch (e) {
       toast.error("Export failed");

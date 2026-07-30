@@ -86,6 +86,17 @@ export interface EmissionsDataContextValue {
   getMitigationFromCatalog: (targetId: string, sectorId: string) => MitigationOption[];
 }
 
+/**
+ * Shared "nothing here yet" values.
+ *
+ * Written once and reused, rather than creating `{}` or `[]` fresh each time.
+ * A new empty object every render counts as a change, which would rebuild the
+ * context below and re-render every screen reading from it — on every render,
+ * for as long as the data is still loading.
+ */
+const EMPTY_SLUG_BREAKDOWN: Record<string, unknown> = Object.freeze({});
+const EMPTY_DISTRICTS: DistrictListEntry[] = Object.freeze([]) as DistrictListEntry[];
+
 const EmissionsDataContext = createContext<EmissionsDataContextValue | null>(null);
 
 export function EmissionsDataProvider({ children }: { children: ReactNode }) {
@@ -168,7 +179,10 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
   const dashboard = dashboardQuery.data;
   const reconciliation = dashboard?.reconciliation;
   const coverage = dashboard?.coverage;
-  const slugBreakdownBySector = dashboard?.slug_breakdown_by_sector ?? {};
+  // Falls back to the shared empty object, not a fresh `{}`. This value is a
+  // dependency of the context useMemo below, so a new reference each render
+  // rebuilt the context and re-rendered every screen reading it.
+  const slugBreakdownBySector = dashboard?.slug_breakdown_by_sector ?? EMPTY_SLUG_BREAKDOWN;
 
   const timeseriesBySector = useMemo(() => {
     const d = dashboardQuery.data;
@@ -254,7 +268,7 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
   const isApiReachable = !dashboardQuery.isError && dashboardQuery.data != null;
   const geography = dashboard?.geography ?? (districtName ? "district" : "national");
   const isDistrictView = geography === "district";
-  const availableDistricts = districtsQuery.data?.districts ?? [];
+  const availableDistricts = districtsQuery.data?.districts ?? EMPTY_DISTRICTS;
 
   const indicatorTargets = indicatorPanelQuery.data?.targets;
   const indicatorPanelLoading = indicatorPanelQuery.isLoading;

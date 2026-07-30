@@ -18,7 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ShieldCheck, Download, AlertTriangle, FileText } from "lucide-react";
-import { exportEvidencePackCSV, exportEvidencePackPDF } from "@/lib/evidence-pack";
+// Export helpers load on demand — they pull in the PDF/spreadsheet libraries
+// (~235 kB), which no visitor should download unless they actually export.
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -39,10 +40,10 @@ export default function EvidenceMRV() {
               <p className="text-xs text-muted-foreground">Every number shows source, owner, last update, validation status and QA/QC flags. Export for parliament/funders.</p>
             </div>
             <div className="flex gap-1">
-              <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => { exportEvidencePackCSV(filtered); toast.success("Evidence Pack CSV exported"); }}>
+              <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={async () => { await (await import("@/lib/evidence-pack")).exportEvidencePackCSV(filtered); toast.success("Evidence Pack CSV exported"); }}>
                 <Download className="h-3 w-3 mr-1" /> CSV
               </Button>
-              <Button size="sm" className="h-7 text-[10px]" onClick={async () => { await exportEvidencePackPDF(filtered); toast.success("Evidence Pack PDF exported"); }}>
+              <Button size="sm" className="h-7 text-[10px]" onClick={async () => { await (await import("@/lib/evidence-pack")).exportEvidencePackPDF(filtered); toast.success("Evidence Pack PDF exported"); }}>
                 <FileText className="h-3 w-3 mr-1" /> PDF pack
               </Button>
             </div>

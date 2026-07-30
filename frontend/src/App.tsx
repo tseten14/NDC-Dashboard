@@ -81,7 +81,32 @@ const FinancialFlow = lazy(() => import("./pages/FinancialFlow.tsx"));
 const CostEffectiveness = lazy(() => import("./pages/CostEffectiveness.tsx"));
 const InstitutionalMap = lazy(() => import("./pages/InstitutionalMap.tsx"));
 
-const queryClient = new QueryClient();
+/**
+ * Data-fetching defaults for the whole app.
+ *
+ * Emissions figures are published annually and the API already caches them, so
+ * re-requesting them constantly costs the visitor time and mobile data while
+ * never changing what is on screen. These defaults apply wherever a query does
+ * not set its own:
+ *
+ *  - staleTime 5 min: reuse what we already have rather than refetching on
+ *    every navigation back to a screen.
+ *  - no refetch on window focus: switching tabs and back should not reload the
+ *    dashboard — the previous default made it flicker and re-fetch.
+ *  - one retry: a genuine outage should surface quickly as an error the user can
+ *    see, not after three silent attempts.
+ */
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      retry: 1,
+    },
+  },
+});
 
 function RouteFallback() {
   return (

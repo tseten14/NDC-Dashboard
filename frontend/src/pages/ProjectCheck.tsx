@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Target, Database, Building2, FileDown } from "lucide-react";
-import { exportInvestmentNote } from "@/lib/investment-note";
+// Export helpers load on demand — they pull in the PDF/spreadsheet libraries
+// (~235 kB), which no visitor should download unless they actually export.
 import { toast } from "sonner";
 
 export default function ProjectCheck() {
@@ -66,7 +67,7 @@ export default function ProjectCheck() {
                         <p className="text-[11px] font-bold text-foreground">{chain.title}</p>
                         <p className="text-[10px] text-muted-foreground italic">{chain.answers_policy_question}</p>
                       </div>
-                      <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={async () => { await exportInvestmentNote(chain); toast.success("Investment note exported"); }}>
+                      <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={async () => { await (await import("@/lib/investment-note")).exportInvestmentNote(chain); toast.success("Investment note exported"); }}>
                         <FileDown className="h-3 w-3 mr-1" /> Export memo
                       </Button>
                     </div>

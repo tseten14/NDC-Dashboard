@@ -50,7 +50,13 @@ export function RoleSwitcher() {
         </Badge>
       )}
       <Select value={activeRole ?? ""} onValueChange={(v) => switchRole(v as AppRole)}>
-        <SelectTrigger className="w-[180px] h-7 text-[11px]" aria-label="Switch active role">
+        {/* Narrower on phones. This sits pinned to the right of the nav bar, and
+            at a fixed 180px it took nearly half a 390px screen, squeezing the
+            navigation links into the sliver left over. */}
+        <SelectTrigger
+          className="w-[116px] sm:w-[180px] h-7 text-[11px]"
+          aria-label="Switch active role"
+        >
           <SelectValue placeholder="Select role…" />
         </SelectTrigger>
         <SelectContent>

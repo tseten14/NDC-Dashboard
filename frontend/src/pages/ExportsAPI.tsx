@@ -7,7 +7,8 @@
  * what was on screen.
  */
 import { exportRecords, getActor } from "@/data/uganda-strategy-data";
-import { exportCrtBtrCsv, exportNdcDashboardPdf } from "@/lib/ndc-export";
+// Export helpers load on demand — they pull in the PDF/spreadsheet libraries
+// (~235 kB), which no visitor should download unless they actually export.
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,12 +38,12 @@ export default function ExportsAPI() {
               reporting prep. This is an illustrative layout, not a UNFCCC ETF-validated Common Reporting Table.
             </p>
             <div className="flex gap-2">
-              <Button size="sm" className="text-xs" onClick={() => {
-                exportCrtBtrCsv(emissions);
+              <Button size="sm" className="text-xs" onClick={async () => {
+                await (await import("@/lib/ndc-export")).exportCrtBtrCsv(emissions);
                 toast.success(`CRT/BTR CSV exported (${geoLabel})`);
               }}>Export CRT/BTR CSV</Button>
-              <Button size="sm" variant="outline" className="text-xs" onClick={() => {
-                exportNdcDashboardPdf(emissions);
+              <Button size="sm" variant="outline" className="text-xs" onClick={async () => {
+                await (await import("@/lib/ndc-export")).exportNdcDashboardPdf(emissions);
                 toast.success(`BTR summary PDF exported (${geoLabel})`);
               }}>Export BTR Summary PDF</Button>
             </div>

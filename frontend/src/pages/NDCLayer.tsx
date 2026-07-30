@@ -44,7 +44,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DashboardAnalyzePanel } from "@/components/dashboard/DashboardAnalyzePanel";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { exportNdcDashboardExcel, exportNdcDashboardPdf, exportCrtBtrCsv } from "@/lib/ndc-export";
+// Exports are loaded on demand, not with the page.
+//
+// The PDF and spreadsheet libraries behind these come to ~235 kB. Importing them
+// normally meant every visitor downloaded the whole export toolchain just to look
+// at the dashboard — on a slow connection it was the last thing to finish loading
+// and held up the page by about two and a half seconds, for a feature most
+// visits never use. Now the download starts when someone actually picks an
+// export format.
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { SectorId, TimeMode, GeographyLevel } from "@/data/uganda-ndc-data";
@@ -321,7 +328,8 @@ export default function NDCLayer() {
             <DropdownMenuContent align="end">
               {canExport("excel") && (
                 <DropdownMenuItem
-                  onClick={() => {
+                  onClick={async () => {
+                    const { exportNdcDashboardExcel } = await import("@/lib/ndc-export");
                     exportNdcDashboardExcel(emissions);
                     toast.success(`Excel exported (${exportGeographyLabel})`);
                   }}
@@ -331,7 +339,8 @@ export default function NDCLayer() {
               )}
               {canExport("pdf") && (
                 <DropdownMenuItem
-                  onClick={() => {
+                  onClick={async () => {
+                    const { exportNdcDashboardPdf } = await import("@/lib/ndc-export");
                     exportNdcDashboardPdf(emissions);
                     toast.success(`PDF exported (${exportGeographyLabel})`);
                   }}
@@ -341,7 +350,8 @@ export default function NDCLayer() {
               )}
               {canExport("csv") && (
                 <DropdownMenuItem
-                  onClick={() => {
+                  onClick={async () => {
+                    const { exportCrtBtrCsv } = await import("@/lib/ndc-export");
                     exportCrtBtrCsv(emissions);
                     toast.success(`CRT/BTR CSV exported (${exportGeographyLabel})`);
                   }}

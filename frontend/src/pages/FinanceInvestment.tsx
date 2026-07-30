@@ -16,7 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Wallet, FileText, Briefcase } from "lucide-react";
-import { exportInvestmentNoteFromIndicator, exportMinisterBrief } from "@/lib/finance-exports";
+// Export helpers load on demand — they pull in the PDF/spreadsheet libraries
+// (~235 kB), which no visitor should download unless they actually export.
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +37,7 @@ export default function FinanceInvestment() {
               <h1 className="text-lg font-bold text-foreground flex items-center gap-2"><Wallet className="h-4 w-4" /> Finance & Investment</h1>
               <p className="text-xs text-muted-foreground">Each target's conditionality, finance gap and bankability — generate Investment Note + Minister one-pager.</p>
             </div>
-            <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={async () => { await exportMinisterBrief(all); toast.success("Minister one-pager exported"); }}>
+            <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={async () => { await (await import("@/lib/finance-exports")).exportMinisterBrief(all); toast.success("Minister one-pager exported"); }}>
               <Briefcase className="h-3 w-3 mr-1" /> Minister one-pager
             </Button>
           </div>
@@ -71,7 +72,7 @@ export default function FinanceInvestment() {
                         <td className="py-1 px-2 text-right">
                           <div className="inline-flex items-center gap-1">
                             <Button size="sm" variant="ghost" className="h-5 text-[10px] px-1.5"
-                              onClick={async (e) => { e.stopPropagation(); await exportInvestmentNoteFromIndicator(i); toast.success("Investment Note exported"); }}>
+                              onClick={async (e) => { e.stopPropagation(); await (await import("@/lib/finance-exports")).exportInvestmentNoteFromIndicator(i); toast.success("Investment Note exported"); }}>
                               <FileText className="h-2.5 w-2.5 mr-0.5" /> Note
                             </Button>
                             <Button asChild size="sm" variant="ghost" className="h-5 text-[10px] px-1.5" onClick={(e) => e.stopPropagation()}>
@@ -101,7 +102,7 @@ export default function FinanceInvestment() {
                     <Row label="Finance gap (USD)" value={picked.finance_gap_estimate_usd ? new Intl.NumberFormat("en-US", { notation: "compact" }).format(picked.finance_gap_estimate_usd) : "—"} />
                     <Row label="Validation" value={picked.validation_status} />
                   </div>
-                  <Button size="sm" className="w-full h-7 text-[10px] mt-2" onClick={async () => { await exportInvestmentNoteFromIndicator(picked); toast.success("Investment Note exported"); }}>
+                  <Button size="sm" className="w-full h-7 text-[10px] mt-2" onClick={async () => { await (await import("@/lib/finance-exports")).exportInvestmentNoteFromIndicator(picked); toast.success("Investment Note exported"); }}>
                     <FileText className="h-3 w-3 mr-1" /> Generate Investment Note
                   </Button>
                 </CardContent>

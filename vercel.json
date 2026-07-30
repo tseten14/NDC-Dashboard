@@ -16,6 +16,23 @@
       "destination": "/index.html"
     }
   ],
+  "headers": [
+    {
+      "//": "Build output filenames contain a content hash, so a given URL's contents can never change. Cache them for a year and let a new deploy be picked up via its new filename.",
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "//": "index.html names the hashed assets, so it must be revalidated every time. Caching it would keep serving the previous deploy's asset URLs.",
+      "source": "/index.html",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+    },
+    {
+      "//": "API responses are already cached server-side; never let a proxy hold a stale emissions figure.",
+      "source": "/api/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    }
+  ],
   "functions": {
     "api/index.js": {
       "maxDuration": 60,

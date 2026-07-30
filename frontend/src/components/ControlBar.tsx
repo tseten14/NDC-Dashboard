@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, Download, FileSpreadsheet, FileText, Database, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { exportToExcel, exportToPDF } from "@/lib/export";
+// Export helpers load on demand — they pull in the PDF/spreadsheet libraries
+// (~235 kB), which no visitor should download unless they actually export.
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
@@ -131,10 +132,10 @@ export function ControlBar({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => { exportToExcel(); toast.success("Excel exported"); }}>
+              <DropdownMenuItem onClick={async () => { await (await import("@/lib/export")).exportToExcel(); toast.success("Excel exported"); }}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />Export to Excel
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { exportToPDF(); toast.success("PDF exported"); }}>
+              <DropdownMenuItem onClick={async () => { await (await import("@/lib/export")).exportToPDF(); toast.success("PDF exported"); }}>
                 <FileText className="h-4 w-4 mr-2" />Export Key Stats (PDF)
               </DropdownMenuItem>
             </DropdownMenuContent>

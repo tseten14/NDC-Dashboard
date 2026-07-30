@@ -4,6 +4,50 @@ All notable changes to the Uganda NDC Data Explorer are documented here.
 
 ## [Unreleased]
 
+### Performance
+
+Measured on a throttled connection (1.6 Mbps, 4x CPU slowdown) — the situation
+that matters for this app's users, not a fast office link. Dashboard, median of
+five runs:
+
+| | Before | After |
+| --- | --- | --- |
+| Fully loaded | 4653 ms | 3247 ms |
+| Requests | 44 | 26 |
+| First paint | 592 ms | 668 ms |
+
+- **Export libraries no longer load with the dashboard.** `NDCLayer` imported the
+  PDF/spreadsheet toolchain (~235 kB) at the top of the file, so every visitor
+  downloaded it just to look at the page — and it was the *last* thing to finish,
+  holding the load up by ~2.5 s for a feature most visits never use. It now loads
+  when someone picks an export format. Same fix applied to the six other screens
+  that did this.
+- **Icon chunks bundled.** Each icon is its own module and different lazy screens
+  use different icons, so Rollup was emitting 39 chunks under 2 kB. Over a
+  high-latency link each is a round trip costing far more than its bytes.
+- **Context no longer rebuilds every render.** `EmissionsDataContext` fell back to
+  freshly-created `{}` and `[]` while data was loading. Both feed the context
+  `useMemo`, so a new reference each render rebuilt the context and re-rendered
+  every screen reading from it — continuously, for as long as loading took.
+- **Data-fetching defaults set.** The query client had none, so React Query's
+  defaults applied: refetch on every window focus. Switching tabs and back
+  re-fetched the dashboard. Now 5-minute freshness, no refetch on focus.
+- **Long-lived caching for build assets** (`vercel.json`). Output filenames are
+  content-hashed, so they are now served `immutable` for a year, with
+  `index.html` explicitly revalidated so a new deploy is still picked up.
+
+Hand-written vendor chunk groups were tried and **reverted** — they delayed first
+paint by ~220 ms for no measurable gain. The reasoning and numbers are recorded in
+`frontend/vite.config.ts` so the experiment is not repeated.
+
+### Bug fixes
+
+- **`npm run preview` could not reach the API.** The preview server had no proxy
+  config, so every data request 404'd and the production build rendered empty —
+  making it useless for checking a build before deploy.
+- **Role switcher squeezed the mobile nav.** Fixed at 180 px it took nearly half a
+  390 px screen, clipping the navigation links beside it.
+
 ### Bug fixes
 
 - **`npm run dev` could never complete.** The prediction verifier parsed the backtest

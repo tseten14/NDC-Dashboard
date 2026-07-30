@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { exportInvestmentMemoFromActivity } from "@/lib/finance-exports";
+// Export helpers load on demand — they pull in the PDF/spreadsheet libraries
+// (~235 kB), which no visitor should download unless they actually export.
 
 export default function InvestmentTemplates() {
   const [selectedActivity, setSelectedActivity] = useState(activities[0]?.id ?? "");
@@ -130,8 +131,8 @@ export default function InvestmentTemplates() {
               <Button
                 size="sm"
                 className="w-full text-xs mt-3"
-                onClick={() => {
-                  exportInvestmentMemoFromActivity(activity);
+                onClick={async () => {
+                  await (await import("@/lib/finance-exports")).exportInvestmentMemoFromActivity(activity);
                   toast.success("Investment memo PDF exported");
                 }}
               >
