@@ -318,7 +318,7 @@ sequenceDiagram
   participant SPA as Dashboard
   participant Facts as fact_ledger
   participant API as POST /dashboard/analyze
-  participant OAI as OpenAI GPT-4o-mini
+  participant OAI as OpenAI GPT-5.6 Sol
   participant Cit as dashboardAiCitations
 
   User->>SPA: Quick action or chat question
@@ -354,7 +354,7 @@ sequenceDiagram
 | Climate fund projects | `mcf-projects.json` | `npm run build:mcf` |
 | Intervention pathway | `transport-theory-of-change.ts` | bundled |
 
-Passage search is hidden until query/topic active; results group by document. Document AI (`/documents/view`) uses `routes/policyAi.js` with PDF fetch + GPT-4o-mini.
+Passage search is hidden until query/topic active; results group by document. Document AI (`/documents/view`) uses `routes/policyAi.js` with PDF fetch + GPT-5.6 Sol.
 
 ---
 

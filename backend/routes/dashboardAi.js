@@ -14,7 +14,10 @@ const router = express.Router();
 const analysisCache = new NodeCache({ stdTTL: 1800 });
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+/** Flagship OpenAI model; override with OPENAI_MODEL on the server if needed. */
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.6-sol";
 const MAX_CONTEXT_CHARS = 24_000;
+const OPENAI_TIMEOUT_MS = 55_000;
 
 class QuotaError extends Error {
   constructor(msg) {
@@ -25,7 +28,7 @@ class QuotaError extends Error {
 
 async function callOpenAI(apiKey, systemText, userText) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 30_000);
+  const timer = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
   try {
     const res = await fetch(OPENAI_URL, {
       method: "POST",
@@ -35,13 +38,13 @@ async function callOpenAI(apiKey, systemText, userText) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: OPENAI_MODEL,
         messages: [
           { role: "system", content: systemText },
           { role: "user", content: userText },
         ],
-        max_tokens: 2800,
-        temperature: 0.25,
+        // GPT-5.6+ rejects max_tokens and non-default temperature on Chat Completions.
+        max_completion_tokens: 2800,
       }),
     });
 
