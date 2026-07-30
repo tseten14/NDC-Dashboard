@@ -33,15 +33,15 @@ Print this page and keep it beside your laptop during the demo.
         |       workspace."
 
   0:25  | DASHBOARD
-        | Action: point at the Climate TRACE banner.
-        | Say: "Not a static PDF — observed emissions, updated from satellite
-        |       and facility data."
+        | Action: point at the Live Climate TRACE accuracy strip (top).
+        | Say: "Not a static PDF — live observed emissions. This accuracy strip
+        |       shows TRACE health, slug-sum reconciliation Δ, and Accuracy
+        |       details for partners."
 
   0:40  | DASHBOARD
-        | Action: name the five operational questions.
-        | Say: "Ministries ask five questions: where we are, what moves the
-        |       needle, policy impact, gaps vs target, and what to prioritise
-        |       next."
+        | Action: optionally open Accuracy details / How to read these numbers.
+        | Say: "TRACE and NDC inventory use different frameworks — we show the
+        |       gap; we don't force the numbers equal."
 
   1:00  | DASHBOARD
         | Action: scroll the progress column / timeseries.

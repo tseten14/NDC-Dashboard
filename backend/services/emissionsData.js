@@ -287,6 +287,7 @@ export async function getEmissionsDashboard(since, to, options = {}) {
     since: sinceY,
     to: toY,
     inventory_year: latestInventoryYear(),
+    gas: "co2e_100yr",
     geography: isDistrict ? "district" : "national",
     gadm_id: gadmId,
     district_name: districtName,

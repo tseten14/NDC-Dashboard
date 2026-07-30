@@ -51,6 +51,7 @@ export const emissionsDashboardSchema = z.object({
   since: z.number(),
   to: z.number(),
   inventory_year: z.number(),
+  gas: z.string().optional(),
   geography: z.enum(["national", "district"]).optional(),
   gadm_id: z.string().optional(),
   district_name: z.string().nullable().optional(),

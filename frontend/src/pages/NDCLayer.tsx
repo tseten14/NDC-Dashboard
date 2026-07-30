@@ -4,9 +4,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAppContext } from "@/hooks/use-app-state";
 import { useCurrentRole } from "@/hooks/use-current-role";
 import { DASHBOARD_MODE_LABELS, getDashboardPresets } from "@/lib/role-capabilities";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, MapPin, Download, FileSpreadsheet, FileText, Sparkles, LayoutList } from "lucide-react";
 import { NdcGapSummary } from "@/components/NdcGapSummary";
 import { DataCoveragePanel } from "@/components/DataCoveragePanel";
+import { LiveEmissionsBanner } from "@/components/LiveEmissionsBanner";
+import { FrameworkDivergenceCallout } from "@/components/FrameworkDivergenceCallout";
+import { AccuracyAuditDrawer } from "@/components/AccuracyAuditDrawer";
 import { NDCTargetsColumn } from "@/components/columns/NDCTargets";
 import { NDCActivitiesColumn } from "@/components/columns/NDCActivities";
 import { ObservedDataColumn } from "@/components/columns/ObservedData";
@@ -23,7 +26,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Download, FileSpreadsheet, FileText, Sparkles, LayoutList } from "lucide-react";
 import { DashboardAnalyzePanel } from "@/components/dashboard/DashboardAnalyzePanel";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { exportNdcDashboardExcel, exportNdcDashboardPdf, exportCrtBtrCsv } from "@/lib/ndc-export";
@@ -43,6 +45,7 @@ export default function NDCLayer() {
   const [searchParams, setSearchParams] = useSearchParams();
   // Which detail panel (opened from the "Data & insights" menu) is showing.
   const [activePanel, setActivePanel] = useState<string | null>(null);
+  const [accuracyOpen, setAccuracyOpen] = useState(false);
 
   // Deep-link support: /dashboard?target=...&sector=...
   useEffect(() => {
@@ -155,6 +158,24 @@ export default function NDCLayer() {
           </button>
         </div>
       )}
+
+      <LiveEmissionsBanner
+        compact={state.geographyLevel === "district"}
+        onOpenAccuracyDetails={() => setAccuracyOpen(true)}
+      />
+
+      {state.geographyLevel === "district" && (
+        <div className="px-3 py-1.5 border-b border-border bg-muted/30 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+          <MapPin className="h-3 w-3 shrink-0 text-primary" />
+          <span>
+            <span className="font-semibold text-foreground">Observed context only</span>
+            {" — "}
+            NDC targets are national
+            {emissions.districtName ? ` (${emissions.districtName})` : ""}.
+          </span>
+        </div>
+      )}
+
       {dashboardMode === "mrv" && (
         <div className="px-3 py-1.5 border-b border-primary/20 bg-primary/5 text-[10px] text-muted-foreground">
           <span className="font-semibold text-foreground">MRV view:</span> AFOLU sector selected; spatial certainty and trackability tools highlighted below. Use Export for CRT/BTR CSV.
@@ -319,6 +340,8 @@ export default function NDCLayer() {
 
       <DataCoveragePanel />
 
+      <FrameworkDivergenceCallout selectedSector={state.selectedSector} />
+
       {dashboardMode === "briefing" && (
         <NdcGapSummary variant="compact" onSelectSector={handleGapSectorSelect} />
       )}
@@ -364,6 +387,7 @@ export default function NDCLayer() {
                     ["spatial", "🛰️ Spatial Certainty"],
                     ["trackability", "📡 What Climate TRACE Can Track"],
                     ["official", "📜 Official sources"],
+                    ["accuracy", "🛡️ Accuracy audit"],
                     ...(!readOnly ? [["mitigation", "💡 Mitigation Options"]] : []),
                   ] as [string, string][]).map(([key, label]) => (
                     <Button
@@ -371,7 +395,13 @@ export default function NDCLayer() {
                       variant="outline"
                       size="sm"
                       className="w-full justify-start text-left text-xs gap-1.5 h-8 whitespace-normal leading-tight"
-                      onClick={() => setActivePanel(key)}
+                      onClick={() => {
+                        if (key === "accuracy") {
+                          setAccuracyOpen(true);
+                          return;
+                        }
+                        setActivePanel(key);
+                      }}
                     >
                       {label}
                     </Button>
@@ -464,6 +494,8 @@ export default function NDCLayer() {
         </div>
         </ScrollArea>
       </div>
+
+      <AccuracyAuditDrawer open={accuracyOpen} onOpenChange={setAccuracyOpen} />
     </div>
   );
 }

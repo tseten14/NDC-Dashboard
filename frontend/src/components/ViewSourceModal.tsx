@@ -2,18 +2,36 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ExternalLink, Database, GitBranch, RefreshCw, Shield, ChevronRight } from "lucide-react";
+import { ExternalLink, Database, GitBranch, RefreshCw, Shield, ChevronRight, Activity } from "lucide-react";
 import { getLineage } from "@/lib/data-lineage";
 import type { ClimatetraceApiSector } from "@/lib/emissions-integration";
 import { cn } from "@/lib/utils";
+
+export interface LiveSourceSnapshot {
+  sector: string;
+  gas?: string;
+  gadmId?: string | null;
+  geography?: "national" | "district" | string | null;
+  districtName?: string | null;
+  since?: number | null;
+  to?: number | null;
+  inventoryYear?: number | null;
+  unit?: string;
+  dataSource?: string | null;
+  reconciliationDeltaMt?: number | null;
+  reconciliationReferenceYear?: number | null;
+  lastRefreshIso?: string | null;
+}
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sector: ClimatetraceApiSector | "economy-wide" | null;
+  /** Live request fields from the current dashboard payload */
+  liveSnapshot?: LiveSourceSnapshot | null;
 }
 
-export function ViewSourceModal({ open, onOpenChange, sector }: Props) {
+export function ViewSourceModal({ open, onOpenChange, sector, liveSnapshot }: Props) {
   const lineage = getLineage(sector);
 
   return (
@@ -26,7 +44,9 @@ export function ViewSourceModal({ open, onOpenChange, sector }: Props) {
           </div>
           {lineage && (
             <p className="text-xs text-muted-foreground mt-1">
-              Technical provenance for <span className="font-medium text-foreground">{lineage.sectorLabel}</span> — for auditor verification
+              Technical provenance for{" "}
+              <span className="font-medium text-foreground">{lineage.sectorLabel}</span> — for auditor
+              verification
             </p>
           )}
         </DialogHeader>
@@ -36,8 +56,60 @@ export function ViewSourceModal({ open, onOpenChange, sector }: Props) {
             <div className="p-5 text-xs text-muted-foreground">No lineage data available for this sector.</div>
           ) : (
             <div className="p-5 space-y-5">
-              {/* API & table refs */}
-              <Section title="Data References" icon={Database}>
+              {liveSnapshot && (
+                <>
+                  <Section title="This request (live)" icon={Activity}>
+                    <p className="text-[10px] text-muted-foreground mb-2">
+                      Snapshot of the payload currently driving the dashboard — not methodology notes.
+                    </p>
+                    <MonoRow label="Sector" value={liveSnapshot.sector} />
+                    <MonoRow label="Gas" value={liveSnapshot.gas ?? "co2e_100yr"} />
+                    <MonoRow label="GADM" value={liveSnapshot.gadmId ?? "UGA"} />
+                    <MonoRow
+                      label="Geography"
+                      value={
+                        liveSnapshot.districtName
+                          ? `district (${liveSnapshot.districtName})`
+                          : liveSnapshot.geography ?? "national"
+                      }
+                    />
+                    <MonoRow
+                      label="Year range"
+                      value={
+                        liveSnapshot.since != null && liveSnapshot.to != null
+                          ? `${liveSnapshot.since}–${liveSnapshot.to}`
+                          : "—"
+                      }
+                    />
+                    <MonoRow
+                      label="Inventory year"
+                      value={
+                        liveSnapshot.inventoryYear != null
+                          ? String(liveSnapshot.inventoryYear)
+                          : "—"
+                      }
+                    />
+                    <MonoRow label="Unit" value={liveSnapshot.unit ?? "MtCO2e"} />
+                    <MonoRow label="Data source" value={liveSnapshot.dataSource ?? "—"} />
+                    {liveSnapshot.reconciliationDeltaMt != null &&
+                      liveSnapshot.reconciliationReferenceYear != null && (
+                        <MonoRow
+                          label="Recon Δ"
+                          value={`${liveSnapshot.reconciliationDeltaMt} Mt (${liveSnapshot.reconciliationReferenceYear})`}
+                        />
+                      )}
+                    {liveSnapshot.lastRefreshIso && (
+                      <MonoRow
+                        label="Updated"
+                        value={new Date(liveSnapshot.lastRefreshIso).toLocaleString("en-UG")}
+                      />
+                    )}
+                  </Section>
+                  <Separator />
+                </>
+              )}
+
+              <Section title="Data references (methodology notes)" icon={Database}>
                 <MonoRow label="API endpoint" value={lineage.apiEndpoint} />
                 <MonoRow label="Raw table" value={lineage.rawTable} />
                 <MonoRow label="Harmonised view" value={lineage.harmonisedView} />
@@ -47,18 +119,17 @@ export function ViewSourceModal({ open, onOpenChange, sector }: Props) {
 
               <Separator />
 
-              {/* Methodology */}
-              <Section title="Methodology" icon={Shield}>
+              <Section title="Methodology notes" icon={Shield}>
                 <p className="text-xs text-foreground leading-relaxed">{lineage.methodology}</p>
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  <span className="font-medium">Uncertainty: </span>{lineage.uncertaintyNote}
+                  <span className="font-medium">Uncertainty: </span>
+                  {lineage.uncertaintyNote}
                 </p>
               </Section>
 
               <Separator />
 
-              {/* Pipeline stages */}
-              <Section title="Data Pipeline" icon={GitBranch}>
+              <Section title="Data pipeline (methodology notes)" icon={GitBranch}>
                 <ol className="space-y-1.5">
                   {lineage.pipelineStages.map((s, i) => (
                     <li key={i} className="flex items-start gap-2">
@@ -81,8 +152,7 @@ export function ViewSourceModal({ open, onOpenChange, sector }: Props) {
 
               <Separator />
 
-              {/* Primary sources */}
-              <Section title="Primary Sources" icon={RefreshCw}>
+              <Section title="Primary sources" icon={RefreshCw}>
                 <div className="flex flex-wrap gap-1.5">
                   {lineage.primarySources.map((src) => (
                     <Badge key={src} variant="outline" className="text-[10px] h-5 font-normal">
@@ -94,14 +164,17 @@ export function ViewSourceModal({ open, onOpenChange, sector }: Props) {
 
               <Separator />
 
-              {/* External link */}
               <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">View publicly accessible dataset on Climate TRACE</p>
+                <p className="text-xs text-muted-foreground">
+                  View publicly accessible dataset on Climate TRACE
+                </p>
                 <a
                   href={lineage.ctPublicUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                  className={cn(
+                    "inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline",
+                  )}
                 >
                   Open Climate TRACE
                   <ExternalLink className="h-3 w-3" />
@@ -115,7 +188,15 @@ export function ViewSourceModal({ open, onOpenChange, sector }: Props) {
   );
 }
 
-function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
+function Section({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5">
@@ -131,7 +212,9 @@ function MonoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start gap-2">
       <span className="text-[10px] text-muted-foreground shrink-0 w-[110px] pt-0.5">{label}</span>
-      <code className="text-[10px] font-mono text-foreground bg-muted/50 px-1.5 py-0.5 rounded break-all">{value}</code>
+      <code className="text-[10px] font-mono text-foreground bg-muted/50 px-1.5 py-0.5 rounded break-all">
+        {value}
+      </code>
     </div>
   );
 }

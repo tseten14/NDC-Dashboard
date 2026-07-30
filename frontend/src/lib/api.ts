@@ -319,6 +319,8 @@ export interface EmissionsDashboard {
   since: number;
   to: number;
   inventory_year: number;
+  /** Climate TRACE gas used for this payload (default co2e_100yr). */
+  gas?: string;
   on_track: number;
   off_track: number;
   mixed: number;

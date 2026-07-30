@@ -1,5 +1,6 @@
 import { Activity, Satellite, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,7 @@ const SECTOR_LABEL: Record<string, string> = {
   ippu: "IPPU",
   agriculture: "AGRICULTURE",
   waste: "WASTE",
+  transport: "TRANSPORT",
 };
 
 const STATUS_CLS: Record<string, string> = {
@@ -20,9 +22,25 @@ const STATUS_CLS: Record<string, string> = {
   unknown: "bg-muted text-muted-foreground border-border",
 };
 
-export function LiveEmissionsBanner() {
-  const { summary: data, summaryIsLoading: isLoading, summaryError: error, health, reconciliation, dashboardLastRefreshIso } =
-    useEmissionsData();
+interface LiveEmissionsBannerProps {
+  /** Opens the Accuracy Audit drawer */
+  onOpenAccuracyDetails?: () => void;
+  /** Hide per-sector Mt chips (e.g. district view) to keep the strip compact */
+  compact?: boolean;
+}
+
+export function LiveEmissionsBanner({
+  onOpenAccuracyDetails,
+  compact = false,
+}: LiveEmissionsBannerProps) {
+  const {
+    summary: data,
+    summaryIsLoading: isLoading,
+    summaryError: error,
+    health,
+    reconciliation,
+    dashboardLastRefreshIso,
+  } = useEmissionsData();
   const isBundledSource = !!data?.data_source && /bundled|mock/i.test(data.data_source);
 
   if (error) {
@@ -43,7 +61,12 @@ export function LiveEmissionsBanner() {
                 /api/health
               </a>{" "}
               and{" "}
-              <a href="/api/v1/health/climatetrace" className="underline font-medium" target="_blank" rel="noreferrer">
+              <a
+                href="/api/v1/health/climatetrace"
+                className="underline font-medium"
+                target="_blank"
+                rel="noreferrer"
+              >
                 Climate TRACE health
               </a>
               . First load may take up to 60s while sector data is fetched.
@@ -90,15 +113,19 @@ export function LiveEmissionsBanner() {
           <Skeleton className="skeleton-shimmer h-4 w-20" />
           <Skeleton className="skeleton-shimmer h-4 w-20" />
           <Skeleton className="skeleton-shimmer h-4 w-20" />
-          <Skeleton className="skeleton-shimmer h-4 w-20" />
         </div>
       )}
 
       {data && (
         <>
-          <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto min-w-0 shrink-0">
-            {(Object.entries(data.sectors) as [string, { latest_year: number | null; latest_value: number | null; status: string }][]).map(
-              ([key, s]) => (
+          {!compact && (
+            <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto min-w-0 shrink-0">
+              {(
+                Object.entries(data.sectors) as [
+                  string,
+                  { latest_year: number | null; latest_value: number | null; status: string },
+                ][]
+              ).map(([key, s]) => (
                 <Badge
                   key={key}
                   variant="outline"
@@ -111,9 +138,9 @@ export function LiveEmissionsBanner() {
                     {s.latest_value !== null ? `${s.latest_value.toFixed(1)} Mt` : "—"}
                   </span>
                 </Badge>
-              ),
-            )}
-          </div>
+              ))}
+            </div>
+          )}
 
           <div className="w-full sm:ml-auto sm:w-auto flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground min-w-0">
             {data.global_rank != null && (
@@ -151,6 +178,17 @@ export function LiveEmissionsBanner() {
               </Badge>
             )}
             {refreshLabel && <span title="Dashboard cache refresh">Updated {refreshLabel}</span>}
+            {onOpenAccuracyDetails && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-5 px-1.5 text-[10px] text-primary"
+                onClick={onOpenAccuracyDetails}
+              >
+                Accuracy details
+              </Button>
+            )}
           </div>
         </>
       )}

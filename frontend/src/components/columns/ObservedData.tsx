@@ -12,6 +12,8 @@ import {
   getProxySectorLabel,
 } from "@/lib/emissions-integration";
 import { DataProvenanceBadge } from "@/components/DataProvenanceBadge";
+import { DataLineageChip } from "@/components/DataLineageChip";
+import { buildTargetLineage } from "@/lib/lineage";
 import { useTargetObservations } from "@/hooks/use-target-observations";
 import { reconciliationDeltaPercent } from "@/lib/progress";
 import { emissionsChartDisplay } from "@/lib/emissions-units";
@@ -263,6 +265,21 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
       : "NDC pledge goal";
   const measuredCompareLabel = observedSeriesLabel.replace(/\s*observed\s*$/i, "").trim() || "Measured";
 
+  const lineageSource: "api" | "catalog" | "mock" =
+    observedMode === "live" && (apiSector || usingProxyData)
+      ? "api"
+      : observedMode === "live" && isIndicatorPanelTarget(selectedTarget)
+        ? "catalog"
+        : "mock";
+  const lineage = buildTargetLineage(selectedTarget, emissions, lineageSource);
+  const qaqc = observedData.provenance.qaqcStatus;
+  const qaqcBadgeCls =
+    qaqc === "ok"
+      ? "text-on-track border-on-track/30"
+      : qaqc === "warning"
+        ? "text-at-risk border-at-risk/30"
+        : "text-muted-foreground border-border";
+
   const chartDisplay = emissionsChartDisplay(
     chartData.map((d) => d.observedValue),
     yUnit,
@@ -364,6 +381,14 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                 {provider}
               </Badge>
             ))}
+            <DataLineageChip lineage={lineage} />
+            <Badge
+              variant="outline"
+              className={cn("text-[8px] h-4 px-1 font-normal capitalize", qaqcBadgeCls)}
+              title="QA/QC status derived from Climate TRACE completeness, YoY spikes, and reconciliation"
+            >
+              QA {qaqc}
+            </Badge>
           </div>
 
           {apiSector && observedMode === "live" && isDistrictView && (
@@ -591,7 +616,27 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
       <ViewSourceModal
         open={viewSourceOpen}
         onOpenChange={setViewSourceOpen}
-        sector={usingProxyData ? null : (apiSector ?? (selectedTarget?.sectorId === "economy-wide" ? "economy-wide" : null))}
+        sector={
+          (usingProxyData ? proxySector : apiSector) ??
+          (selectedTarget?.sectorId === "economy-wide" ? "economy-wide" : null)
+        }
+        liveSnapshot={{
+          sector: String(
+            (usingProxyData ? proxySector : apiSector) ?? selectedTarget.sectorId,
+          ),
+          gas: emissions.dashboard?.gas ?? "co2e_100yr",
+          gadmId: emissions.dashboard?.gadm_id ?? "UGA",
+          geography: emissions.geography,
+          districtName: emissions.districtName,
+          since: emissions.dashboard?.since ?? null,
+          to: emissions.dashboard?.to ?? null,
+          inventoryYear: emissions.dashboard?.inventory_year ?? null,
+          unit: "MtCO2e",
+          dataSource: emissions.dashboard?.data_source ?? liveProgress?.data_source ?? null,
+          reconciliationDeltaMt: emissions.reconciliation?.delta_mt ?? null,
+          reconciliationReferenceYear: emissions.reconciliation?.reference_year ?? null,
+          lastRefreshIso: emissions.dashboardLastRefreshIso,
+        }}
       />
     </div>
   );
