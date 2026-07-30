@@ -1,3 +1,8 @@
+/**
+ * Banner across the risk screens.
+ *
+ * States the status of the risk data being shown.
+ */
 // Persistent banner reminding users that prototype risk data is illustrative only.
 import { AlertTriangle } from "lucide-react";
 

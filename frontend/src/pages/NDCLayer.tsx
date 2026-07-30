@@ -1,3 +1,19 @@
+/**
+ * Screen: the main NDC dashboard.
+ *
+ * The app's primary analysis screen, laid out in three columns that read left to
+ * right as a single argument:
+ *   1. NDC TARGETS   — what Uganda promised
+ *   2. OBSERVED DATA — what Climate TRACE actually measures
+ *   3. PROGRESS      — how far along that leaves the country
+ *
+ * Choosing a target on the left fills the other two columns for it. The controls
+ * along the top switch sector, and switch between the national picture and a
+ * single district.
+ *
+ * District figures are shown for context only. NDC targets are national
+ * commitments, so a district is never given a pass or fail against them.
+ */
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";

@@ -1,3 +1,9 @@
+/**
+ * Badge naming a figure's source.
+ *
+ * Shows at a glance whether a number is live from Climate TRACE, from a stored
+ * import, or from bundled reference data.
+ */
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Upload } from "lucide-react";

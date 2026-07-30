@@ -1,3 +1,14 @@
+/**
+ * Matches NDC targets to measured emissions.
+ *
+ * Uganda's NDC and Climate TRACE do not describe the world the same way, so a
+ * target and a measurement cannot simply be compared. This works out which
+ * Climate TRACE category corresponds to each target, and where no direct match
+ * exists it identifies a stand-in and labels it as one.
+ *
+ * Some targets are not emissions at all — forest cover is a percentage of land.
+ * Those are recognised here so they are never compared against a tonnage.
+ */
 import type {
   NDCTarget,
   ObservedDataPoint,

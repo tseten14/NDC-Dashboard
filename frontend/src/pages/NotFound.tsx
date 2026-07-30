@@ -1,3 +1,9 @@
+/**
+ * Screen: page not found.
+ *
+ * Shown when a web address does not match any screen, with a way back to the
+ * dashboard.
+ */
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 

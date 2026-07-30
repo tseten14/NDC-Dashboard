@@ -1,3 +1,10 @@
+/**
+ * Screen: where the money has actually gone.
+ *
+ * Tracks climate finance from commitment to disbursement by project and
+ * district. The gap between the two is the point of the screen — money pledged
+ * is not money spent.
+ */
 // Financial Flow — committed → disbursed → spent per project.
 import { useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";

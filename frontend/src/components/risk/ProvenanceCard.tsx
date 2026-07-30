@@ -1,3 +1,9 @@
+/**
+ * Card: where a risk layer came from.
+ *
+ * Names the source and maturity of a hazard layer, so an illustrative layer is
+ * not mistaken for a validated one.
+ */
 // Data Provenance Card for a hazard layer.
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

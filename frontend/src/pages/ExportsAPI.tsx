@@ -1,3 +1,11 @@
+/**
+ * Screen: exports and reporting formats.
+ *
+ * Produces the files needed for official reporting — the CRT/BTR formats used in
+ * UN climate submissions — plus Excel and PDF versions for ordinary use. Each
+ * export records which view it was taken from, so a file can be traced back to
+ * what was on screen.
+ */
 import { exportRecords, getActor } from "@/data/uganda-strategy-data";
 import { exportCrtBtrCsv, exportNdcDashboardPdf } from "@/lib/ndc-export";
 import { useEmissionsData } from "@/context/EmissionsDataContext";

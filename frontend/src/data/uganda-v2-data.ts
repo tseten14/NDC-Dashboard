@@ -1,3 +1,9 @@
+/**
+ * Expanded NDC reference data.
+ *
+ * A richer description of targets and indicators, adding how each is measured,
+ * what evidence supports it and how confident that evidence is.
+ */
 /* ═══════════════════════════════════════════════════════════════
    Uganda Integrated NDC–Development Explorer  •  v2.0 schema
    Causal chains, indicators (typology), interlinkages

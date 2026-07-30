@@ -1,3 +1,18 @@
+/**
+ * Policy impact modelling endpoints.
+ *
+ * Lets a user ask "if we adopt this policy, what happens to emissions?" A policy
+ * case describes a real measure (its cost, coverage and expected effect); the
+ * forecast endpoint runs that case through the impact engine and returns the
+ * projected emissions path. "TEF elements" are the building blocks of the
+ * Transparency and Effectiveness Framework used to structure the answer.
+ *
+ * Endpoints:
+ *   GET  /policy-cases              — the library of modelled policy cases
+ *   GET  /policy-cases/:id          — one case in full
+ *   POST /policy-impact/forecast    — run a case and return the projection
+ *   GET  /policy-impact/tef-elements — the framework's building blocks
+ */
 import express from "express";
 import { safeParseOrLog } from "../../shared/validate.js";
 import {

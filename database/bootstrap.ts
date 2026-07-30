@@ -1,3 +1,14 @@
+/**
+ * Works out how the app should store data at startup.
+ *
+ * Settles on one of three modes and reports it:
+ *  - postgres: a real database is configured and reachable
+ *  - fallback: no database, so bundled reference data is served instead
+ *  - disabled: no database and no fallback, so saving is switched off
+ *
+ * This is what allows the app to run on a laptop with nothing installed while
+ * still using a proper database in production.
+ */
 import "dotenv/config";
 import { runMigrations } from "./migrate.js";
 import { runSeed } from "./seed.js";

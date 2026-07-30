@@ -1,3 +1,10 @@
+/**
+ * Rewrites NDC targets in everyday language.
+ *
+ * Official target wording is precise but hard to read. This provides a plain
+ * version of each — what it means and which actions it implies — so the dashboard
+ * can show something understandable without losing the exact text.
+ */
 import type { NDCTarget } from "@/data/uganda-ndc-data";
 
 export interface TargetPlainLanguage {

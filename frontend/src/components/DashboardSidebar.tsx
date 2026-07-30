@@ -1,3 +1,9 @@
+/**
+ * The dashboard's side panel.
+ *
+ * Holds the secondary controls and context that sit beside the main dashboard
+ * columns.
+ */
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { sectors, type Sector } from "@/data/climate-data";

@@ -1,3 +1,11 @@
+/**
+ * The database connection.
+ *
+ * Opens and shares a single pool of connections, and offers a health check the
+ * rest of the app uses to ask whether the database is actually reachable. If no
+ * database address is configured, this reports that clearly instead of failing
+ * at some later, more confusing point.
+ */
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema.js";

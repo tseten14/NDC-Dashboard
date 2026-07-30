@@ -1,3 +1,11 @@
+/**
+ * Screen: AFOLU measurement, reporting and verification.
+ *
+ * AFOLU covers agriculture, forestry and other land use — the biggest part of
+ * Uganda's emissions and the hardest to measure. This screen lays out how those
+ * figures are produced and checked, which stand-in measures are used where
+ * direct measurement is not possible, and what is still missing.
+ */
 import { activities, kpis, dataSources, getActor, computeKPIProgress } from "@/data/uganda-strategy-data";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

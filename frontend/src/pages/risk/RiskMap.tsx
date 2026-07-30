@@ -1,3 +1,11 @@
+/**
+ * Screen: the risk map.
+ *
+ * Colours Uganda's districts by how exposed they are to a chosen hazard —
+ * drought, flood, landslide — under a chosen scenario. Each layer carries its
+ * data status (illustrative or preliminary) on the face of the map, so a rough
+ * layer is not mistaken for a validated one.
+ */
 // Interactive risk map: choropleth of districts colored by selected hazard layer.
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";

@@ -1,3 +1,10 @@
+/**
+ * Screen: cause and effect chains.
+ *
+ * Traces the path from an action to its eventual emissions outcome, so the
+ * reasoning behind a claimed reduction can be followed and questioned rather
+ * than taken on trust.
+ */
 import { useState } from "react";
 import { causalChains, getIndicator, indicatorTypeLabel, mrvMethodLabel, ndcTargetsTouchedByChain } from "@/data/uganda-v2-data";
 import { Card, CardContent } from "@/components/ui/card";

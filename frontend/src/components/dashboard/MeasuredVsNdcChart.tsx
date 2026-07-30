@@ -1,3 +1,9 @@
+/**
+ * Chart: measured emissions against the NDC ceiling.
+ *
+ * A direct two-bar comparison of the latest measurement and the pledge limit —
+ * the simplest statement of whether Uganda is inside its commitment.
+ */
 import {
   Bar,
   BarChart,

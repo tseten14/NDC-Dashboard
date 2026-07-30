@@ -1,3 +1,9 @@
+/**
+ * Screen: the classic three-column cockpit.
+ *
+ * An earlier layout that puts targets, observed data and progress side by side
+ * in one view. Kept because some users prefer it to the newer dashboard.
+ */
 import { useState, useCallback } from "react";
 import { ControlBar } from "@/components/ControlBar";
 import { NDCTargetsColumn } from "@/components/columns/NDCTargets";

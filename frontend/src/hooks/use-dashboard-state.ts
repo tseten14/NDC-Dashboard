@@ -1,3 +1,9 @@
+/**
+ * State for the standalone dashboard layout.
+ *
+ * The same idea as use-app-state but scoped to the classic cockpit screen, which
+ * manages its own selection independently.
+ */
 import { useState, useCallback, useMemo } from "react";
 import {
   type SectorId, type TimeMode, type GeographyLevel,

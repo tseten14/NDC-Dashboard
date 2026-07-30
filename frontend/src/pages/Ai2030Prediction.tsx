@@ -1,3 +1,13 @@
+/**
+ * Screen: projected emissions in 2030.
+ *
+ * Takes the observed history and projects it forward to 2030, then compares that
+ * projection with what Uganda pledged, showing the shortfall per sector.
+ *
+ * These are indicative planning estimates produced by a statistical model, not
+ * official figures — the screen says so, and shows an uncertainty range rather
+ * than a single confident number.
+ */
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {

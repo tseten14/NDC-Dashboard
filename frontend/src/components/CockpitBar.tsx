@@ -1,3 +1,8 @@
+/**
+ * The cockpit's control strip.
+ *
+ * The row of controls above the cockpit columns for switching what is in view.
+ */
 // Cockpit-wide context bar: scope toggles affecting all primary pages.
 import { useCockpit } from "@/hooks/use-cockpit";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

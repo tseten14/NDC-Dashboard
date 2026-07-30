@@ -1,3 +1,14 @@
+/**
+ * Database health endpoint.
+ *
+ * Answers one question: "is the database working right now?" The app can run
+ * without a database (it then serves the bundled reference data instead), so
+ * this reports which of the three modes it is in — connected to the real
+ * database, falling back to bundled data, or switched off entirely.
+ *
+ * Endpoint:
+ *   GET /health/db — current database mode, response time, and a plain message.
+ */
 import express from "express";
 import { checkDatabaseConnectivity } from "../../database/index.ts";
 import { getPersistenceMode } from "../../database/bootstrap.ts";

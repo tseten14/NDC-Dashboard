@@ -1,3 +1,9 @@
+/**
+ * A number that counts up when it appears.
+ *
+ * Presentation only; shows the final value immediately when reduced motion is
+ * requested.
+ */
 import { useEffect, useRef, useState } from "react";
 import { useCountUp } from "@/hooks/use-count-up";
 

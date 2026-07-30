@@ -1,3 +1,9 @@
+/**
+ * Panel: the gap between promise and reality.
+ *
+ * Sets each NDC target against the latest measurement and quantifies the
+ * shortfall — the app's central comparison, stated in one place.
+ */
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";

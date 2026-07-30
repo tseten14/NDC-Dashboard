@@ -1,3 +1,9 @@
+/**
+ * Placeholder states for the dashboard columns.
+ *
+ * What a column shows while loading, when there is no data, or before a target
+ * has been chosen — so an empty column always explains itself.
+ */
 import type { ReactNode } from "react";
 import { Database, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";

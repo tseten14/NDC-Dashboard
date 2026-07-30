@@ -1,3 +1,14 @@
+/**
+ * Short-term holding area for files being imported.
+ *
+ * When someone uploads a spreadsheet, the app does not save it straight away.
+ * It first parses the file and keeps the result here, in memory, so the user can
+ * review how columns were interpreted and correct any mistakes. Only when they
+ * confirm does the data get written for real.
+ *
+ * Because this lives in memory, anything not confirmed is discarded when the
+ * server restarts — which is the intended behaviour for an unfinished import.
+ */
 import { randomUUID } from "node:crypto";
 
 /** In-memory staging for upload → confirm flow (TTL 2 hours). */

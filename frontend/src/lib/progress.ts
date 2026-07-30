@@ -1,3 +1,10 @@
+/**
+ * Progress calculation for the front end.
+ *
+ * Re-exports the shared progress rules so a percentage shown in the browser is
+ * produced by exactly the same code as the one the API reports. Duplicating this
+ * logic would eventually mean two different answers to the same question.
+ */
 import type { MetricType, ProgressStatus, QAQCStatus } from "@/data/uganda-ndc-data";
 import {
   calculateProgress as calculateProgressCore,

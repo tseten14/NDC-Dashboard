@@ -1,3 +1,11 @@
+/**
+ * Generates stable identifiers.
+ *
+ * The same target imported twice must end up with the same id, or the second
+ * import would create a duplicate instead of updating the first. These build ids
+ * by deriving them from the thing itself rather than at random, so they come out
+ * identical every time.
+ */
 import { v5 as uuidv5 } from "uuid";
 
 /** Stable namespace for deterministic UUIDs from legacy string keys (t1, KPI-*, climate-afolu). */

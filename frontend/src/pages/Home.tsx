@@ -1,3 +1,9 @@
+/**
+ * Screen: the landing page.
+ *
+ * The first thing a person sees after choosing a country. Explains in plain
+ * terms what the app can do and points to the main screens.
+ */
 import { useEffect, type CSSProperties } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";

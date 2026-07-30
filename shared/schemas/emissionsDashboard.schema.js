@@ -1,3 +1,11 @@
+/**
+ * The expected shape of the emissions dashboard data.
+ *
+ * Describes the payload the dashboard screen is built from — the yearly figures,
+ * the progress calculation, the per-sector summaries and the reconciliation
+ * check. The API validates against this before responding, so the screen can
+ * never be handed a half-formed payload and draw a misleading chart from it.
+ */
 import { z } from "zod";
 
 const sectorStatusSchema = z.enum(["on_track", "at_risk", "mixed", "off_track", "unknown"]);

@@ -1,3 +1,8 @@
+/**
+ * Uganda's districts.
+ *
+ * The district list used by the geography selector and the maps.
+ */
 export const ugandaDistricts = [
   "Kampala", "Wakiso", "Mukono", "Jinja", "Mbale", "Gulu", "Lira",
   "Soroti", "Arua", "Mbarara", "Kabale", "Fort Portal", "Masaka",

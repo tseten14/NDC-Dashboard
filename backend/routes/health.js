@@ -1,3 +1,20 @@
+/**
+ * Service health endpoints, plus the inbox for browser error reports.
+ *
+ * Used by monitoring and by the app itself to check that the API is alive and
+ * that its upstream data source (Climate TRACE) is reachable. The "full" check
+ * is the slower, more thorough one — it actually reaches out to the database and
+ * to Climate TRACE rather than just confirming the server is running.
+ *
+ * Also exposes isMockMode(), the single place that decides whether the app is
+ * serving real live data or stand-in demo figures. Several screens show a
+ * warning banner based on it, so that a demo is never mistaken for real data.
+ *
+ * Endpoints:
+ *   GET  /health        — quick "am I up?" check
+ *   GET  /health/full   — deep check: database + Climate TRACE + cache stats
+ *   POST /client-errors — receives JavaScript errors from people's browsers
+ */
 import express from "express";
 import { checkDatabaseConnectivity } from "../../database/index.ts";
 import { getPersistenceMode } from "../../database/bootstrap.ts";

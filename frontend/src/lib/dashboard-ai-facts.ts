@@ -1,3 +1,13 @@
+/**
+ * The fact sheet and citations behind AI answers.
+ *
+ * Builds a ledger of verified figures, each paired with the source it came from
+ * — the UNFCCC NDC registry, Climate TRACE — and the rules the assistant must
+ * follow when citing them.
+ *
+ * The point is that every claim in an answer can be traced to a source. An
+ * assistant that cannot cite where a number came from should not be stating it.
+ */
 import {
   ndcTargets,
   type NDCTarget,

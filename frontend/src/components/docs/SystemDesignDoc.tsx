@@ -1,3 +1,6 @@
+/**
+ * The system design document, rendered in the app.
+ */
 import systemDesignMarkdown from "../../../../docs/dev/system-design.md?raw";
 import { MarkdownDocument } from "./MarkdownDocument";
 

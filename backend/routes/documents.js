@@ -1,3 +1,28 @@
+/**
+ * Policy document library endpoints.
+ *
+ * Serves the collection of climate policy documents (national strategies, plans
+ * and Multilateral Climate Fund project papers) that the app lets people browse
+ * and search. Documents are broken into short "passages" so a search can point
+ * at the exact paragraph that answers a question, rather than a whole PDF.
+ *
+ * Everything here is read-only and comes from files prepared ahead of time by
+ * the scripts in scripts/build_policy_*.mjs.
+ *
+ * Endpoints:
+ *   GET /documents                       — list the document catalogue
+ *   GET /documents/meta                  — counts and coverage of the catalogue
+ *   GET /documents/curated               — the hand-picked highlights
+ *   GET /documents/topics                — topics documents are tagged with
+ *   GET /documents/:id                   — one document
+ *   GET /documents/:id/passages          — that document split into passages
+ *   GET /documents/passages/search       — full-text search across passages
+ *   GET /documents/passage-corpus/meta   — size/coverage of the passage set
+ *   GET /documents/catalog/:catalogId    — look a document up by catalogue id
+ *   GET /documents/mcf/meta              — summary of the climate-fund projects
+ *   GET /documents/mcf/search            — search the climate-fund projects
+ *   GET /documents/mcf/:projectId        — one climate-fund project
+ */
 import express from "express";
 import { getCurated, getDocumentById, getMeta, listDocuments } from "../services/policyDocuments.js";
 import {

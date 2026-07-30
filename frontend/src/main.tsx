@@ -1,3 +1,9 @@
+/**
+ * The starting point of the front end.
+ *
+ * The first file the browser runs. Mounts the application into the page and
+ * loads the global styles. Everything else follows from App.tsx.
+ */
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";

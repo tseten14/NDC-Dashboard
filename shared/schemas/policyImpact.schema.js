@@ -1,3 +1,13 @@
+/**
+ * The expected shape of a policy case.
+ *
+ * A policy case describes a climate measure in a structured way: the chain of
+ * cause and effect from action to emissions outcome, the size and direction of
+ * that outcome, the trade-offs involved, and the sources backing each claim.
+ *
+ * Requiring sources here is deliberate — a case cannot enter the library without
+ * saying where its numbers came from.
+ */
 import { z } from "zod";
 
 export const pathwayNodeKindSchema = z.enum([

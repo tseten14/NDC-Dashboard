@@ -1,3 +1,19 @@
+/**
+ * The heart of the emissions dashboard.
+ *
+ * Brings together the two halves of the story and works out what they mean:
+ *  - observed emissions, measured by Climate TRACE
+ *  - Uganda's NDC targets, the reductions the country has committed to
+ *
+ * From those it calculates, per sector, how far along Uganda is toward each
+ * target and whether that counts as on track or off track, then assembles the
+ * single payload the dashboard screen renders.
+ *
+ * It also performs a reconciliation check: the sector totals shown in the app
+ * are added back up and compared against Climate TRACE's own national figure,
+ * so any discrepancy is surfaced rather than hidden. The dashboard's "accuracy
+ * details" panel is built from that check.
+ */
 import {
   NDC_TARGETS,
   SECTOR_MAP,

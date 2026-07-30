@@ -1,3 +1,9 @@
+/**
+ * Panel: the largest individual emitters.
+ *
+ * Ranks the specific sites Climate TRACE has identified as emitting most, so
+ * attention can go to particular facilities rather than sector averages.
+ */
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { emissionsApi, type EmissionsSource } from "@/lib/api";

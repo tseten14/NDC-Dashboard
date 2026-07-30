@@ -1,3 +1,11 @@
+/**
+ * Shared vocabulary for the import pipeline.
+ *
+ * The type definitions every import step passes between them: what a parsed file
+ * looks like, what a column mapping is, and what warnings can be raised. No
+ * behaviour here — this file exists so the parser, the mapper and the saver all
+ * agree on the same shapes.
+ */
 export type InferredColumnType = "number" | "date" | "text";
 
 export interface ParseWarning {

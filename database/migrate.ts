@@ -1,3 +1,10 @@
+/**
+ * Brings the database structure up to date.
+ *
+ * Applies the numbered migration files in database/migrations in order, skipping
+ * any already applied. This is how the database's tables and columns are changed
+ * over time without losing what is stored in them.
+ */
 import "dotenv/config";
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";

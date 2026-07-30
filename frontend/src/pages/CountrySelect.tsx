@@ -1,3 +1,10 @@
+/**
+ * Screen: choose a country.
+ *
+ * The app's front door. Uganda is the country with a full set of data; the
+ * others are listed as coming soon. The choice is remembered for the browser
+ * session, and everything else in the app is locked until one is made.
+ */
 import { useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { COUNTRY_OPTIONS, type CountryCode } from "@/data/countries";

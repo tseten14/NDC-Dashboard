@@ -1,3 +1,8 @@
+/**
+ * Fades text in as it scrolls into view.
+ *
+ * Presentation only; stays still when reduced motion is requested.
+ */
 import { Fragment } from "react";
 import { cn } from "@/lib/utils";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";

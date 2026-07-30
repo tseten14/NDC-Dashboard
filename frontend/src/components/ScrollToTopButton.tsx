@@ -1,3 +1,8 @@
+/**
+ * Back-to-top button.
+ *
+ * Appears once the page has been scrolled down, for the long screens.
+ */
 import { useEffect, useRef, useState } from "react";
 import { ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";

@@ -1,3 +1,9 @@
+/**
+ * Small tag showing where a figure came from.
+ *
+ * A compact marker naming the source of the number beside it, expandable for the
+ * full trail.
+ */
 import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";

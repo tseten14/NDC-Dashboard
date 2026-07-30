@@ -1,3 +1,13 @@
+/**
+ * Dashboard column: observed data (column 2 of 3).
+ *
+ * The middle column — what Climate TRACE actually measured, as a year-by-year
+ * chart with its sources, quality warnings and coverage notes attached.
+ *
+ * Gaps are drawn as gaps and never interpolated, and the difference between what
+ * the chart covers and what the target covers is stated where the two do not
+ * match exactly.
+ */
 import { useState, type ReactNode } from "react";
 import { type NDCTarget, type ObservedDataSet, type TimeMode, getObservedDataForTarget, bau2030ForTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";

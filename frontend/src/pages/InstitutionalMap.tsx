@@ -1,3 +1,9 @@
+/**
+ * Screen: who owns what across government.
+ *
+ * Maps commitments to the ministries and agencies responsible for them, so it is
+ * clear who to ask about any given target.
+ */
 // Institutional Map — who owns what across government.
 import { useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";

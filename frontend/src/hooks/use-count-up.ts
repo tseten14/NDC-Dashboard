@@ -1,3 +1,10 @@
+/**
+ * Animates a number counting up to its value.
+ *
+ * Purely decorative: makes headline figures tick up when they first appear.
+ * Respects the visitor's "reduce motion" setting, in which case the final number
+ * is shown immediately.
+ */
 import { useEffect, useRef, useState } from "react";
 
 /**

@@ -1,3 +1,16 @@
+/**
+ * Stand-in emissions data for demos and automated tests.
+ *
+ * Mirrors the shape of the real emissions endpoints but returns fixed, made-up
+ * numbers, so the app can be demonstrated or tested without calling Climate
+ * TRACE. It is only mounted when USE_MOCK_DATA=true, and whenever it is active
+ * the app shows a prominent "MOCK DATA MODE" banner — these figures must never
+ * be mistaken for Uganda's real emissions.
+ *
+ * Endpoints mirror the live ones:
+ *   GET /emissions/timeseries, /emissions/progress, /emissions/summary,
+ *   GET /provenance, /health/climatetrace
+ */
 import express from "express";
 import { NDC_TARGETS } from "../../../config/ndcTargets.js";
 

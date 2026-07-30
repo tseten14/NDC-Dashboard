@@ -1,3 +1,12 @@
+/**
+ * Turns reviewed spreadsheet rows into records ready to save.
+ *
+ * The last step of an import. By this point the user has confirmed which column
+ * means what, so each row is converted into an observation — a target, a year
+ * and a value — with the numbers and years checked as it goes. Rows that cannot
+ * be made sense of are collected as errors and reported back rather than being
+ * quietly dropped, so nobody ends up with a partial import they did not notice.
+ */
 import type { ColumnMapping } from "./types.js";
 import { extractYearFromValue } from "./inferTypes.js";
 

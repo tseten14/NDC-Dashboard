@@ -1,3 +1,9 @@
+/**
+ * Example activities.
+ *
+ * A handful of realistic sample activities so the delivery screens have
+ * something to show before any real data has been entered.
+ */
 // Seed ActivityOrProject records — minimal but real enough to drive activity workflows.
 import type { ActivityOrProject } from "./indicator-registry";
 

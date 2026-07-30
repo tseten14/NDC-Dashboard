@@ -1,3 +1,8 @@
+/**
+ * Dashboard column: activities.
+ *
+ * The work under way against the selected target.
+ */
 import { type NDCActivity, type GeographyLevel, getActivitiesForTarget } from "@/data/uganda-ndc-data";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

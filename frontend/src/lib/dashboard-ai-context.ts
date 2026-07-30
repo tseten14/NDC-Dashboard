@@ -1,3 +1,11 @@
+/**
+ * Assembles what the dashboard assistant is allowed to know.
+ *
+ * Before any question is asked of the AI assistant, this gathers the figures
+ * currently on screen and packages them as context. The assistant answers from
+ * this package rather than from memory, which is what keeps its answers tied to
+ * the data actually being displayed.
+ */
 import {
   ndcTargets,
   getObservedDataForTarget,

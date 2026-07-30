@@ -1,3 +1,11 @@
+/**
+ * Loads screens on demand, and retries if the load fails.
+ *
+ * Screens are downloaded only when first visited, which keeps the initial load
+ * fast. That download can fail on a flaky connection, or when a new version has
+ * been deployed and the old file no longer exists. This retries, and reloads the
+ * page if the cause was a stale version, rather than leaving a blank screen.
+ */
 import { lazy } from "react";
 import type { ComponentType, LazyExoticComponent } from "react";
 

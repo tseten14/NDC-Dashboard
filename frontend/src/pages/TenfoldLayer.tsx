@@ -1,3 +1,9 @@
+/**
+ * Screen: Tenfold Growth Strategy alignment.
+ *
+ * Shows how climate activities line up with Uganda's Tenfold growth ambitions,
+ * and how ready each one is — so growth and climate plans can be read together.
+ */
 import { activities, kpis, computeKPIProgress, getActor, strategies } from "@/data/uganda-strategy-data";
 import { useAppContext } from "@/hooks/use-app-state";
 import { Card, CardContent } from "@/components/ui/card";

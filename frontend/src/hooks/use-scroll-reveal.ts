@@ -1,3 +1,8 @@
+/**
+ * Fades content in as it scrolls into view.
+ *
+ * Presentation only. Disabled when the visitor has asked for reduced motion.
+ */
 import { useCallback, useRef } from "react";
 
 /**

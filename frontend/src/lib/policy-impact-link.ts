@@ -1,3 +1,10 @@
+/**
+ * Carries a selection between screens.
+ *
+ * Builds the links that take a chosen mitigation option through to the policy
+ * impact screen, and from there on to climate finance — passing the selection
+ * along so the user does not have to make it again on each screen.
+ */
 import type { MitigationOption, SectorId } from "@/data/uganda-ndc-data";
 
 const SECTOR_LABELS: Record<SectorId, string> = {

@@ -1,3 +1,10 @@
+/**
+ * Stand-in answers for the policy assistant.
+ *
+ * Pre-written responses used when no AI service is configured, so the feature
+ * can be demonstrated offline. These are illustrative examples, not real
+ * analysis of the documents.
+ */
 // Mock AI policy analysis engine.
 // Generates plausible, demo-quality responses for CPR documents using available
 // document metadata (title, summary, category, source, type, date).

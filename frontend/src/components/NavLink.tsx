@@ -1,3 +1,8 @@
+/**
+ * A navigation link that knows when it is the current page.
+ *
+ * Highlights itself when its screen is the one being viewed.
+ */
 import { NavLink as RouterNavLink, NavLinkProps } from "react-router-dom";
 import { forwardRef, memo } from "react";
 import { cn } from "@/lib/utils";

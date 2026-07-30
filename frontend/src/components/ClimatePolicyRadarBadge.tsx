@@ -1,3 +1,9 @@
+/**
+ * Badge marking data from Climate Policy Radar.
+ *
+ * Labels documents sourced from the Climate Policy Radar project so their origin
+ * is visible at a glance.
+ */
 import { BookOpen, ExternalLink } from "lucide-react";
 import { CLIMATE_POLICY_RADAR_URL, CPR_PASSAGE_ATTRIBUTION } from "@/lib/policy-lineage";
 

@@ -1,3 +1,9 @@
+/**
+ * Shared frame for the risk screens.
+ *
+ * Holds the navigation between the risk overview, map, screening and drilldown
+ * views, so they share one consistent shell.
+ */
 // Layout shell for /risk with sub-tab navigation and persistent illustrative banner.
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";

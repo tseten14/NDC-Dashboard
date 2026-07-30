@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 /**
+ * Captures screenshots of the running app.
+ *
+ * Drives a real browser through the main screens and saves an image of each, for
+ * demos and documentation. The app must already be running.
+ */
+/**
  * Capture demo deck screenshots at 1920×1080.
  * Usage: node scripts/capture_demo_screenshots.mjs [baseURL]
  * Default: https://ndc-data-explorer-e051f914.vercel.app

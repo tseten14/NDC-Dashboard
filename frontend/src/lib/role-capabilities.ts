@@ -1,3 +1,12 @@
+/**
+ * What each role can see and do.
+ *
+ * Defines, per role, which screens are relevant, what the dashboard should
+ * default to, and which exports are offered — so a field officer is not
+ * presented with a minister's briefing tools and vice versa.
+ *
+ * This shapes the interface only. Real enforcement happens in the API.
+ */
 import type { AppRole } from "@/hooks/use-current-role";
 
 /**

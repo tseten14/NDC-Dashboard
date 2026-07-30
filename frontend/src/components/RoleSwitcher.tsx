@@ -1,3 +1,9 @@
+/**
+ * The role chooser.
+ *
+ * Switches between roles — field officer, MRV officer, senior decision-maker and
+ * so on — changing which screens and actions are offered.
+ */
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCurrentRole, ALL_ROLES, type AppRole } from "@/hooks/use-current-role";
 import { getDefaultRoute } from "@/lib/role-capabilities";

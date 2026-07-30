@@ -1,3 +1,10 @@
+/**
+ * Reads uploaded JSON files.
+ *
+ * Accepts data supplied as JSON rather than as a spreadsheet, and flattens it
+ * into the same rows-and-columns shape the rest of the import path expects, so
+ * everything downstream works the same regardless of the file format.
+ */
 import type { TabularParseResult, ParseWarning } from "../types.js";
 import { inferTypesForHeaders } from "../inferTypes.js";
 

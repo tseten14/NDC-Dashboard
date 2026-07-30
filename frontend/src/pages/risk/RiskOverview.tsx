@@ -1,3 +1,10 @@
+/**
+ * Screen: risk summary.
+ *
+ * The entry point to the risk section: which hazards are registered, which
+ * adaptation targets respond to them, and links through to the map and the
+ * screening tool.
+ */
 // Executive overview: top risk signals, hotspots by district, what-this-means panels.
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

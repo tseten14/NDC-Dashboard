@@ -1,3 +1,9 @@
+/**
+ * Finds the policy documents relevant to a sector.
+ *
+ * Connects what is on screen to the written policy behind it, so a user looking
+ * at forestry figures is offered the forestry strategy.
+ */
 import type { PolicyDocument } from "./policy-documents";
 import type { SectorId } from "@/data/uganda-ndc-data";
 

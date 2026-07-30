@@ -1,3 +1,14 @@
+/**
+ * Who the current user is and what they may do.
+ *
+ * The app presents different things to different jobs — a field officer records
+ * activity, an MRV officer verifies it, a senior decision-maker reads summaries.
+ * This holds the chosen role and answers the permission questions the screens
+ * ask ("can this person approve?", "is this view read-only?").
+ *
+ * Roles here shape what is shown, not what is secured. Anything that genuinely
+ * must be protected is enforced by the API, not by hiding a button.
+ */
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { LOCAL_USER, DEFAULT_ROLES } from "@/lib/auth-config";
 import {

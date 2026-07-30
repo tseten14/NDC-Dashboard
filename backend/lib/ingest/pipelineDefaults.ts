@@ -1,3 +1,11 @@
+/**
+ * Sensible starting settings for an import.
+ *
+ * Recognises the standard file shapes the app already knows about — the policy
+ * catalogue export in particular — and pre-fills the import settings for them,
+ * so a routine upload needs no manual configuration. Anything unrecognised falls
+ * back to the ordinary column-matching path.
+ */
 import type { ColumnMapping, InferredColumnType } from "./types.js";
 import type { PipelineFilterOptions } from "./pipelineClean.js";
 

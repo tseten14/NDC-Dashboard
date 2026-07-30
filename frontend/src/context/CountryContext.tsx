@@ -1,3 +1,9 @@
+/**
+ * Remembers which country was chosen.
+ *
+ * Stored for the browser session, so the choice survives moving between screens
+ * but is asked again in a new session. Every data request is scoped by it.
+ */
 import {
   createContext,
   useCallback,

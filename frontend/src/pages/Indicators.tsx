@@ -1,3 +1,10 @@
+/**
+ * Screen: the indicator catalogue.
+ *
+ * Every indicator being tracked, filterable by sector and type, showing which
+ * national strategies each one feeds. Useful for spotting a measurement being
+ * relied on in several places at once — or one nobody is collecting.
+ */
 import { useMemo, useState } from "react";
 import { indicatorsV2, indicatorTypeLabel, mrvMethodLabel, type IndicatorType, type SectorV2, getNDCTarget, interlinkages, getIndicator } from "@/data/uganda-v2-data";
 import { ScrollArea } from "@/components/ui/scroll-area";

@@ -1,3 +1,10 @@
+/**
+ * Screen: National Development Plan IV alignment.
+ *
+ * Uganda's climate commitments sit inside its wider development plan. This shows
+ * which NDP IV targets each climate activity supports, so the two are planned
+ * together rather than separately.
+ */
 import { programmes, activities, kpis, computeKPIProgress, getActor } from "@/data/uganda-strategy-data";
 import { useAppContext } from "@/hooks/use-app-state";
 import { Card, CardContent } from "@/components/ui/card";

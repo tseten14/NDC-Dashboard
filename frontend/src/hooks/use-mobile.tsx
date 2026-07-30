@@ -1,3 +1,8 @@
+/**
+ * Reports whether the screen is phone-sized.
+ *
+ * Lets components lay themselves out differently on a small screen.
+ */
 import * as React from "react";
 
 const MOBILE_BREAKPOINT = 768;

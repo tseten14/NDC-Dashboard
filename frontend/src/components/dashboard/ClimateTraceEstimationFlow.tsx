@@ -1,3 +1,9 @@
+/**
+ * Diagram: how Climate TRACE produces a number.
+ *
+ * Walks through the path from satellite observation to a published emissions
+ * figure, so a user can judge how much weight the estimate deserves.
+ */
 import { useId } from "react";
 import {
   ArrowRight,

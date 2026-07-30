@@ -1,3 +1,10 @@
+/**
+ * Screen: summary for senior decision-makers.
+ *
+ * The short version: what is off track, what needs a decision now, and which
+ * commitments still have no numbers attached. Written to be readable in a few
+ * minutes without drilling into the detail screens.
+ */
 // Executive Overview — 4 tiles + What-must-change + Quantification backlog.
 import { useMemo } from "react";
 import { useCockpit } from "@/hooks/use-cockpit";

@@ -1,3 +1,18 @@
+/**
+ * Climate risk endpoints.
+ *
+ * Serves the data behind the risk screens: which hazards threaten which parts of
+ * the country (drought, flood, landslide and so on), scored per district and per
+ * map grid cell, together with the adaptation measures that can be chosen in
+ * response. All of it is bundled reference data shipped with the app rather than
+ * a live feed.
+ *
+ * Endpoints:
+ *   GET /hazard-layers       — the hazard types that can be mapped
+ *   GET /districts           — risk scores by district
+ *   GET /cells               — risk scores by map grid cell
+ *   GET /adaptation-options  — measures available in response to a hazard
+ */
 import express from "express";
 import {
   HAZARD_LAYERS,

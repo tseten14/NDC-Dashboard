@@ -28,6 +28,7 @@ docs/
 | -------- | ------- |
 | [dev/architecture.md](./dev/architecture.md) | Repo layout, routes, state, dev proxy |
 | [dev/system-design.md](./dev/system-design.md) | End-to-end workflows, diagrams, data flows |
+| [dev/code-comments.md](./dev/code-comments.md) | House style for the plain-language file headers used throughout the codebase |
 | [dev/deploy.md](./dev/deploy.md) | Vercel deployment, env vars, Postgres |
 | [dev/policy-engine.md](./dev/policy-engine.md) | Policy Impact / KCI matching detail |
 | [dev/ct-data-gaps.txt](./dev/ct-data-gaps.txt) | Climate TRACE known gaps and upstream requests |

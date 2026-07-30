@@ -1,3 +1,18 @@
+/**
+ * Caps how many requests one visitor may make.
+ *
+ * Protects the service, and the Climate TRACE quota behind it, from a single
+ * caller — whether a runaway script or a deliberate flood — using up capacity
+ * everyone else needs. Reading is allowed generously; importing data is capped
+ * much more tightly, since each import writes to storage.
+ *
+ * Callers are told when to come back: an over-limit response carries a
+ * retry_after_seconds field rather than just failing.
+ *
+ * Note: these limits are per visitor only because the app declares how many
+ * proxies sit in front of it — see the "trust proxy" setting in createApp.js.
+ * Without that, every visitor would be counted as one.
+ */
 import rateLimit from "express-rate-limit";
 
 function rateLimitHandler(req, res, _next, options) {

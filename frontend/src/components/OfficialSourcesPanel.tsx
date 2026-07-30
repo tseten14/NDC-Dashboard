@@ -1,3 +1,9 @@
+/**
+ * Panel: links to the official documents.
+ *
+ * Points at Uganda's NDC submission and the other primary sources, so a reader
+ * can go and check the original rather than relying on this app's summary.
+ */
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { documentsApi } from "@/lib/api";

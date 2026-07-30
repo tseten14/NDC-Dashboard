@@ -1,5 +1,14 @@
 #!/usr/bin/env node
 /**
+ * Build step: split policy documents into searchable passages.
+ *
+ * Whole documents are too coarse to search usefully. This cuts each one into
+ * short passages and records where each came from, so a search can point at the
+ * exact paragraph that answers a question and cite it properly.
+ *
+ * Usage: npm run build:passages
+ */
+/**
  * Build passage corpus JSON from Climate Policy Radar passage-level CSV export.
  * Usage: node scripts/build_policy_passages.mjs [path/to/export.csv]
  */

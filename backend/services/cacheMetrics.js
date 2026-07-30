@@ -1,3 +1,11 @@
+/**
+ * Cache hit/miss bookkeeping.
+ *
+ * Keeps a running tally of how often a cached answer was reused instead of
+ * re-fetched from Climate TRACE. Purely for observability — the health endpoint
+ * reports these numbers so operators can see whether caching is doing its job.
+ * Nothing here affects the figures the app shows.
+ */
 const stats = {
   hits: 0,
   misses: 0,

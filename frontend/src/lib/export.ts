@@ -1,3 +1,9 @@
+/**
+ * Exports the current view to Excel or PDF.
+ *
+ * Each file is stamped with what it shows — the geography, the year range and
+ * the data source — so that a spreadsheet found later can still be identified.
+ */
 import { sectors, getProgressPercent, getSectorStatus } from "@/data/climate-data";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";

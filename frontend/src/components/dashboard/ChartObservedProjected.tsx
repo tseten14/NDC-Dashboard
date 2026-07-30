@@ -1,3 +1,10 @@
+/**
+ * Chart: measured history and projection together.
+ *
+ * Draws what has been measured and what is projected on one set of axes, with
+ * the projected part hatched and the pledge limit marked, so the eye can tell
+ * observation from forecast without consulting the legend.
+ */
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ExternalLink, Info } from "lucide-react";

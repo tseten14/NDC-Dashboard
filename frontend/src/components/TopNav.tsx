@@ -1,3 +1,9 @@
+/**
+ * The main navigation bar.
+ *
+ * The top-level menu across the app, including the country indicator, the role
+ * switcher and the theme toggle.
+ */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";

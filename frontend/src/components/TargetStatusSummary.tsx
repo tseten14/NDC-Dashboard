@@ -1,3 +1,8 @@
+/**
+ * Panel: target status at a glance.
+ *
+ * Counts how many targets are on track, off track or unmeasurable.
+ */
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ndcTargets, ndcActivities, getObservedDataForTarget, type NDCTarget } from "@/data/uganda-ndc-data";

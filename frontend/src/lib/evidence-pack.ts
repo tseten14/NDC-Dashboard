@@ -1,3 +1,10 @@
+/**
+ * Exports an evidence pack.
+ *
+ * Bundles an indicator's figures together with their sources and verification
+ * status into a CSV or PDF, so the backing for a claim can be handed over as a
+ * single document.
+ */
 // Evidence Pack export — CSV + PDF for parliament/funders.
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";

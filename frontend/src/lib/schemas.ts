@@ -1,3 +1,9 @@
+/**
+ * Shared data shape definitions for the front end.
+ *
+ * Re-exports the schemas so the browser validates API responses against the same
+ * definitions the API validated them with.
+ */
 export { safeParseOrLog } from "../../../shared/validate.js";
 export {
   climateTraceEmissionsResponseSchema,

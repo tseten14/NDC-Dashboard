@@ -1,3 +1,8 @@
+/**
+ * The page footer.
+ *
+ * Carries the Climate TRACE attribution required by its licence.
+ */
 import { Leaf, Satellite } from "lucide-react";
 
 export function Footer() {

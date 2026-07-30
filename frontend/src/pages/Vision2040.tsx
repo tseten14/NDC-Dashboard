@@ -1,3 +1,9 @@
+/**
+ * Screen: Vision 2040 alignment.
+ *
+ * Places climate commitments in the context of Uganda's long-term national
+ * vision.
+ */
 import { kpis, computeKPIProgress, strategies } from "@/data/uganda-strategy-data";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

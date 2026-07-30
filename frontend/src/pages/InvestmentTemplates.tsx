@@ -1,3 +1,10 @@
+/**
+ * Screen: ready-made investment documents.
+ *
+ * Generates a starting investment memo for a target, pre-filled with its
+ * strategy alignment, indicators and budget codes — so a funding case begins
+ * from real data rather than a blank page.
+ */
 import { useState } from "react";
 import { activities, kpis, strategies, getActor, computeKPIProgress } from "@/data/uganda-strategy-data";
 import { Card, CardContent } from "@/components/ui/card";

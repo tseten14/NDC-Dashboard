@@ -1,3 +1,9 @@
+/**
+ * Screen: named contacts.
+ *
+ * The named person or office responsible for each commitment — the answer to
+ * "who do I actually call about this?"
+ */
 import { actors, kpis, dataSources, activities, getDataSource } from "@/data/uganda-strategy-data";
 import { useAppContext } from "@/hooks/use-app-state";
 import { Card, CardContent } from "@/components/ui/card";

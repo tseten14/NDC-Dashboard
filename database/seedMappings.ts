@@ -1,3 +1,11 @@
+/**
+ * Converts bundled reference data into database records.
+ *
+ * The app ships with starting data — Uganda's sectors and the strategy
+ * indicators. This translates that material into the exact shape the tables
+ * expect, so a fresh database can be filled with something useful rather than
+ * starting empty.
+ */
 export type MetricType = "emissions_reduction" | "rising_share" | "absolute_level";
 
 export function mapMetricType(input: string): MetricType {

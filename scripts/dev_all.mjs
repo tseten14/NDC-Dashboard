@@ -1,5 +1,18 @@
 #!/usr/bin/env node
 /**
+ * Starts everything needed for local development.
+ *
+ * One command that does the whole setup in order: creates the .env file if
+ * missing, checks dependencies are installed, validates the bundled data, runs
+ * the live accuracy verifications, and finally starts the web front end and the
+ * API together.
+ *
+ * The verifications are the slow part and need internet access. Skip them with
+ * SKIP_DEV_VERIFY=true when working offline or in a hurry.
+ *
+ * Usage: npm run dev
+ */
+/**
  * Full local dev bootstrap: env + deps + data validation + live verifications + web + API.
  *
  * Usage: npm run dev:all

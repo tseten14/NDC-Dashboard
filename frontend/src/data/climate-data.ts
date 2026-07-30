@@ -1,3 +1,9 @@
+/**
+ * Reference sector data for the legacy screens.
+ *
+ * Fixed figures used by the older overview screens. The live dashboard does not
+ * read from here — it uses the Climate TRACE data fetched from the API.
+ */
 import {
   Trees, Flame, Droplets, Factory, Trash2, Bus, CloudRain,
   type LucideIcon,

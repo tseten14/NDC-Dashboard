@@ -1,3 +1,9 @@
+/**
+ * Panel: one sector in detail.
+ *
+ * The full picture for a single sector — its figures, its targets and its
+ * progress.
+ */
 import { useState } from "react";
 import { type Sector, getProgressPercent, getSectorStatus, decisionOptions } from "@/data/climate-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

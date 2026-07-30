@@ -1,3 +1,9 @@
+/**
+ * Ready-made action suggestions.
+ *
+ * Offers standard next steps for a selected target, so a user is not left
+ * staring at a problem with no suggested response.
+ */
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

@@ -1,3 +1,10 @@
+/**
+ * Badge marking what kind of number this is.
+ *
+ * Distinguishes a measured figure from an estimate, a projection or a stand-in.
+ * Used throughout the app so the status of a number travels with it instead of
+ * being explained once in a caption and then forgotten.
+ */
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 

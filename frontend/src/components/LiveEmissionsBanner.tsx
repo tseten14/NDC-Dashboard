@@ -1,3 +1,9 @@
+/**
+ * The live figures strip along the top of the dashboard.
+ *
+ * Shows the current emissions per sector, when they were last refreshed, whether
+ * the answer came from cache, and a link into the accuracy audit.
+ */
 import { Activity, Satellite, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

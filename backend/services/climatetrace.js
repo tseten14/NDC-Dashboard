@@ -1,3 +1,17 @@
+/**
+ * The direct line to the Climate TRACE API.
+ *
+ * Climate TRACE is an independent monitoring project that estimates greenhouse
+ * gas emissions worldwide from satellite imagery and sensor data. It is this
+ * app's source of observed emissions — the "what is actually happening" side,
+ * as opposed to the "what was promised" side that comes from Uganda's NDC.
+ *
+ * This module handles the network calls themselves: fetching the national
+ * snapshot, the individual emitting sites shown on the map, and the confidence
+ * information that says how precisely each site is located. Answers are cached
+ * briefly, and failures are reported rather than papered over with stand-in
+ * numbers, so the app never silently shows invented data.
+ */
 import NodeCache from "node-cache";
 import {
   CLIMATE_TRACE_BASE_URL,

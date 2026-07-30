@@ -1,3 +1,9 @@
+/**
+ * Panel: full provenance detail.
+ *
+ * The expanded version of the provenance badge — which source, retrieved when,
+ * and under what licence.
+ */
 import { ExternalLink, X, Database, Cpu, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getLineage } from "@/lib/data-lineage";

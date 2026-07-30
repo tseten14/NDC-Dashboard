@@ -1,3 +1,11 @@
+/**
+ * Import: upload a file.
+ *
+ * The main import path. A file is uploaded, inspected, and shown back to the
+ * user with the app's interpretation of each column and any quality problems it
+ * found. Nothing is saved until the user confirms, and if the figures would
+ * overwrite existing ones they are told before it happens rather than after.
+ */
 // Data Pipeline — upload → map columns → preview clean rows → save to database.
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";

@@ -1,3 +1,10 @@
+/**
+ * Renders documentation pages.
+ *
+ * Displays Markdown documents in the app, including diagrams written as Mermaid.
+ * The functions above the component clean up and resize the generated diagram
+ * markup so diagrams stay readable and correctly sized in both themes.
+ */
 import { useEffect, useId, useRef, useState, type ComponentPropsWithoutRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";

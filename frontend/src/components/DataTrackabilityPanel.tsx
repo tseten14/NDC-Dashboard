@@ -1,3 +1,10 @@
+/**
+ * Panel: what can and cannot be tracked.
+ *
+ * Not every NDC commitment can be checked against satellite data. This states
+ * plainly which targets are genuinely trackable and which are not, so an absence
+ * of evidence is not read as evidence of failure.
+ */
 import { useQuery } from "@tanstack/react-query";
 import { emissionsApi } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";

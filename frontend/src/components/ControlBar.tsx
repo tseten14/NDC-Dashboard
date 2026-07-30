@@ -1,3 +1,9 @@
+/**
+ * Dashboard controls.
+ *
+ * The sector chooser, the national/district switch, and the export and assistant
+ * buttons — the strip that decides what the dashboard below is showing.
+ */
 import { type SectorId, type GeographyLevel, sectorDefinitions, getDataCompleteness, getLastRefreshTimestamp } from "@/data/uganda-ndc-data";
 import { ugandaDistricts } from "@/data/uganda-districts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

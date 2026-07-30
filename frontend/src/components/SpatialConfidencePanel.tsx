@@ -1,3 +1,10 @@
+/**
+ * Panel: how precisely emissions are located.
+ *
+ * A power station's emissions are pinned to an exact point; farmland emissions
+ * are spread across a wide area. This states which is which, so a map bubble is
+ * not read as more precise than the data behind it.
+ */
 import { useQuery } from "@tanstack/react-query";
 import { emissionsApi } from "@/lib/api";
 import { useEmissionsData } from "@/context/EmissionsDataContext";

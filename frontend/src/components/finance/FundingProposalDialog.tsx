@@ -1,3 +1,9 @@
+/**
+ * Dialog: draft a funding proposal.
+ *
+ * Builds a proposal for the selected intervention, pre-filled from the data on
+ * screen so it starts from real figures.
+ */
 import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";

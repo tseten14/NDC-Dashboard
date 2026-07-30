@@ -1,3 +1,13 @@
+/**
+ * Guesses what kind of information a spreadsheet column holds.
+ *
+ * Given a column of raw text, works out whether it looks like years, numbers,
+ * dates or plain labels. This is what lets the import screen pre-fill its
+ * suggestions instead of asking the user to describe every column by hand.
+ *
+ * These are only suggestions: the user always sees them and can correct them
+ * before anything is saved.
+ */
 import type { InferredColumnType } from "./types.js";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;

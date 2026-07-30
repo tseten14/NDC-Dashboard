@@ -1,3 +1,10 @@
+/**
+ * Screen: administrator tools.
+ *
+ * Behind-the-scenes view for people maintaining the app: what data is loaded,
+ * which programmes and field definitions are configured, and how the parts fit
+ * together. Not part of the everyday analysis workflow.
+ */
 import { Link } from "react-router-dom";
 import { strategies, programmes, kpis, actors, dataSources } from "@/data/uganda-strategy-data";
 import { useCurrentRole } from "@/hooks/use-current-role";

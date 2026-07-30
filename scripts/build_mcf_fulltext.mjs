@@ -1,5 +1,14 @@
 #!/usr/bin/env node
 /**
+ * Build step: prepare the climate-fund project texts.
+ *
+ * Reads the raw Multilateral Climate Fund project documents and writes a single
+ * searchable file the API can serve. Run ahead of time rather than on demand, so
+ * that searching in the app is instant.
+ *
+ * Usage: npm run build:mcf
+ */
+/**
  * Build MCF (multilateral climate fund) searchable corpus from policy documents export.
  * Enriches metadata with searchable text; ready for Anne's full-text drop-in via same schema.
  */

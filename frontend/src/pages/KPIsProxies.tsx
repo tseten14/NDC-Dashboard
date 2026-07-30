@@ -1,3 +1,10 @@
+/**
+ * Screen: performance measures and stand-ins.
+ *
+ * Some things cannot be measured directly, so a proxy is used instead. This
+ * lists both, shows the formula behind each, and names which strategies rely on
+ * it — making the substitution explicit rather than hidden.
+ */
 import { kpis, strategies, dataSources, getActor, getDataSource, computeKPIProgress } from "@/data/uganda-strategy-data";
 import { useAppContext } from "@/hooks/use-app-state";
 import { Card, CardContent } from "@/components/ui/card";

@@ -1,3 +1,10 @@
+/**
+ * Screen: who is delivering what.
+ *
+ * A tracking view of activities in progress — what has been produced, what
+ * evidence supports it, and what the next action is for each. Written for the
+ * people chasing delivery rather than for analysts.
+ */
 // Delivery & Accountability — indicator → activity → district chain.
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";

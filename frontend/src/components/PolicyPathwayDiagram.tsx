@@ -1,3 +1,9 @@
+/**
+ * Diagram: how a policy leads to an outcome.
+ *
+ * Draws the chain from action to emissions effect as a diagram, so the reasoning
+ * can be followed step by step rather than accepted as a single figure.
+ */
 import { Link } from "react-router-dom";
 import {
   URBAN_TRANSPORT_PATHWAY,

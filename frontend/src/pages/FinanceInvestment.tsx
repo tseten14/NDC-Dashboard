@@ -1,3 +1,10 @@
+/**
+ * Screen: investment readiness.
+ *
+ * Shows, per target, whether it is ready to attract funding: which financial
+ * instruments suit it, whether the commitment is conditional on outside support,
+ * and how bankable it currently looks.
+ */
 // Finance & Investment — conditionality, finance gap, Investment Note + Minister brief.
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";

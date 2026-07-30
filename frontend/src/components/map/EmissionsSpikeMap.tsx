@@ -1,3 +1,9 @@
+/**
+ * Map: where emissions are changing fastest.
+ *
+ * Draws a spike at each location scaled by how much its emissions have moved,
+ * making rapid change visible geographically.
+ */
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { geoIdentity, geoPath, geoContains } from "d3-geo";
 import type { FeatureCollection } from "geojson";

@@ -1,3 +1,10 @@
+/**
+ * Where each sector's numbers come from.
+ *
+ * Records, per sector, which Climate TRACE categories were combined to produce
+ * the figure shown and how. Screens use this to answer "where did this number
+ * come from?" with a specific trail rather than a general reassurance.
+ */
 // Data lineage metadata for every Climate TRACE sector we track.
 // Used by the View Source modal and click-to-trace provenance panel.
 

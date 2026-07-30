@@ -1,3 +1,8 @@
+/**
+ * Chart: emissions by sector.
+ *
+ * Plots each sector's emissions over time.
+ */
 import { type Sector } from "@/data/climate-data";
 import {
   ChartHatchPatternDef,

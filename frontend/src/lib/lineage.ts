@@ -1,3 +1,9 @@
+/**
+ * Builds the source trail for one target.
+ *
+ * Assembles the chain from a displayed figure back to the data it came from, for
+ * the "where did this come from?" panels.
+ */
 import type { NDCTarget } from "@/data/uganda-ndc-data";
 import { getObservedDataForTarget } from "@/data/uganda-ndc-data";
 import type { DataLineage } from "@/components/DataLineageChip";

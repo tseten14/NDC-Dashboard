@@ -1,3 +1,10 @@
+/**
+ * The expected shape of an import inspection report.
+ *
+ * When a file is uploaded it is inspected before anything is saved. This defines
+ * what that inspection reports back: what was found in the file, and what
+ * quality problems were spotted, so the user can review both before confirming.
+ */
 import { z } from "zod";
 
 export const ingestQcSchema = z.object({

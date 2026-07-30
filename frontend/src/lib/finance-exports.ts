@@ -1,3 +1,10 @@
+/**
+ * Generates finance documents.
+ *
+ * Produces the written outputs a funding conversation needs — an investment
+ * note, an investment memo, a minister's brief — filled in from the data on
+ * screen rather than typed up by hand.
+ */
 // Finance & Investment exports — Investment Note (per indicator) + Minister one-pager.
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";

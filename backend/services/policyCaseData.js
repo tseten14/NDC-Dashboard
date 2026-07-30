@@ -1,3 +1,15 @@
+/**
+ * Loads the library of policy cases.
+ *
+ * A policy case is a written-up description of a real climate measure: what it
+ * does, what it costs, who it reaches and what effect it is expected to have.
+ * They are prepared offline (see scripts/build_policy_cases.mjs) and read from
+ * disk here, then validated against a schema so a malformed case is caught at
+ * startup rather than producing a wrong forecast later.
+ *
+ * Also holds the TEF elements — the standard building blocks used to describe a
+ * measure's effect consistently across sectors.
+ */
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";

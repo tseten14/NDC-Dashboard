@@ -4,6 +4,50 @@ All notable changes to the Uganda NDC Data Explorer are documented here.
 
 ## [Unreleased]
 
+### Bug fixes
+
+- **`npm run dev` could never complete.** The prediction verifier parsed the backtest
+  metrics table with a digits-only pattern, so it silently failed to match the routinely
+  negative R² column, reported "0 eval points", and exited non-zero — taking the whole dev
+  bootstrap down with it. Numbers are now parsed with sign, exponent and `nan`/`inf`
+  handling (`scripts/verify_predictions.mjs`).
+- **Model quality gate replaced.** The same script gated on pooled R² > 0.5. Pooled R² is
+  not a valid skill measure here: it is pooled across sectors spanning two orders of
+  magnitude and dominated by the land-sector net flux, which legitimately changes sign year
+  to year, so it reads negative even when every sector is tracked well. The gate is now
+  skill against the naive persistence baseline — the standard test for short annual series
+  — and R² is retained as a reported diagnostic.
+- **Land-sector sinks were flagged as impossible data.** The accuracy guardrails treated
+  every negative value as a unit or sign error, so Climate TRACE's genuine AFOLU net
+  removals (2018, 2019, 2021, 2024) raised console errors on live data, and would have
+  thrown in test mode. Negatives are now an error only for gross-source sectors; net-flux
+  sectors are allowed to go below zero, and magnitude is bounded in *both* directions so a
+  real unit error at implausible scale is still caught
+  (`frontend/src/lib/data-validation.ts`).
+- **Rate limits were global, not per visitor.** Express was never told how many proxies sit
+  in front of it, so on Vercel it read the proxy's own address for every request and the
+  entire user base shared one 200-request budget. Now configured via `TRUST_PROXY_HOPS`
+  (default 1 on Vercel, 0 locally), counting hops rather than trusting all of them so the
+  header cannot be forged to evade the limiter (`backend/server/createApp.js`).
+- **Ingest integration test passed exactly once per machine.** It wrote into the real
+  `data/ingest-observations.json`, so its rows survived the run and every later run got a
+  409 conflict from `/ingest/confirm`. The file-mode store path is now overridable with
+  `INGEST_STORE_PATH`, and the test uses a throwaway file it cleans up.
+- **`npm run test:e2e` always failed** with "No tests found" — the config pointed at a
+  directory holding only an unused helper. Added a browser smoke suite covering the country
+  gate, dashboard, target selection, map, and uncaught page errors.
+- Fixed all 18 ESLint errors (`no-explicit-any`, empty interfaces) by using the concrete
+  types that already existed.
+
+### Documentation
+
+- Plain-language header comments added to every source file (~210), written for readers who
+  are not developers: what the file is for and why it matters, not a restatement of the
+  code.
+- README corrected: the scripts table described `npm run dev:all` (which no longer exists)
+  and called `npm run dev` "frontend only". Added the environment switches and the
+  `trust proxy` note.
+
 ### NDC AI — verified citations (Dashboard)
 
 - **Fact ledger** (`frontend/src/lib/dashboard-ai-facts.ts`): every quotable dashboard number is pre-mapped to an exact Climate TRACE v7 API URL or UNFCCC NDC PDF before the AI runs.

@@ -1,3 +1,8 @@
+/**
+ * Test environment setup.
+ *
+ * Runs before the unit tests and installs the shared helpers they rely on.
+ */
 import "@testing-library/jest-dom";
 
 Object.defineProperty(window, "matchMedia", {

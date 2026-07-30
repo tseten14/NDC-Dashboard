@@ -1,3 +1,10 @@
+/**
+ * Screen: import data.
+ *
+ * Where a spreadsheet or document is brought into the system. The file is
+ * inspected first and the user is shown how each column was interpreted, so
+ * mistakes are caught before anything is saved rather than after.
+ */
 // Data Ingestion — two modes: Data Pipeline and Quick scan.
 import { useState } from "react";
 import { CockpitBar } from "@/components/CockpitBar";

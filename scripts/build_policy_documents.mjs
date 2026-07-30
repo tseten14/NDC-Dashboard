@@ -1,5 +1,13 @@
 #!/usr/bin/env node
 /**
+ * Build step: assemble the policy document catalogue.
+ *
+ * Collects the climate policy documents, extracts their titles, dates and
+ * topics, and writes the catalogue the document library screen browses.
+ *
+ * Usage: npm run build:documents
+ */
+/**
  * Build data/policy/documents.json from Climate Policy Radar CSV export.
  * Usage: node scripts/build_policy_documents.mjs [path/to/export.csv]
  */

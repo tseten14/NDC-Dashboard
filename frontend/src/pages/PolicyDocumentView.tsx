@@ -1,3 +1,10 @@
+/**
+ * Screen: read one policy document.
+ *
+ * Opens a single climate policy document and lets a user ask questions of it.
+ * Every answer quotes the passage it came from and links to it, so a claim can
+ * be checked against the source text rather than taken on faith.
+ */
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";

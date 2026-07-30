@@ -1,3 +1,10 @@
+/**
+ * Uganda's development strategies.
+ *
+ * The targets from the national strategies that sit alongside the NDC — NDP IV,
+ * Tenfold, Vision 2040 — with their validation status and investment readiness,
+ * so climate and development commitments can be viewed together.
+ */
 /* ═══════════════════════════════════════════════════════════════
    Uganda NDC & Strategy Explorer – Unified Data Model
    ═══════════════════════════════════════════════════════════════ */

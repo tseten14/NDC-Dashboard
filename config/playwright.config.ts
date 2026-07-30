@@ -1,3 +1,13 @@
+/**
+ * Browser test settings.
+ *
+ * Configures the end-to-end tests, which drive a real browser against a running
+ * copy of the app. Starts the app automatically if it is not already running,
+ * with stand-in data so the tests do not depend on Climate TRACE being
+ * reachable.
+ *
+ * Run with: npm run test:e2e
+ */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";

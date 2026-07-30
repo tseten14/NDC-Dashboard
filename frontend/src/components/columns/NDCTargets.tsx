@@ -1,3 +1,10 @@
+/**
+ * Dashboard column: NDC targets (column 1 of 3).
+ *
+ * The left-hand column of the main dashboard — what Uganda promised, in both
+ * official wording and plain language. Choosing one here is what fills the other
+ * two columns.
+ */
 import { useEffect, useState } from "react";
 import { type NDCTarget, type SectorId, getTargetsForSector, sectorDefinitions } from "@/data/uganda-ndc-data";
 import { Card, CardContent } from "@/components/ui/card";

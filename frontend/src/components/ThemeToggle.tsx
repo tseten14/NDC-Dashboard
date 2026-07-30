@@ -1,3 +1,6 @@
+/**
+ * Light and dark mode switch.
+ */
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { useTheme } from "next-themes";

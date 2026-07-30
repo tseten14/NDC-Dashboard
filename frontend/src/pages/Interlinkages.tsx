@@ -1,3 +1,10 @@
+/**
+ * Screen: how sectors affect each other.
+ *
+ * Climate measures rarely stay in their own box — a forestry decision changes
+ * agriculture, energy affects transport. This shows those connections so a
+ * knock-on effect is not missed.
+ */
 import { useMemo, useState } from "react";
 import { interlinkages, getIndicator, type SectorV2 } from "@/data/uganda-v2-data";
 import { Card, CardContent } from "@/components/ui/card";

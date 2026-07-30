@@ -1,3 +1,12 @@
+/**
+ * Reads and checks values from a web address.
+ *
+ * When a screen asks for "emissions from 2015 to 2025", those years arrive as
+ * text on the end of a URL and could be anything at all. These helpers turn them
+ * into numbers, confirm they fall in a sensible range, and reject the request
+ * clearly if not — so a bad address produces a helpful error rather than a
+ * strange-looking chart.
+ */
 import { INVENTORY_YEAR_MIN, latestInventoryYear } from "../config/climateTrace.js";
 
 /**

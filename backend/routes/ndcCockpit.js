@@ -1,3 +1,17 @@
+/**
+ * Endpoints for the decision-support "cockpit" screens.
+ *
+ * Supplies the three lists those screens are built from: the indicators being
+ * tracked, the delivery activities on the ground, and the menu of mitigation
+ * options (the measures a ministry could choose to fund). Responses are checked
+ * against a schema before being sent, so a malformed payload fails here rather
+ * than silently drawing a wrong chart.
+ *
+ * Endpoints:
+ *   GET /indicators/panel            — indicators with their latest values
+ *   GET /catalog/activities          — delivery activities
+ *   GET /catalog/mitigation-options  — available mitigation measures
+ */
 import express from "express";
 import {
   getIndicatorPanel,

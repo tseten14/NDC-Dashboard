@@ -1,3 +1,10 @@
+/**
+ * Reads the activities recorded in this browser.
+ *
+ * Activities are drafted locally before being submitted. This makes them
+ * available to screens that need them, and counts how many are attached to each
+ * target — which is how the "targets with no activity" gap is spotted.
+ */
 import { useEffect, useState } from "react";
 import {
   getApprovedActivitiesForTarget,

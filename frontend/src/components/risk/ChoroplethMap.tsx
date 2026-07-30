@@ -1,3 +1,9 @@
+/**
+ * Map: districts shaded by risk.
+ *
+ * Colours each district by its score for the selected hazard, with a legend
+ * explaining the scale.
+ */
 // Lightweight SVG choropleth: renders district polygons colored by selected-hazard intensity.
 import { useMemo, useState } from "react";
 import { riskColor, type RiskCell, type RiskDistrict } from "@/hooks/use-risk-data";

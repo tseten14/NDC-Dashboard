@@ -1,3 +1,9 @@
+/**
+ * Shared state for the cockpit screens.
+ *
+ * Keeps the cockpit views in step with one another so a selection made in one
+ * pane is reflected in the others.
+ */
 // Cockpit-scope state via React context.
 import { createContext, useContext, useState, type ReactNode } from "react";
 import type { Strategy } from "@/data/indicator-registry";

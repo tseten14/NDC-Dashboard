@@ -1,3 +1,9 @@
+/**
+ * Code style rules.
+ *
+ * Configures the linter that checks the codebase for likely mistakes and
+ * inconsistent style. Run with: npm run lint
+ */
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";

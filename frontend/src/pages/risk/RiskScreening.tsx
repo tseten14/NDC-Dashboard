@@ -1,3 +1,10 @@
+/**
+ * Screen: screen an activity for climate risk.
+ *
+ * Asks whether a planned target or activity is itself threatened by climate
+ * hazards where it will happen — a flood-prone site, say — and returns a result
+ * with a written explanation rather than only a score.
+ */
 // Operational risk screening: pick an NDC target/activity → see hazards, risk level, and adaptation options.
 import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";

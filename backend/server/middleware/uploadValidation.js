@@ -1,3 +1,11 @@
+/**
+ * Checks that an uploaded file really is what it claims to be.
+ *
+ * A file named "data.csv" can contain anything at all. This inspects the actual
+ * contents to identify the true format and rejects the upload if it is not one
+ * the importer supports. Trusting the file extension alone would let someone
+ * upload an executable disguised as a spreadsheet.
+ */
 import { fileTypeFromBuffer } from "file-type";
 
 const ALLOWED_MIMES = new Set(["application/pdf", "text/csv", "application/json"]);

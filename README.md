@@ -47,7 +47,18 @@ git clone <YOUR_GIT_URL>
 cd ndc-data-explorer-e051f914
 cp .env.example .env
 npm install
-npm run dev:all
+npm run dev
+```
+
+`npm run dev` does the whole local setup in one go: creates `.env` if missing, checks
+dependencies, validates the bundled data, runs the live accuracy verifications against
+Climate TRACE, then starts the web front end and the API together.
+
+Those verifications need internet access and take a minute or so. To skip them (offline,
+or when you just want the app up):
+
+```sh
+SKIP_DEV_VERIFY=true npm run dev
 ```
 
 - **App:** http://localhost:8080  
@@ -130,10 +141,19 @@ Set `USE_MOCK_DATA=true` in `.env` for offline fixture mode (no Climate TRACE ca
 | `INGEST_API_KEY` | Shared secret for **write** endpoints (`POST` under `/api/v1/ingest/*`) |
 | `VITE_INGEST_API_KEY` | Same value in the frontend `.env` so the ingest UI can send `x-api-key` |
 | `LOG_LEVEL` | Pino log level (`info` default) |
+| `TRUST_PROXY_HOPS` | Number of reverse proxies in front of the API (default: 1 on Vercel, 0 locally). Rate limits are per visitor only when this is right — see below |
+| `INGEST_STORE_PATH` | Override where file-mode imports are written (used by tests to stay isolated) |
 
 **Write auth:** Include header `x-api-key: <INGEST_API_KEY>` on all ingest `POST` requests (upload, confirm, scan, import). `GET` routes stay public.
 
 **Rate limits (per IP):**
+
+> These are per *visitor* only because the app declares how many proxies sit in front of
+> it (`TRUST_PROXY_HOPS`, applied via Express's `trust proxy` setting in
+> `backend/server/createApp.js`). Without that, Express reads the proxy's own address for
+> every request, so the whole user base shares a single budget and everyone starts getting
+> `429`s at trivial traffic. The default is correct for Vercel; set it explicitly if you
+> deploy behind a different number of proxies.
 
 | Scope | Limit |
 | ----- | ----- |
@@ -149,13 +169,24 @@ Exceeded limits return `429` with `{ "error": "rate_limited", "retry_after_secon
 
 | Command | Description |
 | ------- | ----------- |
-| `npm run dev:all` | Frontend + API |
-| `npm run dev` | Frontend only |
+| `npm run dev` | **Full local setup**: env + deps + data checks + live verifications, then web + API |
+| `npm run dev:servers` | Web + API only, skipping all the checks |
+| `npm run dev:frontend` | Front end only |
 | `npm run start:api` | API only |
 | `npm run build` | Production build → `frontend/dist` |
-| `npm run test` | Vitest |
+| `npm run test` | Unit tests (Vitest) |
+| `npm run test:e2e` | Browser tests (Playwright) — drives the real app |
 | `npm run lint` | ESLint |
+| `npm run verify:all` | Live accuracy checks: Climate TRACE + 2030 predictions |
 | `npm run build:documents` | Regenerate policy JSON from CPR CSV export |
+
+Environment switches worth knowing:
+
+| Variable | Effect |
+| -------- | ------ |
+| `SKIP_DEV_VERIFY=true` | Skip the live verifications in `npm run dev` (offline work) |
+| `USE_MOCK_DATA=true` | Serve stand-in figures instead of calling Climate TRACE |
+| `USE_DB_FALLBACK=true` | With no `DATABASE_URL`, save imports to a local file instead |
 
 ## Deploy
 

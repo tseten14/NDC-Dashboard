@@ -1,3 +1,17 @@
+/**
+ * Saving and reading imported data.
+ *
+ * Handles everything that needs to outlive a single request: the targets being
+ * tracked, the values recorded against them, and the history of import jobs.
+ *
+ * It works in two modes. With a database configured it uses Postgres. Without
+ * one it falls back to a local file, so the app still runs on a laptop with no
+ * database set up. Callers do not need to know which mode is active.
+ *
+ * Before writing, it checks for conflicts — data already recorded for the same
+ * target and year — and reports them instead of overwriting silently, so an
+ * accidental re-import cannot quietly replace existing figures.
+ */
 import { and, desc, eq, asc, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getDb } from "../../database/index.ts";

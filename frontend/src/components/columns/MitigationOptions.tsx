@@ -1,3 +1,9 @@
+/**
+ * Dashboard column: mitigation options.
+ *
+ * The measures available for the selected target, with the decisions taken on
+ * each recorded to the decision log.
+ */
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {

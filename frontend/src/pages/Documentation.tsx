@@ -1,3 +1,11 @@
+/**
+ * Screen: the in-app user guide.
+ *
+ * Plain-language help for people using the app: what each screen is for, how
+ * roles change what is visible, how to read the numbers, and where the data
+ * comes from. This is the documentation a non-technical user reads; the files in
+ * docs/ are for developers.
+ */
 import { Suspense, useState } from "react";
 import { lazyWithRetry as lazy } from "@/lib/lazy-with-retry";
 import { Link } from "react-router-dom";

@@ -1,3 +1,12 @@
+/**
+ * The expected shape of Climate TRACE's replies.
+ *
+ * Climate TRACE is an outside service that can change without warning. These
+ * definitions describe exactly what its responses should contain, and every
+ * reply is checked against them before use. If the format ever shifts, the app
+ * fails loudly at the point of the change rather than quietly displaying
+ * whatever it received.
+ */
 import { z } from "zod";
 
 export const climateTraceSummarySchema = z.object({

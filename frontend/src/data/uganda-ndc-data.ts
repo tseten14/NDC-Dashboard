@@ -1,3 +1,15 @@
+/**
+ * Uganda's NDC targets and the vocabulary around them.
+ *
+ * The commitments from Uganda's Updated NDC (September 2022) — what is promised,
+ * by when, and whether each is unconditional or depends on international
+ * support — plus the shared type definitions the rest of the app uses to talk
+ * about sectors, targets and data quality.
+ *
+ * This is reference data transcribed from the official submission. Changing a
+ * figure here changes what the app reports Uganda has promised, so any edit must
+ * be checked against the source document.
+ */
 import {
   Trees, Flame, Droplets, Factory, Trash2, Bus, CloudRain, Wheat,
   type LucideIcon,

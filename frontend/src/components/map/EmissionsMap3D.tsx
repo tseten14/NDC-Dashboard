@@ -1,3 +1,13 @@
+/**
+ * The 3D emissions map.
+ *
+ * Renders Uganda in 3D with satellite imagery and terrain, and places a bubble
+ * at every located emission source, sized by emissions and coloured by sector.
+ * Clicking one opens its details.
+ *
+ * Uses map tiles that need no account or API key, so the map works on a fresh
+ * checkout with nothing configured.
+ */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Feature, FeatureCollection, Point } from "geojson";
 import type { MapLayerMouseEvent, GeoJSONSource } from "maplibre-gl";

@@ -1,3 +1,9 @@
+/**
+ * Fetches the recorded values for one target.
+ *
+ * These are the figures imported through the ingestion screen, as distinct from
+ * the live Climate TRACE measurements.
+ */
 import { useQuery } from "@tanstack/react-query";
 import { persistenceApi } from "@/lib/api";
 

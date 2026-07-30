@@ -1,3 +1,10 @@
+/**
+ * All strategy targets in one flat list.
+ *
+ * Targets normally sit nested inside their strategies. This flattens them into a
+ * single searchable list so a target can be found by id without knowing which
+ * strategy it belongs to.
+ */
 // Flat list of all strategy targets across NDC + NDP IV + Tenfold for use in target-link picker.
 // Keeps ID conventions stable across the app.
 

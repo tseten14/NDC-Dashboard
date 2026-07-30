@@ -1,3 +1,13 @@
+/**
+ * Screen: the emissions map.
+ *
+ * A 3D map of Uganda with a bubble at every emitting site Climate TRACE has
+ * located — power stations, factories, roads, farmland — sized by how much it
+ * emits and coloured by sector. Clicking a bubble gives that site's details.
+ *
+ * The year selector re-draws the map for a chosen year, which is how a change
+ * over time becomes visible geographically rather than as a line on a chart.
+ */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { geoContains } from "d3-geo";

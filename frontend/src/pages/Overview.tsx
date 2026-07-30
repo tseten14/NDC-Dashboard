@@ -1,3 +1,9 @@
+/**
+ * Screen: the original overview (superseded).
+ *
+ * An earlier summary screen, kept reachable at /legacy-overview so existing
+ * links and bookmarks still work. New work belongs on the executive overview.
+ */
 import { strategies, activities, kpis, progressRecords, getActor, roadmapPhases, raciData } from "@/data/uganda-strategy-data";
 import { useAppContext } from "@/hooks/use-app-state";
 import { Card, CardContent } from "@/components/ui/card";

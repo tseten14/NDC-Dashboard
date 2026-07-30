@@ -1,3 +1,10 @@
+/**
+ * Screen: value for money by measure.
+ *
+ * Ranks mitigation measures by cost per tonne of CO2 avoided, so limited budget
+ * can be pointed at whatever buys the most reduction. Also shows each measure's
+ * total potential, since the cheapest option is not always the largest.
+ */
 // Cost Effectiveness — USD per tCO2e by intervention.
 import { useMemo, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";

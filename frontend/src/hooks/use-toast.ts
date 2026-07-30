@@ -1,3 +1,10 @@
+/**
+ * The pop-up notification system.
+ *
+ * Manages the small messages that appear in the corner to confirm an action
+ * worked or report that it failed, including how many show at once and how long
+ * each stays.
+ */
 import * as React from "react";
 
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";

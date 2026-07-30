@@ -1,3 +1,11 @@
+/**
+ * Warning: the two frameworks do not line up.
+ *
+ * Uganda's NDC and Climate TRACE define sectors differently, so their numbers
+ * are not always comparing the same thing. Where that matters this explains the
+ * difference in place, rather than letting a reader assume a like-for-like
+ * comparison.
+ */
 import { useMemo, useState } from "react";
 import { AlertTriangle, ChevronDown, ChevronRight, Info } from "lucide-react";
 import { useEmissionsData } from "@/context/EmissionsDataContext";

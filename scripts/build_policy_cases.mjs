@@ -1,5 +1,14 @@
 #!/usr/bin/env node
 /**
+ * Build step: assemble and check the policy case library.
+ *
+ * Gathers the individual policy case files, validates each against the policy
+ * case schema, and fails if any is malformed or missing its sources — so a
+ * broken case is caught here rather than surfacing as a wrong forecast later.
+ *
+ * Usage: npm run build:policy-cases
+ */
+/**
  * Validate data/policy-cases corpus against Zod schema.
  * Optional: extract raw text from KCI PDFs via ingest scan.
  *

@@ -1,3 +1,8 @@
+/**
+ * The side navigation menu.
+ *
+ * Lists the screens available to the current role, grouped by theme.
+ */
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {

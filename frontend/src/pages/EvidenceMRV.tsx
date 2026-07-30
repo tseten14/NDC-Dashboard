@@ -1,3 +1,10 @@
+/**
+ * Screen: evidence behind each indicator.
+ *
+ * Lists the indicators being tracked with their verification status and when
+ * they were last updated — so it is obvious which figures have been checked and
+ * which are still unverified.
+ */
 // Evidence & MRV — provenance, qa_flags, confidence, Evidence Pack export.
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";

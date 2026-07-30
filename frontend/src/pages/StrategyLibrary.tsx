@@ -1,3 +1,10 @@
+/**
+ * Screen: the strategy library.
+ *
+ * Every target across Uganda's climate and development strategies in one
+ * searchable registry. Its main value is showing the gaps: targets with no
+ * activity assigned to them, and targets with no way to measure progress.
+ */
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { indicatorRegistry } from "@/data/indicator-registry";

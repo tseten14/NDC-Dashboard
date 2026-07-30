@@ -1,3 +1,8 @@
+/**
+ * Import: connect to an external system.
+ *
+ * Pulls data from a connected source rather than an uploaded file.
+ */
 // Connections — manage external data sources, schedules, mapping. OpenAPI doc + webhook stubs.
 import { useState } from "react";
 import { Button } from "@/components/ui/button";

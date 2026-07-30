@@ -1,3 +1,11 @@
+/**
+ * Screen: model a policy's impact.
+ *
+ * Lets a user pick a policy objective, or describe their own, and see the
+ * projected effect on emissions along with the trade-offs and the assumptions
+ * behind it. The chain of reasoning is shown, not just the final number, so the
+ * result can be argued with.
+ */
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";

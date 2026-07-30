@@ -1,3 +1,10 @@
+/**
+ * Catches crashes in a screen.
+ *
+ * If part of the interface fails, this shows a readable message and a way to
+ * recover instead of leaving a blank white page, and reports the error back to
+ * the server so it can be fixed.
+ */
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";

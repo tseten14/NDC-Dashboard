@@ -1,3 +1,9 @@
+/**
+ * Screen: scenario projections.
+ *
+ * Project emissions forward under different assumptions and compare the result
+ * against the baseline, to see which drivers actually move the outcome.
+ */
 import { useState } from "react";
 import { projections, kpis, generateProjectionSeries, strategies } from "@/data/uganda-strategy-data";
 import { Card, CardContent } from "@/components/ui/card";

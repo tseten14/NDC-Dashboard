@@ -1,3 +1,10 @@
+/**
+ * Screen: risk detail.
+ *
+ * Breaks a district's risk score into its parts — exposure and vulnerability —
+ * and shows the underlying sources side by side, so a headline score can be
+ * traced back to what produced it.
+ */
 // Technical drill-down: Hazard × Exposure × Vulnerability components, assumptions, side-by-side sources.
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";

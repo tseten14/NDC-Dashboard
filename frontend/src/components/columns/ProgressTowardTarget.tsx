@@ -1,3 +1,12 @@
+/**
+ * Dashboard column: progress (column 3 of 3).
+ *
+ * The right-hand column — how far the observed figures leave Uganda from the
+ * pledge, as a percentage and an on-track judgement.
+ *
+ * The formula is printed on the panel rather than hidden, because a progress
+ * percentage is meaningless unless the reader can see how it was calculated.
+ */
 import { useMemo, type ReactNode } from "react";
 import { type NDCTarget, type ProgressStatus } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";

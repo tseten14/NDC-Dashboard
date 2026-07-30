@@ -1,3 +1,8 @@
+/**
+ * Panel: what the Climate TRACE dataset contains.
+ *
+ * Explains the coverage and limits of the underlying dataset.
+ */
 import {
   Globe2,
   CalendarRange,

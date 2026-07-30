@@ -1,3 +1,12 @@
+/**
+ * Supplies the indicator and measure catalogues.
+ *
+ * An "indicator" is something being tracked toward a target (forest cover, for
+ * example); a "mitigation option" is a measure a ministry could fund to move it.
+ * This module reads both from the bundled configuration and attaches each
+ * item's quality-review status, so the screens can show not just a number but
+ * how trustworthy that number is.
+ */
 import {
   INDICATOR_META,
   INDICATOR_YEARLY,

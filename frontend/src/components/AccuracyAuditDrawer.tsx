@@ -1,3 +1,11 @@
+/**
+ * Panel: the accuracy audit.
+ *
+ * Slides open to show the working behind the headline figures — the sector
+ * totals added back up, compared against Climate TRACE's own national number,
+ * with any difference stated outright. It exists so a sceptical user can check
+ * the arithmetic instead of being asked to trust it.
+ */
 import { useMemo, useState } from "react";
 import { Copy, Download, ShieldCheck } from "lucide-react";
 import {

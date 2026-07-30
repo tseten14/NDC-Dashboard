@@ -1,3 +1,9 @@
+/**
+ * Saves table data as a CSV file.
+ *
+ * Turns rows on screen into a spreadsheet file and triggers the browser
+ * download, naming the file after what was exported so it is identifiable later.
+ */
 const ROW_COUNT_VALUE_COLUMN = "__row_count__";
 
 function escapeCsvCell(value: unknown): string {

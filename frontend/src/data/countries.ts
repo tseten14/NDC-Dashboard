@@ -1,3 +1,9 @@
+/**
+ * The list of countries offered on the front page.
+ *
+ * Uganda is the only one with a complete dataset; the rest are shown as coming
+ * soon so the intended scope is visible.
+ */
 export type CountryCode = "UG" | "KE" | "TZ" | "RW" | "ET" | "GH" | "ZA" | "NG";
 
 export type CountryOption = {

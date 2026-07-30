@@ -1,3 +1,13 @@
+/**
+ * Suggests which spreadsheet column means what.
+ *
+ * People label their columns differently — "yr", "Year", "period" all mean the
+ * same thing. This matches the headings in an uploaded file against the fields
+ * the app needs (year, value, source, target) and proposes a mapping, then
+ * reports whether the proposal is complete enough to import.
+ *
+ * The user reviews and adjusts the suggestion before any data is saved.
+ */
 import type { ColumnMapping, InferredColumnType, ObservationField } from "./types.js";
 
 const FIELD_PATTERNS: Record<ObservationField, RegExp[]> = {

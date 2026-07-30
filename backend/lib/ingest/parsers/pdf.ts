@@ -1,3 +1,11 @@
+/**
+ * Reads uploaded PDF documents.
+ *
+ * PDFs are written to be looked at, not read by a program, so no attempt is made
+ * to pull tables of figures out of them automatically. Instead the text and
+ * basic details are extracted so the document can be filed and searched, and the
+ * user is told plainly that the numbers inside were not imported.
+ */
 import type { TabularParseResult } from "../types.js";
 import { extractPdfText, isPdfMagic } from "../pdfExtract.js";
 import { buildPdfTextSections } from "../../../services/ingestInsights.js";

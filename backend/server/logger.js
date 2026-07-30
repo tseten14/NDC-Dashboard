@@ -1,3 +1,12 @@
+/**
+ * Application logging.
+ *
+ * One shared logger, plus a few named helpers for the events worth being able to
+ * search for later: calls to Climate TRACE, cache hits and misses, data imports,
+ * and reconciliation gaps between the app's sector totals and Climate TRACE's
+ * national figure. Logs are written as structured JSON so they can be filtered
+ * by field rather than by grepping text.
+ */
 import pino from "pino";
 
 export const logger = pino({

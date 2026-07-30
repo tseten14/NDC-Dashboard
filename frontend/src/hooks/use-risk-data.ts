@@ -1,3 +1,10 @@
+/**
+ * Fetches climate risk data and turns scores into colours.
+ *
+ * Loads the hazard layers, district and cell scores and adaptation options, and
+ * provides the shared mapping from a numeric score to a risk level and its
+ * colour — kept here so every risk screen and the map colour identically.
+ */
 // Climate Risk module — data from Express API.
 import { useEffect, useState, useMemo } from "react";
 

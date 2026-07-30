@@ -1,3 +1,8 @@
+/**
+ * Import: upload map data.
+ *
+ * Handles geographic files (shapefiles and similar) for the mapping screens.
+ */
 // GIS Ingest — GeoJSON / zipped Shapefile dropzone, attribute mapping, preview.
 import { useState } from "react";
 import shp from "shpjs";

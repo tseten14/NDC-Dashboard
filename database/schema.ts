@@ -1,3 +1,13 @@
+/**
+ * The database layout.
+ *
+ * Defines every table and column: the targets being tracked, the observed values
+ * recorded against them, the history of import jobs, the audit trail, and the
+ * delivery activities with their approval workflow.
+ *
+ * This file is the single source of truth for the structure — the migration
+ * files are generated from it.
+ */
 import {
   pgTable,
   uuid,

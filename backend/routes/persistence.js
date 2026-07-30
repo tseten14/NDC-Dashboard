@@ -1,3 +1,15 @@
+/**
+ * Read access to saved targets and their observations.
+ *
+ * These are the figures that have been imported through the data-ingestion
+ * screen and stored — as opposed to the live Climate TRACE numbers, which are
+ * fetched fresh on every request. Used to show a target's own reported history
+ * alongside the satellite-derived observations.
+ *
+ * Endpoints:
+ *   GET /targets                        — every stored target
+ *   GET /targets/:targetId/observations — the values recorded against one target
+ */
 import express from "express";
 import { getTargets, getObservationsForTarget } from "../services/persistence.js";
 

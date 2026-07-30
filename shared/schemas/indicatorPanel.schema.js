@@ -1,3 +1,10 @@
+/**
+ * The expected shape of the indicator panel data.
+ *
+ * Defines what an indicator entry must contain — its latest value, its units and
+ * its quality-review status — so the cockpit screens always receive complete
+ * records.
+ */
 import { z } from "zod";
 
 export const indicatorPanelMetaSchema = z.object({

@@ -1,3 +1,9 @@
+/**
+ * Strip showing the active role.
+ *
+ * A constant reminder of which role is selected, since the role changes what is
+ * visible and what may be changed.
+ */
 import { useCurrentRole, ALL_ROLES } from "@/hooks/use-current-role";
 import { getRoleContextMessage } from "@/lib/role-capabilities";
 import { UserCircle2 } from "lucide-react";

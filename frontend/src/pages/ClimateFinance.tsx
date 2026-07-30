@@ -1,3 +1,10 @@
+/**
+ * Screen: climate finance screening.
+ *
+ * Helps answer "who might pay for this?" Given a planned intervention, it shows
+ * which funds and funders it fits, what they require, and where the gaps are
+ * between what is needed and what is committed.
+ */
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";

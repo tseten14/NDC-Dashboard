@@ -1,3 +1,10 @@
+/**
+ * Screen: check a project's fit.
+ *
+ * For a proposed project, shows what it would contribute to, how that
+ * contribution would be proven, and who owns the data needed — a readiness check
+ * before a project is taken forward.
+ */
 import { useMemo, useState } from "react";
 import { chainsForSectorAndIntervention, getIndicator, indicatorsTouchedByChain, ndcTargetsTouchedByChain, mrvMethodLabel, type SectorV2 } from "@/data/uganda-v2-data";
 import { Card, CardContent } from "@/components/ui/card";

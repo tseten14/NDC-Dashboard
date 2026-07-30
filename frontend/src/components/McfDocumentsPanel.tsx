@@ -1,3 +1,9 @@
+/**
+ * Panel: related climate-fund projects.
+ *
+ * Lists Multilateral Climate Fund projects relevant to what is on screen —
+ * showing what has already been funded in this area.
+ */
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { documentsApi } from "@/lib/api";

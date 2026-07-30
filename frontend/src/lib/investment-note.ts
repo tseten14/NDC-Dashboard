@@ -1,3 +1,9 @@
+/**
+ * Builds a one-page investment note.
+ *
+ * Pulls a target's figures, its strategy alignment and its funding gap into a
+ * single PDF summary for funders.
+ */
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { type CausalChain, getIndicator, indicatorsTouchedByChain, ndcTargetsTouchedByChain, indicatorTypeLabel, mrvMethodLabel } from "@/data/uganda-v2-data";

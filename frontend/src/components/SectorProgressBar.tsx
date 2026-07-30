@@ -1,3 +1,9 @@
+/**
+ * Bar showing progress toward a sector's target.
+ *
+ * Coloured by status so on track and off track are distinguishable without
+ * reading the number.
+ */
 import { memo } from "react";
 import { type Sector, getProgressPercent, getSectorStatus } from "@/data/climate-data";
 import { cn } from "@/lib/utils";

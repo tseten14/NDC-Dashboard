@@ -1,3 +1,10 @@
+/**
+ * The master list of indicators.
+ *
+ * Every indicator tracked across Uganda's strategies, with how it is verified,
+ * how strongly it aligns to each strategy, whether the associated commitment is
+ * conditional on outside funding, and which financial instruments suit it.
+ */
 // Canonical IndicatorRegistry — Uganda NDC Data Explorer (Executive Cockpit)
 // Sources: NDP IV (FY2025/26–FY2029/30), Tenfold Growth Strategy (June 2025) to 2040,
 // Updated NDC (September 2022) to 2030.

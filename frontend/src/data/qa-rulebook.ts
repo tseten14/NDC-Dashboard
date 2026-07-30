@@ -1,3 +1,11 @@
+/**
+ * Quality checks for time series.
+ *
+ * The rules a series of yearly figures is tested against — impossible jumps,
+ * missing years, values outside a sensible range. Each returns a plain
+ * explanation of what looks wrong, which is what the quality warnings on screen
+ * are built from.
+ */
 // QA / QC Rulebook — produces qa_flags for indicators.
 // Rules are pure functions over Indicator + optional time series.
 

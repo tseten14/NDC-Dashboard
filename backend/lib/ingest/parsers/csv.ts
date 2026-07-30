@@ -1,3 +1,11 @@
+/**
+ * Reads uploaded CSV spreadsheets.
+ *
+ * Pulls the column headings and rows out of a comma-separated file. Real-world
+ * files are messy — stray blank lines, inconsistent row lengths, odd characters
+ * — so problems are collected as warnings and shown to the user alongside the
+ * preview, rather than causing the whole upload to fail.
+ */
 import Papa from "papaparse";
 import type { TabularParseResult, ParseWarning } from "../types.js";
 import { inferTypesForHeaders } from "../inferTypes.js";

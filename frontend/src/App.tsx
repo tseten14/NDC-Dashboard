@@ -1,3 +1,14 @@
+/**
+ * The application shell.
+ *
+ * Wires the whole front end together: the list of screens and the web address
+ * each one answers to, and the shared providers every screen sits inside —
+ * the selected country, the current role, the emissions data, and the error
+ * boundary that catches crashes.
+ *
+ * Most screens are loaded only when first visited, which keeps the initial page
+ * load small.
+ */
 import { Suspense, type ReactNode } from "react";
 import { lazyWithRetry as lazy } from "@/lib/lazy-with-retry";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

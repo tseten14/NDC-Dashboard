@@ -1,3 +1,9 @@
+/**
+ * Panel: how complete the data is.
+ *
+ * States which years and sectors are actually covered, so a gap is visible as a
+ * gap rather than being mistaken for a zero.
+ */
 import { useState } from "react";
 import { ChevronDown, ChevronRight, ExternalLink, Info } from "lucide-react";
 import { useEmissionsData } from "@/context/EmissionsDataContext";

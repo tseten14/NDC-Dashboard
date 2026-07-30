@@ -1,3 +1,10 @@
+/**
+ * Screen: the policy document library.
+ *
+ * Browse and search Uganda's climate policy documents — national strategies,
+ * plans and climate-fund project papers. Searching looks inside the documents,
+ * returning the specific passage that matches rather than just a file name.
+ */
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useNavigate } from "react-router-dom";

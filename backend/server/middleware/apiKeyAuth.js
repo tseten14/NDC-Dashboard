@@ -1,3 +1,13 @@
+/**
+ * Password check for the endpoints that change data.
+ *
+ * Anyone may read from this API, but writing to it — importing figures, in
+ * practice — requires a shared secret sent in the x-api-key header. This is
+ * what stops a stranger from posting made-up emissions data into the system.
+ *
+ * Read requests (GET) pass through untouched; everything else must present the
+ * key or is rejected.
+ */
 import { logger } from "../logger.js";
 
 /**

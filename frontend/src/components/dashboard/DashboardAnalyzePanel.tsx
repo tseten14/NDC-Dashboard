@@ -1,3 +1,10 @@
+/**
+ * Panel: the dashboard assistant.
+ *
+ * Answers questions about the figures currently on screen. It is given those
+ * figures as context and must cite its sources, so its answers stay tied to the
+ * displayed data rather than to general knowledge.
+ */
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import type { NDCTarget, SectorId } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";

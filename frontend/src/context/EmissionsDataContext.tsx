@@ -1,3 +1,14 @@
+/**
+ * The single source of emissions data for the whole app.
+ *
+ * Fetches the dashboard payload once and shares it with every screen that needs
+ * it, rather than each one asking separately. Re-fetches when the geography
+ * changes between national and a specific district.
+ *
+ * It also runs the accuracy guardrails (see lib/data-validation.ts) over
+ * incoming figures, so suspicious values are flagged as they arrive rather than
+ * after they have already been drawn on a chart.
+ */
 import {
   createContext,
   useCallback,

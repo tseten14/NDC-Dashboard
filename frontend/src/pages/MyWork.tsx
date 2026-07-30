@@ -1,3 +1,10 @@
+/**
+ * Screen: your personal work queue.
+ *
+ * Gathers everything waiting on the signed-in person — their draft activities,
+ * their uploads, and anything sitting in their approvals queue. The contents
+ * change with the selected role.
+ */
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCurrentRole } from "@/hooks/use-current-role";

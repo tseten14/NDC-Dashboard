@@ -1,3 +1,21 @@
+/**
+ * Builds year-by-year emissions histories from Climate TRACE.
+ *
+ * Climate TRACE publishes emissions under its own category names ("slugs" such
+ * as forestry-and-land-use or road-transportation). Uganda's NDC groups things
+ * differently, into sectors like AFOLU, Energy and Transport. This module is the
+ * translator: it fetches the raw slugs, converts tonnes to million tonnes
+ * (MtCO2e), and adds them up into the sectors the app displays.
+ *
+ * Two rules matter for accuracy:
+ *  - A year with no data stays empty. It is never filled in by guessing from
+ *    neighbouring years, so a gap on a chart is a real gap.
+ *  - If any slug making up a sector is missing, the whole sector total is left
+ *    empty rather than reported as a smaller, misleading number.
+ *
+ * Results are cached in memory for a short time so that opening a screen does
+ * not trigger dozens of repeat calls to Climate TRACE.
+ */
 import NodeCache from "node-cache";
 import { SECTOR_MAP, ALL_TRACE_SLUGS } from "../../config/ndcTargets.js";
 import {
