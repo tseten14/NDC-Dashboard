@@ -2,7 +2,7 @@
  * Cross-check Climate TRACE v7 API responses vs our dashboard aggregation.
  * Run: node scripts/verify_climatetrace_v7.mjs
  */
-import { SECTOR_MAP, ALL_TRACE_SLUGS } from "../config/ndcTargets.js";
+import { SECTOR_MAP, ALL_TRACE_SLUGS, NDC_TARGETS } from "../config/ndcTargets.js";
 import {
   fetchSectorEmissionsForYear,
   fetchUgandaCountryRanking,
@@ -73,7 +73,7 @@ async function main() {
     console.log(`   ${sector.padEnd(12)} ${sum ?? "null"} Mt  (${detail})`);
   }
   const uiSum = Object.values(ui).reduce((a, v) => a + (v ?? 0), 0);
-  console.log(`   Sum of 5 UI sectors: ${+uiSum.toFixed(2)} Mt (agriculture separate from AFOLU by design)\n`);
+  console.log(`   Sum of ${Object.keys(ui).length} UI sectors: ${+uiSum.toFixed(2)} Mt (agriculture separate from AFOLU by design)\n`);
 
   // 5) Timeseries service (cached path)
   const afoluSeries = await getUiSectorTimeseries("afolu", YEAR, YEAR);
@@ -86,8 +86,8 @@ async function main() {
   const gapRankVsSlugs = +(rankMt - slugSum).toFixed(2);
   const gapRankVsUi = +(rankMt - uiSum).toFixed(2);
   console.log("6) Reconciliation");
-  console.log(`   Ranking total − sum(all 8 slugs): ${gapRankVsSlugs} Mt`);
-  console.log(`   Ranking total − sum(5 UI sectors):  ${gapRankVsUi} Mt`);
+  console.log(`   Ranking total − sum(all ${ALL_TRACE_SLUGS.length} slugs): ${gapRankVsSlugs} Mt`);
+  console.log(`   Ranking total − sum(${Object.keys(ui).length} UI sectors):  ${gapRankVsUi} Mt`);
   console.log(
     "   Note: Gaps are expected — ranking is all sectors; we map a subset to NDC buckets.",
   );
@@ -106,13 +106,12 @@ async function main() {
 
   // 8) Sanity: NDC baseline comparison (policy vs observed — not a bug)
   console.log("\n8) NDC policy baselines vs Climate TRACE observed (2023) — different frameworks");
-  const ndc = { afolu: 42.5, energy: 6.2, agriculture: 28.4, ippu: 1.8, waste: 3.8 };
-  for (const [s, baseline] of Object.entries(ndc)) {
+  for (const [s, cfg] of Object.entries(NDC_TARGETS)) {
+    const baseline = cfg.baseline;
     const obs = ui[s];
-    if (obs != null) {
-      const diff = +(obs - baseline).toFixed(2);
-      console.log(`   ${s}: NDC baseline ${baseline} vs TRACE ${obs} Mt (Δ ${diff})`);
-    }
+    if (baseline == null || obs == null) continue;
+    const diff = +(obs - baseline).toFixed(2);
+    console.log(`   ${s}: NDC baseline ${baseline} vs TRACE ${obs} Mt (Δ ${diff})`);
   }
 
   let failed = false;
