@@ -1,3 +1,9 @@
+/**
+ * Picker: link an activity to targets.
+ *
+ * Search across all strategies and attach the targets an activity contributes
+ * to, recording whether the contribution is direct, enabling or a proxy.
+ */
 import { useState } from "react";
 import { allFlatTargets, type FlatTarget } from "@/data/strategy-targets-flat";
 import { Button } from "@/components/ui/button";
@@ -69,7 +75,7 @@ export function TargetLinkPicker({ links, onChange }: Props) {
                 </Button>
               </div>
               <div className="flex gap-1.5">
-                <Select value={l.relationshipType} onValueChange={(v: any) => updateLink(i, { relationshipType: v })}>
+                <Select value={l.relationshipType} onValueChange={(v) => updateLink(i, { relationshipType: v as DraftLink["relationshipType"] })}>
                   <SelectTrigger className="h-6 text-[10px] w-[110px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Direct">Direct</SelectItem>
@@ -92,7 +98,7 @@ export function TargetLinkPicker({ links, onChange }: Props) {
       {/* Search to add */}
       <div className="border border-dashed border-border rounded-md p-2 space-y-2">
         <div className="flex gap-1.5">
-          <Select value={strategy} onValueChange={(v: any) => setStrategy(v)}>
+          <Select value={strategy} onValueChange={(v) => setStrategy(v as "all" | DraftLink["strategy"])}>
             <SelectTrigger className="h-7 text-[10px] w-[100px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All strategies</SelectItem>

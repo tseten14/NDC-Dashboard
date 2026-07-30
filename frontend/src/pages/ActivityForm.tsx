@@ -1,3 +1,10 @@
+/**
+ * Screen: create or edit a delivery activity.
+ *
+ * The form for recording a piece of work — who is doing it, where, over what
+ * period, and which NDC targets it contributes to. Saved to the browser first as
+ * a draft, so a part-finished entry is not lost.
+ */
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { useCurrentRole } from "@/hooks/use-current-role";
@@ -234,7 +241,10 @@ export default function ActivityForm() {
               </div>
               <div className="space-y-1">
                 <Label className="text-[11px]">Status</Label>
-                <Select value={status} onValueChange={(v: any) => setStatus(v)}>
+                <Select
+                  value={status}
+                  onValueChange={(v) => setStatus(v as "planned" | "active" | "completed")}
+                >
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="planned">Planned</SelectItem>

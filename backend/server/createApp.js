@@ -27,6 +27,20 @@ import { isMockMode } from "../routes/health.js";
 export function createApp() {
   const app = express();
 
+  // How many reverse proxies sit in front of us.
+  //
+  // The rate limiters below bucket callers by IP address. Express only reads the
+  // real visitor's address out of the X-Forwarded-For header when it is told how
+  // many proxies to trust; without this it sees the proxy's own address, so on
+  // Vercel every visitor in the world would share a single 200-request budget and
+  // the API would start returning 429 to everyone at trivial traffic levels.
+  //
+  // Vercel puts exactly one proxy in front of the function, hence 1. Locally
+  // there is none, hence 0. Trusting *all* hops would let a caller forge the
+  // header and slip the limiter, so we count hops instead of passing `true`.
+  const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? (process.env.VERCEL ? 1 : 0));
+  app.set("trust proxy", Number.isFinite(trustProxyHops) ? trustProxyHops : 0);
+
   app.use(createHelmetMiddleware());
   app.use(createCorsMiddleware());
   app.use(

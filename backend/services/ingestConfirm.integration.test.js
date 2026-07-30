@@ -7,6 +7,9 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import express from "express";
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
+import { rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { createApp } from "../server/createApp.js";
 import { bootstrapDatabase } from "../../database/bootstrap.ts";
 import { mapRowsToObservations } from "../lib/ingest/confirmRows.ts";
@@ -23,6 +26,7 @@ const CSV = `year,value,source,target_id
 
 let server;
 let baseUrl;
+let storeFile;
 
 beforeAll(async () => {
   process.env.INGEST_API_KEY = API_KEY;
@@ -30,6 +34,11 @@ beforeAll(async () => {
   if (!process.env.DATABASE_URL) {
     process.env.USE_DB_FALLBACK = "true";
   }
+  // Write to a throwaway store. Sharing the real data/ingest-observations.json
+  // meant the rows this test ingests survived the run, so the second and every
+  // later run got a 409 "existing data found" from /ingest/confirm.
+  storeFile = path.join(tmpdir(), `ndc-ingest-test-${randomUUID()}.json`);
+  process.env.INGEST_STORE_PATH = storeFile;
   await bootstrapDatabase();
 
   const app = express();
@@ -42,6 +51,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await new Promise((resolve) => server?.close(resolve));
+  delete process.env.INGEST_STORE_PATH;
+  if (storeFile) await rm(storeFile, { force: true });
 });
 
 describe("ingest confirm flow", () => {

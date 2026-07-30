@@ -1,3 +1,14 @@
+/**
+ * Screen: one delivery activity in full.
+ *
+ * Shows a single piece of work on the ground — what it is meant to achieve,
+ * which NDC targets it contributes to, what it has produced, and the evidence
+ * backing that. Reviewers use the buttons here to move it through approval
+ * (submit, approve, return, decline) and to record verification.
+ *
+ * What a person can do here depends on their role: a field officer records
+ * progress, a reviewer approves, and a read-only viewer sees but cannot change.
+ */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useCurrentRole } from "@/hooks/use-current-role";
@@ -8,6 +19,12 @@ import {
   approveTargetLink,
   addValidation,
   type WorkflowState,
+  type StoredActivity,
+  type ActivityTargetLink,
+  type OutputRecord,
+  type EvidenceItem,
+  type ValidationRecord,
+  type AuditEntry,
 } from "@/lib/activities-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,12 +43,12 @@ export default function ActivityDetail() {
   const { id } = useParams();
   const nav = useNavigate();
   const { user, canApproveMapping, canVerify, isReadOnly } = useCurrentRole();
-  const [activity, setActivity] = useState<any>(null);
-  const [links, setLinks] = useState<any[]>([]);
-  const [outputs, setOutputs] = useState<any[]>([]);
-  const [evidence, setEvidence] = useState<any[]>([]);
-  const [validations, setValidations] = useState<any[]>([]);
-  const [audit, setAudit] = useState<any[]>([]);
+  const [activity, setActivity] = useState<StoredActivity | null>(null);
+  const [links, setLinks] = useState<ActivityTargetLink[]>([]);
+  const [outputs, setOutputs] = useState<OutputRecord[]>([]);
+  const [evidence, setEvidence] = useState<EvidenceItem[]>([]);
+  const [validations, setValidations] = useState<ValidationRecord[]>([]);
+  const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [decision, setDecision] = useState<
     { state: WorkflowState; title: string; cta: string; requireNote?: boolean } | null

@@ -1,5 +1,18 @@
+/**
+ * The app's shared screen state.
+ *
+ * Holds the choices that several screens need to agree on: the selected sector
+ * and target, whether the view is national or one district, and the running
+ * decision log. Keeping these in one place is what lets a sector chosen on one
+ * screen still be selected after navigating to another.
+ *
+ * Two rules are enforced here rather than left to each screen: changing sector
+ * clears the chosen target (it belonged to the old sector), and returning to the
+ * national view clears the chosen district.
+ */
 import { useState, useCallback, createContext, useContext } from "react";
 import type { StrategyId, ViewMode, ValidationFilter } from "@/data/uganda-strategy-data";
+import type { DecisionLogEntry, DecisionStatus } from "@/data/uganda-ndc-data";
 
 export interface AppState {
   activeStrategy: StrategyId | "all";
@@ -13,7 +26,7 @@ export interface AppState {
   selectedDistrictId: string | null;
   timeMode: "historical" | "projection";
   selectedMitigationOptions: string[];
-  decisionLog: any[];
+  decisionLog: DecisionLogEntry[];
 }
 
 export function useAppState() {
@@ -29,7 +42,7 @@ export function useAppState() {
   const [selectedDistrictId, setSelectedDistrictId] = useState<string | null>(null);
   const [timeMode, setTimeMode] = useState<"historical" | "projection">("historical");
   const [selectedMitigationOptions, setSelectedMitigationOptions] = useState<string[]>([]);
-  const [decisionLog, setDecisionLog] = useState<any[]>([]);
+  const [decisionLog, setDecisionLog] = useState<DecisionLogEntry[]>([]);
 
   /** Changing sector clears the selected target unless `preserveTarget` is set (e.g. URL deep-link). */
   const setSelectedSector = useCallback((sector: string, opts?: { preserveTarget?: boolean }) => {
@@ -48,11 +61,12 @@ export function useAppState() {
     );
   }, []);
 
-  const addToDecisionLog = useCallback((entry: any) => {
+  /** The caller supplies the decision itself; id and timestamp are stamped here. */
+  const addToDecisionLog = useCallback((entry: Omit<DecisionLogEntry, "id" | "date">) => {
     setDecisionLog(prev => [...prev, { ...entry, id: `dl-${Date.now()}`, date: new Date().toISOString() }]);
   }, []);
 
-  const updateDecisionStatus = useCallback((entryId: string, status: string) => {
+  const updateDecisionStatus = useCallback((entryId: string, status: DecisionStatus) => {
     setDecisionLog(prev => prev.map(e => e.id === entryId ? { ...e, status } : e));
   }, []);
 

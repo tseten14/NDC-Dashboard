@@ -1,9 +1,15 @@
+/**
+ * Badges for approval and verification state.
+ *
+ * Shows where something has reached — draft, submitted, approved, returned,
+ * declined — and whether it has been verified.
+ */
 import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { CircleDot, Send, Check, Undo2, X, Clock } from "lucide-react";
+import { CircleDot, Send, Check, Undo2, X, Clock, type LucideIcon } from "lucide-react";
 
-const styles: Record<string, { cls: string; Icon: any; label: string }> = {
+const styles: Record<string, { cls: string; Icon: LucideIcon; label: string }> = {
   Draft: { cls: "bg-muted text-muted-foreground", Icon: CircleDot, label: "Draft" },
   Submitted: { cls: "bg-chart-4/15 text-chart-4 border-chart-4/40", Icon: Send, label: "Submitted" },
   Approved: { cls: "bg-on-track/15 text-on-track border-on-track/40", Icon: Check, label: "Approved" },

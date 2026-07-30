@@ -1,4 +1,10 @@
-import { strategies } from "@/data/uganda-strategy-data";
+/**
+ * The top filter strip.
+ *
+ * Filters by strategy, view mode, validation status and district — narrowing
+ * what every screen below is showing.
+ */
+import { strategies, type ValidationFilter } from "@/data/uganda-strategy-data";
 import { ugandaDistricts } from "@/data/uganda-districts";
 import { useAppContext } from "@/hooks/use-app-state";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -48,7 +54,7 @@ export function TopContextBar() {
         {/* Validation Filter */}
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Validation</span>
-          <Select value={validationFilter} onValueChange={(v) => setValidationFilter(v as any)}>
+          <Select value={validationFilter} onValueChange={(v) => setValidationFilter(v as ValidationFilter)}>
             <SelectTrigger className="w-[110px] h-6 text-[10px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all"><span className="text-xs">All</span></SelectItem>

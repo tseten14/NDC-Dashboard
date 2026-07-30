@@ -1,14 +1,38 @@
+/**
+ * Saves imported figures to a local file when there is no database.
+ *
+ * The app is designed to run without any database set up. In that case imported
+ * observations are written to a JSON file instead, so the import feature still
+ * works on a laptop with nothing installed.
+ *
+ * This is a development and demonstration convenience, not a production store —
+ * it has no concurrency handling. Production uses Postgres via services/persistence.js.
+ */
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const STORE_PATH = path.resolve(__dirname, "..", "..", "data", "ingest-observations.json");
+const DEFAULT_STORE_PATH = path.resolve(__dirname, "..", "..", "data", "ingest-observations.json");
+
+/**
+ * Where ingested rows are written when Postgres is unavailable.
+ *
+ * Resolved per call rather than once at import so INGEST_STORE_PATH can be set
+ * after this module loads — tests need their own store file, otherwise the rows
+ * one run writes are still there on the next run and the confirm endpoint
+ * rejects them as duplicates.
+ */
+function storePath() {
+  return process.env.INGEST_STORE_PATH
+    ? path.resolve(process.env.INGEST_STORE_PATH)
+    : DEFAULT_STORE_PATH;
+}
 
 async function readStore() {
   try {
-    const raw = await readFile(STORE_PATH, "utf8");
+    const raw = await readFile(storePath(), "utf8");
     const parsed = JSON.parse(raw);
     return {
       targets: Array.isArray(parsed.targets) ? parsed.targets : [],
@@ -20,8 +44,9 @@ async function readStore() {
 }
 
 async function writeStore(store) {
-  await mkdir(path.dirname(STORE_PATH), { recursive: true });
-  await writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
+  const target = storePath();
+  await mkdir(path.dirname(target), { recursive: true });
+  await writeFile(target, JSON.stringify(store, null, 2), "utf8");
 }
 
 /**

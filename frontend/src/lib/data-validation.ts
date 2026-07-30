@@ -33,6 +33,19 @@ const SECTOR_MAX_MT: Record<string, number> = {
   economy_wide: 300,
 };
 
+/**
+ * Sectors reported as a *net flux* (emissions minus removals) rather than a
+ * gross source. Land-sector accounting follows IPCC convention, so a negative
+ * value is a legitimate net sink — Climate TRACE reports Uganda's
+ * forestry-and-land-use slug below zero in several years. Flagging those as
+ * "impossible" produced false errors on live data, so negatives are only an
+ * error for gross-source sectors (energy, transport, ippu, waste, agriculture).
+ *
+ * Magnitude is still bounded in both directions via SECTOR_MAX_MT, so a genuine
+ * unit or sign error at implausible scale is still caught.
+ */
+const NET_FLUX_SECTORS = new Set(["afolu", "forestry_and_land_use", "economy_wide"]);
+
 export function validateEmissionsPoint(
   value: number | null,
   year: number,
@@ -55,7 +68,7 @@ export function validateEmissionsPoint(
     });
   }
 
-  if (value !== null && value < 0) {
+  if (value !== null && value < 0 && !NET_FLUX_SECTORS.has(sector)) {
     issues.push({
       severity: "error",
       rule: "negative-emissions",
@@ -85,14 +98,16 @@ export function validateEmissionsPoint(
     });
   }
 
+  // Bound magnitude in both directions: a net-flux sector can be negative, but a
+  // sink far beyond the sector ceiling is still a unit error worth surfacing.
   const ceiling = SECTOR_MAX_MT[sector] ?? 300;
-  if (value !== null && value > ceiling) {
+  if (value !== null && Math.abs(value) > ceiling) {
     issues.push({
       severity: "warn",
       rule: "implausible-magnitude",
       field: "value",
       value,
-      message: `${sector} ${year}: ${value} MtCO2e exceeds the plausible ceiling for this sector (${ceiling} MtCO2e) — check units.`,
+      message: `${sector} ${year}: ${value} MtCO2e exceeds the plausible magnitude for this sector (±${ceiling} MtCO2e) — check units.`,
     });
   }
 

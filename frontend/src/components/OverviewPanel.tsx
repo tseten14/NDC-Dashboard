@@ -1,6 +1,12 @@
+/**
+ * Panel: headline summary tiles.
+ *
+ * The top-level figures on the legacy overview screen — total emissions,
+ * progress, and how many sectors are off track.
+ */
 import { sectors, getTotalEmissions, getTotalBaseline, getOverallProgress, getProgressPercent, getSectorStatus } from "@/data/climate-data";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingDown, Target, Activity, AlertTriangle } from "lucide-react";
+import { TrendingDown, Target, Activity, AlertTriangle, type LucideIcon } from "lucide-react";
 import { SectorProgressBar } from "./SectorProgressBar";
 
 export function OverviewPanel() {
@@ -66,7 +72,7 @@ export function OverviewPanel() {
 }
 
 function KPICard({ icon: Icon, label, value, sub, highlight, warning }: {
-  icon: any; label: string; value: string; sub: string; highlight?: boolean; warning?: boolean;
+  icon: LucideIcon; label: string; value: string; sub: string; highlight?: boolean; warning?: boolean;
 }) {
   return (
     <Card className="relative overflow-hidden">

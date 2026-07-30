@@ -80,7 +80,9 @@ describe("Mock router produces a distinct data_source = 'MOCK' marker", () => {
     // If mock data reaches the UI, the on_track/off_track counts would be
     // suspiciously uniform (1/1/2) and all sectors would show status='mixed'.
     // Confirm the REAL NDC targets do NOT have this uniformity.
-    const realStatuses = Object.values(NDC_TARGETS).map((t) => (t as any).condition);
+    const realStatuses = Object.values(NDC_TARGETS).map(
+      (t) => (t as { condition?: string }).condition,
+    );
     const unique = new Set(realStatuses);
     // Real targets have mixed conditionality (Unconditional, Conditional, Mixed)
     expect(unique.size).toBeGreaterThanOrEqual(2);
