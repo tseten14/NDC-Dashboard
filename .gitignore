@@ -12,9 +12,32 @@ scripts/.verify-predictions-*
 dist
 dist-ssr
 *.local
+
+# Secrets.
+#
+# Ignore every .env variant and then re-admit the example, rather than listing
+# the variants individually — the previous list covered .env and .env.local but
+# not .env.production or .env.staging, which are exactly the files that hold
+# real credentials.
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+
+# Credential files that must never be committed under any name.
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+secrets.json
+credentials.json
+service-account*.json
+gha-creds-*.json
+
+# Database dumps — these routinely contain production data.
+*.sql.gz
+*.dump
+dump.rdb
 
 # Editor directories and files
 .vscode/*

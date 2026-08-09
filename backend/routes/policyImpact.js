@@ -14,6 +14,7 @@
  *   GET  /policy-impact/tef-elements — the framework's building blocks
  */
 import express from "express";
+import { sendClientError, sendServerError } from "../server/errors.js";
 import { safeParseOrLog } from "../../shared/validate.js";
 import {
   forecastRequestSchema,
@@ -30,22 +31,22 @@ import { runPolicyImpactForecast } from "../services/policyImpactEngine.js";
 
 const router = express.Router();
 
-router.get("/policy-cases", (_req, res) => {
+router.get("/policy-cases", (req, res) => {
   try {
     return res.json(listPolicyCases());
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "policy_cases_list_failed");
   }
 });
 
 router.get("/policy-cases/:id", (req, res) => {
   try {
     const c = getPolicyCaseById(req.params.id);
-    if (!c) return res.status(404).json({ error: "case_not_found" });
+    if (!c) return sendClientError(res, 404, "case_not_found");
     safeParseOrLog(policyCaseSchema, c, "policyCase.detail");
     return res.json({ case: c, data_source: "bundled KCI corpus" });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "policy_case_get_failed");
   }
 });
 
@@ -53,14 +54,19 @@ router.post("/policy-impact/forecast", (req, res) => {
   try {
     const parsed = forecastRequestSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+      // Field names and reasons are safe to return — they describe the caller's
+      // own payload — but the raw Zod issue list can echo submitted values back,
+      // so only the field paths and messages are sent.
+      return res.status(400).json({
+        error: "invalid_request",
+        details: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+      });
     }
     const result = runPolicyImpactForecast(getAllPolicyCases(), parsed.data);
     safeParseOrLog(forecastResponseSchema, result, "policyImpact.forecast");
     return res.json(result);
   } catch (err) {
-    req.log?.error({ err }, "policy_impact_forecast_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "policy_impact_forecast_failed");
   }
 });
 
@@ -70,7 +76,7 @@ router.get("/policy-impact/tef-elements", (req, res) => {
     const elements = getTefElements(sector);
     return res.json({ sector: sector || "all", elements, data_source: "transition elements taxonomy" });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "tef_elements_failed");
   }
 });
 

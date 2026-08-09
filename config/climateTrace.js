@@ -48,6 +48,46 @@ export function climateTraceUrl(path, params = {}) {
   return url.toString();
 }
 
+/** How long to wait for Climate TRACE before giving up on a request. */
+const UPSTREAM_TIMEOUT_MS = Number(process.env.CLIMATE_TRACE_TIMEOUT_MS ?? 15_000);
+/** Largest upstream response accepted, as a guard against a runaway payload. */
+const UPSTREAM_MAX_BYTES = 25 * 1024 * 1024;
+
+/**
+ * Fetch from Climate TRACE with a deadline and a size ceiling.
+ *
+ * These calls had neither. A request to a service that accepts the connection
+ * and then never answers would hang until the platform killed the whole
+ * function — so one slow upstream could exhaust every available request slot
+ * and take the dashboard down with it. An explicit deadline turns that into a
+ * single failed request that the caller can retry.
+ *
+ * The URL is deliberately kept out of the thrown message: it is built from
+ * internal configuration and ends up in logs and error paths.
+ */
+async function fetchUpstream(url, label) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: controller.signal, redirect: "follow" });
+    if (!res.ok) {
+      throw new Error(`Climate TRACE ${label} error: ${res.status}`);
+    }
+    const declared = Number(res.headers.get("content-length") ?? 0);
+    if (declared > UPSTREAM_MAX_BYTES) {
+      throw new Error(`Climate TRACE ${label} response too large`);
+    }
+    return await res.json();
+  } catch (err) {
+    if (err?.name === "AbortError") {
+      throw new Error(`Climate TRACE ${label} timed out after ${UPSTREAM_TIMEOUT_MS}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Annual national (or gadm) total for one Climate TRACE sector slug.
  * GET /v7/sources/emissions
@@ -59,9 +99,7 @@ export async function fetchSectorEmissionsForYear(year, sectorSlug, gadmId = CLI
     gadmId,
     sectors: sectorSlug,
   });
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Climate TRACE API error: ${res.status} (${url})`);
-  const data = await res.json();
+  const data = await fetchUpstream(url, "emissions");
   const parsed = safeParseOrLog(climateTraceEmissionsResponseSchema, data, "climateTrace.emissions");
   if (!parsed.ok) {
     throw new Error("Climate TRACE emissions response failed schema validation");
@@ -85,9 +123,7 @@ export async function fetchSectorEmissionsForYear(year, sectorSlug, gadmId = CLI
  */
 export async function fetchLocationEmissions(year, gadmId = CLIMATE_TRACE_GADM_UGANDA) {
   const url = climateTraceUrl("/sources/emissions", { year, gas: CLIMATE_TRACE_GAS, gadmId });
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Climate TRACE API error: ${res.status} (${url})`);
-  const data = await res.json();
+  const data = await fetchUpstream(url, "emissions");
   const parsed = safeParseOrLog(climateTraceEmissionsResponseSchema, data, "climateTrace.emissions");
   if (!parsed.ok) throw new Error("Climate TRACE emissions response failed schema validation");
 
@@ -134,9 +170,7 @@ export async function fetchSources({
     limit: safeLimit,
     offset: safeOffset,
   });
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Climate TRACE sources error: ${res.status} (${url})`);
-  const data = await res.json();
+  const data = await fetchUpstream(url, "sources");
   const parsed = safeParseOrLog(climateTraceSourcesResponseSchema, data, "climateTrace.sources");
   if (!parsed.ok) {
     throw new Error("Climate TRACE sources response failed schema validation");
@@ -169,9 +203,7 @@ export async function fetchUgandaCountryRanking(year) {
     start: String(year),
     end: String(year),
   });
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Climate TRACE rankings error: ${res.status}`);
-  const data = await res.json();
+  const data = await fetchUpstream(url, "rankings");
   const parsed = safeParseOrLog(climateTraceRankingsResponseSchema, data, "climateTrace.rankings");
   if (!parsed.ok) {
     throw new Error("Climate TRACE rankings response failed schema validation");

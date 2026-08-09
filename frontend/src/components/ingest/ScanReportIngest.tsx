@@ -48,7 +48,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-import { ingestApi, resolveApiHost, applyIngestWriteHeaders } from "@/lib/api";
+import { ingestApi, resolveApiHost } from "@/lib/api";
 import { safeParseOrLog, ingestScanReportSchema } from "@/lib/schemas";
 import { recordUpload } from "@/lib/uploaded-files-store";
 
@@ -359,7 +359,11 @@ export function ScanReportIngest() {
     const scanUrl = new URL(`${BASE || window.location.origin}/api/v1/ingest/scan`);
     if (allowJsonRepair) scanUrl.searchParams.set("json_mode", "repair");
     xhr.open("POST", scanUrl.toString());
-    applyIngestWriteHeaders(xhr);
+    // Send the operator session cookie. XMLHttpRequest is used here rather than
+    // fetch purely because it reports upload progress, and it omits cookies on
+    // cross-origin requests unless asked — which is the case in development,
+    // where the page and the API sit on different ports.
+    xhr.withCredentials = true;
 
     xhr.upload.onprogress = (ev) => {
       if (!ev.lengthComputable) return;

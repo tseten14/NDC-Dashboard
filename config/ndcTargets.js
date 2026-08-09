@@ -95,6 +95,24 @@ export const NDC_TARGETS = {
   },
 };
 
+// Detach the inherited properties.
+//
+// Several endpoints validate a caller-supplied sector by asking whether
+// NDC_TARGETS[sector] exists. That reads like an allow-list, but an ordinary
+// object also answers to inherited names — "constructor", "toString",
+// "valueOf" — so `?sector=constructor` returned a truthy value and slipped past
+// the check into code that expected a target definition.
+//
+// Removing the prototype makes the object answer only for the sectors actually
+// defined above, which fixes every one of those checks at once rather than
+// leaving each call site to remember. Freezing then stops any later code
+// mutating shared configuration at runtime.
+Object.setPrototypeOf(NDC_TARGETS, null);
+Object.freeze(NDC_TARGETS);
+
+/** The sector keys callers may ask for. */
+export const NDC_SECTOR_KEYS = Object.keys(NDC_TARGETS);
+
 /** Climate TRACE API slug → dashboard sector key. */
 export const SLUG_TO_UI_SECTOR = {
   "forestry-and-land-use": "afolu",

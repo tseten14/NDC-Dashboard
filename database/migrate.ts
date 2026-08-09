@@ -25,6 +25,12 @@ async function tableExists(tableName: string): Promise<boolean> {
   return Boolean(result.rows[0]?.exists);
 }
 
+/**
+ * Arbitrary but fixed number identifying this app's migration lock.
+ * Any value works as long as it never changes.
+ */
+const MIGRATION_LOCK_ID = 4711_2026;
+
 export async function runMigrations(): Promise<void> {
   if (!isDatabaseConfigured()) {
     console.log("[db:migrate] DATABASE_URL not set — skipping migrations");
@@ -45,6 +51,32 @@ export async function runMigrations(): Promise<void> {
       applied_at timestamptz NOT NULL DEFAULT now()
     )`,
   );
+
+  // Only one process may migrate at a time.
+  //
+  // Migrations run automatically when the API starts, and in production the API
+  // is a serverless function — so a burst of traffic can start several
+  // instances at once, all of which would read "not yet applied" and run the
+  // same file concurrently. A database-held lock serialises them: the others
+  // wait here, then find the work already recorded as done.
+  //
+  // The lock is taken on a dedicated connection so that releasing it cannot be
+  // confused by the pool handing the connection to someone else mid-migration.
+  const lockClient = await pool.connect();
+  try {
+    await lockClient.query("SELECT pg_advisory_lock($1)", [MIGRATION_LOCK_ID]);
+    await applyPending(pool, migrationsDir, files);
+  } finally {
+    await lockClient.query("SELECT pg_advisory_unlock($1)", [MIGRATION_LOCK_ID]).catch(() => {});
+    lockClient.release();
+  }
+}
+
+async function applyPending(
+  pool: ReturnType<typeof getPool>,
+  migrationsDir: string,
+  files: string[],
+): Promise<void> {
   const appliedRes = await pool.query("SELECT filename FROM schema_migrations");
   const applied = new Set<string>(appliedRes.rows.map((r) => r.filename as string));
 
@@ -69,10 +101,27 @@ export async function runMigrations(): Promise<void> {
       .map((s) => s.trim())
       .filter(Boolean);
 
-    for (const statement of statements) {
-      await pool.query(statement);
+    // Apply each file as a single unit. Without this a migration that fails
+    // halfway leaves the database in a state that matches neither the old
+    // schema nor the new one, and is not recorded as applied — so the next
+    // start retries from the beginning against a partially-changed database.
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      for (const statement of statements) {
+        await client.query(statement);
+      }
+      await client.query(
+        "INSERT INTO schema_migrations (filename) VALUES ($1) ON CONFLICT DO NOTHING",
+        [file],
+      );
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw err;
+    } finally {
+      client.release();
     }
-    await pool.query("INSERT INTO schema_migrations (filename) VALUES ($1) ON CONFLICT DO NOTHING", [file]);
     console.log(`[db:migrate] Applied ${file}`);
   }
 }

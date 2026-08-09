@@ -103,6 +103,7 @@ export default defineConfig(({ mode }) => {
     include: [
       "src/**/*.{test,spec}.{ts,tsx}",
       "../backend/services/**/*.test.js",
+      "../backend/server/**/*.test.js",
       "../shared/**/*.test.js",
     ],
   },

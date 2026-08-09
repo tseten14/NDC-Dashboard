@@ -46,19 +46,23 @@ export function resolveApiHost(): string {
 
 const BASE = resolveApiHost();
 
-function ingestWriteHeaders(extra: HeadersInit = {}): HeadersInit {
-  const key = import.meta.env.VITE_INGEST_API_KEY?.trim();
-  return key ? { ...extra, "x-api-key": key } : extra;
-}
+/**
+ * How import requests prove they are allowed.
+ *
+ * They no longer carry a key. The write passphrase used to be read from
+ * VITE_INGEST_API_KEY and attached here, which meant Vite compiled its value
+ * into the JavaScript served to every visitor — the secret guarding the import
+ * endpoints was printed in the page source for anyone who looked.
+ *
+ * Instead the operator unlocks the session once (see operator-session.ts) and
+ * the server sets a cookie the browser attaches automatically. `credentials`
+ * below is what tells fetch to send it. The passphrase itself never reaches the
+ * browser, so there is nothing in the bundle left to steal.
+ */
+const withCredentials: Pick<RequestInit, "credentials"> = { credentials: "include" };
 
-/** For XMLHttpRequest-based ingest uploads (scan). */
-export function applyIngestWriteHeaders(xhr: XMLHttpRequest) {
-  const key = import.meta.env.VITE_INGEST_API_KEY?.trim();
-  if (key) xhr.setRequestHeader("x-api-key", key);
-}
-
-async function getJSON<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`);
+async function getJSON<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, init);
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`API ${res.status} ${res.statusText}: ${body || path}`);
@@ -75,11 +79,17 @@ async function getJSONValidated<T>(path: string, schema: ZodType<T>, label: stri
   return parsed.data;
 }
 
-async function postJSON<T>(path: string, body: unknown, headers: HeadersInit = {}): Promise<T> {
+async function postJSON<T>(
+  path: string,
+  body: unknown,
+  headers: HeadersInit = {},
+  init: RequestInit = {},
+): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify(body),
+    ...init,
   });
   if (!res.ok) {
     const payload = await res.json().catch(() => null);
@@ -696,8 +706,13 @@ export interface IngestJobRow {
   completed_at: string | null;
 }
 
-async function postFormData<T>(path: string, formData: FormData, headers: HeadersInit = {}): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { method: "POST", body: formData, headers });
+async function postFormData<T>(
+  path: string,
+  formData: FormData,
+  headers: HeadersInit = {},
+  init: RequestInit = {},
+): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, { method: "POST", body: formData, headers, ...init });
   if (!res.ok) {
     const payload = await res.json().catch(() => null);
     const detail =
@@ -712,23 +727,23 @@ async function postFormData<T>(path: string, formData: FormData, headers: Header
 export const ingestApi = {
   health: () => getJSON<IngestHealthResponse>("/api/v1/ingest/health"),
   importRows: (payload: IngestImportPayload) =>
-    postJSON<IngestImportResponse>("/api/v1/ingest/files/import", payload, ingestWriteHeaders()),
+    postJSON<IngestImportResponse>("/api/v1/ingest/files/import", payload, {}, withCredentials),
   uploadFile: (file: File) => {
     const fd = new FormData();
     fd.append("file", file);
-    return postFormData<IngestUploadResponse>("/api/v1/ingest/upload", fd, ingestWriteHeaders());
+    return postFormData<IngestUploadResponse>("/api/v1/ingest/upload", fd, {}, withCredentials);
   },
   pipelineScan: async (payload: {
     jobId: string;
     columnMapping: Partial<Record<ObservationField, string | null>>;
     filters?: PipelineFilterOptions;
   }) => {
-    const headers = ingestWriteHeaders();
     for (const path of ["/api/v1/ingest/clean", "/api/v1/ingest/pipeline/scan"]) {
       const res = await fetch(`${BASE}${path}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        ...withCredentials,
       });
       if (res.ok) return res.json() as Promise<PipelineScanResponse>;
       if (res.status !== 404) {
@@ -745,8 +760,9 @@ export const ingestApi = {
   confirmImport: async (payload: IngestConfirmPayload) => {
     const res = await fetch(`${BASE}/api/v1/ingest/confirm`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...ingestWriteHeaders() },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      ...withCredentials,
     });
     if (res.status === 409) {
       const body = await res.json().catch(() => null);
@@ -762,8 +778,13 @@ export const ingestApi = {
     }
     return res.json() as Promise<IngestConfirmResponse>;
   },
+  // The job list names every imported file, so the server now requires operator
+  // authority for it too — hence the credentials.
   listJobs: (limit = 10) =>
-    getJSON<{ jobs: IngestJobRow[]; count: number }>(`/api/v1/ingest/jobs?limit=${limit}`),
+    getJSON<{ jobs: IngestJobRow[]; count: number }>(
+      `/api/v1/ingest/jobs?limit=${limit}`,
+      withCredentials,
+    ),
 };
 
 export const cockpitApi = {

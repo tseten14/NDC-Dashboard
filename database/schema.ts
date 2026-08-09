@@ -8,6 +8,7 @@
  * This file is the single source of truth for the structure — the migration
  * files are generated from it.
  */
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -19,6 +20,8 @@ import {
   date,
   jsonb,
   pgEnum,
+  index,
+  check,
 } from "drizzle-orm/pg-core";
 
 export const metricTypeEnum = pgEnum("metric_type", [
@@ -36,33 +39,65 @@ export const ingestJobStatusEnum = pgEnum("ingest_job_status", [
   "failed",
 ]);
 
-export const targets = pgTable("targets", {
-  id: uuid("id").primaryKey(),
-  sector: text("sector").notNull(),
-  baselineYear: integer("baseline_year").notNull(),
-  targetYear: integer("target_year").notNull(),
-  metricType: metricTypeEnum("metric_type").notNull(),
-  baselineValue: numeric("baseline_value", { precision: 18, scale: 4 }).notNull(),
-  targetValue: numeric("target_value", { precision: 18, scale: 4 }).notNull(),
-  unit: text("unit").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const targets = pgTable(
+  "targets",
+  {
+    id: uuid("id").primaryKey(),
+    sector: text("sector").notNull(),
+    baselineYear: integer("baseline_year").notNull(),
+    targetYear: integer("target_year").notNull(),
+    metricType: metricTypeEnum("metric_type").notNull(),
+    baselineValue: numeric("baseline_value", { precision: 18, scale: 4 }).notNull(),
+    targetValue: numeric("target_value", { precision: 18, scale: 4 }).notNull(),
+    unit: text("unit").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    sectorIdx: index("targets_sector_idx").on(table.sector),
+    yearOrder: check("targets_year_order", sql`${table.targetYear} >= ${table.baselineYear}`),
+    // An import can create a target from a spreadsheet cell, so the label is
+    // bounded here rather than trusting every caller to trim it.
+    sectorLength: check("targets_sector_length", sql`char_length(${table.sector}) BETWEEN 1 AND 300`),
+  }),
+);
 
-export const observations = pgTable("observations", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  targetId: uuid("target_id")
-    .notNull()
-    .references(() => targets.id, { onDelete: "cascade" }),
-  year: integer("year").notNull(),
-  value: numeric("value", { precision: 18, scale: 4 }).notNull(),
-  source: text("source").notNull(),
-  asOf: date("as_of").notNull(),
-  isEstimated: boolean("is_estimated").notNull().default(false),
-  isValidated: boolean("is_validated").notNull().default(false),
-  qaqcStatus: text("qaqc_status").notNull().default("ok"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+/**
+ * Recorded values.
+ *
+ * The checks below are the same rules the import code applies, restated where
+ * the database can enforce them. Validation in application code only protects
+ * the paths that run it; a constraint protects the table itself, including from
+ * a migration or a console session that bypasses the app entirely.
+ */
+export const observations = pgTable(
+  "observations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    targetId: uuid("target_id")
+      .notNull()
+      .references(() => targets.id, { onDelete: "cascade" }),
+    year: integer("year").notNull(),
+    value: numeric("value", { precision: 18, scale: 4 }).notNull(),
+    source: text("source").notNull(),
+    asOf: date("as_of").notNull(),
+    isEstimated: boolean("is_estimated").notNull().default(false),
+    isValidated: boolean("is_validated").notNull().default(false),
+    qaqcStatus: text("qaqc_status").notNull().default("ok"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    targetYearIdx: index("observations_target_id_year_idx").on(table.targetId, table.year),
+    qaqcStatusIdx: index("observations_qaqc_status_idx").on(table.qaqcStatus),
+    yearRange: check("observations_year_range", sql`${table.year} BETWEEN 1900 AND 2100`),
+    // Drives whether an upload may replace an existing row, so an unrecognised
+    // value would make that decision unpredictable.
+    qaqcStatusAllowed: check(
+      "observations_qaqc_status_allowed",
+      sql`${table.qaqcStatus} IN ('ok', 'ingested', 'validated', 'warning', 'error')`,
+    ),
+  }),
+);
 
 export const ingestJobs = pgTable("ingest_jobs", {
   id: uuid("id").primaryKey().defaultRandom(),

@@ -19,12 +19,68 @@ export function isDatabaseConfigured(): boolean {
   return Boolean(process.env.DATABASE_URL?.trim());
 }
 
+/**
+ * Whether to require an encrypted connection.
+ *
+ * Anything other than a database on this machine is reached across a network
+ * the app does not control, so the traffic — which carries the credentials on
+ * connect — must be encrypted. Local development against localhost is exempted,
+ * because a local Postgres typically has no certificate and demanding one would
+ * simply stop the app from starting.
+ *
+ * Set DATABASE_SSL=require or DATABASE_SSL=disable to override the guess.
+ */
+function resolveSslConfig(connectionString: string): pg.PoolConfig["ssl"] {
+  const explicit = process.env.DATABASE_SSL?.trim().toLowerCase();
+  if (explicit === "disable" || explicit === "false") return undefined;
+  if (explicit === "require" || explicit === "true") return { rejectUnauthorized: true };
+  // Some managed providers issue certificates signed by their own authority.
+  // This is the escape hatch for those, and it is deliberately explicit so that
+  // weakening verification is a visible choice in the deployment config.
+  if (explicit === "no-verify") return { rejectUnauthorized: false };
+
+  try {
+    const host = new URL(connectionString).hostname;
+    const isLocal = host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "";
+    return isLocal ? undefined : { rejectUnauthorized: true };
+  } catch {
+    return { rejectUnauthorized: true };
+  }
+}
+
 export function getPool(): pg.Pool {
   if (!isDatabaseConfigured()) {
     throw new Error("DATABASE_URL is not configured");
   }
   if (!pool) {
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const connectionString = process.env.DATABASE_URL as string;
+    pool = new Pool({
+      connectionString,
+      ssl: resolveSslConfig(connectionString),
+      // The API runs as short-lived serverless functions, and every warm
+      // instance keeps its own pool. Left at the default of ten, a handful of
+      // concurrent instances is enough to exhaust the database's connection
+      // limit and take the whole service down — so each instance is kept small
+      // and hands connections back quickly.
+      max: Number(process.env.DATABASE_POOL_MAX ?? 5),
+      idleTimeoutMillis: 10_000,
+      // Fail fast rather than letting a request hang while the database is
+      // unreachable; a hung request holds a function slot open for its full
+      // duration and is how one slow dependency becomes an outage.
+      connectionTimeoutMillis: 8_000,
+      // Ceiling on any single query. Without it, one pathological query can
+      // hold a connection indefinitely.
+      statement_timeout: 15_000,
+      query_timeout: 15_000,
+      application_name: "ndc-data-explorer",
+    });
+
+    // A pool emits errors for idle clients dropped by the server. With no
+    // listener attached Node treats that as an unhandled error and terminates
+    // the process, so a routine network blip becomes a crash.
+    pool.on("error", (err) => {
+      console.error("[db] idle client error:", err.message);
+    });
   }
   return pool;
 }

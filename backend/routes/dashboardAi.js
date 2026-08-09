@@ -8,7 +8,9 @@
  */
 import express from "express";
 import NodeCache from "node-cache";
+import { z } from "zod";
 import { enrichCitationsFromFacts } from "../services/dashboardAiCitations.js";
+import { sendClientError, sendServerError } from "../server/errors.js";
 
 const router = express.Router();
 const analysisCache = new NodeCache({ stdTTL: 1800 });
@@ -126,16 +128,30 @@ function buildUserMessage({ action, question, context }) {
   return `Task: ${taskLine}\n\n--- DASHBOARD CONTEXT (JSON) ---\n${trimmed}`;
 }
 
-router.post("/dashboard/analyze", async (req, res) => {
-  const { action, question, context } = req.body ?? {};
+/**
+ * What the client is allowed to send.
+ *
+ * This endpoint spends money on every call that misses the cache, so the input
+ * is pinned down rather than passed through: `action` must be one of the four
+ * known buttons, the free-text question is length-capped, and the dashboard
+ * snapshot must be a plain object. Without the cap a caller could paste an
+ * essay and have it billed as prompt tokens.
+ */
+const requestSchema = z.object({
+  action: z.enum(["progress_check", "gap_analysis", "sector_emissions", "priorities"]).optional(),
+  question: z.string().trim().min(1).max(500).optional(),
+  context: z.record(z.unknown()),
+});
 
-  if (!context || typeof context !== "object") {
-    return res.status(400).json({ error: "context object is required" });
+router.post("/dashboard/analyze", async (req, res) => {
+  const parsedRequest = requestSchema.safeParse(req.body ?? {});
+  if (!parsedRequest.success) {
+    return sendClientError(res, 400, "invalid_request", "Provide a dashboard context and an optional action or question.");
   }
+  const { action, question, context } = parsedRequest.data;
+
   if (!process.env.OPENAI_API_KEY) {
-    return res.status(503).json({
-      error: "AI analysis is not available on this server (OPENAI_API_KEY not set).",
-    });
+    return sendClientError(res, 503, "ai_unavailable", "AI analysis is not configured on this server.");
   }
 
   const cacheKey = question
@@ -179,11 +195,18 @@ router.post("/dashboard/analyze", async (req, res) => {
     analysisCache.set(cacheKey, result);
     return res.json(result);
   } catch (err) {
-    req.log?.error({ err }, "dashboard_ai_analyze_failed");
+    // The quota message is written by this file, so it is safe to show. Any
+    // other failure may quote the upstream provider's response, which can
+    // include account and organisation details, so it stays in the log.
     if (err.name === "QuotaError") {
-      return res.status(429).json({ error: err.message });
+      req.log?.warn({ event: "dashboard_ai_quota" }, "AI provider rate limit reached");
+      return sendClientError(res, 429, "ai_rate_limited", err.message);
     }
-    return res.status(500).json({ error: err.message || "Analysis failed" });
+    return sendServerError(req, res, err, "dashboard_ai_analyze_failed", {
+      status: 502,
+      code: "ai_analysis_failed",
+      message: "The analysis could not be completed. Please try again.",
+    });
   }
 });
 

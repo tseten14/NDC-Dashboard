@@ -93,7 +93,8 @@ export async function fetchLiveUgandaSnapshot() {
   } catch (err) {
     logger.error({ err, event: "climatetrace_live_failed" }, err.message);
     const stale = cache.get(LIVE_CACHE_KEY);
-    if (stale) return { ...stale, stale: true, error: err.message };
+    const safeError = "Climate TRACE data is temporarily unavailable.";
+    if (stale) return { ...stale, stale: true, error: safeError };
     return {
       api_version: "v7",
       co2e_mtco2e: null,
@@ -101,7 +102,7 @@ export async function fetchLiveUgandaSnapshot() {
       previous_rank: null,
       yoy_change_mtco2e: null,
       stale: true,
-      error: err.message,
+      error: safeError,
     };
   }
 }
@@ -308,7 +309,17 @@ export async function checkApiHealth() {
       gas: CLIMATE_TRACE_GAS,
       gadmId: CLIMATE_TRACE_GADM_UGANDA,
     });
-    const res = await fetch(url);
+    // A health probe must never be the thing that hangs. Without a deadline
+    // this endpoint would sit open for as long as the upstream kept the socket,
+    // which is the opposite of what a health check is for.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8_000);
+    let res;
+    try {
+      res = await fetch(url, { signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
     return {
       status: res.ok ? "ok" : "degraded",
       api_version: "v7",
@@ -323,7 +334,8 @@ export async function checkApiHealth() {
       api_version: "v7",
       docs_url: CLIMATE_TRACE_DOCS_URL,
       latency_ms: Date.now() - start,
-      error: err.message,
+      // Deliberately no error text: this response is public, and the upstream
+      // message embeds the internal request URL.
       last_checked: new Date().toISOString(),
     };
   }

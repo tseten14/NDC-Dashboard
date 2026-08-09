@@ -274,6 +274,19 @@ export async function ensureIngestTargets(targetLabels) {
   }
 }
 
+/** Rows per INSERT statement — keeps each statement under the driver's parameter cap. */
+const INSERT_BATCH_SIZE = 500;
+
+/**
+ * Most rows a single import may write.
+ *
+ * The import endpoints require operator authority, so this is not a defence
+ * against a stranger — it is a limit on how much damage one mistaken upload can
+ * do, and a ceiling on how long a single request can hold a database
+ * transaction open.
+ */
+export const MAX_OBSERVATIONS_PER_IMPORT = 50_000;
+
 function conflictKey(targetId, year) {
   return `${targetId}\0${year}`;
 }
@@ -340,6 +353,11 @@ export async function insertObservationsBatch(observationRows, targetLabels = ne
   if (!observationRows.length) {
     return { inserted: 0, skippedConflicts: 0, mode, storage: null };
   }
+  if (observationRows.length > MAX_OBSERVATIONS_PER_IMPORT) {
+    throw new Error(
+      `Import rejected: ${observationRows.length} rows exceeds the ${MAX_OBSERVATIONS_PER_IMPORT}-row limit for a single import.`,
+    );
+  }
 
   const conflictCheck = await findObservationConflicts(observationRows);
   // "validated" (curated/official) rows are never silently touched by an upload,
@@ -379,26 +397,38 @@ export async function insertObservationsBatch(observationRows, targetLabels = ne
       qaqcStatus: "ingested",
     }));
 
-    if (executionMode !== "append") {
-      const toReplace = new Set(values.map((v) => conflictKey(v.targetId, v.year)));
-      for (const key of toReplace) {
-        if (!ingestedConflictKeys.has(key)) continue; // nothing "ingested" on file for this pair — no delete needed
-        const [targetId, yearStr] = key.split("\0");
-        await db
-          .delete(observations)
-          .where(
-            and(
-              eq(observations.targetId, targetId),
-              eq(observations.year, Number(yearStr)),
-              eq(observations.qaqcStatus, "ingested"),
-            ),
-          );
+    // An overwrite deletes the old rows and then writes the new ones. Run
+    // separately, a failure in between — a dropped connection, a serverless
+    // function hitting its time limit — leaves the figures deleted and nothing
+    // put back, silently blanking part of the dashboard. Inside a transaction
+    // the whole replacement either happens or it does not.
+    await db.transaction(async (tx) => {
+      if (executionMode !== "append") {
+        const toReplace = new Set(values.map((v) => conflictKey(v.targetId, v.year)));
+        for (const key of toReplace) {
+          if (!ingestedConflictKeys.has(key)) continue; // nothing "ingested" on file for this pair — no delete needed
+          const [targetId, yearStr] = key.split("\0");
+          await tx
+            .delete(observations)
+            .where(
+              and(
+                eq(observations.targetId, targetId),
+                eq(observations.year, Number(yearStr)),
+                eq(observations.qaqcStatus, "ingested"),
+              ),
+            );
+        }
       }
-    }
 
-    if (values.length) {
-      await db.insert(observations).values(values);
-    }
+      if (values.length) {
+        // Insert in batches: a single statement with tens of thousands of rows
+        // can exceed the driver's parameter limit and fail the whole import.
+        for (let i = 0; i < values.length; i += INSERT_BATCH_SIZE) {
+          await tx.insert(observations).values(values.slice(i, i + INSERT_BATCH_SIZE));
+        }
+      }
+    });
+
     return { inserted: values.length, skippedConflicts, mode: "postgres", storage: "postgres.observations" };
   }
 

@@ -37,25 +37,40 @@ export async function bootstrapDatabase(): Promise<{ mode: PersistenceMode; reas
       throw new Error(health.error ?? "Database connectivity check failed");
     }
 
+    // Seeding writes reference rows. It is idempotent, but running it on every
+    // cold start in production means a leftover SEED_DB=true from initial setup
+    // quietly re-asserts seed data against the live database forever. Require
+    // the intent to be stated explicitly for a production deployment.
     if (process.env.SEED_DB === "true") {
-      const counts = await runSeed();
-      console.log(
-        `[db:seed] Inserted/verified ${counts.targets} targets, ${counts.observations} observations`,
-      );
+      const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
+      if (isProduction && process.env.ALLOW_PRODUCTION_SEED !== "true") {
+        console.warn(
+          "[db:seed] SEED_DB=true ignored in production. Set ALLOW_PRODUCTION_SEED=true for a one-off seed, then remove both.",
+        );
+      } else {
+        const counts = await runSeed();
+        console.log(
+          `[db:seed] Inserted/verified ${counts.targets} targets, ${counts.observations} observations`,
+        );
+      }
     }
 
     activeMode = "postgres";
     modeReason = "Connected to Postgres";
     return getPersistenceMode();
   } catch (err) {
+    // The driver's message names the host, port, user and database. It is
+    // written to the server log, but modeReason is a value other code may
+    // surface, so it is kept generic.
     const message = err instanceof Error ? err.message : String(err);
+    console.error("[db:bootstrap] database unavailable:", message);
     if (process.env.USE_DB_FALLBACK === "true") {
       activeMode = "fallback";
-      modeReason = `Postgres unavailable (${message}) — using in-memory fallback`;
+      modeReason = "Postgres unavailable — using bundled reference data";
       return getPersistenceMode();
     }
     activeMode = "disabled";
-    modeReason = message;
+    modeReason = "Postgres unavailable";
     throw err;
   }
 }

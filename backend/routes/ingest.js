@@ -36,8 +36,9 @@ import { resolveTargetId } from "../../database/id.ts";
 import { safeParseOrLog } from "../../shared/validate.js";
 import { ingestScanReportSchema } from "../../shared/schemas/ingestScan.schema.js";
 import { requireWriteApiKey } from "../server/middleware/apiKeyAuth.js";
-import { validateUploadMime } from "../server/middleware/uploadValidation.js";
+import { validateUploadMime, validateScanContent } from "../server/middleware/uploadValidation.js";
 import { logIngestEvent } from "../server/logger.js";
+import { sendServerError } from "../server/errors.js";
 
 const router = express.Router();
 
@@ -389,6 +390,26 @@ function extOf(name) {
   return i === -1 ? "" : name.slice(i + 1).toLowerCase();
 }
 
+/**
+ * Make a parse failure safe to show the person who uploaded the file.
+ *
+ * These messages are genuinely useful — "this is Rich Text, not JSON" tells
+ * someone exactly what to fix — so unlike other errors they are worth showing.
+ * But the same catch block also receives failures from the PDF and CSV parsing
+ * libraries, and those quote absolute file paths and internal module names. So
+ * anything path-shaped is stripped and the result is length-capped before it
+ * leaves the server.
+ */
+function safeParseMessage(err, fallback) {
+  const raw = typeof err?.message === "string" ? err.message : "";
+  if (!raw) return fallback;
+  const cleaned = raw
+    .replace(/(?:file:\/\/)?(?:[A-Za-z]:)?[\\/][\w.\-\\/]{2,}/g, "[path]")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned.slice(0, 300) || fallback;
+}
+
 function inferType(values) {
   let numeric = 0;
   let date = 0;
@@ -735,10 +756,36 @@ async function analyzePdf(buffer, filename) {
   };
 }
 
+/**
+ * Strip anything path-like out of a name supplied by the client.
+ *
+ * The name is only ever displayed and recorded, never used to open a file — but
+ * that is true of today's code, not necessarily tomorrow's. Removing directory
+ * separators and leading dots at the boundary means a name like
+ * "../../etc/passwd" cannot become a path traversal if some later change starts
+ * treating it as one.
+ */
+function sanitizeFilename(name) {
+  const base = String(name ?? "upload").split(/[\\/]/).pop() ?? "upload";
+  const cleaned = [...base]
+    // Drop control characters by code point rather than by regex range. A
+    // newline or a NUL smuggled into a filename can forge an extra entry in a
+    // line-based log or truncate the name where a C library reads it.
+    .filter((ch) => {
+      const code = ch.codePointAt(0);
+      return code > 0x1f && code !== 0x7f;
+    })
+    .join("")
+    .replace(/^\.+/, "")
+    .trim();
+  return cleaned.slice(0, 200) || "upload";
+}
+
 async function analyzeFile(file, options = {}) {
-  const ext = extOf(file.originalname);
+  const filename = sanitizeFilename(file.originalname);
+  const ext = extOf(filename);
   const base = {
-    filename: file.originalname,
+    filename,
     size_bytes: file.size,
     mime: file.mimetype,
     extension: ext,
@@ -751,15 +798,24 @@ async function analyzeFile(file, options = {}) {
     return { ...base, error: "File is empty (0 bytes)" };
   }
 
+  // Check what the bytes actually are, not what the name claims. The scan
+  // endpoint previously trusted the extension alone, so a disguised binary was
+  // handed straight to a parser. The upload endpoint already did this; the two
+  // now behave the same way.
+  const contentCheck = await validateScanContent(file.buffer, ext);
+  if (!contentCheck.ok) {
+    return { ...base, error: contentCheck.reason };
+  }
+
   try {
     let analysis;
-    if (ext === "csv") analysis = await analyzeCsv(file.buffer, file.originalname);
-    else if (ext === "json") analysis = await analyzeJson(file.buffer, file.originalname, options);
-    else if (ext === "txt") analysis = analyzeText(file.buffer, file.originalname);
-    else if (ext === "pdf") analysis = await analyzePdf(file.buffer, file.originalname);
+    if (ext === "csv") analysis = await analyzeCsv(file.buffer, filename);
+    else if (ext === "json") analysis = await analyzeJson(file.buffer, filename, options);
+    else if (ext === "txt") analysis = analyzeText(file.buffer, filename);
+    else if (ext === "pdf") analysis = await analyzePdf(file.buffer, filename);
     return { ...base, ...analysis };
   } catch (err) {
-    return { ...base, error: err.message || "Failed to parse file" };
+    return { ...base, error: safeParseMessage(err, "Failed to parse file") };
   }
 }
 
@@ -805,7 +861,7 @@ function uploadMiddleware(req, res, next) {
     if (err.code === "LIMIT_FILE_COUNT" || err.code === "LIMIT_UNEXPECTED_FILE") {
       return res.status(413).json({ error: `Too many files. Max ${MAX_FILES} per upload.` });
     }
-    return res.status(400).json({ error: err.message || "Upload failed" });
+    return res.status(400).json({ error: safeParseMessage(err, "Upload failed") });
   });
 }
 
@@ -852,11 +908,11 @@ router.post("/ingest/scan", requireWriteApiKey, uploadMiddleware, async (req, re
     // configured, in-memory fallback otherwise) and appear in the jobs list.
     await Promise.all(
       files.map((f, i) => {
-        const ext = (f.originalname?.split(".").pop() || "").toLowerCase();
+        const ext = extOf(sanitizeFilename(f.originalname));
         const fileType = ext === "json" ? "json" : ext === "pdf" ? "pdf" : "csv";
         const r = results[i] ?? {};
         return createIngestJob({
-          filename: f.originalname ?? "upload",
+          filename: sanitizeFilename(f.originalname),
           fileType,
           status: r.error ? "failed" : "complete",
           rowCount: typeof r.rows === "number" ? r.rows : null,
@@ -892,8 +948,9 @@ router.post("/ingest/scan", requireWriteApiKey, uploadMiddleware, async (req, re
     safeParseOrLog(ingestScanReportSchema, payload, "ingest.scan");
     return res.json(payload);
   } catch (err) {
-    req.log?.error({ err }, "ingest_scan_failed");
-    return res.status(500).json({ error: err.message || "Internal scan error" });
+    return sendServerError(req, res, err, "ingest_scan_failed", {
+      message: "The files could not be scanned.",
+    });
   }
 });
 
@@ -969,8 +1026,9 @@ router.post("/ingest/files/import", requireWriteApiKey, async (req, res) => {
       persisted: true,
     });
   } catch (err) {
-    req.log?.error({ err }, "ingest_files_import_failed");
-    return res.status(500).json({ error: err.message || "Failed to import dataset." });
+    return sendServerError(req, res, err, "ingest_files_import_failed", {
+      message: "The dataset could not be imported.",
+    });
   }
 });
 
@@ -1010,18 +1068,23 @@ router.post("/ingest/upload", requireWriteApiKey, uploadSingle.single("file"), a
       return res.status(400).json({ error: "No file uploaded. Use multipart field name 'file'." });
     }
 
-    const mimeCheck = await validateUploadMime(file.buffer, file.originalname);
+    // Everything downstream — the job record, the audit file, the response —
+    // uses the cleaned name, so a crafted filename can never travel further
+    // into the system than this line.
+    const filename = sanitizeFilename(file.originalname);
+
+    const mimeCheck = await validateUploadMime(file.buffer, filename);
     if (!mimeCheck.ok) {
       logIngestEvent({
         accepted: false,
-        filename: file.originalname,
+        filename,
         rejected_reason: mimeCheck.reason,
       });
       return res.status(415).json({ error: mimeCheck.reason });
     }
 
-    const fileType = detectUploadFileType(file);
-    const parsed = await parseUploadBuffer(file.buffer, fileType, file.originalname);
+    const fileType = detectUploadFileType({ originalname: filename, mimetype: file.mimetype });
+    const parsed = await parseUploadBuffer(file.buffer, fileType, filename);
     const suggested = suggestColumnMapping(parsed.headers, parsed.inferredTypes);
     const { mapping: columnMapping, filters: pipelineDefaults, fileKind } = applyPipelineDefaults(
       parsed.headers,
@@ -1033,7 +1096,7 @@ router.post("/ingest/upload", requireWriteApiKey, uploadSingle.single("file"), a
     const jobId = randomUUID();
     await createIngestJob({
       id: jobId,
-      filename: file.originalname,
+      filename,
       fileType,
       status: "pending",
       rowCount: parsed.rowCount,
@@ -1042,7 +1105,7 @@ router.post("/ingest/upload", requireWriteApiKey, uploadSingle.single("file"), a
 
     createUploadJob({
       jobId,
-      filename: file.originalname,
+      filename,
       fileType,
       parseResult: parsed,
       columnMapping,
@@ -1051,7 +1114,7 @@ router.post("/ingest/upload", requireWriteApiKey, uploadSingle.single("file"), a
 
     logIngestEvent({
       accepted: true,
-      filename: file.originalname,
+      filename,
       fileType,
       rowCount: parsed.rowCount,
     });
@@ -1072,11 +1135,11 @@ router.post("/ingest/upload", requireWriteApiKey, uploadSingle.single("file"), a
   } catch (err) {
     logIngestEvent({
       accepted: false,
-      filename: req.file?.originalname,
+      filename: req.file ? sanitizeFilename(req.file.originalname) : null,
       rejected_reason: err.message,
     });
-    req.log?.error({ err }, "ingest_upload_failed");
-    return res.status(400).json({ error: err.message || "Upload parse failed" });
+    req.log?.error({ err, event: "ingest_upload_failed" }, "ingest upload parse failed");
+    return res.status(400).json({ error: safeParseMessage(err, "Upload parse failed") });
   }
 });
 
@@ -1170,8 +1233,9 @@ async function handlePipelineClean(req, res) {
       conflictCheck,
     });
   } catch (err) {
-    req.log?.error({ err }, "ingest_pipeline_scan_failed");
-    return res.status(500).json({ error: err.message || "Pipeline scan failed" });
+    return sendServerError(req, res, err, "ingest_pipeline_scan_failed", {
+      message: "The clean step could not be completed.",
+    });
   }
 }
 
@@ -1263,8 +1327,11 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
         storage = result.storage;
         skippedConflicts = result.skippedConflicts ?? 0;
       } catch (err) {
-        insertError = err.message || "Database insert failed";
-        req.log?.error({ err }, "ingest_observations_insert_failed");
+        // A driver error names the table, column and constraint that failed and
+        // is returned to the browser further down as dashboardHint, so only a
+        // generic sentence crosses the boundary.
+        insertError = "Rows could not be saved to the database.";
+        req.log?.error({ err, event: "ingest_observations_insert_failed" }, "observation insert failed");
       }
     }
 
@@ -1361,25 +1428,32 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
       auditFile: `data/ingest-imports/${jobId}.json`,
     });
   } catch (err) {
-    req.log?.error({ err }, "ingest_confirm_failed");
-    if (req.body?.jobId) {
+    if (typeof req.body?.jobId === "string") {
       await updateIngestJobStatus(req.body.jobId, {
         status: "failed",
-        errorMessage: err.message || "Confirm failed",
+        errorMessage: "Import failed — see server logs",
       }).catch(() => {});
     }
-    return res.status(500).json({ error: err.message || "Confirm import failed" });
+    return sendServerError(req, res, err, "ingest_confirm_failed", {
+      message: "The import could not be completed.",
+    });
   }
 });
 
-router.get("/ingest/jobs", async (req, res) => {
+/**
+ * The job list names every file anyone has ever imported, together with the
+ * error text from failed imports. That is operational detail about an internal
+ * process — filenames alone can disclose programmes, districts and partners —
+ * so it needs the same operator authority as the imports themselves, even
+ * though it only reads.
+ */
+router.get("/ingest/jobs", requireWriteApiKey, async (req, res) => {
   try {
-    const limit = Math.min(parseInt(req.query.limit ?? "20", 10) || 20, 100);
+    const limit = Math.min(Math.max(parseInt(req.query.limit ?? "20", 10) || 20, 1), 100);
     const jobs = await getRecentIngestJobs(limit);
     return res.json({ jobs, count: jobs.length });
   } catch (err) {
-    req.log?.error({ err }, "ingest_jobs_list_failed");
-    return res.status(500).json({ error: err.message || "Failed to list ingest jobs" });
+    return sendServerError(req, res, err, "ingest_jobs_list_failed");
   }
 });
 
@@ -1394,7 +1468,10 @@ router.get("/ingest/health", async (_req, res) => {
       tabular_engine: python.available ? "pandas" : "javascript_fallback",
       python3: python.available,
       pandas_version: python.version ?? null,
-      python_error: python.error ?? null,
+      // The raw Python failure quotes interpreter paths and module directories,
+      // which maps out the host filesystem. Callers only need to know whether
+      // the faster engine is available.
+      python_available: python.available,
       install_hint: python.available
         ? null
         : "pip install -r backend/ml/requirements-ingest.txt",

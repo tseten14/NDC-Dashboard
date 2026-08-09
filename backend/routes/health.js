@@ -22,6 +22,7 @@ import { checkApiHealth } from "../services/climatetrace.js";
 import { getCacheMetrics } from "../services/cacheMetrics.js";
 import { logger } from "../server/logger.js";
 import { clientErrorsRateLimiter } from "../server/middleware/rateLimit.js";
+import { sendServerError } from "../server/errors.js";
 
 const router = express.Router();
 const startedAt = Date.now();
@@ -39,7 +40,7 @@ router.get("/health", (_req, res) => {
   });
 });
 
-router.get("/health/full", async (_req, res) => {
+router.get("/health/full", async (req, res) => {
   try {
     const dbStarted = Date.now();
     const { mode } = getPersistenceMode();
@@ -77,8 +78,9 @@ router.get("/health/full", async (_req, res) => {
       uptime_seconds: Math.floor((Date.now() - startedAt) / 1000),
     });
   } catch (err) {
-    logger.error({ err, event: "health_full_failed" }, err.message);
-    res.status(500).json({ status: "error", error: err.message });
+    return sendServerError(req, res, err, "health_full_failed", {
+      message: "Health check could not be completed.",
+    });
   }
 });
 

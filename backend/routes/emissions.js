@@ -4,6 +4,7 @@
  * @see docs/dev/architecture.md and PROJECT_DOCUMENTATION.txt § B2
  */
 import express from "express";
+import { sendServerError } from "../server/errors.js";
 import {
   getTimeseries,
   getSectorSummary,
@@ -30,6 +31,24 @@ import {
 import { COUNTRY_NDC_TARGETS, MEASURABLE_VARIABLES, listMeasurementTypes } from "../../config/measurableVariables.js";
 
 const router = express.Router();
+
+/**
+ * Resolve a sector name supplied by the caller.
+ *
+ * Reading `NDC_TARGETS[sector]` directly looks like an allow-list check but is
+ * not one: every JavaScript object inherits properties such as "constructor"
+ * and "toString", so `?sector=constructor` returned a truthy value and sailed
+ * past the "unknown sector" guard into code expecting a target definition.
+ * Asking whether the object *itself* defines the key closes that, and requiring
+ * a plain string first rejects `?sector=a&sector=b`, which Express delivers as
+ * an array.
+ */
+function resolveSector(raw) {
+  if (typeof raw !== "string" || !Object.prototype.hasOwnProperty.call(NDC_TARGETS, raw)) {
+    return null;
+  }
+  return raw;
+}
 
 function parseRange(query, gadmId = UGANDA_NATIONAL_GADM) {
   const { since, to } = defaultInventoryRange();
@@ -65,7 +84,7 @@ function resolveGeography(query) {
   return { gadmId, districtName: getDistrictName(gadmId) };
 }
 
-router.get("/emissions/districts", (_req, res) => {
+router.get("/emissions/districts", (req, res) => {
   return res.json({
     national: { gadm_id: UGANDA_NATIONAL_GADM, name: "Uganda (national)" },
     districts: listDistricts(),
@@ -130,8 +149,7 @@ router.get("/emissions/sources", async (req, res) => {
       note: "Source-level rows mix individual assets and GADM aggregations (forestry, buildings, agriculture, roads), sorted by emissions.",
     });
   } catch (err) {
-    req.log?.error({ err }, "emissions_sources_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "emissions_sources_failed");
   }
 });
 
@@ -158,8 +176,7 @@ router.get("/emissions/spatial-confidence", async (req, res) => {
         "https://github.com/climatetracecoalition/methodology-documents",
     });
   } catch (err) {
-    req.log?.error({ err }, "emissions_spatial_confidence_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "emissions_spatial_confidence_failed");
   }
 });
 
@@ -181,8 +198,7 @@ router.get("/emissions/map", async (req, res) => {
       note: "Each point is a geolocated emission source (asset-level facility or GADM sub-area aggregation) with its Climate TRACE centroid.",
     });
   } catch (err) {
-    req.log?.error({ err }, "emissions_map_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "emissions_map_failed");
   }
 });
 
@@ -213,16 +229,19 @@ router.get("/emissions/dashboard", async (req, res) => {
     });
     return res.json(dashboard);
   } catch (err) {
-    req.log?.error({ err }, "emissions_dashboard_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "emissions_dashboard_failed");
   }
 });
 
 router.get("/emissions/timeseries", async (req, res) => {
   try {
-    const { sector } = req.query;
-    if (!sector) return res.status(400).json({ error: "sector is required" });
-    if (!NDC_TARGETS[sector]) return res.status(400).json({ error: `Unknown sector: ${sector}` });
+    const sector = resolveSector(req.query.sector);
+    if (!sector) {
+      return res.status(400).json({
+        error: "unknown_sector",
+        message: `sector must be one of: ${Object.keys(NDC_TARGETS).join(", ")}`,
+      });
+    }
 
     const geo = resolveGeography(req.query);
     if (geo.error) return res.status(geo.status).json({ error: geo.error });
@@ -243,16 +262,19 @@ router.get("/emissions/timeseries", async (req, res) => {
       timeseries,
     });
   } catch (err) {
-    req.log?.error({ err }, "emissions_timeseries_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "emissions_timeseries_failed");
   }
 });
 
 router.get("/emissions/progress", async (req, res) => {
   try {
-    const { sector } = req.query;
-    if (!sector) return res.status(400).json({ error: "sector is required" });
-    if (!NDC_TARGETS[sector]) return res.status(400).json({ error: `Unknown sector: ${sector}` });
+    const sector = resolveSector(req.query.sector);
+    if (!sector) {
+      return res.status(400).json({
+        error: "unknown_sector",
+        message: `sector must be one of: ${Object.keys(NDC_TARGETS).join(", ")}`,
+      });
+    }
 
     const geo = resolveGeography(req.query);
     if (geo.error) return res.status(geo.status).json({ error: geo.error });
@@ -289,37 +311,39 @@ router.get("/emissions/progress", async (req, res) => {
       target_scope: "national",
     });
   } catch (err) {
-    req.log?.error({ err }, "emissions_progress_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "emissions_progress_failed");
   }
 });
 
-router.get("/emissions/summary", async (_req, res) => {
+router.get("/emissions/summary", async (req, res) => {
   try {
     const summary = await getSectorSummary();
     return res.json(summary);
   } catch (err) {
-    req.log?.error({ err }, "emissions_summary_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "emissions_summary_failed");
   }
 });
 
-router.get("/provenance", async (_req, res) => {
+router.get("/provenance", async (req, res) => {
   try {
     const payload = await getProvenancePayload();
     return res.json(payload);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "provenance_failed");
   }
 });
 
-router.get("/health/climatetrace", async (_req, res) => {
+router.get("/health/climatetrace", async (req, res) => {
   try {
     const health = await checkApiHealth();
     const code = health.status === "ok" ? 200 : health.status === "degraded" ? 206 : 503;
     return res.status(code).json(health);
   } catch (err) {
-    return res.status(503).json({ status: "down", error: err.message });
+    // The upstream error text embeds the full Climate TRACE request URL. That
+    // is internal detail about how this server calls out, so it is logged
+    // rather than returned.
+    req.log?.error({ err, event: "climatetrace_health_failed" }, "climate trace health check failed");
+    return res.status(503).json({ status: "down" });
   }
 });
 

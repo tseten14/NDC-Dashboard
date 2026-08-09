@@ -24,6 +24,7 @@
  *   GET /documents/mcf/:projectId        — one climate-fund project
  */
 import express from "express";
+import { sendClientError, sendServerError } from "../server/errors.js";
 import { getCurated, getDocumentById, getMeta, listDocuments } from "../services/policyDocuments.js";
 import {
   getPassageCorpusMeta,
@@ -37,12 +38,11 @@ import { getMcfMeta, getMcfProject, searchMcfProjects } from "../services/mcfPro
 
 const router = express.Router();
 
-router.get("/documents/mcf/meta", (_req, res) => {
+router.get("/documents/mcf/meta", (req, res) => {
   try {
     return res.json(getMcfMeta());
   } catch (err) {
-    _req.log?.error({ err }, "mcf_meta_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "mcf_meta_failed");
   }
 });
 
@@ -51,28 +51,25 @@ router.get("/documents/mcf/search", (req, res) => {
     const { q, funder, sector, minAmount, limit, offset } = req.query;
     return res.json(searchMcfProjects({ q, funder, sector, minAmount, limit, offset }));
   } catch (err) {
-    req.log?.error({ err }, "mcf_search_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "mcf_search_failed");
   }
 });
 
 router.get("/documents/mcf/:projectId", (req, res) => {
   try {
     const project = getMcfProject(req.params.projectId);
-    if (!project) return res.status(404).json({ error: "MCF project not found" });
+    if (!project) return sendClientError(res, 404, "not_found", "MCF project not found");
     return res.json(project);
   } catch (err) {
-    req.log?.error({ err }, "mcf_get_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "mcf_get_failed");
   }
 });
 
-router.get("/documents/passage-corpus/meta", (_req, res) => {
+router.get("/documents/passage-corpus/meta", (req, res) => {
   try {
     return res.json(getPassageCorpusMeta());
   } catch (err) {
-    _req.log?.error({ err }, "passage_corpus_meta_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "passage_corpus_meta_failed");
   }
 });
 
@@ -81,8 +78,7 @@ router.get("/documents/topics", (req, res) => {
     const { documentId } = req.query;
     return res.json(listTopics({ documentId }));
   } catch (err) {
-    req.log?.error({ err }, "documents_topics_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "documents_topics_failed");
   }
 });
 
@@ -91,17 +87,15 @@ router.get("/documents/passages/search", (req, res) => {
     const { q, topicId, limit, offset } = req.query;
     return res.json(searchPassages({ q, topicId, limit, offset }));
   } catch (err) {
-    req.log?.error({ err }, "documents_passages_search_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "documents_passages_search_failed");
   }
 });
 
-router.get("/documents/meta", (_req, res) => {
+router.get("/documents/meta", (req, res) => {
   try {
     return res.json(getMeta());
   } catch (err) {
-    _req.log?.error({ err }, "documents_meta_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "documents_meta_failed");
   }
 });
 
@@ -110,20 +104,18 @@ router.get("/documents/curated", (req, res) => {
     const { sectorId, context } = req.query;
     return res.json(getCurated({ sectorId, context }));
   } catch (err) {
-    req.log?.error({ err }, "documents_curated_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "documents_curated_failed");
   }
 });
 
 router.get("/documents/catalog/:catalogId", (req, res) => {
   try {
     const doc = getDocumentById(req.params.catalogId);
-    if (!doc) return res.status(404).json({ error: "Document not found" });
+    if (!doc) return sendClientError(res, 404, "not_found", "Document not found");
     const passageDoc = getPassageDocumentByCatalogId(req.params.catalogId);
     return res.json({ document: doc, passageDocument: passageDoc });
   } catch (err) {
-    req.log?.error({ err }, "documents_catalog_get_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "documents_catalog_get_failed");
   }
 });
 
@@ -132,22 +124,20 @@ router.get("/documents/:cprDocumentId/passages", (req, res) => {
     const { cprDocumentId } = req.params;
     const { q, topicId, limit, offset } = req.query;
     const result = listPassages(cprDocumentId, { q, topicId, limit, offset });
-    if (!result) return res.status(404).json({ error: "Passage document not found" });
+    if (!result) return sendClientError(res, 404, "not_found", "Passage document not found");
     return res.json(result);
   } catch (err) {
-    req.log?.error({ err }, "documents_passages_list_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "documents_passages_list_failed");
   }
 });
 
 router.get("/documents/:cprDocumentId", (req, res) => {
   try {
     const doc = getPassageDocument(req.params.cprDocumentId);
-    if (!doc) return res.status(404).json({ error: "Passage document not found" });
+    if (!doc) return sendClientError(res, 404, "not_found", "Passage document not found");
     return res.json(doc);
   } catch (err) {
-    req.log?.error({ err }, "documents_passage_get_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "documents_passage_get_failed");
   }
 });
 
@@ -156,8 +146,7 @@ router.get("/documents", (req, res) => {
     const { category, source, q, limit, offset } = req.query;
     return res.json(listDocuments({ category, source, q, limit, offset }));
   } catch (err) {
-    req.log?.error({ err }, "documents_list_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "documents_list_failed");
   }
 });
 

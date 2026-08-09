@@ -152,11 +152,11 @@ export function buildDashboardFactLedger(
       });
     }
 
-    if (pr?.target_value_mt != null) {
+    if (pr?.target_value != null) {
       pushFact(facts, {
         id: `fact_ndc_sector_${sector}_target_2030`,
         claim: `NDC 2030 emissions ceiling for ${lineage.sectorLabel}`,
-        value: pr.target_value_mt,
+        value: pr.target_value,
         unit: "MtCO₂e",
         year: 2030,
         source_label: "Uganda Updated NDC 2022 — sector 2030 target (UNFCCC)",
@@ -166,11 +166,11 @@ export function buildDashboardFactLedger(
       });
     }
 
-    if (pr?.bau_2030_mt != null) {
+    if (pr?.bau_2030 != null) {
       pushFact(facts, {
         id: `fact_ndc_sector_${sector}_bau_2030`,
         claim: `Business-as-usual 2030 projection for ${lineage.sectorLabel} (NDC annex)`,
-        value: pr.bau_2030_mt,
+        value: pr.bau_2030,
         unit: "MtCO₂e",
         year: 2030,
         source_label: "Uganda Updated NDC 2022 — BAU 2030 (UNFCCC)",

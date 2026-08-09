@@ -11,6 +11,7 @@
  *   GET /targets/:targetId/observations — the values recorded against one target
  */
 import express from "express";
+import { sendServerError } from "../server/errors.js";
 import { getTargets, getObservationsForTarget } from "../services/persistence.js";
 
 const router = express.Router();
@@ -20,8 +21,7 @@ router.get("/targets", async (req, res) => {
     const rows = await getTargets();
     return res.json({ targets: rows, count: rows.length });
   } catch (err) {
-    req.log?.error({ err }, "targets_list_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "targets_list_failed");
   }
 });
 
@@ -30,8 +30,7 @@ router.get("/targets/:targetId/observations", async (req, res) => {
     const rows = await getObservationsForTarget(req.params.targetId);
     return res.json({ target_id: req.params.targetId, observations: rows, count: rows.length });
   } catch (err) {
-    req.log?.error({ err, targetId: req.params.targetId }, "target_observations_failed");
-    return res.status(500).json({ error: err.message });
+    return sendServerError(req, res, err, "target_observations_failed");
   }
 });
 

@@ -39,4 +39,33 @@ export async function validateUploadMime(buffer, filename) {
   return { ok: false, reason: "Could not determine file type from content" };
 }
 
+/**
+ * Content check for the multi-file scan endpoint, which also accepts .txt.
+ *
+ * Text formats — CSV, JSON, plain text — have no magic bytes, so there is
+ * nothing to sniff and the extension is all there is to go on. What can be
+ * checked is that they are not something else in disguise: if the sniffer
+ * recognises a real binary format (an executable, an archive, an image) then
+ * whatever the name says, this is not a spreadsheet and must not reach a parser.
+ *
+ * @returns {Promise<{ ok: true } | { ok: false, reason: string }>}
+ */
+export async function validateScanContent(buffer, extension) {
+  const detected = await fileTypeFromBuffer(buffer);
+
+  if (extension === "pdf") {
+    if (detected?.mime !== "application/pdf") {
+      return { ok: false, reason: "File is named .pdf but its contents are not a PDF." };
+    }
+    return { ok: true };
+  }
+
+  if (!detected) return { ok: true };
+  if (ALLOWED_MIMES.has(detected.mime)) return { ok: true };
+  return {
+    ok: false,
+    reason: `File contents are ${detected.mime}, which this scanner does not accept.`,
+  };
+}
+
 export { ALLOWED_MIMES };

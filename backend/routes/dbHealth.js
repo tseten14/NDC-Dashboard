@@ -15,7 +15,7 @@ import { getPersistenceMode } from "../../database/bootstrap.ts";
 
 const router = express.Router();
 
-router.get("/health/db", async (_req, res) => {
+router.get("/health/db", async (req, res) => {
   const started = Date.now();
   const { mode } = getPersistenceMode();
 
@@ -40,11 +40,15 @@ router.get("/health/db", async (_req, res) => {
   const result = await checkDatabaseConnectivity();
   const latency_ms = result.latencyMs;
   if (!result.ok) {
+    // The driver's own message names the host, port, user and database, which
+    // is a map of the infrastructure for anyone probing this endpoint. It goes
+    // to the log instead, where an operator can read it.
+    req.log?.error({ event: "db_health_failed", err: result.error }, "database connectivity check failed");
     return res.status(503).json({
       status: "error",
       latency_ms,
       mode,
-      message: result.error,
+      message: "Database is not reachable",
     });
   }
 

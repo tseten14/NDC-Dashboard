@@ -9,6 +9,8 @@
  */
 import express from "express";
 import NodeCache from "node-cache";
+import { z } from "zod";
+import { sendClientError, sendServerError } from "../server/errors.js";
 
 const router = express.Router();
 
@@ -19,6 +21,8 @@ const analysisCache = new NodeCache({ stdTTL: 3600 });
 
 const MAX_PDF_CHARS = 8_000;  // ~2k tokens — well within free-tier limits
 const FETCH_TIMEOUT_MS = 20_000;
+/** Largest document this server will pull into memory to read (25 MB). */
+const MAX_PDF_BYTES = 25 * 1024 * 1024;
 
 /** Hosts permitted for server-side PDF fetch (SSRF guard). */
 const ALLOWED_PDF_HOSTS = new Set([
@@ -80,7 +84,6 @@ async function callOpenAI(apiKey, systemText, userText) {
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
       const msg = errBody?.error?.message ?? `HTTP ${res.status}`;
-      console.error("[policyAi] OpenAI error:", res.status, msg);
       if (res.status === 429) {
         throw new QuotaError("The AI service rate limit has been reached. Please wait a moment and try again.");
       }
@@ -103,10 +106,36 @@ async function fetchPdfBuffer(url) {
     const res = await fetch(url, {
       signal: controller.signal,
       headers: { "User-Agent": "NDC-Explorer/1.0" },
+      // Never follow a redirect here. The host allow-list is checked against the
+      // URL we were given; a redirect would be followed to somewhere that was
+      // never checked, which is exactly how an allow-list gets walked around.
+      redirect: "error",
     });
     if (!res.ok) throw new Error(`PDF fetch failed: ${res.status}`);
-    const buf = await res.arrayBuffer();
-    return Buffer.from(buf);
+
+    // Refuse an oversized document twice over. The declared length is checked
+    // first because it is free, then the bytes are counted as they arrive —
+    // a Content-Length header is a claim, not a guarantee.
+    const declaredLength = Number(res.headers.get("content-length") ?? 0);
+    if (declaredLength > MAX_PDF_BYTES) {
+      throw new Error("PDF exceeds the maximum size this server will read");
+    }
+
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error("PDF response had no body");
+    const chunks = [];
+    let total = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.length;
+      if (total > MAX_PDF_BYTES) {
+        await reader.cancel();
+        throw new Error("PDF exceeds the maximum size this server will read");
+      }
+      chunks.push(value);
+    }
+    return Buffer.concat(chunks);
   } finally {
     clearTimeout(timer);
   }
@@ -218,22 +247,36 @@ function buildUserMessage(docTitle, action, question, pdfText) {
 
 // ── Route ──────────────────────────────────────────────────────────────────────
 
-router.post("/policy/analyze", async (req, res) => {
-  const { contentUrl, title, action, question } = req.body ?? {};
+/**
+ * What the client is allowed to send.
+ *
+ * `contentUrl` is checked twice: the schema confirms it is a bounded URL, then
+ * assertAllowedPdfUrl confirms it points at the one document host this server
+ * will fetch from. The title is capped because it is placed into the prompt, and
+ * the question because it is billed by length.
+ */
+const requestSchema = z.object({
+  contentUrl: z.string().url().max(2048),
+  title: z.string().trim().max(300).optional(),
+  action: z.enum(["exec_summary", "key_items", "targets", "recommendations"]).optional(),
+  question: z.string().trim().min(1).max(500).optional(),
+});
 
-  if (!contentUrl || typeof contentUrl !== "string") {
-    return res.status(400).json({ error: "contentUrl is required" });
+router.post("/policy/analyze", async (req, res) => {
+  const parsedRequest = requestSchema.safeParse(req.body ?? {});
+  if (!parsedRequest.success) {
+    return sendClientError(res, 400, "invalid_request", "A valid document contentUrl is required.");
   }
+  const { contentUrl, title, action, question } = parsedRequest.data;
+
   let safeContentUrl;
   try {
     safeContentUrl = assertAllowedPdfUrl(contentUrl);
   } catch (err) {
-    return res.status(400).json({ error: err.message });
+    return sendClientError(res, 400, "content_url_not_allowed", err.message);
   }
   if (!process.env.OPENAI_API_KEY) {
-    return res
-      .status(503)
-      .json({ error: "AI analysis is not available on this server (OPENAI_API_KEY not set)." });
+    return sendClientError(res, 503, "ai_unavailable", "AI analysis is not configured on this server.");
   }
 
   const cacheKey = question
@@ -271,11 +314,15 @@ router.post("/policy/analyze", async (req, res) => {
     analysisCache.set(cacheKey, result);
     return res.json(result);
   } catch (err) {
-    req.log?.error({ err }, "policy_ai_analyze_failed");
     if (err.name === "QuotaError") {
-      return res.status(429).json({ error: err.message });
+      req.log?.warn({ event: "policy_ai_quota" }, "AI provider rate limit reached");
+      return sendClientError(res, 429, "ai_rate_limited", err.message);
     }
-    return res.status(500).json({ error: err.message || "Analysis failed" });
+    return sendServerError(req, res, err, "policy_ai_analyze_failed", {
+      status: 502,
+      code: "ai_analysis_failed",
+      message: "The analysis could not be completed. Please try again.",
+    });
   }
 });
 

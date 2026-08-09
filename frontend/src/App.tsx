@@ -28,6 +28,7 @@ import { CurrentRoleProvider } from "@/hooks/use-current-role";
 import { AuthGate } from "@/components/AuthGate";
 import { CountryGate } from "@/components/CountryGate";
 import { CountryProvider } from "@/context/CountryContext";
+import { OperatorSessionProvider } from "@/hooks/use-operator-session";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "./pages/NotFound.tsx";
 import CountrySelect from "./pages/CountrySelect.tsx";
@@ -211,6 +212,10 @@ const App = () => (
         <Sonner />
         <CountryProvider>
           <BrowserRouter>
+            {/* Tracks whether importing is unlocked on this device. Wrapped
+                around the router so the state survives navigation between the
+                import tabs. */}
+            <OperatorSessionProvider>
             <CurrentRoleProvider>
               <Routes>
                 <Route
@@ -233,6 +238,7 @@ const App = () => (
                 />
               </Routes>
             </CurrentRoleProvider>
+            </OperatorSessionProvider>
           </BrowserRouter>
         </CountryProvider>
       </TooltipProvider>
