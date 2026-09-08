@@ -20,23 +20,15 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
-\usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,fit,calc}
 
 \title{Can AI Applications Help Governments with Climate and Energy Policy? A Case Study of the NDC Data Explorer at UNFCCC}
 
-% --- FIXED ONE-PAGE LEFT ALIGNMENT BLOCK ---
 \author{%
-  \makebox[\textwidth][]{%
-    \begin{tabular}{@{}l@{}}
-      {\large \textbf{Tseten Sherpa}$^{1,2}$} \\[1.2em]
-      {\small $^{1}$ School for Environment and Sustainability, University of Michigan, Ann Arbor, MI, USA} \\
-      {\small $^{2}$ Mitigation Data Systems, United Nations Framework Convention on Climate Change (UNFCCC), Bonn, Germany} \\ \\
-      {\small Correspondence to: tsherp@umich.edu}
-    \end{tabular}%
-  }%
+  Tseten Sherpa$^{1,2}$ \\
+  $^{1}$ School for Environment and Sustainability, University of Michigan \\
+  $^{2}$ Mitigation Data Systems, UNFCCC, Bonn, Germany \\
+  Correspondence to: tsherp@umich.edu
 }
-% --------------------------------------------
 
 \begin{document}
 
@@ -85,16 +77,16 @@ clamped to $[0,100]$, where $y_{t}$ is the latest observed value and $C_{2030}$ 
 
 A concrete transport example shows why the formula cannot be replaced by ``percent cut from 2015.'' The NDC records a 2015 transport inventory of 4.2~MtCO$_2$e, a 2030 BAU of 9.6, and a 2030 ceiling of 6.8 (29\% below BAU). The ceiling is \emph{higher} than the base year. A dashboard that treated 4.2$\to$6.8 as a failed reduction would report that Uganda had already missed a target it had not set. Equation~\eqref{eq:progress} instead asks how much of the required wedge below BAU has been achieved. If latest observed transport were 7.5~MtCO$_2$e, progress would be $100\times(9.6-7.5)/(9.6-6.8)\approx 75\%$: between cap and BAU, not a pass, not a collapse. The same logic applies to AFOLU (77.6 baseline, 122.2 BAU, 91.8 cap) and stationary energy. Waste is the near-flat case (2.08 to a 2.09 cap against 3.19 BAU): being near the 2015 level is consistent with the pledge, not evidence of inaction.
 
-Geography is national or district. National Climate TRACE series begin in 2015; district series begin in 2021. Fifty-six Uganda districts are available via Climate TRACE GADM identifiers (national \texttt{UGA}; e.g.\ Kampala \texttt{UGA.16\_1}). NDC targets are national. District numbers are therefore shown as observed context only: the interface does not assign a district a pass/fail score. A Kampala timeseries can inform siting and briefing; it cannot be read as ``Kampala is off track for the NDC,'' because no such district target exists. That is a design choice, not an unfinished feature. Other countries appear in a country gate as scaffolding; they are not wired to live data.
+Geography is national or district. National Climate TRACE series begin in 2015; district series begin in 2021. Fifty-six Uganda districts are available via Climate TRACE GADM identifiers (national \texttt{UGA}; for example Kampala \texttt{UGA.16\_1}). NDC targets are national. District numbers are therefore shown as observed context only: the interface does not assign a district a pass/fail score. A Kampala timeseries can inform siting and briefing; it cannot be read as ``Kampala is off track for the NDC,'' because no such district target exists. That is a design choice, not an unfinished feature. Other countries appear in a country gate as scaffolding; they are not wired to live data.
 
-\begin{table*}[t]
+\begin{table}[t]
   \caption{Uganda Updated NDC (September 2022) mitigation ceilings used by the cockpit. Sector targets are BAU-relative. Agriculture emissions are a Climate TRACE-tracked component of AFOLU and have no standalone NDC 2022 ceiling. Units MtCO$_2$e except where noted.}
   \label{tab:ndc-targets}
   \centering
   \small
   \begin{tabular}{llrrrl}
     \toprule
-    ID & Sector & 2015 baseline & 2030 BAU & 2030 cap & CT-tracked \\
+    ID & Sector & 2015 base & 2030 BAU & 2030 cap & CT \\
     \midrule
     t0 & Economy-wide & --- & --- & 112.1 & --- \\
     t1 & AFOLU ($-24.9\%$ BAU) & 77.6 & 122.2 & 91.8 & yes \\
@@ -102,45 +94,33 @@ Geography is national or district. National Climate TRACE series begin in 2015; 
     t5 & Transport ($-29\%$) & 4.2 & 9.6 & 6.8 & yes \\
     t6 & Waste ($-34.8\%$) & 2.08 & 3.19 & 2.09 & yes \\
     t7 & IPPU ($-14\%$) & 0.57 & 1.0 & 0.86 & yes \\
-    t8 & Agriculture (CSA $31.7\%\to 70.7\%$) & --- & --- & --- & indicator \\
+    t8 & Agriculture (CSA indicator) & --- & --- & --- & ind. \\
     \bottomrule
   \end{tabular}
-\end{table*}
+\end{table}
 
 \section{System overview}
 \label{sec:system}
 
-The NDC Data Explorer is a web-based decision-support cockpit, not a chatbot wrapped around a search index and not official MRV submission software. A React and TypeScript single-page application (Vite, Tailwind, MapLibre GL) talks to an Express API under \texttt{/api/v1}. Production is deployed on Vercel. Live emissions and progress come from Climate TRACE API~v7 (gas field \texttt{co2e\_100yr}); the only numeric transform applied for display is tonnes to MtCO$_2$e. NDC target definitions, sector-to-slug mapping, and the mitigation catalogue are versioned in the repository. Optional Postgres stores ingested indicator observations; it does not replace Climate TRACE MtCO$_2$e series. Browser \texttt{localStorage} holds personal activity drafts and a role preference. Role labels (ministry officer, MRV officer, senior decision-maker, and others) shape navigation defaults; they are not remote authentication.
+The NDC Data Explorer is a web-based decision-support cockpit, not a chatbot wrapped around a search index and not official MRV submission software. A React and TypeScript single-page application (Vite, Tailwind, MapLibre GL) talks to an Express API under \texttt{/api/v1}. Production is deployed on Vercel. Live emissions and progress come from Climate TRACE API~v7 (gas field \texttt{co2e\_100yr}); the only numeric transform applied for display is tonnes to MtCO$_2$e. NDC target definitions, sector-to-slug mapping, and the mitigation catalogue are versioned in the repository. Optional Postgres stores ingested indicator observations; it does not replace Climate TRACE MtCO$_2$e series. Browser storage holds personal activity drafts and a role preference. Role labels (ministry officer, MRV officer, senior decision-maker, and others) shape navigation defaults; they are not remote authentication.
 
 Figure~\ref{fig:architecture} summarizes the data path. Three upstream classes feed the API: live Climate TRACE inventories, bundled Uganda NDC 2022 configuration, and a Climate Policy Radar export of Uganda documents and multilateral climate-fund projects. The cockpit assembles those into a dashboard, map, document library, and finance screen. When a user asks a question, the client builds a fact ledger from the current view and sends it with the query to an OpenAI chat-completions model; the server returns cited prose and a confidence flag.
 
-\begin{figure*}[t]
-  \centering
-  \resizebox{\textwidth}{!}{%
-  \begin{tikzpicture}[
-    font=\small,
-    box/.style={draw, rounded corners=2pt, align=center, inner sep=6pt, minimum height=1.15cm},
-    src/.style={box, fill=black!4},
-    mid/.style={box, fill=black!8},
-    ui/.style={box, fill=black!12},
-    arr/.style={-{Latex}, thick},
-  ]
-    \node[src] (ct) {Climate TRACE\\API v7};
-    \node[src, right=7mm of ct] (ndc) {Uganda NDC 2022\\targets \& catalogue};
-    \node[src, right=7mm of ndc] (cpr) {CPR / MCF\\document export};
-    \node[mid, below=12mm of ndc] (api) {Express API\\emissions, documents, ingest};
-    \node[ui, below=12mm of api] (ui) {React cockpit\\dashboard, map, finance, documents};
-    \node[src, right=18mm of ui] (llm) {OpenAI chat\\quote-only over ledger};
-    \draw[arr] (ct) -- (api);
-    \draw[arr] (ndc) -- (api);
-    \draw[arr] (cpr) -- (api);
-    \draw[arr] (api) -- (ui);
-    \draw[arr] (ui) -- node[above, font=\scriptsize] {fact ledger} (llm);
-    \draw[arr] (llm) -- node[below, font=\scriptsize] {cited prose} (ui);
-  \end{tikzpicture}}
-  \caption{Architecture of the NDC Data Explorer. Live inventories, versioned NDC configuration, and a document export meet in an Express API. The cockpit is the system of record for what the assistant may say: the model never browses the open web.}
+\begin{table}[t]
+  \caption{Architecture of the NDC Data Explorer. The cockpit is the system of record for what the assistant may say: the model never browses the open web.}
   \label{fig:architecture}
-\end{figure*}
+  \centering
+  \small
+  \begin{tabular}{ccc}
+    \toprule
+    Climate TRACE API v7 & Uganda NDC 2022 config & CPR / MCF document export \\
+    \midrule
+    \multicolumn{3}{c}{$\downarrow$ \quad Express API (emissions, documents, ingest) \quad $\downarrow$} \\
+    \multicolumn{3}{c}{$\downarrow$ \quad React cockpit (dashboard, map, finance, documents) \quad $\downarrow$} \\
+    \multicolumn{3}{c}{fact ledger $\rightarrow$ OpenAI chat (quote-only) $\rightarrow$ cited prose} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 A cross-cutting honesty model, summarized in Table~\ref{tab:honesty}, is as important as the architecture. Every user-visible number is labelled live, bundled-from-NDC, snapshot, indicative, or local-only. Indicative modules may inform screening; they are not permitted to overwrite Climate TRACE totals or NDC ceilings.
 
@@ -149,14 +129,14 @@ A cross-cutting honesty model, summarized in Table~\ref{tab:honesty}, is as impo
   \label{tab:honesty}
   \centering
   \small
-  \begin{tabular}{p{0.18\columnwidth}p{0.36\columnwidth}p{0.36\columnwidth}}
+  \begin{tabular}{p{0.18\columnwidth}p{0.34\columnwidth}p{0.36\columnwidth}}
     \toprule
     Class & What users see & Provenance \\
     \midrule
-    Live & Sector and district MtCO$_2$e, timeseries, map sources, spatial confidence & Climate TRACE API v7; tonnes$\to$MtCO$_2$e only \\
+    Live & Sector and district MtCO$_2$e, timeseries, map sources & Climate TRACE API v7; tonnes to MtCO$_2$e only \\
     Bundled official & 2030 ceilings, BAU, conditionality, indicator targets & Uganda Updated NDC (Sept.\ 2022) \\
-    Snapshot & $\sim$207 policy documents; passage index; $\sim$167 MCF projects & Climate Policy Radar export, not a live API \\
-    Indicative & MACC / fund fit; KCI analogies; 2030 trend; risk layers & Catalogue assumptions or seed models \\
+    Snapshot & $\sim$207 policy documents; $\sim$167 MCF projects & Climate Policy Radar export, not a live API \\
+    Indicative & MACC / fund fit; KCI analogies; 2030 trend; risk & Catalogue assumptions or seed models \\
     Local-only & User activities; role preference & Browser storage; not a shared ledger \\
     \bottomrule
   \end{tabular}
@@ -168,7 +148,7 @@ A cross-cutting honesty model, summarized in Table~\ref{tab:honesty}, is as impo
 \subsection{Emissions dashboard}
 \label{sec:dashboard}
 
-The primary analysis surface is a five-column NDC cockpit: official targets, observed Climate TRACE series, progress toward the selected ceiling, mitigation options, and NDC-traceable activities. Users switch sector (AFOLU, energy, transport, IPPU, agriculture, waste) and geography. Climate TRACE subsector slugs are aggregated through a fixed \texttt{SECTOR\_MAP}; a reconciliation invariant requires that mapped sectors plus a small unmapped remainder (e.g.\ mineral extraction) explain the national total. An on-screen accuracy strip reports API health and the reconciliation residual. Named ``top emitting sources'' are spatially located assets and are \emph{not} required to sum to the sector total: spatially uncertain mass appears in totals only.
+The primary analysis surface is a five-column NDC cockpit: official targets, observed Climate TRACE series, progress toward the selected ceiling, mitigation options, and NDC-traceable activities. Users switch sector (AFOLU, energy, transport, IPPU, agriculture, waste) and geography. Climate TRACE subsector slugs are aggregated through a fixed sector map; a reconciliation invariant requires that mapped sectors plus a small unmapped remainder (for example mineral extraction) explain the national total. An on-screen accuracy strip reports API health and the reconciliation residual. Named top emitting sources are spatially located assets and are \emph{not} required to sum to the sector total: spatially uncertain mass appears in totals only.
 
 The dashboard does not invent missing inventory years and does not interpolate. When Climate TRACE and the NDC inventory-scale baseline diverge---as they systematically can, because one is a satellite-and-model inventory and the other is a national GHG inventory---the interface shows a warning rather than coercing equality. A planning tool that hid that discrepancy would train users to treat third-party estimates as official MRV. Exports (Excel, a plain-language PDF briefing, and a CRT/BTR-style CSV) inherit the current geography label so a district view cannot be mistaken for a national submission table.
 
@@ -184,42 +164,34 @@ The emissions map is a MapLibre GL three-dimensional satellite and terrain view 
 
 The core natural-language interface is an OpenAI chat-completions assistant (default model configurable; deployment used a current flagship chat model) that answers questions about the \emph{current dashboard state}. It is not an embedding retriever over a document store and not a web-enabled agent.
 
-Before each call, the client constructs a fact ledger: a list of typed records $\{\mathrm{id}, \mathrm{value}, \mathrm{claim}, \mathrm{source\_url}, \mathrm{viewer\_url}, \mathrm{domain}\}$. Identifiers distinguish inventories from pledges (e.g.\ \texttt{fact\_trace\_transport\_latest\_2024} versus \texttt{fact\_ndc\_t5\_target}). Typical rows include, for each dashboard sector, the latest Climate TRACE value and year, the last five observed years, the NDC 2030 ceiling and BAU, derived progress percent, the national country total, and Uganda's global rank. Selected-target rows add the official baseline, target, and a plain-language gloss of the pledge. Domains are \texttt{climatetrace} or \texttt{unfccc}. Source URLs point at the Climate TRACE v7 emissions or rankings endpoints that produced the number, or at the UNFCCC NDC Registry PDF for Uganda [6]. The public Climate TRACE inventory page is attached as a human viewer URL, not as a second numeric source.
+Before each call, the client constructs a fact ledger: a list of typed records with an identifier, value, claim, source URL, viewer URL, and domain. Identifiers distinguish inventories from pledges (for example \texttt{fact\_trace\_transport\_latest\_2024} versus \texttt{fact\_ndc\_t5\_target}). Typical rows include, for each dashboard sector, the latest Climate TRACE value and year, the last five observed years, the NDC 2030 ceiling and BAU, derived progress percent, the national country total, and Uganda's global rank. Selected-target rows add the official baseline, target, and a plain-language gloss of the pledge. Domains are Climate TRACE or UNFCCC. Source URLs point at the Climate TRACE v7 emissions or rankings endpoints that produced the number, or at the UNFCCC NDC Registry PDF for Uganda [6]. The public Climate TRACE inventory page is attached as a human viewer URL, not as a second numeric source.
 
-The system prompt requires the model to (i)~quote only values that appear in \texttt{quotable\_facts}, (ii)~attach the corresponding fact identifiers to each paragraph, (iii)~keep Climate TRACE and NDC numbers on separate citation lists, and (iv)~say that a figure is unavailable rather than estimate it. Output is constrained to a JSON schema: title, confidence, headed sections of short prose paragraphs, a one-sentence disclaimer, and follow-up questions. Free-text questions are capped at 500 characters. Four canned actions---progress check, gap analysis, sector emissions, and priorities---use the same ledger with a narrower task line, so a briefing officer can obtain a structured note without composing a prompt.
+The system prompt requires the model to (i)~quote only values that appear in the quotable-facts list, (ii)~attach the corresponding fact identifiers to each paragraph, (iii)~keep Climate TRACE and NDC numbers on separate citation lists, and (iv)~say that a figure is unavailable rather than estimate it. Output is constrained to a JSON schema: title, confidence, headed sections of short prose paragraphs, a one-sentence disclaimer, and follow-up questions. Free-text questions are capped at 500 characters. Four canned actions---progress check, gap analysis, sector emissions, and priorities---use the same ledger with a narrower task line, so a briefing officer can obtain a structured note without composing a prompt.
 
-Consider the question ``Are we on track for transport?'' The ledger already contains the NDC transport ceiling, BAU, baseline, the latest TRACE estimate, and the derived progress percent. A valid answer may compare those figures and cite \texttt{fact\_ndc\_*} for the pledge and \texttt{fact\_trace\_*} for the observation. It may not invent a 2015--2030 reduction rate, a district pass/fail, or a finance need, because those numbers are not in the ledger. That is the point of the design: the assistant is allowed to narrate the cockpit, not to enlarge it.
+Consider the question ``Are we on track for transport?'' The ledger already contains the NDC transport ceiling, BAU, baseline, the latest TRACE estimate, and the derived progress percent. A valid answer may compare those figures and cite NDC facts for the pledge and TRACE facts for the observation. It may not invent a 2015--2030 reduction rate, a district pass/fail, or a finance need, because those numbers are not in the ledger. That is the point of the design: the assistant is allowed to narrate the cockpit, not to enlarge it.
 
-After generation, a deterministic resolver maps cited identifiers to URLs. If the model omits identifiers, the resolver tries numeric matching (absolute tolerance $0.06$ or relative $2.5\%$) and, failing that, conservative keyword inference (e.g.\ ``observed'' plus a selected sector $\to$ that sector's latest TRACE fact). Any paragraph that still contains a number not in the ledger sets \texttt{has\_unverified\_numbers} and the answer's confidence is treated as low (Figure~\ref{fig:ai-pipeline}). In a diplomatic setting, an ungrounded but fluent answer is worse than no answer: a non-expert user cannot reliably distinguish a well-supported claim from a plausible fabrication without an explicit source trail. The ledger makes that trail mechanical.
+After generation, a deterministic resolver maps cited identifiers to URLs. If the model omits identifiers, the resolver tries numeric matching (absolute tolerance $0.06$ or relative $2.5\%$) and, failing that, conservative keyword inference. Any paragraph that still contains a number not in the ledger is marked as having unverified numbers and the answer's confidence is treated as low (Table~\ref{fig:ai-pipeline}). In a diplomatic setting, an ungrounded but fluent answer is worse than no answer: a non-expert user cannot reliably distinguish a well-supported claim from a plausible fabrication without an explicit source trail. The ledger makes that trail mechanical.
 
-\begin{figure}[t]
-  \centering
-  \resizebox{\columnwidth}{!}{%
-  \begin{tikzpicture}[
-    font=\small,
-    box/.style={draw, rounded corners=2pt, align=center, inner sep=5pt, minimum width=2.35cm, minimum height=1.05cm},
-    arr/.style={-{Latex}, thick},
-  ]
-    \node[box] (s) {Dashboard\\state};
-    \node[box, right=6mm of s] (f) {Typed fact\\ledger};
-    \node[box, right=6mm of f] (m) {LLM\\quote-only};
-    \node[box, right=6mm of m] (r) {Citation\\resolver};
-    \node[box, right=6mm of r] (c) {Cited answer\\+ confidence};
-    \draw[arr] (s) -- (f);
-    \draw[arr] (f) -- (m);
-    \draw[arr] (m) -- (r);
-    \draw[arr] (r) -- (c);
-  \end{tikzpicture}}
+\begin{table}[t]
   \caption{NDC AI pipeline. The model is not the system of record. Unverified numbers survive only as a visible low-confidence flag.}
   \label{fig:ai-pipeline}
-\end{figure}
+  \centering
+  \small
+  \begin{tabular}{ccccc}
+    \toprule
+    Dashboard state & $\rightarrow$ & Typed fact ledger & $\rightarrow$ & LLM (quote-only) \\
+     & & & $\rightarrow$ & Citation resolver \\
+     & & & $\rightarrow$ & Cited answer + confidence \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \subsection{Policy documents}
 \label{sec:documents}
 
 A second assistant operates over documents rather than dashboard numbers. The library is a Climate Policy Radar export: on the order of 207 Uganda rows (laws, executive plans, UN submissions, fund projects), a passage index over key texts (NDC, NDPIV, NBSAP, agroforestry and climate regulations), and a multilateral climate-fund (MCF) project table of on the order of 167 Uganda-linked records. This is a snapshot rebuilt from CSV, not a live CPR API.
 
-Document analysis fetches the PDF over HTTPS, extracts text with page markers, truncates to 8{,}000 characters, and asks the model for an executive summary, key items, targets, or recommendations with page citations of the form $[p.N]$. Truncation is a limitation: a long NDC annex will not be fully in context. We prefer a partial, page-addressable reading to an unbounded fetch that pretends to have read the whole file. Server-side fetch is host-allowlisted to \texttt{cdn.climatepolicyradar.org}; redirects are disabled. The allowlist is an SSRF control and a trust boundary: the model may read only files the secretariat already treated as in-corpus. Passage search over the key-document index is a separate, non-generative path: keyword or topic filters return grouped passages without calling the language model, which is the right tool when the user already knows which instrument they mean.
+Document analysis fetches the PDF over HTTPS, extracts text with page markers, truncates to 8{,}000 characters, and asks the model for an executive summary, key items, targets, or recommendations with page citations of the form $[p.N]$. Truncation is a limitation: a long NDC annex will not be fully in context. We prefer a partial, page-addressable reading to an unbounded fetch that pretends to have read the whole file. Server-side fetch is host-allowlisted to the Climate Policy Radar CDN; redirects are disabled. The allowlist is a trust boundary: the model may read only files the secretariat already treated as in-corpus. Passage search over the key-document index is a separate, non-generative path: keyword or topic filters return grouped passages without calling the language model, which is the right tool when the user already knows which instrument they mean.
 
 \subsection{Climate finance}
 \label{sec:finance}
@@ -268,28 +240,24 @@ The author thanks the UNFCCC Secretariat's Mitigation Data Systems team for supe
 
 \section*{References}
 
-{\small
+\noindent [1] P. Lewis, E. Perez, A. Piktus, F. Petroni, V. Karpukhin, N. Goyal, H. K\"uttler, M. Lewis, W. Yih, T. Rockt\"aschel, S. Riedel, and D. Kiela, ``Retrieval-augmented generation for knowledge-intensive NLP tasks,'' in {\it Advances in Neural Information Processing Systems}, vol. 33, 2020, pp. 9459--9474.
 
-\noindent [1] P. Lewis, E. Perez, A. Piktus, F. Petroni, V. Karpukhin, N. Goyal, H. K\"uttler, M. Lewis, W. Yih, T. Rockt\"aschel, S. Riedel, and D. Kiela, ``Retrieval-augmented generation for knowledge-intensive NLP tasks,'' in \textit{Advances in Neural Information Processing Systems}, vol. 33, 2020, pp. 9459--9474.
+\noindent [2] F. Larosa et al., ``Large language models in climate and sustainability policy: limits and opportunities,'' {\it Environmental Research Letters}, vol. 20, no. 7, p. 074032, 2025, arXiv:2502.02191.
 
-\noindent [2] F. Larosa et al., ``Large language models in climate and sustainability policy: limits and opportunities,'' \textit{Environmental Research Letters}, vol. 20, no. 7, p. 074032, 2025, arXiv:2502.02191.
+\noindent [3] E. Nabavi, H. R. Maier, S. Razavi, A. Hindes, M. Howden, W. Grant, and S. Raman, ``On using large language models to support social research for climate action,'' {\it npj Climate Action}, vol. 5, no. 1, 2026.
 
-\noindent [3] E. Nabavi, H. R. Maier, S. Razavi, A. Hindes, M. Howden, W. Grant, and S. Raman, ``On using large language models to support social research for climate action,'' \textit{npj Climate Action}, vol. 5, no. 1, 2026.
+\noindent [4] A. Manivannan, V. Spaiser, T. J. B. Cann, J. Evans, J. P. Everall, et al., ``Generative AI for climate governance and acceptability-constrained policy design,'' {\it npj Climate Action}, vol. 5, no. 1, p. 37, 2026.
 
-\noindent [4] A. Manivannan, V. Spaiser, T. J. B. Cann, J. Evans, J. P. Everall, et al., ``Generative AI for climate governance and acceptability-constrained policy design,'' \textit{npj Climate Action}, vol. 5, no. 1, p. 37, 2026.
+\noindent [5] United Nations Framework Convention on Climate Change, {\it Paris Agreement}, United Nations, 2015, Article 4.
 
-\noindent [5] United Nations Framework Convention on Climate Change, \textit{Paris Agreement}, United Nations, 2015, Article 4.
-
-\noindent [6] Republic of Uganda, Ministry of Water and Environment, ``Updated nationally determined contribution (NDC),'' September 2022. [Online]. Available: \url{https://unfccc.int/sites/default/files/NDC/2022-09/Updated%20NDC%20_Uganda_2022%20Final.pdf}
+\noindent [6] Republic of Uganda, Ministry of Water and Environment, ``Updated nationally determined contribution (NDC),'' September 2022. Available: \url{https://unfccc.int/NDCREG}
 
 \noindent [7] C. Gordon et al., ``Closing gaps in emissions monitoring with Climate TRACE,'' arXiv:2511.19277, 2025.
 
-\noindent [8] Climate TRACE Coalition, ``Climate TRACE emissions inventory,'' Zenodo, 2026. [Online]. Available: \url{https://doi.org/10.5281/zenodo.20414751}
+\noindent [8] Climate TRACE Coalition, ``Climate TRACE emissions inventory,'' Zenodo, 2026. Available: \url{https://doi.org/10.5281/zenodo.20414751}
 
-\noindent [9] Climate Policy Radar, ``All document text data,'' Hugging Face dataset, 2026. [Online]. Available: \url{https://huggingface.co/datasets/ClimatePolicyRadar/all-document-text-data}
+\noindent [9] Climate Policy Radar, ``All document text data,'' Hugging Face dataset, 2026.
 
 \noindent [10] Food and Agriculture Organization of the United Nations, ``NDC tracking tool, module 3: progress toward BAU-relative targets,'' 2024.
-
-}
 
 \end{document}
