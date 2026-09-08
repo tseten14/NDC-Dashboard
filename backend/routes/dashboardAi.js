@@ -10,78 +10,30 @@ import express from "express";
 import NodeCache from "node-cache";
 import { z } from "zod";
 import { enrichCitationsFromFacts } from "../services/dashboardAiCitations.js";
+import { completeChat, QuotaError } from "../services/openaiChat.js";
 import { sendClientError, sendServerError } from "../server/errors.js";
 
 const router = express.Router();
 const analysisCache = new NodeCache({ stdTTL: 1800 });
 
-const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-/** Flagship OpenAI model; override with OPENAI_MODEL on the server if needed. */
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.6-sol";
-const MAX_CONTEXT_CHARS = 24_000;
-const OPENAI_TIMEOUT_MS = 55_000;
-
-class QuotaError extends Error {
-  constructor(msg) {
-    super(msg);
-    this.name = "QuotaError";
-  }
-}
-
-async function callOpenAI(apiKey, systemText, userText) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
-  try {
-    const res = await fetch(OPENAI_URL, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        messages: [
-          { role: "system", content: systemText },
-          { role: "user", content: userText },
-        ],
-        // GPT-5.6+ rejects max_tokens and non-default temperature on Chat Completions.
-        max_completion_tokens: 2800,
-      }),
-    });
-
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}));
-      const msg = errBody?.error?.message ?? `HTTP ${res.status}`;
-      if (res.status === 429) {
-        throw new QuotaError("The AI service rate limit has been reached. Please wait a moment and try again.");
-      }
-      throw new Error(`OpenAI ${res.status}: ${msg}`);
-    }
-
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content ?? "";
-  } finally {
-    clearTimeout(timer);
-  }
-}
+const MAX_CONTEXT_CHARS = 12_000;
 
 const ACTION_PROMPTS = {
   progress_check:
-    "Write 3–4 prose sections on the selected NDC target. Use ONLY numbers from context.quotable_facts. Each paragraph refs must list fact ids for every number you mention.",
+    "Write 2–3 short prose sections on the selected NDC target. Use ONLY numbers from context.quotable_facts. Each paragraph refs must list fact ids for every number you mention.",
   gap_analysis:
-    "Write 3–4 prose sections comparing Climate TRACE measurements to the NDC pledge. Cite fact_trace_* for observed values and fact_ndc_* for pledge values — never mix them on one ref list incorrectly.",
+    "Write 2–3 short prose sections comparing Climate TRACE measurements to the NDC pledge. Cite fact_trace_* for observed values and fact_ndc_* for pledge values — never mix them on one ref list incorrectly.",
   sector_emissions:
-    "Write 3–4 prose sections on sector emissions and trends. Every numeric claim must match a fact in context.quotable_facts and cite that fact id.",
+    "Write 2–3 short prose sections on sector emissions and trends. Every numeric claim must match a fact in context.quotable_facts and cite that fact id.",
   priorities:
-    "Write 3–4 prose sections ranking targets by risk. Only use numbers from context.quotable_facts with matching fact id refs.",
+    "Write 2–3 short prose sections ranking targets by risk. Only use numbers from context.quotable_facts with matching fact id refs.",
 };
 
 const SYSTEM_PROMPT = `You are a plain-language climate analyst for Uganda's NDC Dashboard.
 
-You receive JSON with live dashboard data plus a fact_ledger: every number you may quote is pre-listed with an exact id, value, and verified source URL.
+You receive compact JSON plus a fact_ledger: every number you may quote is pre-listed with an exact id, value, and verified source URL.
 
-Write like Perplexity: prose paragraphs with precise inline citations — each paragraph cites ONLY the fact ids backing the numbers in THAT paragraph.
+Write short prose paragraphs with precise inline citations — each paragraph cites ONLY the fact ids backing the numbers in THAT paragraph.
 
 Respond ONLY with valid JSON:
 
@@ -93,7 +45,7 @@ Respond ONLY with valid JSON:
       "heading": "<section heading>",
       "lines": [
         {
-          "text": "<one prose paragraph: 2–3 sentences, 40–80 words>",
+          "text": "<one prose paragraph: 1–2 sentences, 25–45 words>",
           "refs": ["<fact id from context.quotable_facts or fact_ledger — one per number cited>"]
         }
       ]
@@ -110,12 +62,46 @@ Critical rules:
 - Climate TRACE emissions → fact_trace_* ids. NDC baselines/targets/BAU → fact_ndc_* ids.
 - Do NOT cite generic sources (unfccc, CPR, dashboard). Cite the specific fact id.
 - If data is missing from quotable_facts, say it is unavailable — do not guess.
-- 3–5 sections, 1–2 paragraphs each, no bullet lists.
+- 2–3 sections, 1 paragraph each, no bullet lists.
 - confidence is "high" only when all numbers map to quotable_facts.
 - Return JSON only — no markdown fences.`;
 
+function slimDashboardContext(context) {
+  const sectorsIn = context.climate_trace?.sectors;
+  const sectors = {};
+  if (sectorsIn && typeof sectorsIn === "object") {
+    for (const [key, value] of Object.entries(sectorsIn)) {
+      if (!value || typeof value !== "object") continue;
+      sectors[key] = {
+        latest_year: value.latest_year,
+        latest_value_mt: value.latest_value_mt,
+        progress_pct: value.progress_pct,
+        status: value.status,
+        target_value_mt: value.target_value_mt,
+        bau_2030_mt: value.bau_2030_mt,
+      };
+    }
+  }
+  return {
+    geography: context.geography,
+    district_name: context.district_name,
+    selected_sector: context.selected_sector,
+    selected_target: context.selected_target,
+    selected_target_progress: context.selected_target_progress,
+    all_targets_summary: context.all_targets_summary,
+    climate_trace: {
+      inventory_years: context.climate_trace?.inventory_years,
+      api_reachable: context.climate_trace?.api_reachable,
+      sectors,
+      reconciliation: context.climate_trace?.reconciliation,
+    },
+    fact_ledger: context.fact_ledger,
+    quotable_facts: context.quotable_facts,
+  };
+}
+
 function buildUserMessage({ action, question, context }) {
-  const contextJson = JSON.stringify(context, null, 2);
+  const contextJson = JSON.stringify(slimDashboardContext(context));
   const trimmed =
     contextJson.length > MAX_CONTEXT_CHARS
       ? `${contextJson.slice(0, MAX_CONTEXT_CHARS)}\n…[context truncated]`
@@ -155,15 +141,20 @@ router.post("/dashboard/analyze", async (req, res) => {
   }
 
   const cacheKey = question
-    ? `dash:v2:chat:${question.slice(0, 80)}:${context.selected_target?.id ?? "none"}:${context.geography}`
-    : `dash:v2:${action ?? "progress_check"}:${context.selected_target?.id ?? "none"}:${context.geography}`;
+    ? `dash:v3:chat:${question.slice(0, 80)}:${context.selected_target?.id ?? "none"}:${context.geography}`
+    : `dash:v3:${action ?? "progress_check"}:${context.selected_target?.id ?? "none"}:${context.geography}`;
 
   const cached = analysisCache.get(cacheKey);
   if (cached) return res.json({ ...cached, from_cache: true });
 
   try {
     const userMessage = buildUserMessage({ action, question, context });
-    const raw = await callOpenAI(process.env.OPENAI_API_KEY, SYSTEM_PROMPT, userMessage);
+    const raw = await completeChat({
+      apiKey: process.env.OPENAI_API_KEY,
+      systemText: SYSTEM_PROMPT,
+      userText: userMessage,
+      maxTokens: 900,
+    });
 
     let parsed;
     try {

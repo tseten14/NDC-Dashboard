@@ -159,6 +159,7 @@ Set `USE_MOCK_DATA=true` in `.env` for offline fixture mode (no Climate TRACE ca
 | ----- | ----- |
 | `GET /api/v1/*` | 200 requests / 15 minutes |
 | `POST /api/v1/ingest/*` | 20 requests / 15 minutes |
+| `POST /api/v1/dashboard/analyze` and `POST /api/v1/policy/analyze` | 50 requests / 15 minutes |
 | `POST /api/v1/client-errors` | 50 requests / hour |
 
 Exceeded limits return `429` with `{ "error": "rate_limited", "retry_after_seconds": N }`.

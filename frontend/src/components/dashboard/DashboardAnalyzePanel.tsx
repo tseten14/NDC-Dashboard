@@ -13,6 +13,7 @@ import {
   DASHBOARD_QUICK_ACTIONS,
   type DashboardQuickAction,
 } from "@/lib/dashboard-ai-context";
+import { aiRequestErrorMessage } from "@/lib/ai-api-error";
 import type { AnalysisLine, AiAnalysisResponse, AiSourceLink } from "@/data/policy-ai-mock";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
@@ -241,17 +242,7 @@ export function DashboardAnalyzePanel({ selectedSector, selectedTarget }: Dashbo
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        if (res.status === 404) {
-          throw new Error(
-            "NDC AI endpoint not found. Restart the API server (npm run start:api) or redeploy the latest backend.",
-          );
-        }
-        if (res.status === 503) {
-          throw new Error(
-            err.error || "NDC AI is unavailable — set OPENAI_API_KEY on the API server.",
-          );
-        }
-        throw new Error(err.error || `Analysis failed (${res.status})`);
+        throw new Error(aiRequestErrorMessage(res.status, err, `Analysis failed (${res.status})`));
       }
       return res.json();
     },

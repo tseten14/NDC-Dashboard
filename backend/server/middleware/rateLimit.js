@@ -43,11 +43,16 @@ export const readRateLimiter = rateLimit({
  * endpoints with no limit at all. This covers anything that is not a GET, so a
  * route added later is protected before anyone remembers to think about it.
  */
+function isAiAnalyzePath(req) {
+  const url = req.originalUrl || req.url || "";
+  return url.includes("/dashboard/analyze") || url.includes("/policy/analyze");
+}
+
 export const writeRateLimiter = rateLimit({
   ...base,
   windowMs: 15 * 60 * 1000,
   max: 60,
-  skip: (req) => req.method === "GET" || req.method === "OPTIONS",
+  skip: (req) => req.method === "GET" || req.method === "OPTIONS" || isAiAnalyzePath(req),
 });
 
 /** 20 requests / 15 min per IP on /api/v1/ingest/* write routes */
@@ -69,8 +74,17 @@ export const ingestWriteRateLimiter = rateLimit({
 export const aiRateLimiter = rateLimit({
   ...base,
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: Number(process.env.AI_RATE_LIMIT_MAX ?? 50),
   skip: (req) => req.method !== "POST",
+  handler: (req, res, _next, options) => {
+    const resetTime = req.rateLimit?.resetTime ?? Date.now() + options.windowMs;
+    const retry_after_seconds = Math.max(1, Math.ceil((resetTime - Date.now()) / 1000));
+    res.status(429).json({
+      error: "ai_rate_limited",
+      message: `Too many AI questions from this network. Try again in ${retry_after_seconds} seconds.`,
+      retry_after_seconds,
+    });
+  },
 });
 
 /** Forecast/modelling endpoints: cheap per call, but unbounded loops if hammered. */

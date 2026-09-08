@@ -212,12 +212,12 @@ All limits are **per client IP** (requires correct `trust proxy` on Vercel).
 | Read | `GET /api/v1/*` | 200 / 15 min |
 | Write | non-GET `/api/v1/*` | 60 / 15 min |
 | Ingest write | `/api/v1/ingest/*` writes | 20 / 15 min |
-| AI | `POST …/analyze` | 20 / 15 min |
+| AI | `POST …/analyze` | 50 / 15 min |
 | Compute | `POST …/forecast` | 60 / 15 min |
 | Auth | `POST /auth/session` | 10 failures / 15 min |
 | Client errors | `POST /client-errors` | 50 / hour |
 
-Over-limit responses: `{ error: "rate_limited", retry_after_seconds: N }`.
+Over-limit responses: `{ error: "rate_limited", retry_after_seconds: N }`. AI endpoints use `{ error: "ai_rate_limited", message, retry_after_seconds }`.
 
 ---
 

@@ -3,13 +3,14 @@
  *
  * OpenAI-backed PDF analysis for CPR policy documents.
  * Fetches the PDF from contentUrl, extracts text with page markers,
- * then calls GPT-5.6 Sol to produce structured analysis.
+ * then calls OpenAI to produce structured analysis.
  *
  * Requires: OPENAI_API_KEY environment variable.
  */
 import express from "express";
 import NodeCache from "node-cache";
 import { z } from "zod";
+import { completeChat, QuotaError } from "../services/openaiChat.js";
 import { sendClientError, sendServerError } from "../server/errors.js";
 
 const router = express.Router();
@@ -43,58 +44,6 @@ function assertAllowedPdfUrl(rawUrl) {
     throw new Error(`contentUrl host not allowed: ${parsed.hostname}`);
   }
   return parsed.toString();
-}
-
-// ── OpenAI REST API ────────────────────────────────────────────────────────────
-
-const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-/** Flagship OpenAI model; override with OPENAI_MODEL on the server if needed. */
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.6-sol";
-const OPENAI_TIMEOUT_MS = 55_000;
-
-class QuotaError extends Error {
-  constructor(msg) {
-    super(msg);
-    this.name = "QuotaError";
-  }
-}
-
-async function callOpenAI(apiKey, systemText, userText) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
-  try {
-    const res = await fetch(OPENAI_URL, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        messages: [
-          { role: "system", content: systemText },
-          { role: "user",   content: userText },
-        ],
-        // GPT-5.6+ rejects max_tokens and non-default temperature on Chat Completions.
-        max_completion_tokens: 3200,
-      }),
-    });
-
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}));
-      const msg = errBody?.error?.message ?? `HTTP ${res.status}`;
-      if (res.status === 429) {
-        throw new QuotaError("The AI service rate limit has been reached. Please wait a moment and try again.");
-      }
-      throw new Error(`OpenAI ${res.status}: ${msg}`);
-    }
-
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content ?? "";
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 // ── PDF fetch + extract ────────────────────────────────────────────────────────
@@ -290,7 +239,13 @@ router.post("/policy/analyze", async (req, res) => {
     const { text: pdfText } = await getPdfText(safeContentUrl);
     const userMessage = buildUserMessage(title ?? "Policy Document", action, question, pdfText);
 
-    const raw = await callOpenAI(process.env.OPENAI_API_KEY, SYSTEM_PROMPT, userMessage);
+    const raw = await completeChat({
+      apiKey: process.env.OPENAI_API_KEY,
+      systemText: SYSTEM_PROMPT,
+      userText: userMessage,
+      maxTokens: 1200,
+      timeoutMs: 40_000,
+    });
 
     let parsed;
     try {
