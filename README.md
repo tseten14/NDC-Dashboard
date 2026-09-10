@@ -1,4 +1,4 @@
-# Uganda NDC Data Explorer
+# NDC Data Explorer
 
 Web application for exploring Uganda’s Nationally Determined Contribution (NDC) data: decision-support cockpit, emissions map, climate finance screening, strategy library, climate risk views, and role-based delivery tools.
 
