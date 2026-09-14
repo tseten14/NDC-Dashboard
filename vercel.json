@@ -3,6 +3,7 @@
   "buildCommand": "npm run build && node scripts/prepare-vercel-public.mjs",
   "installCommand": "npm install",
   "framework": null,
+  "trailingSlash": false,
   "env": {
     "USE_MOCK_DATA": "false"
   },
@@ -12,17 +13,15 @@
       "destination": "/api"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ],
   "headers": [
     {
-      "//": "Protective headers for the app's own pages. The Express middleware sets the equivalent headers, but only on API responses — the HTML is served straight off the CDN and never passes through that code, so without this block the page itself had no content security policy and no clickjacking protection.",
       "source": "/(.*)",
       "headers": [
         {
-          "//": "Names every place the page may load code or data from. script-src 'self' means an injected inline script will not run, which is the difference between a content-injection bug and a working attack. connect-src is limited to this origin plus the two upstreams the app genuinely calls. frame-ancestors 'none' stops the dashboard being framed by another site and clicked through invisibly.",
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.climatetrace.org; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
         },
@@ -34,7 +33,6 @@
           "value": "max-age=63072000; includeSubDomains; preload"
         },
         {
-          "//": "The app uses none of these device capabilities, so they are refused outright rather than left available to anything that ends up running on the page.",
           "key": "Permissions-Policy",
           "value": "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()"
         },
@@ -42,17 +40,14 @@
       ]
     },
     {
-      "//": "Build output filenames contain a content hash, so a given URL's contents can never change. Cache them for a year and let a new deploy be picked up via its new filename.",
       "source": "/assets/(.*)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     },
     {
-      "//": "index.html names the hashed assets, so it must be revalidated every time. Caching it would keep serving the previous deploy's asset URLs.",
       "source": "/index.html",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     },
     {
-      "//": "API responses are already cached server-side; never let a proxy hold a stale emissions figure. no-store also keeps any authenticated response out of shared caches.",
       "source": "/api/(.*)",
       "headers": [{ "key": "Cache-Control", "value": "no-store" }]
     }
