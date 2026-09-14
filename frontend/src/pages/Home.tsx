@@ -17,7 +17,7 @@ import { HERO_GRADIENT_TEXT } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Sparkles, Target,
-  Upload, Satellite, Scale, Workflow, Briefcase, ArrowRight,
+  Upload, Satellite, Scale, Store, Workflow, Briefcase, ArrowRight,
 } from "lucide-react";
 
 const FEATURES = [
@@ -44,6 +44,12 @@ const FEATURES = [
     title: "Policy documents",
     to: "/documents",
     accent: "from-slate-500/20 to-slate-500/5",
+  },
+  {
+    icon: Store,
+    title: "MWP-marketplace",
+    to: "/mwp-marketplace",
+    accent: "from-sky-500/20 to-sky-500/5",
   },
   {
     icon: Workflow,

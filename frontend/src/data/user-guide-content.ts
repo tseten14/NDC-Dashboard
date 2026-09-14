@@ -232,6 +232,32 @@ export const BASIC_FEATURES: FeatureGuide[] = [
     ],
   },
   {
+    title: "MWP-marketplace",
+    to: "/mwp-marketplace",
+    who: "Country project owners, financiers, technology and research partners, facilitators",
+    purpose:
+      "A demonstration pipeline of country-led climate projects moving from NDC priorities to investable implementation — connecting mitigation gaps with finance and delivery partners.",
+    steps: [
+      "Open MWP-marketplace from the top bar (to the right of Policy Documents).",
+      "Review the pipeline overview for total investment, financing gap and emissions impact.",
+      "Search or filter projects by sector using the filter chips.",
+      "Click any project row to expand its detail — summary, NDC target, secured financing.",
+      "Treat every figure as fictional demonstration data.",
+    ],
+    howItWorks:
+      "The page displays a curated pipeline of 12 demonstration projects across 12 countries and 9 sectors. Each project traces from an NDC target through an implementation gap to a costed, staged investment. Data is static and illustrative.",
+    result:
+      "A clear view of how a Mitigation Work Programme marketplace could present country-led projects alongside the Explorer — not a live investment platform.",
+    limitations:
+      "All countries, projects, organisations, and financial figures are fictional. Not an official UNFCCC product. No real financing or partner commitments.",
+    youWillSee: [
+      "Pipeline summary: project count, total investment, financing gap, countries",
+      "Emissions impact callout showing combined annual reduction potential",
+      "Searchable, filterable project list with stage, sector, country, investment and gap",
+      "Expandable project rows with summary, NDC target and secured financing detail",
+    ],
+  },
+  {
     title: "Emissions Map",
     to: "/map",
     who: "Anyone who needs a geographic picture of sources",

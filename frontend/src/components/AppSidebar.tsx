@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard, Network, ShieldCheck, Wallet, Upload, ChevronDown, ChevronRight,
   Target, TrendingUp, Building2, Eye, Trees, BarChart3, Users, LineChart, FileText, Download, Settings,
-  Database, GitBranch, Workflow, Search, Library, Briefcase, ShieldAlert, Sparkles, Coins, BookOpen, Map, Home, Scale,
+  Database, GitBranch, Workflow, Search, Library, Briefcase, ShieldAlert, Sparkles, Coins, BookOpen, Map, Home, Scale, Store,
 } from "lucide-react";
 import { useCurrentRole } from "@/hooks/use-current-role";
 import {
@@ -37,6 +37,7 @@ const primary: NavItem[] = [
   { title: "Policy Impact", url: "/policy-impact", icon: Workflow },
   { title: "Climate Finance", url: "/climate-finance", icon: Coins },
   { title: "Policy documents", url: "/documents", icon: Scale },
+  { title: "MWP-marketplace", url: "/mwp-marketplace", icon: Store },
   { title: "Documentation", url: "/docs", icon: BookOpen },
 ];
 

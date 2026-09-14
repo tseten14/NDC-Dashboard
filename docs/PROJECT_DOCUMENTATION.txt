@@ -98,7 +98,7 @@ A6a. MAIN SCREENS AND ROUTES (2026)
 
   Top navigation bar (always visible on main app shell):
     Home → Emissions Map → Dashboard → Data Ingestion → AI 2030 Projection →
-    Policy Impact → Climate Finance → Policy Documents → Database → Documentation
+    Policy Impact → Climate Finance → Policy Documents → MWP-marketplace → Database → Documentation
 
   The left sidebar is organised around five decision questions, each a collapsible group:
 

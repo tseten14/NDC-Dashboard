@@ -15,7 +15,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  Upload, Target, Sparkles, Coins, Workflow, Scale, Map as MapIcon, Home,
+  Upload, Target, Sparkles, Coins, Workflow, Scale, Store, Map as MapIcon, Home,
   BookOpen, Briefcase, Globe2, Leaf,
 } from "lucide-react";
 
@@ -30,6 +30,7 @@ const primary: NavItem[] = [
   { title: "Policy Impact",      url: "/policy-impact",  icon: Workflow },
   { title: "Climate Finance",    url: "/climate-finance",icon: Coins },
   { title: "Policy Documents",   url: "/documents",      icon: Scale },
+  { title: "MWP-marketplace",    url: "/mwp-marketplace",icon: Store },
   { title: "Database",           url: "/my-work",        icon: Briefcase },
   { title: "Documentation",      url: "/docs",           icon: BookOpen },
 ];
