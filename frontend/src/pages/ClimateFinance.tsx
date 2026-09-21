@@ -34,7 +34,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import {
   Coins, MapPin, Landmark, Info, AlertTriangle, FileText, ArrowRight,
-  Banknote, Sparkles, Building2, CheckCircle2, Target, ExternalLink,
+  Banknote, Sparkles, Building2, CheckCircle2, Target, ExternalLink, Store,
 } from "lucide-react";
 
 const FUNDER_TONE: Record<string, string> = {
@@ -269,10 +269,18 @@ export default function ClimateFinance() {
                       Rough order-of-magnitude for a {sectorLabel.toLowerCase()} programme at this scale — refine in the proposal.
                     </p>
                   </div>
-                  <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setProposalOpen(true)}>
-                    <FileText className="h-3.5 w-3.5" />
-                    Prepare funding proposal
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setProposalOpen(true)}>
+                      <FileText className="h-3.5 w-3.5" />
+                      Prepare funding proposal
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" asChild>
+                      <Link to={`/mwp-marketplace?from=climate-finance&sector=${focusSectorId ?? ""}&intervention=${encodeURIComponent(interventionParam ?? "")}`}>
+                        <Store className="h-3.5 w-3.5" />
+                        Pitch in Marketplace
+                      </Link>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 

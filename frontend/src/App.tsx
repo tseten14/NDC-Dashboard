@@ -48,6 +48,7 @@ const Ai2030Prediction = lazy(() => import("./pages/Ai2030Prediction.tsx"));
 const ClimateFinance = lazy(() => import("./pages/ClimateFinance.tsx"));
 const PolicyDocuments = lazy(() => import("./pages/PolicyDocuments.tsx"));
 const MwpMarketplace = lazy(() => import("./pages/MwpMarketplace.tsx"));
+const MwpMarketplaceDeal = lazy(() => import("./pages/MwpMarketplaceDeal.tsx"));
 const Documentation = lazy(() => import("./pages/Documentation.tsx"));
 const PolicyImpact = lazy(() => import("./pages/PolicyImpact.tsx"));
 const PolicyDocumentView = lazy(() => import("./pages/PolicyDocumentView.tsx"));
@@ -181,6 +182,7 @@ function ProtectedShell() {
                   <Route path="/documents" element={<LazyPage><PolicyDocuments /></LazyPage>} />
                   <Route path="/documents/view" element={<LazyPage><PolicyDocumentView /></LazyPage>} />
                   <Route path="/mwp-marketplace" element={<LazyPage><MwpMarketplace /></LazyPage>} />
+                  <Route path="/mwp-marketplace/:id" element={<LazyPage><MwpMarketplaceDeal /></LazyPage>} />
                   <Route path="/policy-impact" element={<LazyPage><PolicyImpact /></LazyPage>} />
                   <Route path="/map" element={<LazyPage><MapExplorer /></LazyPage>} />
                   <Route path="/district-translator" element={<LazyPage><DistrictTranslator /></LazyPage>} />
