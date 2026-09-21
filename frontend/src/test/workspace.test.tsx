@@ -22,10 +22,10 @@ function mountNavigation(path = "/district-translator") {
 }
 
 describe("workspace navigation", () => {
-  it("keeps District Translator visible beside the map and marks the current page", () => {
+  it("keeps District Translator and Marketplace visible and marks the current page", () => {
     mountNavigation();
     const links = within(screen.getByRole("navigation", { name: "Primary navigation" })).getAllByRole("link");
-    expect(links.map((link) => link.textContent)).toEqual(["Home", "Emissions Map", "District Translator", "Dashboard", "Database"]);
+    expect(links.map((link) => link.textContent)).toEqual(["Home", "Emissions Map", "District Translator", "Dashboard", "Marketplace", "Database"]);
     expect(links[2]).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveAttribute("href", "#main-content");
     expect(document.title).toContain("District Translator");

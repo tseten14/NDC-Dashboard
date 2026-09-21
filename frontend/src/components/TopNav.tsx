@@ -21,7 +21,9 @@ export function TopNav() {
   const menuPath = useRef(pathname);
   const visible = PRIMARY_NAV.filter((item) => isPrimaryNavVisible(activeRole, item.url));
   const current = PRIMARY_NAV.find((item) => item.url === "/" ? pathname === "/" : pathname === item.url || pathname.startsWith(`${item.url}/`));
-  const shortcuts = visible.filter((item) => item.group === "Explore" || item.url === "/my-work");
+  const shortcuts = visible.filter(
+    (item) => item.group === "Explore" || item.url === "/mwp-marketplace" || item.url === "/my-work",
+  );
 
   useEffect(() => { setOpen(false); }, [pathname, activeRole]);
   useEffect(() => {
