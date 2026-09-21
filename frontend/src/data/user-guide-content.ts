@@ -232,29 +232,30 @@ export const BASIC_FEATURES: FeatureGuide[] = [
     ],
   },
   {
-    title: "MWP-marketplace",
+    title: "Marketplace",
     to: "/mwp-marketplace",
-    who: "Country project owners, financiers, technology and research partners, facilitators",
+    who: "Ministry project leads, NDC focal points, investment officers, fund programme managers",
     purpose:
-      "A demonstration pipeline of country-led climate projects moving from NDC priorities to investable implementation — connecting mitigation gaps with finance and delivery partners.",
+      "Uganda's implementation deal room. Package NDC-aligned projects as investment pitches, see how funders evaluate them, and track delivery from concept to first disbursement.",
     steps: [
-      "Open MWP-marketplace from the top bar (to the right of Policy Documents).",
-      "Review the pipeline overview for total investment, financing gap and emissions impact.",
-      "Search or filter projects by sector using the filter chips.",
-      "Click any project row to expand its detail — summary, NDC target, secured financing.",
-      "Treat every figure as fictional demonstration data.",
+      "Open Marketplace from the top bar (to the right of Policy Documents).",
+      "Review your pipeline — each card shows the project stage, funding ask, readiness, and funder status.",
+      "Click a card to open the deal room for that project.",
+      "In the deal room, switch between Pitch (investment brief), Evaluation (funder scorecard), and Delivery (milestone board).",
+      "Use the evidence links on the Pitch tab to see Dashboard, Policy Impact, and Climate Finance data for that sector.",
+      "From Climate Finance, click 'Pitch in Marketplace' to jump straight to the closest matching deal.",
     ],
     howItWorks:
-      "The page displays a curated pipeline of 12 demonstration projects across 12 countries and 9 sectors. Each project traces from an NDC target through an implementation gap to a costed, staged investment. Data is static and illustrative.",
+      "Five Uganda projects mapped to real NDC sectors (AFOLU, Energy, Transport, Waste, IPPU). Each project carries a structured pitch, a funder evaluation scorecard with six criteria, and a delivery milestone timeline. Evidence links connect back to Dashboard, Policy Impact, and Climate Finance with the correct sector pre-selected.",
     result:
-      "A clear view of how a Mitigation Work Programme marketplace could present country-led projects alongside the Explorer — not a live investment platform.",
+      "A government user can walk a funder through a structured pitch backed by Explorer evidence, understand what the funder will evaluate, and track what needs to happen next.",
     limitations:
-      "All countries, projects, organisations, and financial figures are fictional. Not an official UNFCCC product. No real financing or partner commitments.",
+      "No live submission or funder accounts. Projects and evaluations are pre-authored to match Uganda's NDC sectors.",
     youWillSee: [
-      "Pipeline summary: project count, total investment, financing gap, countries",
-      "Emissions impact callout showing combined annual reduction potential",
-      "Searchable, filterable project list with stage, sector, country, investment and gap",
-      "Expandable project rows with summary, NDC target and secured financing detail",
+      "Pipeline workspace with 5 Uganda project cards showing stage, ask, readiness bar, and funder status",
+      "Deal room with three tabs: Pitch (brief + facts + readiness checklist), Evaluation (scorecard + decision), Delivery (milestone timeline)",
+      "Evidence links to Dashboard, Policy Impact, and Climate Finance",
+      "Climate Finance handoff banner when arriving from the screening tool",
     ],
   },
   {

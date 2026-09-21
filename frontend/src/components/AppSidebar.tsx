@@ -37,7 +37,7 @@ const primary: NavItem[] = [
   { title: "Policy Impact", url: "/policy-impact", icon: Workflow },
   { title: "Climate Finance", url: "/climate-finance", icon: Coins },
   { title: "Policy documents", url: "/documents", icon: Scale },
-  { title: "MWP-marketplace", url: "/mwp-marketplace", icon: Store },
+  { title: "Marketplace", url: "/mwp-marketplace", icon: Store },
   { title: "Documentation", url: "/docs", icon: BookOpen },
 ];
 

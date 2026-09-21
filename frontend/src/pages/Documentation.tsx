@@ -131,7 +131,7 @@ export default function Documentation() {
           <p className="text-xs text-muted-foreground leading-relaxed">
             The <strong className="text-foreground">top bar</strong> lists primary tools in order:
             Home → Emissions Map → Dashboard → Data Ingestion → AI 2030 → Policy Impact →
-            Climate Finance → Policy Documents → MWP-marketplace → Database → Documentation.
+            Climate Finance → Policy Documents → Marketplace → Database → Documentation.
           </p>
           <p className="text-xs text-muted-foreground leading-relaxed">
             The <strong className="text-foreground">left sidebar</strong> groups deeper pages into{" "}
