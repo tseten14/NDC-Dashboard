@@ -68,3 +68,4 @@ test-results/
 
 # TypeScript compiler output log
 .tsc-output.txt
+*.tsbuildinfo
