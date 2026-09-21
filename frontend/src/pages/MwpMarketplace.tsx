@@ -5,22 +5,26 @@
  * pitches for funders, with their current stage and readiness status. Each card
  * links into the deal room for that project.
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DEALS, stageTone, fmtUSD, type DealPitch } from "@/data/mwp-marketplace-data";
+import { marketplaceApi } from "@/lib/api";
+import { stageTone, fmtUSD, type DealPitch } from "@/data/mwp-marketplace-data";
+import { useOperatorSession } from "@/hooks/use-operator-session";
+import { DealFormDialog } from "@/components/marketplace/DealFormDialog";
 import {
-  Store, ArrowRight, CheckCircle2, Circle, MapPin, Banknote, Leaf,
+  Store, ArrowRight, CheckCircle2, Circle, MapPin, Banknote, Leaf, Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function ReadinessBar({ pitch }: { pitch: DealPitch }) {
   const met = pitch.readiness.filter((r) => r.met).length;
   const total = pitch.readiness.length;
-  const pct = Math.round((met / total) * 100);
+  const pct = total > 0 ? Math.round((met / total) * 100) : 0;
   return (
     <div className="flex items-center gap-2 text-[11px]">
       <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
@@ -70,13 +74,13 @@ function PipelineCard({ pitch }: { pitch: DealPitch }) {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              {pitch.evaluation.decision === "interest" && (
+              {pitch.evaluation?.decision === "interest" && (
                 <><CheckCircle2 className="h-3 w-3 text-emerald-500" /> Funder interest</>
               )}
-              {pitch.evaluation.decision === "questions" && (
+              {pitch.evaluation?.decision === "questions" && (
                 <><Circle className="h-3 w-3 text-amber-500" /> Questions pending</>
               )}
-              {pitch.evaluation.decision === "pass" && (
+              {pitch.evaluation?.decision === "pass" && (
                 <><Circle className="h-3 w-3 text-muted-foreground" /> Not ready</>
               )}
             </div>
@@ -94,27 +98,46 @@ export default function MwpMarketplace() {
   const [searchParams] = useSearchParams();
   const fromClimateFinance = searchParams.get("from") === "climate-finance";
   const sectorParam = searchParams.get("sector");
+  const { authenticated } = useOperatorSession();
+  const [createOpen, setCreateOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const dealsQuery = useQuery({
+    queryKey: ["marketplace", "deals"],
+    queryFn: () => marketplaceApi.listDeals(),
+    staleTime: 60_000,
+  });
+
+  const deals = useMemo<DealPitch[]>(() => dealsQuery.data?.deals ?? [], [dealsQuery.data]);
 
   const highlighted = useMemo(() => {
-    if (!fromClimateFinance || !sectorParam) return null;
+    if (!fromClimateFinance || !sectorParam || deals.length === 0) return null;
     const s = sectorParam.toLowerCase();
-    return DEALS.find((d) => d.sectorId.toLowerCase() === s) ?? DEALS[0];
-  }, [fromClimateFinance, sectorParam]);
+    return deals.find((d) => d.sectorId.toLowerCase() === s) ?? deals[0];
+  }, [fromClimateFinance, sectorParam, deals]);
 
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-6 max-w-5xl">
         {/* Header */}
-        <div>
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <Store className="h-4 w-4 text-primary" />
-            Marketplace
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Uganda's NDC implementation pipeline. Package projects as investment pitches,
-            track funder evaluation, and follow delivery milestones — from NDC gap to
-            first disbursement.
-          </p>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <Store className="h-4 w-4 text-primary" />
+              Marketplace
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+              Uganda's NDC implementation pipeline. Package projects as investment pitches,
+              track funder evaluation, and follow delivery milestones — from NDC gap to
+              first disbursement.
+            </p>
+          </div>
+          {authenticated && (
+            <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-3.5 w-3.5" />
+              Add to pipeline
+            </Button>
+          )}
         </div>
 
         {/* Handoff banner */}
@@ -137,13 +160,49 @@ export default function MwpMarketplace() {
         {/* Pipeline */}
         <section className="space-y-3">
           <h3 className="text-sm font-bold text-foreground">Your pipeline</h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {DEALS.map((d) => (
-              <PipelineCard key={d.id} pitch={d} />
-            ))}
-          </div>
+
+          {dealsQuery.isLoading && (
+            <p className="text-xs text-muted-foreground py-8 text-center">Loading pipeline…</p>
+          )}
+
+          {dealsQuery.isError && (
+            <Card>
+              <CardContent className="p-4 text-xs text-muted-foreground text-center">
+                Could not load the pipeline. {(dealsQuery.error as Error)?.message}
+              </CardContent>
+            </Card>
+          )}
+
+          {!dealsQuery.isLoading && deals.length === 0 && (
+            <Card>
+              <CardContent className="p-6 text-center space-y-2">
+                <p className="text-sm text-muted-foreground">No deals in the pipeline yet.</p>
+                {authenticated && (
+                  <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setCreateOpen(true)}>
+                    <Plus className="h-3 w-3" /> Create the first deal
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {deals.length > 0 && (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {deals.map((d) => (
+                <PipelineCard key={d.id} pitch={d} />
+              ))}
+            </div>
+          )}
         </section>
       </div>
+
+      {authenticated && (
+        <DealFormDialog
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          onSaved={() => queryClient.invalidateQueries({ queryKey: ["marketplace", "deals"] })}
+        />
+      )}
     </ScrollArea>
   );
 }

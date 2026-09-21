@@ -3,12 +3,46 @@
  * via data/seeds/persistenceSeedSource.js (Node-safe, no Vite path aliases).
  */
 import { getDb, isDatabaseConfigured } from "./index.js";
-import { observations, targets } from "./schema.js";
+import { observations, targets, marketplaceDeals } from "./schema.js";
 import { observationUuid, targetUuid } from "./id.js";
 import { mapClimateSectors, mapStrategyKpis } from "./seedMappings.js";
 import { climateSectorsForSeed, strategyKpis, strategyProgressRecords } from "../data/seeds/persistenceSeedSource.js";
 
-export async function runSeed(): Promise<{ targets: number; observations: number }> {
+async function seedMarketplaceDeals(db: ReturnType<typeof getDb>) {
+  const { DEALS } = await import("../frontend/src/data/mwp-marketplace-data.js");
+  const now = new Date();
+  for (const deal of DEALS) {
+    await db
+      .insert(marketplaceDeals)
+      .values({
+        id: deal.id,
+        title: deal.title,
+        ministry: deal.ministry,
+        sector: deal.sector,
+        sectorId: deal.sectorId,
+        geography: deal.geography,
+        stage: deal.stage,
+        problem: deal.problem,
+        intervention: deal.intervention,
+        askM: String(deal.askM),
+        coFinanceM: String(deal.coFinanceM),
+        annualMtCO2e: String(deal.annualMtCO2e),
+        instrument: deal.instrument,
+        ndcTarget: deal.ndcTarget,
+        readiness: deal.readiness,
+        evidence: deal.evidence,
+        evaluation: deal.evaluation,
+        milestones: deal.milestones,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoNothing();
+  }
+  const rows = await db.select({ id: marketplaceDeals.id }).from(marketplaceDeals);
+  return rows.length;
+}
+
+export async function runSeed(): Promise<{ targets: number; observations: number; deals?: number }> {
   if (!isDatabaseConfigured()) {
     throw new Error("DATABASE_URL is required to seed");
   }
@@ -60,7 +94,14 @@ export async function runSeed(): Promise<{ targets: number; observations: number
   const targetCount = await db.select({ id: targets.id }).from(targets);
   const observationCount = await db.select({ id: observations.id }).from(observations);
 
-  return { targets: targetCount.length, observations: observationCount.length };
+  let dealCount = 0;
+  try {
+    dealCount = await seedMarketplaceDeals(db);
+  } catch (err) {
+    console.warn("[db:seed] Marketplace deals seed skipped:", (err as Error).message);
+  }
+
+  return { targets: targetCount.length, observations: observationCount.length, deals: dealCount };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

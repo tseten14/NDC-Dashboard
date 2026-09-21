@@ -7,18 +7,24 @@
  *  - Delivery — milestone board
  */
 import { useState } from "react";
-import { useParams, Link, Navigate } from "react-router-dom";
+import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getDeal, stageTone, fmtUSD } from "@/data/mwp-marketplace-data";
-import type { EvalCriterion, Milestone } from "@/data/mwp-marketplace-data";
+import { marketplaceApi } from "@/lib/api";
+import { stageTone, fmtUSD } from "@/data/mwp-marketplace-data";
+import type { EvalCriterion, Milestone, DealPitch } from "@/data/mwp-marketplace-data";
+import { useOperatorSession } from "@/hooks/use-operator-session";
+import { DealFormDialog } from "@/components/marketplace/DealFormDialog";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   ArrowLeft, Target, MapPin, Building2, Banknote, Leaf, FileText,
   CheckCircle2, Circle, AlertCircle, ExternalLink, BarChart3,
+  Pencil, Trash2,
 } from "lucide-react";
 
 /* ── Score styling ───────────────────────────────────────────────────── */
@@ -67,12 +73,11 @@ function CriterionRow({ c }: { c: EvalCriterion }) {
   );
 }
 
-function MilestoneRow({ m, idx }: { m: Milestone; idx: number }) {
+function MilestoneRow({ m }: { m: Milestone }) {
   const isDone = m.status === "done";
   const isCurrent = m.status === "current";
   return (
     <div className="flex items-start gap-3">
-      {/* Timeline line + dot */}
       <div className="flex flex-col items-center shrink-0 w-5">
         <div className={cn(
           "h-3 w-3 rounded-full border-2 mt-1",
@@ -80,7 +85,6 @@ function MilestoneRow({ m, idx }: { m: Milestone; idx: number }) {
           isCurrent && "bg-primary border-primary ring-2 ring-primary/20",
           !isDone && !isCurrent && "bg-background border-muted-foreground/40",
         )} />
-        {/* Connector line */}
         <div className="w-0.5 flex-1 bg-border/60 mt-1" />
       </div>
       <div className="pb-5 min-w-0 flex-1">
@@ -106,13 +110,47 @@ type DealTab = "pitch" | "evaluate" | "deliver";
 
 export default function MwpMarketplaceDeal() {
   const { id } = useParams<{ id: string }>();
-  const deal = id ? getDeal(id) : undefined;
+  const navigate = useNavigate();
   const [tab, setTab] = useState<DealTab>("pitch");
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { authenticated } = useOperatorSession();
+  const queryClient = useQueryClient();
 
+  const dealQuery = useQuery({
+    queryKey: ["marketplace", "deal", id],
+    queryFn: () => marketplaceApi.getDeal(id!),
+    enabled: !!id,
+  });
+
+  if (dealQuery.isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center p-6 text-sm text-muted-foreground">
+        Loading deal…
+      </div>
+    );
+  }
+
+  const deal: DealPitch | undefined = dealQuery.data?.deal;
   if (!deal) return <Navigate to="/mwp-marketplace" replace />;
 
   const ev = deal.evaluation;
-  const ds = DECISION_STYLE[ev.decision] ?? DECISION_STYLE.questions;
+  const ds = DECISION_STYLE[ev?.decision] ?? DECISION_STYLE.questions;
+
+  async function handleDelete() {
+    if (!confirm("Remove this deal from the pipeline? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      await marketplaceApi.deleteDeal(deal!.id);
+      queryClient.invalidateQueries({ queryKey: ["marketplace"] });
+      toast.success("Deal removed from pipeline");
+      navigate("/mwp-marketplace");
+    } catch (err) {
+      toast.error((err as Error).message || "Delete failed");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <ScrollArea className="h-full">
@@ -129,9 +167,27 @@ export default function MwpMarketplaceDeal() {
               <h2 className="text-lg font-bold text-foreground">{deal.title}</h2>
               <p className="text-sm text-muted-foreground mt-0.5">{deal.ministry}</p>
             </div>
-            <Badge variant="outline" className={cn("text-[10px] h-5 px-1.5", stageTone(deal.stage))}>
-              {deal.stage}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={cn("text-[10px] h-5 px-1.5", stageTone(deal.stage))}>
+                {deal.stage}
+              </Badge>
+              {authenticated && (
+                <>
+                  <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => setEditOpen(true)}>
+                    <Pencil className="h-3 w-3" /> Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[10px] gap-1 text-destructive border-destructive/30 hover:bg-destructive/10"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                  >
+                    <Trash2 className="h-3 w-3" /> Delete
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -153,7 +209,6 @@ export default function MwpMarketplaceDeal() {
         {/* ── PITCH TAB ──────────────────────────────────────────── */}
         {tab === "pitch" && (
           <div className="space-y-5">
-            {/* Problem + Intervention */}
             <Card>
               <CardContent className="p-4 space-y-4">
                 <div>
@@ -167,7 +222,6 @@ export default function MwpMarketplaceDeal() {
               </CardContent>
             </Card>
 
-            {/* Key facts grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <Card>
                 <CardContent className="p-3">
@@ -206,7 +260,6 @@ export default function MwpMarketplaceDeal() {
               </Card>
             </div>
 
-            {/* NDC target */}
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-3 flex items-start gap-2">
                 <Target className="h-4 w-4 text-primary shrink-0 mt-0.5" />
@@ -217,38 +270,39 @@ export default function MwpMarketplaceDeal() {
               </CardContent>
             </Card>
 
-            {/* Readiness checklist */}
-            <Card>
-              <CardContent className="p-4">
-                <h3 className="text-sm font-semibold text-foreground mb-3">Funder readiness</h3>
-                <div className="grid gap-1.5">
-                  {deal.readiness.map((r) => (
-                    <div key={r.label} className="flex items-center gap-2 text-xs">
-                      {r.met ? (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                      ) : (
-                        <Circle className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
-                      )}
-                      <span className={r.met ? "text-foreground" : "text-muted-foreground"}>{r.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {deal.readiness?.length > 0 && (
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Funder readiness</h3>
+                  <div className="grid gap-1.5">
+                    {deal.readiness.map((r) => (
+                      <div key={r.label} className="flex items-center gap-2 text-xs">
+                        {r.met ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                        ) : (
+                          <Circle className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
+                        )}
+                        <span className={r.met ? "text-foreground" : "text-muted-foreground"}>{r.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Evidence links */}
-            <div className="flex flex-wrap gap-2">
-              <EvidenceLink href={deal.evidence.dashboardHref} label="Dashboard evidence" />
-              <EvidenceLink href={deal.evidence.policyImpactHref} label="Policy Impact" />
-              <EvidenceLink href={deal.evidence.climateFinanceHref} label="Climate Finance screening" />
-            </div>
+            {deal.evidence && (
+              <div className="flex flex-wrap gap-2">
+                {deal.evidence.dashboardHref && <EvidenceLink href={deal.evidence.dashboardHref} label="Dashboard evidence" />}
+                {deal.evidence.policyImpactHref && <EvidenceLink href={deal.evidence.policyImpactHref} label="Policy Impact" />}
+                {deal.evidence.climateFinanceHref && <EvidenceLink href={deal.evidence.climateFinanceHref} label="Climate Finance screening" />}
+              </div>
+            )}
           </div>
         )}
 
         {/* ── EVALUATE TAB ───────────────────────────────────────── */}
-        {tab === "evaluate" && (
+        {tab === "evaluate" && ev && (
           <div className="space-y-5">
-            {/* Funder + decision */}
             <Card>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2 flex-wrap">
@@ -265,19 +319,19 @@ export default function MwpMarketplaceDeal() {
               </CardContent>
             </Card>
 
-            {/* Scorecard */}
-            <Card>
-              <CardContent className="p-4">
-                <h3 className="text-sm font-semibold text-foreground mb-3">Diligence scorecard</h3>
-                <div>
-                  {ev.criteria.map((c) => (
-                    <CriterionRow key={c.criterion} c={c} />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {ev.criteria?.length > 0 && (
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Diligence scorecard</h3>
+                  <div>
+                    {ev.criteria.map((c) => (
+                      <CriterionRow key={c.criterion} c={c} />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* What this means for government */}
             <Card className="border-amber-500/20 bg-amber-500/5">
               <CardContent className="p-3 text-xs text-muted-foreground space-y-1">
                 <p className="font-semibold text-foreground">What this means for you</p>
@@ -294,20 +348,27 @@ export default function MwpMarketplaceDeal() {
         {/* ── DELIVER TAB ────────────────────────────────────────── */}
         {tab === "deliver" && (
           <div className="space-y-5">
-            <Card>
-              <CardContent className="p-4">
-                <h3 className="text-sm font-semibold text-foreground mb-4">Delivery milestones</h3>
-                <div>
-                  {deal.milestones.map((m, i) => (
-                    <MilestoneRow key={m.label} m={m} idx={i} />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {deal.milestones?.length > 0 ? (
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="text-sm font-semibold text-foreground mb-4">Delivery milestones</h3>
+                  <div>
+                    {deal.milestones.map((m) => (
+                      <MilestoneRow key={m.label} m={m} />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center text-sm text-muted-foreground">
+                  No milestones defined yet.
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Current status callout */}
             {(() => {
-              const current = deal.milestones.find((m) => m.status === "current");
+              const current = deal.milestones?.find((m) => m.status === "current");
               if (!current) return null;
               return (
                 <Card className="border-primary/20 bg-primary/5">
@@ -324,6 +385,17 @@ export default function MwpMarketplaceDeal() {
           </div>
         )}
       </div>
+
+      {authenticated && (
+        <DealFormDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          deal={deal}
+          onSaved={() => {
+            queryClient.invalidateQueries({ queryKey: ["marketplace"] });
+          }}
+        />
+      )}
     </ScrollArea>
   );
 }
