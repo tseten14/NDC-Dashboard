@@ -4,6 +4,9 @@
  * @see docs/dev/architecture.md and PROJECT_DOCUMENTATION.txt § B2
  */
 import express from "express";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { sendServerError } from "../server/errors.js";
 import {
   getTimeseries,
@@ -20,6 +23,9 @@ import {
 } from "../../shared/queryParams.js";
 import { SUBNATIONAL_INVENTORY_YEAR_MIN } from "../../config/ugandaDistrictGadm.js";
 import { checkApiHealth, getSources, getSpatialConfidence, getEmissionSourcesForMap } from "../services/climatetrace.js";
+import { getPolygonInsights } from "../services/polygonInsights.js";
+import { getTranslatorSources, TRACE_PROVIDER, TRANSLATOR_YEARS, DEFAULT_TRANSLATOR_YEAR } from "../services/translator/climateTrace.js";
+import { BOUNDARY_PROVENANCE } from "../services/translator/geometry.js";
 import { getSectorPredictions } from "../services/predictionEngine.js";
 import { NDC_TARGETS } from "../../config/ndcTargets.js";
 import {
@@ -31,6 +37,7 @@ import {
 import { COUNTRY_NDC_TARGETS, MEASURABLE_VARIABLES, listMeasurementTypes } from "../../config/measurableVariables.js";
 
 const router = express.Router();
+const translatorDistrictDisplay = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "../services/translator/uganda-districts-display.geojson"), "utf8");
 
 /**
  * Resolve a sector name supplied by the caller.
@@ -199,6 +206,31 @@ router.get("/emissions/map", async (req, res) => {
     });
   } catch (err) {
     return sendServerError(req, res, err, "emissions_map_failed");
+  }
+});
+
+router.get("/emissions/translator/metadata", (_req, res) => {
+  res.json({ years: TRANSLATOR_YEARS, default_year: DEFAULT_TRANSLATOR_YEAR, providers: [TRACE_PROVIDER], boundary: BOUNDARY_PROVENANCE });
+});
+
+router.get("/emissions/translator/districts", (_req, res) => {
+  res.type("application/geo+json").send(translatorDistrictDisplay);
+});
+
+router.get("/emissions/translator/sources", async (req, res) => {
+  const year = Number(req.query.year);
+  if (!TRANSLATOR_YEARS.includes(year)) return res.status(400).json({ error: "unsupported_year" });
+  try { return res.json(await getTranslatorSources(year)); }
+  catch (err) { return sendServerError(req, res, err, "translator_sources_failed"); }
+});
+
+router.post("/emissions/polygon-insights", async (req, res) => {
+  try {
+    const result = await getPolygonInsights({ geometry: req.body?.geometry, year: req.body?.year, sectors: req.body?.sectors, selectionKind: req.body?.selection_kind ?? "custom", districtId: req.body?.district_id });
+    if (result.error) return res.status(400).json({ error: result.error });
+    return res.json(result);
+  } catch (err) {
+    return sendServerError(req, res, err, "polygon_insights_failed");
   }
 });
 

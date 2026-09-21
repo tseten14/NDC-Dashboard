@@ -9,18 +9,16 @@
  * Most screens are loaded only when first visited, which keeps the initial page
  * load small.
  */
-import { Suspense, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, type ReactNode } from "react";
 import { lazyWithRetry as lazy } from "@/lib/lazy-with-retry";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { EmissionsDataProvider } from "@/context/EmissionsDataContext";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
-import { AmbientBackground } from "@/components/AmbientBackground";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { useAppState, AppStateContext } from "@/hooks/use-app-state";
 import { CockpitProvider } from "@/hooks/use-cockpit";
@@ -33,9 +31,12 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "./pages/NotFound.tsx";
 import CountrySelect from "./pages/CountrySelect.tsx";
 
-import ActivityForm from "./pages/ActivityForm.tsx";
-import ActivityDetail from "./pages/ActivityDetail.tsx";
 import Home from "./pages/Home.tsx";
+import { routeNeedsEmissions } from "@/lib/route-data";
+
+const ActivityForm = lazy(() => import("./pages/ActivityForm.tsx"));
+const ActivityDetail = lazy(() => import("./pages/ActivityDetail.tsx"));
+const EmissionsDataProvider = lazy(() => import("@/context/EmissionsDataContext").then((module) => ({ default: module.EmissionsDataProvider })));
 
 // Dashboard pulls in recharts + chart components; lazy-load so the landing
 // page bundle stays small and first paint is fast.
@@ -52,6 +53,7 @@ const PolicyImpact = lazy(() => import("./pages/PolicyImpact.tsx"));
 const PolicyDocumentView = lazy(() => import("./pages/PolicyDocumentView.tsx"));
 
 const MapExplorer = lazy(() => import("./pages/MapExplorer.tsx"));
+const DistrictTranslator = lazy(() => import("./pages/DistrictTranslator.tsx"));
 const DataIngestion = lazy(() => import("./pages/DataIngestion.tsx"));
 const MyWork = lazy(() => import("./pages/MyWork.tsx"));
 const StrategyLibrary = lazy(() => import("./pages/StrategyLibrary.tsx"));
@@ -112,8 +114,14 @@ const queryClient = new QueryClient({
 
 function RouteFallback() {
   return (
-    <div className="flex h-full min-h-[12rem] items-center justify-center p-6 text-sm text-muted-foreground">
-      Loading…
+    <div role="status" aria-live="polite" className="mx-auto flex h-full min-h-[12rem] max-w-6xl flex-col justify-center gap-5 p-6 sm:p-10">
+      <span className="text-sm font-medium text-muted-foreground">Opening your workspace…</span>
+      <div aria-hidden="true" className="space-y-5 motion-safe:animate-pulse">
+        <div className="h-8 w-2/3 rounded-lg bg-muted" />
+        <div className="h-4 w-1/2 rounded bg-muted" />
+        <div className="grid grid-cols-3 gap-4">{[1, 2, 3].map((item) => <div key={item} className="h-28 rounded-2xl border bg-card" />)}</div>
+        <div className="h-40 rounded-2xl border bg-card" />
+      </div>
     </div>
   );
 }
@@ -122,31 +130,45 @@ function LazyPage({ children }: { children: ReactNode }) {
   return <Suspense fallback={<RouteFallback />}>{children}</Suspense>;
 }
 
+function PageData({ pathname, children }: { pathname: string; children: ReactNode }) {
+  return routeNeedsEmissions(pathname)
+    ? <LazyPage><EmissionsDataProvider>{children}</EmissionsDataProvider></LazyPage>
+    : children;
+}
+
 function ProtectedShell() {
   const state = useAppState();
   const location = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
+  const previousPath = useRef(location.pathname);
+  useEffect(() => {
+    if (previousPath.current !== location.pathname) {
+      mainRef.current?.scrollTo({ top: 0 });
+      mainRef.current?.focus({ preventScroll: true });
+      previousPath.current = location.pathname;
+    }
+  }, [location.pathname]);
   return (
     <AppStateContext.Provider value={state}>
-      <EmissionsDataProvider>
       <CockpitProvider>
-          <div className="h-dvh flex flex-col w-full relative">
-            <AmbientBackground />
+          <div className="h-dvh flex flex-col w-full relative bg-background">
             <TopNav />
-            <main className="flex-1 min-h-0 overflow-hidden relative z-10">
-                <ErrorBoundary label="Page">
+            <main ref={mainRef} id="main-content" tabIndex={-1} className="flex-1 min-h-0 overflow-auto relative z-10 outline-none">
+                <ErrorBoundary key={location.pathname} label="Page">
                 {/* Keyed wrapper remounts page content on route change.
                     No crossfade here: fading heavy pages (e.g. the GL map) on
                     every navigation caused a visible flash/flicker. */}
                 <div key={location.pathname} className="h-full">
+                <PageData pathname={location.pathname}>
                 <Routes>
                   {/* Main */}
                   <Route path="/" element={<Home />} />
                   <Route path="/dashboard" element={<LazyPage><NDCLayer /></LazyPage>} />
                   <Route path="/library" element={<LazyPage><StrategyLibrary /></LazyPage>} />
                   <Route path="/my-work" element={<LazyPage><MyWork /></LazyPage>} />
-                  <Route path="/activities/new" element={<ActivityForm />} />
-                  <Route path="/activities/:id/edit" element={<ActivityForm />} />
-                  <Route path="/activities/:id" element={<ActivityDetail />} />
+                  <Route path="/activities/new" element={<LazyPage><ActivityForm /></LazyPage>} />
+                  <Route path="/activities/:id/edit" element={<LazyPage><ActivityForm /></LazyPage>} />
+                  <Route path="/activities/:id" element={<LazyPage><ActivityDetail /></LazyPage>} />
 
                   {/* Cockpit / Advanced */}
                   <Route path="/executive" element={<LazyPage><ExecutiveOverview /></LazyPage>} />
@@ -161,6 +183,7 @@ function ProtectedShell() {
                   <Route path="/mwp-marketplace" element={<LazyPage><MwpMarketplace /></LazyPage>} />
                   <Route path="/policy-impact" element={<LazyPage><PolicyImpact /></LazyPage>} />
                   <Route path="/map" element={<LazyPage><MapExplorer /></LazyPage>} />
+                  <Route path="/district-translator" element={<LazyPage><DistrictTranslator /></LazyPage>} />
                   <Route path="/docs" element={<LazyPage><Documentation /></LazyPage>} />
 
                   {/* Climate Risk & Vulnerability */}
@@ -193,6 +216,7 @@ function ProtectedShell() {
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                </PageData>
                 </div>
                 </ErrorBoundary>
               </main>
@@ -200,7 +224,6 @@ function ProtectedShell() {
             <Footer />
           </div>
       </CockpitProvider>
-      </EmissionsDataProvider>
     </AppStateContext.Provider>
   );
 }

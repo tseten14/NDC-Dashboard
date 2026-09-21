@@ -40,7 +40,7 @@ export function ThemeToggle() {
       type="button"
       variant="ghost"
       size="sm"
-      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground relative"
+      className="h-10 w-10 p-0 text-muted-foreground hover:text-foreground relative"
       onClick={toggle}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}

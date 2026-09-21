@@ -18,6 +18,7 @@ import {
   type CountryCode,
   type CountryOption,
 } from "@/data/countries";
+import { writePreference } from "@/lib/preferences";
 
 const STORAGE_KEY = "ndc-selected-country";
 
@@ -46,12 +47,12 @@ export function CountryProvider({ children }: { children: ReactNode }) {
   const selectCountry = useCallback((code: CountryCode) => {
     const option = COUNTRY_OPTIONS.find((c) => c.code === code && c.available);
     if (!option) return;
-    sessionStorage.setItem(STORAGE_KEY, code);
+    writePreference("sessionStorage", STORAGE_KEY, code);
     setCountry(option);
   }, []);
 
   const clearCountry = useCallback(() => {
-    sessionStorage.removeItem(STORAGE_KEY);
+    writePreference("sessionStorage", STORAGE_KEY, null);
     setCountry(null);
   }, []);
 

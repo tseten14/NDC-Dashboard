@@ -43,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
       // import — the only recovery is a full reload to fetch the fresh build.
       const chunkError = isChunkLoadError(this.state.error);
       return (
-        <div className="flex flex-col items-center justify-center gap-3 p-8 text-center min-h-[160px]">
+        <div role="alert" className="flex flex-col items-center justify-center gap-3 p-8 text-center min-h-[240px]">
           <AlertTriangle className="h-7 w-7 text-destructive" />
           <div className="space-y-0.5">
             {this.props.label && (
@@ -57,7 +57,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="text-xs text-muted-foreground max-w-sm">
               {chunkError
                 ? "This page was updated since you loaded it. Reload to get the latest version."
-                : this.state.error.message || "An unexpected error occurred in this section."}
+                : "This section could not open. Try again, or choose another tool from the navigation."}
             </p>
           </div>
           <Button

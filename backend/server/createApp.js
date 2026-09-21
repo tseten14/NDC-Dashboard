@@ -96,6 +96,7 @@ export function createApp() {
   app.use("/v1/policy/analyze", aiRateLimiter);
   app.use("/v1/dashboard/analyze", aiRateLimiter);
   app.use("/v1/policy-impact/forecast", computeRateLimiter);
+  app.use("/v1/emissions/polygon-insights", computeRateLimiter);
 
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
 

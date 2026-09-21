@@ -7,6 +7,7 @@
  * page if the cause was a stale version, rather than leaving a blank screen.
  */
 import { lazy } from "react";
+import { reloadOnceForStaleChunk } from "./chunk-recovery";
 import type { ComponentType, LazyExoticComponent } from "react";
 
 /**
@@ -24,7 +25,6 @@ import type { ComponentType, LazyExoticComponent } from "react";
  * index.html. A sessionStorage guard prevents a reload loop if the asset is
  * genuinely missing.
  */
-const RELOAD_FLAG = "ndc:chunk-reload";
 
 export function isChunkLoadError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err ?? "");
@@ -38,25 +38,6 @@ export function isChunkLoadError(err: unknown): boolean {
   );
 }
 
-function clearReloadGuard() {
-  try {
-    window.sessionStorage?.removeItem(RELOAD_FLAG);
-  } catch {
-    /* sessionStorage unavailable (private mode / SSR) — ignore */
-  }
-}
-
-function reloadOnceForStaleChunk(): boolean {
-  try {
-    if (window.sessionStorage?.getItem(RELOAD_FLAG) === "1") return false;
-    window.sessionStorage?.setItem(RELOAD_FLAG, "1");
-  } catch {
-    // No sessionStorage → fall through and reload anyway (best effort, once).
-  }
-  window.location.reload();
-  return true;
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function lazyWithRetry<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
@@ -64,14 +45,12 @@ export function lazyWithRetry<T extends ComponentType<any>>(
   return lazy(async () => {
     try {
       const mod = await factory();
-      clearReloadGuard(); // import succeeded → reset guard for next navigation
       return mod;
     } catch (firstErr) {
       // One transient retry before deciding it's a stale/missing chunk.
       try {
         await new Promise((r) => setTimeout(r, 400));
         const mod = await factory();
-        clearReloadGuard();
         return mod;
       } catch (secondErr) {
         if (isChunkLoadError(secondErr) && reloadOnceForStaleChunk()) {

@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
   root: __dirname,
   envDir: path.resolve(__dirname, ".."),
   server: {
-    host: "::",
+    host: "localhost",
     port: 8080,
     hmr: {
       overlay: false,

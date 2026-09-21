@@ -1,227 +1,90 @@
-/**
- * Screen: the landing page.
- *
- * The first thing a person sees after choosing a country. Explains in plain
- * terms what the app can do and points to the main screens.
- */
-import { useEffect, type CSSProperties } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ArrowRight, ArrowUpRight, BookOpen, Layers3, MapPinned, ShieldCheck, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useCountry } from "@/context/CountryContext";
-import { useScrollReveal } from "@/hooks/use-scroll-reveal";
-import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
-import { HERO_GRADIENT_TEXT } from "@/lib/hero-styles";
-import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard, Sparkles, Target,
-  Upload, Satellite, Scale, Store, Workflow, Briefcase, ArrowRight,
-} from "lucide-react";
-
-const FEATURES = [
-  {
-    icon: Target,
-    title: "Explore NDCs",
-    to: "/dashboard",
-    accent: "from-emerald-500/20 to-emerald-500/5",
-  },
-  {
-    icon: Upload,
-    title: "Data Ingestion",
-    to: "/ingest",
-    accent: "from-amber-500/20 to-amber-500/5",
-  },
-  {
-    icon: Sparkles,
-    title: "AI Predictions",
-    to: "/ai-2030",
-    accent: "from-fuchsia-500/20 to-fuchsia-500/5",
-  },
-  {
-    icon: Scale,
-    title: "Policy documents",
-    to: "/documents",
-    accent: "from-slate-500/20 to-slate-500/5",
-  },
-  {
-    icon: Store,
-    title: "MWP-marketplace",
-    to: "/mwp-marketplace",
-    accent: "from-sky-500/20 to-sky-500/5",
-  },
-  {
-    icon: Workflow,
-    title: "Policy Impact",
-    to: "/policy-impact",
-    accent: "from-indigo-500/20 to-indigo-500/5",
-  },
-  {
-    icon: Briefcase,
-    title: "Database",
-    to: "/my-work",
-    accent: "from-orange-500/20 to-orange-500/5",
-  },
-];
+import { useCurrentRole } from "@/hooks/use-current-role";
+import { isPrimaryNavVisible } from "@/lib/role-capabilities";
+import { PRIMARY_NAV } from "@/lib/navigation";
 
 export default function Home() {
   const { country } = useCountry();
+  const { activeRole } = useCurrentRole();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const featuresReveal = useScrollReveal();
-  const bannerReveal = useScrollReveal();
+  const canExplore = isPrimaryNavVisible(activeRole, "/dashboard");
+  const tools = PRIMARY_NAV.filter((item) => item.url !== "/" && isPrimaryNavVisible(activeRole, item.url));
 
-  // Legacy deep-links: /?target=... → /dashboard?target=...
   useEffect(() => {
     if (searchParams.has("target") || searchParams.has("sector")) {
       navigate(`/dashboard?${searchParams.toString()}`, { replace: true });
     }
   }, [navigate, searchParams]);
 
-  const countryLabel = country?.name ?? "your country";
-
   return (
-    <ScrollArea className="h-full">
-      <div className="min-h-full bg-gradient-to-b from-muted/30 via-background to-background">
-        {/* Hero */}
-        <section className="relative overflow-hidden border-b border-border/60">
-          <div
-            className="pointer-events-none absolute inset-0 opacity-[0.35]"
-            aria-hidden
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 20% 20%, hsl(var(--accent) / 0.12), transparent 45%), radial-gradient(circle at 80% 0%, hsl(var(--sidebar-primary) / 0.15), transparent 40%)",
-            }}
-          />
-          <div className="relative mx-auto max-w-5xl px-4 sm:px-6 py-10 sm:py-14">
-            <Badge variant="outline" className="mb-4 text-[10px] font-medium tracking-wide gap-1.5">
-              <Sparkles className="h-3 w-3 text-sidebar-primary" />
-              {country ? `${country.flag} ${country.name}` : "NDC Data Explorer"} · Decision-support cockpit
-            </Badge>
-
-            <h1 className="hero-headline font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight text-foreground max-w-3xl leading-[1.15]">
-              Turn {countryLabel}&apos;s climate commitments into{" "}
-              <span className={HERO_GRADIENT_TEXT}>implementation decisions.</span>
-            </h1>
-
-            <p className="mt-4 text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
-              Link NDC targets to live emissions, track progress, explore mitigation options, and
-              see where delivery is off track — all in one place.
-            </p>
-
-            <div className="mt-7 flex flex-wrap gap-2.5">
-              <Button asChild size="default" className="gap-1.5 shadow-sm">
-                <Link to="/dashboard">
-                  <LayoutDashboard className="h-4 w-4" />
-                  Open Dashboard
-                </Link>
-              </Button>
+    <div className="h-full overflow-y-auto overscroll-contain">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+        <section className="relative isolate overflow-hidden rounded-3xl border border-border bg-card">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.12),transparent_65%)]" />
+          <div className="relative grid gap-8 p-6 sm:p-10 lg:grid-cols-[1.25fr_0.75fr] lg:gap-12 lg:p-12">
+            <div className="flex flex-col items-start justify-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-foreground">
+                <span aria-hidden="true">{country?.flag ?? "🌍"}</span>{country?.name ?? "National"} climate workspace
+              </span>
+              <h1 className="mt-6 max-w-2xl font-display text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.5rem]">
+                Climate evidence.<br /><span className="text-primary">Clearer decisions.</span>
+              </h1>
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
+                Explore emissions, understand local priorities, and connect {country?.name ?? "your country"}’s climate commitments to the work ahead.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Button asChild className="h-11 gap-2 rounded-xl px-5">
+                  <Link to={canExplore ? "/district-translator" : "/my-work"}>
+                    {canExplore ? <MapPinned className="h-4 w-4" /> : <Layers3 className="h-4 w-4" />}
+                    {canExplore ? "Explore a district" : "Open Database"}<ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                {canExplore && <Button asChild variant="outline" className="h-11 gap-2 rounded-xl px-5">
+                  <Link to="/dashboard">Open Dashboard<ArrowUpRight className="h-4 w-4" /></Link>
+                </Button>}
+              </div>
+              <p className="mt-6 flex items-center gap-2 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4 shrink-0" />Source-linked evidence. Clear coverage and limitations.</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-background/70 p-5 sm:p-6">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">A practical starting point</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-tight">From national to local.</h2>
+              <div className="mt-6 space-y-6">
+                {[
+                  { icon: Target, title: "Understand the commitment", description: "Start with national targets and sector-level progress." },
+                  { icon: MapPinned, title: "Look closer at a place", description: "Select a district or draw an area to examine mapped sources." },
+                  { icon: Layers3, title: "Take the evidence with you", description: "Export insights with their sources, units, and coverage notes." },
+                ].map((step, index) => <div key={step.title} className="flex gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-primary"><step.icon className="h-5 w-5" aria-hidden="true" /></span>
+                  <div><h3 className="text-sm font-semibold"><span className="mr-1.5 text-muted-foreground">{index + 1}.</span>{step.title}</h3><p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.description}</p></div>
+                </div>)}
+              </div>
+              <p className="mt-6 border-t pt-4 text-xs leading-relaxed text-muted-foreground">District Translator reports mapped Climate TRACE sources, not a complete district inventory.</p>
             </div>
           </div>
         </section>
-
-        {/* What you can do */}
-        <section ref={featuresReveal} className="reveal mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-10">
-          <div className="mb-6 max-w-xl">
-            <h2 className="font-brand text-lg sm:text-xl font-semibold text-foreground">What you can do here</h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              A concise cockpit for planners, MRV teams and partners — built on Climate TRACE and
-              Uganda&apos;s Updated NDC.
-            </p>
+        <section aria-labelledby="workspace-tools-heading" className="py-9 sm:py-12">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <div><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-primary">Choose your next step</p><h2 id="workspace-tools-heading" className="mt-2 text-2xl font-semibold tracking-tight">Your tools, in one place.</h2></div>
+            <p className="text-sm text-muted-foreground">Explore, plan, and deliver with context.</p>
           </div>
-
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f, i) => (
-              <Link
-                key={f.title}
-                to={f.to}
-                className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl dash-fade-up"
-                style={{ "--dash-fade-delay": `${0.04 + i * 0.04}s` } as CSSProperties}
-              >
-                <Card className="h-full border-border/80 transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-lg group-hover:shadow-primary/10 group-hover:-translate-y-1">
-                  <CardContent className="flex min-h-[12.25rem] flex-col items-center justify-center p-4 text-center">
-                    <div
-                      className={cn(
-                        "mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ring-1 ring-border/50",
-                        f.accent,
-                      )}
-                    >
-                      <f.icon className="h-5 w-5 text-foreground/80" />
-                    </div>
-                    <h3 className="text-base font-semibold leading-snug text-foreground group-hover:text-primary transition-colors">
-                      {f.title}
-                    </h3>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+            {tools.map((item) => <Link key={item.url} to={item.url} className="group flex items-start gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-primary/[0.03] focus-visible:ring-2 focus-visible:ring-ring">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-primary"><item.icon className="h-5 w-5" aria-hidden="true" /></span>
+              <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{item.title}</span><span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{item.description}</span></span>
+              <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" aria-hidden="true" />
+            </Link>)}
           </div>
         </section>
-
-        {/* Banner */}
-        <section ref={bannerReveal} className="reveal mx-auto max-w-5xl px-4 sm:px-6 pb-10 sm:pb-14">
-          <Card className="gradient-border-card overflow-hidden border-primary/20 bg-gradient-to-br from-primary/[0.07] via-card to-card shadow-sm">
-            <CardContent className="p-0">
-              <div className="grid md:grid-cols-[1.1fr_0.9fr] gap-0">
-                <div className="p-6 sm:p-8 flex flex-col justify-center">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Satellite className="h-4 w-4 text-sidebar-primary" />
-                    <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                      Powered by Climate TRACE
-                    </span>
-                  </div>
-                  <h2 className="font-brand text-xl sm:text-2xl font-bold text-foreground leading-snug">
-                    Evidence you can see — from satellite to sector dashboard
-                  </h2>
-                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed max-w-md">
-                    Observed emissions, asset-level sources, district views and spatial certainty —
-                    connected to the NDC targets that matter for {countryLabel}.
-                  </p>
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    <Button asChild size="sm" variant="secondary" className="gap-1.5">
-                      <Link to="/map">
-                        View Emissions Map
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Link>
-                    </Button>
-                    <Button asChild size="sm" variant="outline" className="gap-1.5">
-                      <Link to="/docs">Read the docs</Link>
-                    </Button>
-                  </div>
-                </div>
-                <div
-                  className="relative min-h-[180px] md:min-h-0 bg-gradient-to-br from-sidebar-primary/15 via-accent/10 to-transparent flex items-center justify-center p-6"
-                  aria-hidden
-                >
-                  <div className="grid grid-cols-2 gap-3 w-full max-w-[220px]">
-                    {[
-                      { label: "Sectors", value: 7 },
-                      { label: "Targets", value: 11 },
-                      { label: "Live data", value: "TRACE" },
-                      { label: "Horizon", value: 2030 },
-                    ].map((stat) => (
-                      <div
-                        key={stat.label}
-                        className="rounded-lg border border-white/10 bg-background/60 backdrop-blur-sm px-3 py-2.5 text-center shadow-sm transition-transform duration-300 hover:scale-105"
-                      >
-                        <p className="text-lg font-bold tabular-nums text-foreground font-display">
-                          {typeof stat.value === "number" ? (
-                            <CountUpNumber value={stat.value} durationMs={800} startWhenVisible />
-                          ) : (
-                            stat.value
-                          )}
-                        </p>
-                        <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{stat.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
+        {isPrimaryNavVisible(activeRole, "/docs") && <section className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-border bg-muted/40 p-6 sm:flex-row sm:items-center">
+          <div className="flex items-start gap-3"><BookOpen className="mt-1 h-5 w-5 shrink-0 text-primary" /><div><h2 className="font-semibold">Know what the data can—and cannot—tell you.</h2><p className="mt-1 text-sm text-muted-foreground">Read about methods, coverage, and how to interpret the results.</p></div></div>
+          <Button asChild variant="outline" className="h-10 shrink-0 gap-2"><Link to="/docs">Read the guide<ArrowRight className="h-4 w-4" /></Link></Button>
+        </section>}
       </div>
-    </ScrollArea>
+    </div>
   );
 }

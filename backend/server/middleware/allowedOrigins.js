@@ -13,7 +13,13 @@
 
 /** Strip a trailing slash so "https://x.com/" and "https://x.com" match. */
 function normalize(origin) {
-  return origin.trim().replace(/\/$/, "");
+  try {
+    const url = new URL(origin.trim());
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.pathname !== "/" || url.search || url.hash) return "";
+    return url.origin;
+  } catch {
+    return "";
+  }
 }
 
 /**
@@ -35,18 +41,28 @@ function vercelOrigins() {
   return origins;
 }
 
+function localDevelopmentOrigins() {
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL) return [];
+  return [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
+  ];
+}
+
 /** Every origin permitted to call this API from a browser. */
 export function allowedOrigins() {
-  const configured = (process.env.FRONTEND_ORIGIN ?? "http://localhost:8080")
+  const configured = (process.env.FRONTEND_ORIGIN ?? "")
     .split(",")
     .map(normalize)
     .filter(Boolean);
-  return [...new Set([...configured, ...vercelOrigins()])];
+  return [...new Set([...configured, ...vercelOrigins(), ...localDevelopmentOrigins()].filter(Boolean))];
 }
 
 /** First configured origin — used where a single canonical value is needed. */
 export function primaryFrontendOrigin() {
-  return allowedOrigins()[0] ?? "http://localhost:8080";
+  return allowedOrigins()[0] ?? "";
 }
 
 export function isAllowedOrigin(origin) {

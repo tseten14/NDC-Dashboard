@@ -54,7 +54,7 @@ export function RoleSwitcher() {
             at a fixed 180px it took nearly half a 390px screen, squeezing the
             navigation links into the sliver left over. */}
         <SelectTrigger
-          className="w-[116px] sm:w-[180px] h-7 text-[11px]"
+          className="w-[150px] sm:w-[180px] h-10 text-xs"
           aria-label="Switch active role"
         >
           <SelectValue placeholder="Select role…" />

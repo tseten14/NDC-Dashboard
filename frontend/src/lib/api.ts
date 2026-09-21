@@ -237,6 +237,11 @@ export interface SpatialConfidenceResponse {
 }
 
 export interface MapSourcePoint {
+  key?: string;
+  source_kind?: "asset" | "administrative" | "unknown";
+  source_type?: string | null;
+  source_url?: string;
+  emissions_tco2e?: number | null;
   id: number | string | null;
   name: string | null;
   sector: string;
@@ -267,6 +272,63 @@ export interface EmissionsMapResponse {
   data_license: string;
   note: string;
   from_cache?: boolean;
+}
+
+export type TranslatorGeometry = GeoJSON.Polygon | GeoJSON.MultiPolygon;
+
+export interface TranslatorCoverage {
+  fetched_rows: number;
+  duplicate_rows: number;
+  missing_coordinates: number;
+  missing_emissions: number;
+  complete_pagination: boolean;
+}
+export interface TranslatorPeriod { year: number; complete_year: boolean; label: string }
+export interface TranslatorProvider {
+  id: string;
+  name: string;
+  spatial_method: "point_filter" | "raster_zonal_statistics" | "polygon_intersection" | "district_lookup" | "national_context";
+  metric: string;
+  units: string;
+  gas: string;
+  api_version: string;
+  api_url: string;
+  api_dataset_release: string | null;
+  published_release: { version: string; published_at: string; data_through: string; verified_at: string; url: string };
+  license: string;
+  license_url: string;
+}
+export interface TranslatorBoundary { source: string; year: number; version: string; license: string; url: string; source_url: string; note: string }
+export interface TranslatorMetadata { years: number[]; default_year: number; providers: TranslatorProvider[]; boundary: TranslatorBoundary }
+export interface TranslatorSources { year: number; points: MapSourcePoint[]; coverage: TranslatorCoverage; retrieved_at: string; period: TranslatorPeriod }
+
+export interface PolygonInsightsResponse {
+  schema_version: string;
+  selection_name: string;
+  period: TranslatorPeriod;
+  boundary_provenance: TranslatorBoundary;
+  coverage: TranslatorCoverage;
+  missing_emissions_count: number;
+  unknown_source_count: number;
+  asset_total_mtco2e: number | null;
+  administrative_total_mtco2e: number | null;
+  unknown_total_mtco2e: number | null;
+  filters: { sectors: string[] | null };
+  indicators: Array<{ provider_id: string; metric: string; value: number | null; units: string; spatial_method: TranslatorProvider["spatial_method"]; period: TranslatorPeriod; coverage: TranslatorCoverage }>;
+  geometry: TranslatorGeometry;
+  year: number;
+  area_km2: number;
+  intersected_districts: Array<{ name: string; boundary_id: string; overlap_pct: number; overlap_km2: number }>;
+  mapped_total_mtco2e: number | null;
+  source_count: number;
+  asset_count: number;
+  administrative_source_count: number;
+  sectors: Array<{ sector: string; mtco2e: number | null; source_count: number; share_pct: number | null; missing_emissions_count: number }>;
+  top_sources: MapSourcePoint[];
+  sources: MapSourcePoint[];
+  trend: Array<{ year: number; mapped_total_mtco2e: number | null; source_count: number | null; complete_year: boolean; status: "available" | "missing_emissions" | "unavailable"; retrieved_at: string | null }>;
+  spatial_confidence: { scope: "mapped_sources_only"; complete_inventory: false; explanation: string };
+  provenance: TranslatorProvider & { source: string; dataset_year: number; retrieved_at: string };
 }
 
 /** Geography selector for emissions queries. Omit for national (UGA). */
@@ -486,6 +548,11 @@ export const emissionsApi = {
     const qs = q.toString();
     return getJSON<EmissionsMapResponse>(`/api/v1/emissions/map${qs ? `?${qs}` : ""}`);
   },
+  translatorMetadata: (signal?: AbortSignal) => getJSON<TranslatorMetadata>("/api/v1/emissions/translator/metadata", { signal }),
+  translatorDistricts: (signal?: AbortSignal) => getJSON<GeoJSON.FeatureCollection<TranslatorGeometry>>("/api/v1/emissions/translator/districts", { signal }),
+  translatorSources: (year: number, signal?: AbortSignal) => getJSON<TranslatorSources>(`/api/v1/emissions/translator/sources?year=${year}`, { signal }),
+  polygonInsights: (body: { geometry?: TranslatorGeometry; year: number; sectors?: string[]; selection_kind?: "custom" | "district"; district_id?: string }, signal?: AbortSignal) =>
+    postJSON<PolygonInsightsResponse>("/api/v1/emissions/polygon-insights", body, {}, { signal }),
   summary: () => getJSON<EmissionsSummary>("/api/v1/emissions/summary"),
   timeseries: (sector: NdcSectorKey, since?: number, to?: number, opts?: GeographyOpts) => {
     const q = new URLSearchParams({ sector });

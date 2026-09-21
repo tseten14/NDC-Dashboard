@@ -14,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 150 22% 14%;
 
-    --primary: 150 20% 15%;
+    --primary: 160 58% 26%;
     --primary-foreground: 150 8% 98%;
 
     --secondary: 150 7% 94%;
@@ -33,7 +33,7 @@
     --input: 150 9% 88%;
     --ring: 152 30% 34%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     scroll-behavior: smooth;
 
@@ -72,25 +72,25 @@
   }
 
   .dark {
-    --background: 150 17% 11%;
+    --background: 160 18% 8%;
     --foreground: 150 6% 92%;
-    --card: 150 14% 15%;
+    --card: 158 15% 12%;
     --card-foreground: 150 6% 92%;
-    --popover: 150 14% 15%;
+    --popover: 158 15% 12%;
     --popover-foreground: 150 6% 92%;
-    --primary: 152 34% 44%;
-    --primary-foreground: 150 8% 98%;
+    --primary: 158 48% 62%;
+    --primary-foreground: 160 30% 10%;
     --secondary: 150 11% 22%;
     --secondary-foreground: 150 6% 92%;
     --muted: 150 11% 22%;
-    --muted-foreground: 150 8% 58%;
+    --muted-foreground: 150 8% 68%;
     --accent: 152 30% 34%;
     --accent-foreground: 0 0% 100%;
     --destructive: 4 72% 56%;
     --destructive-foreground: 0 0% 100%;
-    --border: 150 11% 24%;
-    --input: 150 11% 24%;
-    --ring: 152 32% 40%;
+    --border: 155 12% 23%;
+    --input: 155 12% 30%;
+    --ring: 158 48% 62%;
 
     --highlight: 38 92% 56%;
     --highlight-foreground: 35 60% 12%;
@@ -119,6 +119,14 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 

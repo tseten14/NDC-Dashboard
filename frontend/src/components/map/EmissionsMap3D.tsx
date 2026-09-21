@@ -10,7 +10,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Feature, FeatureCollection, Point } from "geojson";
-import type { MapLayerMouseEvent, GeoJSONSource } from "maplibre-gl";
+import type { MapLayerMouseEvent, GeoJSONSource, StyleSpecification } from "maplibre-gl";
 import type { MapSourcePoint } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import ugandaGeo from "@/data/uganda-adm2.geo.json";
@@ -185,8 +185,7 @@ export function EmissionsMap3D({
     void (async () => {
       let maplibregl;
       try {
-        const maplibre = await import("maplibre-gl");
-        maplibregl = maplibre.default ?? maplibre;
+        maplibregl = await import("@/lib/maplibre");
       } catch {
         if (!disposed) setLoadError(true);
         return;
@@ -241,7 +240,7 @@ export function EmissionsMap3D({
             "fog-ground-blend": 0.4,
             "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 4, 0.6, 10, 0],
           },
-        } as unknown as maplibregl.StyleSpecification,
+        } as unknown as StyleSpecification,
       });
 
       map.scrollZoom.setWheelZoomRate(1 / 200);

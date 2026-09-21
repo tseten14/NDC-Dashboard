@@ -11,6 +11,7 @@
  */
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { LOCAL_USER, DEFAULT_ROLES } from "@/lib/auth-config";
+import { readPreference, writePreference } from "@/lib/preferences";
 import {
   canExport as canExportFmt,
   canUseIngest as canUseIngestRole,
@@ -75,10 +76,13 @@ const ROLES_KEY = "uganda-ndc-available-roles";
 
 function loadStoredRoles(): AppRole[] {
   try {
-    const raw = localStorage.getItem(ROLES_KEY);
+    const raw = readPreference("localStorage", ROLES_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as AppRole[];
-      if (parsed.length) return parsed;
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const valid = parsed.filter((role): role is AppRole => ALL_ROLES.some((meta) => meta.id === role));
+        if (valid.length) return [...new Set(valid)];
+      }
     }
   } catch {
     /* ignore */
@@ -95,27 +99,27 @@ export function CurrentRoleProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const roles = loadStoredRoles();
     setAvailableRoles(roles);
-    const stored = localStorage.getItem(ACTIVE_ROLE_KEY) as AppRole | null;
+    const stored = readPreference("localStorage", ACTIVE_ROLE_KEY) as AppRole | null;
     setActiveRoleState(stored && roles.includes(stored) ? stored : "Admin");
     setLoading(false);
   }, []);
 
   const setActiveRole = useCallback((r: AppRole) => {
-    localStorage.setItem(ACTIVE_ROLE_KEY, r);
+    writePreference("localStorage", ACTIVE_ROLE_KEY, r);
     setActiveRoleState(r);
   }, []);
 
   const grantRole = useCallback((r: AppRole) => {
     setAvailableRoles((prev) => {
       const next = prev.includes(r) ? prev : [...prev, r];
-      localStorage.setItem(ROLES_KEY, JSON.stringify(next));
+      writePreference("localStorage", ROLES_KEY, JSON.stringify(next));
       return next;
     });
     setActiveRole(r);
   }, [setActiveRole]);
 
   const signOut = useCallback(() => {
-    localStorage.removeItem(ACTIVE_ROLE_KEY);
+    writePreference("localStorage", ACTIVE_ROLE_KEY, null);
     setActiveRoleState("Admin");
   }, []);
 

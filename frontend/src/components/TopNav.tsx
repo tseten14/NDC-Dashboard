@@ -1,10 +1,4 @@
-/**
- * The main navigation bar.
- *
- * The top-level menu across the app, including the country indicator, the role
- * switcher and the theme toggle.
- */
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useCountry } from "@/context/CountryContext";
@@ -13,233 +7,101 @@ import { isPrimaryNavVisible } from "@/lib/role-capabilities";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import {
-  Upload, Target, Sparkles, Coins, Workflow, Scale, Store, Map as MapIcon, Home,
-  BookOpen, Briefcase, Globe2, Leaf,
-} from "lucide-react";
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ArrowUpRight, Globe2, LayoutGrid, Leaf, Menu } from "lucide-react";
+import { PRIMARY_NAV } from "@/lib/navigation";
 
-type NavItem = { title: string; url: string; icon: React.ElementType };
-
-const primary: NavItem[] = [
-  { title: "Home",               url: "/",               icon: Home },
-  { title: "Emissions Map",      url: "/map",            icon: MapIcon },
-  { title: "Dashboard",          url: "/dashboard",      icon: Target },
-  { title: "Data Ingestion",     url: "/ingest",         icon: Upload },
-  { title: "AI 2030 Projection", url: "/ai-2030",        icon: Sparkles },
-  { title: "Policy Impact",      url: "/policy-impact",  icon: Workflow },
-  { title: "Climate Finance",    url: "/climate-finance",icon: Coins },
-  { title: "Policy Documents",   url: "/documents",      icon: Scale },
-  { title: "MWP-marketplace",    url: "/mwp-marketplace",icon: Store },
-  { title: "Database",           url: "/my-work",        icon: Briefcase },
-  { title: "Documentation",      url: "/docs",           icon: BookOpen },
-];
 
 export function TopNav() {
   const { country, clearCountry } = useCountry();
-  const navigate = useNavigate();
+  const { activeRole, loading } = useCurrentRole();
   const { pathname } = useLocation();
-  const { activeRole, loading: roleLoading } = useCurrentRole();
-  const visiblePrimary = primary.filter((item) => isPrimaryNavVisible(activeRole, item.url));
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const menuPath = useRef(pathname);
+  const visible = PRIMARY_NAV.filter((item) => isPrimaryNavVisible(activeRole, item.url));
+  const current = PRIMARY_NAV.find((item) => item.url === "/" ? pathname === "/" : pathname === item.url || pathname.startsWith(`${item.url}/`));
+  const shortcuts = visible.filter((item) => item.group === "Explore" || item.url === "/my-work");
 
-  // Condense the header once page content (in any nested scroll container) scrolls down.
-  // The scroll handler is rAF-batched so we read scrollTop at most once per frame
-  // and only flip state when the threshold is actually crossed.
-  const [condensed, setCondensed] = useState(false);
+  useEffect(() => { setOpen(false); }, [pathname, activeRole]);
   useEffect(() => {
-    let frame = 0;
-    let lastTarget: HTMLElement | null = null;
-    const measure = () => {
-      frame = 0;
-      if (!lastTarget) return;
-      const y = lastTarget.scrollTop;
-      // Hysteresis: condense past 64px, only expand again below 16px. A single
-      // threshold made the header flicker/jump when scrolling near it.
-      setCondensed((prev) => (prev ? y > 16 : y > 64));
-    };
-    const onScroll = (e: Event) => {
-      const el =
-        e.target instanceof Document
-          ? (e.target.scrollingElement as HTMLElement | null)
-          : e.target instanceof HTMLElement
-            ? e.target
-            : null;
-      if (!el) return;
-      lastTarget = el;
-      if (frame === 0) frame = requestAnimationFrame(measure);
-    };
-    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
-    return () => {
-      document.removeEventListener("scroll", onScroll, true);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, []);
+    document.title = `${current?.title ?? "Workspace"} · NDC Data Explorer${country ? ` — ${country.name}` : ""}`;
+  }, [current?.title, country]);
 
-  // Sliding indicator: follows hover, settles on the active link.
-  const linkRefs = useRef(new Map<string, HTMLAnchorElement>());
-  const navRef = useRef<HTMLElement>(null);
-  const [hovered, setHovered] = useState<string | null>(null);
-  const [hoverEnabled, setHoverEnabled] = useState(false);
-  const [indicator, setIndicator] = useState<{ left: number; width: number; visible: boolean }>({
-    left: 0,
-    width: 0,
-    visible: false,
-  });
-
-  const activeUrl =
-    visiblePrimary.find((p) => (p.url === "/" ? pathname === "/" : pathname.startsWith(p.url)))?.url ?? null;
-
-  useEffect(() => {
-    setHovered(null);
-    setHoverEnabled(false);
-  }, [pathname]);
-
-  useLayoutEffect(() => {
-    const measure = () => {
-      const targetUrl = hoverEnabled && hovered ? hovered : activeUrl;
-      const el = targetUrl != null ? linkRefs.current.get(targetUrl) : undefined;
-      const nav = navRef.current;
-      if (!el || !nav) {
-        setIndicator((s) => ({ ...s, visible: false }));
-        return;
-      }
-      const navBox = nav.getBoundingClientRect();
-      const box = el.getBoundingClientRect();
-      setIndicator({ left: box.left - navBox.left + 8, width: box.width - 16, visible: true });
-    };
-    measure();
-    const raf = requestAnimationFrame(() => requestAnimationFrame(measure));
-    // The condense transition slides the brand mark + links over 300ms, so the
-    // first measurement reads a mid-transition position. Re-measure once it
-    // settles; the indicator's own CSS transition keeps the move smooth.
-    const t = window.setTimeout(measure, 320);
-    const ro = typeof ResizeObserver !== "undefined" && navRef.current
-      ? new ResizeObserver(() => measure())
-      : null;
-    if (ro && navRef.current) ro.observe(navRef.current);
-    const fontsReady = document.fonts?.ready?.then(() => measure());
-    return () => {
-      cancelAnimationFrame(raf);
-      window.clearTimeout(t);
-      ro?.disconnect();
-      void fontsReady;
-    };
-  }, [hovered, hoverEnabled, activeUrl, pathname, visiblePrimary.length, condensed, roleLoading]);
+  const changeCountry = () => {
+    setOpen(false);
+    clearCountry();
+    navigate("/select-country");
+  };
 
   return (
-    <header
-      data-top-nav
-      className={cn(
-        "sticky top-0 z-40 w-full border-b border-border/70",
-        // backdrop-blur-md (not -xl): a sticky element's backdrop-filter is
-        // recomputed every scroll frame, so a smaller blur radius is cheaper.
-        "bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65",
-        "shadow-[0_1px_12px_-6px_hsl(168_45%_28%/0.15)]",
-      )}
-    >
-      {/* Top strip: brand + breadcrumb + country + role. Collapses on scroll. */}
-      <div
-        className={cn(
-          "flex items-center gap-3 sm:gap-4 px-4 sm:px-6 border-b border-border/40 overflow-hidden",
-          "transition-[height,opacity] duration-300 ease-out",
-          condensed ? "h-0 opacity-0 border-b-0" : "h-12 opacity-100",
-        )}
-      >
-        <NavLink to="/" end className="flex items-center gap-2.5 shrink-0 group" activeClassName="">
-          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-sm shadow-emerald-500/30 ring-1 ring-emerald-400/40 transition-all duration-300 group-hover:shadow-emerald-500/50 group-hover:scale-105">
-            <Leaf className="h-4 w-4 text-white drop-shadow-sm" />
-          </div>
-          <div className="hidden sm:block">
-            <p className="text-sm font-extrabold tracking-tight text-foreground leading-none font-display">NDC</p>
-            <p className="text-[10px] font-medium text-muted-foreground tracking-wide leading-none mt-0.5">Data Explorer</p>
-          </div>
+    <header data-top-nav className="relative z-40 shrink-0 border-b border-border bg-card">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:text-primary-foreground">
+        Skip to main content
+      </a>
+      <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <NavLink to="/" end activeClassName="" aria-label="NDC Data Explorer home" className="flex min-w-0 items-center gap-3 rounded-lg">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground"><Leaf className="h-5 w-5" aria-hidden="true" /></span>
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold tracking-tight">NDC <span className="font-normal text-muted-foreground">Data Explorer</span></span>
+            <span className="mt-0.5 block truncate text-xs text-muted-foreground md:hidden">{current?.title ?? "Climate workspace"}</span>
+            <span className="mt-0.5 hidden text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground md:block">Evidence into action</span>
+          </span>
         </NavLink>
-
-        <div className="flex-1" />
-
-        <div className="flex items-center gap-3">
-          {country && (
-            <span className="text-xs text-muted-foreground hidden md:flex items-center gap-1.5">
-              <span className="text-base leading-none">{country.flag}</span>
-              {country.name}
-            </span>
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-            onClick={() => { clearCountry(); navigate("/select-country"); }}
-          >
-            <Globe2 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">{country ? "Change country" : "Select country"}</span>
+        <div className="hidden items-center gap-4 md:flex">
+          <Button variant="ghost" size="sm" onClick={changeCountry} className="h-10 gap-2 text-muted-foreground" aria-label="Change country">
+            <span aria-hidden="true">{country?.flag ?? <Globe2 className="h-4 w-4" />}</span>
+            {country?.name ?? "Select country"}<ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Button>
+          <span className="h-6 w-px bg-border" aria-hidden="true" />
+          {!loading && <RoleSwitcher />}
         </div>
-      </div>
-
-      {/* Nav links strip — links scroll, controls (theme + role) stay pinned
-          right so the role switcher is always visible, even when scrolled. */}
-      <div className="flex items-stretch">
-        <div className="overflow-x-auto scrollbar-none flex-1 min-w-0">
-        <nav
-          ref={navRef}
-          className="relative flex items-center gap-0 px-4 min-w-max"
-          onMouseLeave={() => {
-            setHovered(null);
-            setHoverEnabled(false);
-          }}
-          onMouseMove={() => setHoverEnabled(true)}
-        >
-          {/* Sliding underline */}
-          <span
-            aria-hidden
-            className={cn(
-              "absolute bottom-0 h-[2.5px] rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500",
-              "transition-[left,width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-              indicator.visible ? "opacity-100" : "opacity-0",
-            )}
-            style={{ left: indicator.left, width: indicator.width }}
-          />
-          {/* Condensed brand mark appears when the top strip is collapsed */}
-          <NavLink
-            to="/"
-            end
-            activeClassName=""
-            className={cn(
-              "flex items-center shrink-0 overflow-hidden transition-[width,margin,opacity] duration-300",
-              condensed ? "w-7 mr-2 opacity-100" : "w-0 mr-0 opacity-0",
-            )}
-          >
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-emerald-500 to-teal-600 shrink-0">
-              <Leaf className="h-3.5 w-3.5 text-white" />
-            </span>
-          </NavLink>
-          {visiblePrimary.map((item) => (
-            <NavLink
-              key={item.url}
-              to={item.url}
-              end={item.url === "/"}
-              ref={(el: HTMLAnchorElement | null) => {
-                if (el) linkRefs.current.set(item.url, el);
-                else linkRefs.current.delete(item.url);
-              }}
-              onMouseEnter={() => setHovered(item.url)}
-              className={cn(
-                "relative px-3.5 text-[13px] font-medium text-muted-foreground transition-all duration-300 hover:text-foreground whitespace-nowrap",
-                condensed ? "py-2" : "py-3",
-              )}
-              activeClassName="text-foreground"
-            >
-              {item.title}
-            </NavLink>
-          ))}
-        </nav>
-        </div>
-        <div className="flex items-center gap-2 px-3 shrink-0 border-l border-border/40 bg-background/40">
+        <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
-          <RoleSwitcher />
+          <Sheet open={open} onOpenChange={(nextOpen) => { if (nextOpen) menuPath.current = pathname; setOpen(nextOpen); }}>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="h-10 gap-2 md:ml-2" aria-label="Open all tools">
+                <Menu className="h-4 w-4 md:hidden" aria-hidden="true" /><LayoutGrid className="hidden h-4 w-4 md:block" aria-hidden="true" />
+                <span className="hidden md:inline">All tools</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent onCloseAutoFocus={(event) => {
+              if (menuPath.current !== pathname) {
+                event.preventDefault();
+                document.getElementById("main-content")?.focus({ preventScroll: true });
+              }
+            }} className="flex w-[min(90vw,420px)] max-w-none flex-col gap-0 overflow-y-auto p-0 sm:max-w-[420px]">
+              <div className="border-b p-6 pr-12">
+                <SheetTitle>Your workspace</SheetTitle>
+                <SheetDescription className="mt-1">Find the right tool for your next decision.</SheetDescription>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4 md:hidden">
+                <Button variant="outline" size="sm" className="h-10" onClick={changeCountry} aria-label="Change country">{country?.flag} {country?.name ?? "Select country"}</Button>
+                {!loading && <RoleSwitcher />}
+              </div>
+              <nav aria-label="All workspace tools" className="space-y-5 p-4">
+                {["Explore", "Plan & deliver", "Manage & learn"].map((group) => {
+                  const items = visible.filter((item) => item.group === group);
+                  return items.length > 0 && <div key={group}>
+                    <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{group}</p>
+                    {items.map((item) => <NavLink key={item.url} to={item.url} end={item.url === "/"} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" activeClassName="bg-primary/10 text-foreground ring-1 ring-inset ring-primary/20">
+                      <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                      <span><span className="block text-sm font-medium">{item.title}</span><span className="mt-0.5 block text-xs text-muted-foreground">{item.description}</span></span>
+                    </NavLink>)}
+                  </div>;
+                })}
+              </nav>
+              <p className="mt-auto border-t px-6 py-4 text-xs leading-relaxed text-muted-foreground">The role selector tailors your workspace. Protected actions still require operator authorization.</p>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
+      <nav aria-label="Primary navigation" className="hidden items-center gap-1 border-t border-border/60 px-6 md:flex lg:px-8">
+        {shortcuts.map((item) => <NavLink key={item.url} to={item.url} end={item.url === "/"} className="relative flex min-h-11 items-center gap-2 border-b-2 border-transparent px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" activeClassName="border-primary bg-primary/5 text-foreground">
+          <item.icon className="h-4 w-4" aria-hidden="true" />{item.title}
+        </NavLink>)}
+        {current && !shortcuts.includes(current) && <span className="ml-3 border-l pl-4 text-sm font-medium text-foreground">{current.title}</span>}
+      </nav>
     </header>
   );
 }

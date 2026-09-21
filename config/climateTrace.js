@@ -65,7 +65,7 @@ const UPSTREAM_MAX_BYTES = 25 * 1024 * 1024;
  * The URL is deliberately kept out of the thrown message: it is built from
  * internal configuration and ends up in logs and error paths.
  */
-async function fetchUpstream(url, label) {
+export async function fetchUpstream(url, label) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
   try {
