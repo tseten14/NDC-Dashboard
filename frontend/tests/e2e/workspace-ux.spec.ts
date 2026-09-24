@@ -20,7 +20,7 @@ test("home loads without dashboard requests; all tools and theme remain accessib
   await expect(page.locator("html")).not.toHaveClass(/dark/);
   await page.screenshot({ path: "test-results/ux-home-desktop-light.png" });
   await page.getByRole("button", { name: "Open all tools" }).click();
-  await expect(page.getByRole("navigation", { name: "All workspace tools" }).getByRole("link")).toHaveCount(13);
+  await expect(page.getByRole("navigation", { name: "All workspace tools" }).getByRole("link")).toHaveCount(14);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Open all tools" })).toBeFocused();

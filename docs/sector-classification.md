@@ -1,8 +1,8 @@
 # Sector Classification
 
-Route: `/sector-classification`. The shared navigation registry places it after District Translator in desktop navigation, the mobile tools sheet, and the home tool catalog. Existing role visibility rules apply. The lazy route uses the app's loading and error boundaries without fetching emissions data.
+Route: `/sector-classification`. The tab now opens an **Exercises** workspace: create a named collection round, resume a saved round, or explore an explicitly synthetic sample. Each exercise connects classification, annual source comparisons, district and entry decisions, recalculation, and review. See [Inventory exercise workflow](inventory-exercises.md) for the data contract, calculation definitions, and operating limits.
 
-The interface follows PDF page 3: framework cards on the left, an expandable sector checklist and search on the right, and one compact selection/save bar at the bottom. Fully selected branches are summarized by their parent code. “Review selection” opens the complete category list, code paths, and removal controls. Source/coverage details are behind “About this classification”; mobile framework choices are collapsible. These disclosures keep the main task focused on choosing and saving sectors.
+The shared navigation registry still places Sector Classification after District Translator. Step 1 retains the verified framework cards, expandable sector checklist, search, and framework-switch confirmation. Changing a scope with imported data creates a separate exercise and preserves the original. The legacy standalone selection is offered as an optional starting scope for new exercises.
 
 ## Classification sources
 
@@ -21,23 +21,14 @@ The reference design abbreviates `3.D` as “Other – harvested wood products�
 
 ## Persistence and integration contract
 
-The app's AuthGate currently passes through and has no remote account identity. Consistent with existing local activity storage, selections are stored in `localStorage`, per country, under `ndc-sector-classification-v1:<countryCode>`. They are shared by roles in that browser, survive refresh/navigation, and do not sync across devices. Unsaved edits are component state; the UI tells users to save before leaving and guards browser unload while dirty.
+Exercises are validated and saved per country under `ndc-inventory-exercises-v1:<countryCode>`. The app's AuthGate currently passes through; there is no remote account identity or inventory submission service. Exercises are therefore local to this browser, shared by its roles, and do not sync across devices. JSON backup export and restoration are available. Failed writes preserve in-memory edits and expose retry/export actions. Concurrent changes from another tab block overwriting stored records.
 
-`readClassificationSelection(countryCode)` returns a validated `ClassificationSelection` or null. It throws for blocked storage, corrupt data, unknown frameworks, mismatched country/schema/hierarchy versions, duplicate codes or unrecognized categories. The UI offers retry and requires explicit consent to replace unreadable data. Failed writes preserve edits and show an actionable error without claiming success. An empty saved selection is valid so users can clear a previous selection.
+The legacy `readClassificationSelection` / `saveClassificationSelection` contract remains available under `ndc-sector-classification-v1:<countryCode>`. It carries `schemaVersion`, `countryCode`, `frameworkId`, `hierarchyVersion`, `selectedCodes`, and ISO `savedAt`. It is used to seed an exercise only when the user chooses to inherit it. New exercise changes belong to the exercise, not the old standalone selection.
 
-The persisted record carries `schemaVersion`, `countryCode`, `frameworkId`, `hierarchyVersion`, `selectedCodes` (terminal codes in source order), and ISO `savedAt`. Parent state is derived from descendant membership, avoiding contradictory parent/child entries. On success, `saveClassificationSelection` dispatches `ndc:classification-saved` with the record in `event.detail`. Future same-window consumers can listen for this event and read the store; other tabs can use the browser's storage event. These APIs are defined in `frontend/src/lib/sector-classification.ts`.
-
-Before adding a hierarchy or modifying its codes, version its data, validate the full saved contract, and implement explicit migration. Do not reinterpret saved selections with a changed tree. Future server persistence must use a real account identity, validate hierarchy versions server-side, and define conflict handling.
-
-## Downstream integration
-
-The existing District Translator uses Climate TRACE sectors; the prediction page uses its own forecast sectors. Neither supplies a verified crosswalk at IPCC category depth. Activity tickets and observed indicator ingestion are not an inventory exercise model. Therefore the feature does not change those screens' filters or figures.
-
-To implement the PDF's remaining inventory steps, consume the saved contract and provide verified reporting-code mappings, inventory exercise IDs, source/time-series storage, district/facility observations, recalculation methods with lineage, and a real review/submission API. Scenario integration additionally requires a compatible inventory basis and verified sector/action/policy models. No placeholder Continue action or fictional totals are provided.
+No Climate TRACE-to-IPCC crosswalk is inferred. Candidates are explicitly imported annual observations using the exercise's selected terminal codes. No dashboard or prediction figures are changed. The guided sample is isolated from live data and marked synthetic throughout the workflow and exports.
 
 ## Checks
 
-- `npm test`: hierarchy invariants, official framework differences, cascading/partial selection, search, safe switching, persistence validation, save failures, corrupted-state recovery, and navigation regressions.
-- `npm run test:ux -- sector-classification`: real-browser desktop, phone, and tablet checks, keyboard operation, reload/navigation persistence, framework-switch confirmation, and screenshots in `test-results/`.
-- With the development server running, `NDC_UX_BASE_URL=http://localhost:8080 npm run test:ux -- sector-classification` runs the same checks against Vite development modules and rejects failed dependency/module responses. The Vite configuration explicitly optimizes the dialog and radio controls at startup to avoid stale dependency URLs when first entering the lazy route.
+- `npm test`: existing classification behavior, numerical statistics, import validation, geography and entry completeness, mix decisions, recalculation methods, review invalidation, storage failure and concurrent-tab protection.
+- `npm run test:ux -- sector-classification`: browser exercise creation, reload persistence, CSV validation, district/entry choices, calculation, sign-off package download, backup restoration, SVG chart export, and phone/tablet layouts.
 - `npx tsc --build --force`, `npm run lint`, and `npm run build`.

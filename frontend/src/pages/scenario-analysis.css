@@ -1,0 +1,10 @@
+.scenario-workspace {
+  --primary: 265 36% 38%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 265 36% 48%;
+}
+.dark .scenario-workspace {
+  --primary: 266 57% 74%;
+  --primary-foreground: 265 30% 12%;
+  --ring: 266 57% 74%;
+}

@@ -1,147 +1,106 @@
-import { useEffect, useMemo, useState } from "react";
-import { ExternalLink, Search, X } from "lucide-react";
-import { useCountry } from "@/context/CountryContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { FrameworkSelector } from "@/components/classification/FrameworkSelector";
-import { SectorHierarchy } from "@/components/classification/SectorHierarchy";
-import { SelectionSummary } from "@/components/classification/SelectionSummary";
-import { DEFAULT_FRAMEWORK, getFramework, type ClassificationFramework, type SectorNode } from "@/data/classifications";
-import { flattenSectors, matchesBranch, matchesSector, planFrameworkChange, readClassificationSelection, saveClassificationSelection, toggleCategory, type ClassificationSelection } from "@/lib/sector-classification";
-
-function loadSelection(countryCode: string) {
-  try { return { saved: readClassificationSelection(countryCode), error: "" }; }
-  catch { return { saved: null, error: "Your saved selection could not be read. Browser storage may be blocked, or the saved hierarchy may no longer be supported. Your stored data has not been changed." }; }
-}
+import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, ArrowRight, Check, FileStack, FlaskConical, FolderOpen, Plus, Search } from 'lucide-react';
+import { useCountry } from '@/context/CountryContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ClassificationWorkspace } from '@/components/classification/ClassificationWorkspace';
+import { getFramework } from '@/data/classifications';
+import { readClassificationSelection, type ClassificationSelection } from '@/lib/sector-classification';
+import { createExercise, createSampleExercise, downloadFile, exerciseKey, exportPackage, readExercises, reviseExercise, writeExercises, validateExercise, type Exercise } from '@/lib/inventory-workspace';
+import { Badge, Panel } from '@/components/inventory/shared';
+import { TimeSeries } from '@/components/inventory/TimeSeries';
+import { Recalculation } from '@/components/inventory/Recalculation';
+import { InventoryReview } from '@/components/inventory/InventoryReview';
 
 export default function SectorClassification() {
   const { country } = useCountry();
-  if (!country) return <p className="p-6" role="status">Choose a country to manage its sector classification.</p>;
-  return <ClassificationWorkspace key={country.code} countryCode={country.code} countryName={country.name} />;
+  if (!country) return <p role="status" className="p-6">Choose a country to manage inventory exercises.</p>;
+  return <InventoryWorkspace key={country.code} countryCode={country.code} countryName={country.name} />;
 }
-
-function ClassificationWorkspace({ countryCode, countryName }: { countryCode: string; countryName: string }) {
-  const [initial] = useState(() => loadSelection(countryCode));
-  const [saved, setSaved] = useState<ClassificationSelection | null>(initial.saved);
-  const [loadError, setLoadError] = useState(initial.error);
-  const [saveError, setSaveError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [framework, setFramework] = useState(() => getFramework(initial.saved?.frameworkId) ?? DEFAULT_FRAMEWORK);
-  const [selected, setSelected] = useState(() => new Set(initial.saved?.selectedCodes ?? []));
-  const [query, setQuery] = useState("");
-  const [expanded, setExpanded] = useState(new Set<string>());
-  const [pendingFramework, setPendingFramework] = useState<ClassificationFramework | null>(null);
-  const [replaceUnreadable, setReplaceUnreadable] = useState(false);
-  const nodes = useMemo(() => flattenSectors(framework.hierarchy), [framework]);
-  const search = query.trim();
-  const matches = search ? nodes.filter((node) => matchesSector(node, search)).length : 0;
-  const dirty = saved ? framework.id !== saved.frameworkId || selected.size !== saved.selectedCodes.length
-    || saved.selectedCodes.some((code) => !selected.has(code)) : selected.size > 0 || framework.id !== DEFAULT_FRAMEWORK.id;
-  const migration = pendingFramework ? planFrameworkChange(selected, framework, pendingFramework) : null;
-
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
-
-  const select = (node: SectorNode, include: boolean) => {
-    setSelected((current) => toggleCategory(node, current, include));
-    setNotice("");
-  };
-  const expand = (code: string) => setExpanded((current) => {
-    const next = new Set(current);
-    if (next.has(code)) next.delete(code); else next.add(code);
-    return next;
-  });
-  const restore = () => {
-    const result = loadSelection(countryCode);
-    setLoadError(result.error);
-    if (result.error) return;
-    setSaved(result.saved);
-    setFramework(getFramework(result.saved?.frameworkId) ?? DEFAULT_FRAMEWORK);
-    setSelected(new Set(result.saved?.selectedCodes ?? []));
-    setQuery(""); setExpanded(new Set()); setSaveError(""); setNotice("Saved selection restored.");
-  };
-  const save = () => {
+function InventoryWorkspace({ countryCode, countryName }: { countryCode: string; countryName: string }) {
+  const [initial] = useState(() => { try { return { exercises: readExercises(countryCode), snapshot: localStorage.getItem(exerciseKey(countryCode)), error: '' }; } catch { return { exercises: [] as Exercise[], snapshot: null, error: 'Saved exercises could not be read. Your stored data has not been changed. Restore browser storage access and reload to retry.' }; } });
+  const lastStored = useRef(initial.snapshot);
+  const [exercises, setExercises] = useState(initial.exercises);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState('');
+  const [newOpen, setNewOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [query, setQuery] = useState('');
+  const [restoreError, setRestoreError] = useState('');
+  const [showAll, setShowAll] = useState(false);
+  const [inherit, setInherit] = useState(false);
+  const [selectionReset, setSelectionReset] = useState<ClassificationSelection | null>(null);
+  const [savedSelection] = useState(() => { try { return readClassificationSelection(countryCode); } catch { return null; } });
+  const active = exercises.find(e => e.id === activeId);
+  useEffect(() => { document.getElementById('main-content')?.scrollTo({ top: 0 }); }, [activeId, active?.step]);
+  const persist = (next: Exercise[]) => {
+    setExercises(next);
     try {
-      const record = saveClassificationSelection(countryCode, framework, selected);
-      setSaved(record); setSaveError(""); setNotice("Selection saved. You can return to edit it at any time.");
-    } catch {
-      setSaveError("Selection could not be saved. Allow browser storage or free some space, then try Save selection again. Your edits are still here.");
+      if (localStorage.getItem(exerciseKey(countryCode)) !== lastStored.current) {
+        setSaveError('Exercises changed in another tab. Export your unsaved work as a backup, then reload to load the latest records. No stored exercises were overwritten.');
+        return false;
+      }
+      writeExercises(countryCode, next); lastStored.current = localStorage.getItem(exerciseKey(countryCode)); setSaveError(''); return true;
     }
+    catch { setSaveError('Changes are still here, but browser storage could not save them. Free storage or allow access, then retry. Export a backup before leaving.'); return false; }
   };
-  const changeFramework = (id: string) => {
-    const next = getFramework(id);
-    if (!next || next.unavailableReason || next.id === framework.id) return;
-    setPendingFramework(next);
+  useEffect(() => {
+    if (!saveError) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn); return () => window.removeEventListener('beforeunload', warn);
+  }, [saveError]);
+  const update = (patch: Partial<Exercise>, action?: string) => {
+    if (!active || initial.error) return false;
+    const next = reviseExercise(active, patch, action);
+    return persist(exercises.map(e => e.id === active.id ? next : e));
   };
-  const confirmFramework = () => {
-    if (!pendingFramework || !migration) return;
-    setFramework(pendingFramework); setSelected(new Set(migration.retained));
-    setQuery(""); setExpanded(new Set()); setNotice("Framework changed. Choose categories and save to update your saved selection.");
-    setPendingFramework(null);
+  const add = (exercise: Exercise) => { if (initial.error) return; persist([exercise, ...exercises]); setActiveId(exercise.id); setNewOpen(false); setName(''); };
+  const restoreBackup = async (file?: File) => {
+    if (!file || initial.error) return;
+    try {
+      if (file.size > 20 * 1024 * 1024) throw new Error('Choose a backup smaller than 20 MB.');
+      const raw = JSON.parse(await file.text());
+      const restored = (Array.isArray(raw) ? raw : [raw]).map(value => {
+        const record = validateExercise(value, countryCode);
+        return reviseExercise({ ...record, id: crypto.randomUUID(), name: `${record.name} · restored` }, {}, 'Restored from exported backup');
+      });
+      if (!restored.length) throw new Error('The backup contains no exercises.');
+      persist([...restored, ...exercises]); setRestoreError('');
+    } catch (err) { setRestoreError(err instanceof Error ? err.message : 'Backup could not be restored.'); }
   };
-
-  return <div className="mx-auto flex min-h-full max-w-7xl flex-col px-4 pt-6 sm:px-6 sm:pt-8 lg:px-8">
-    <header className="mb-7">
-      <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">Sector Classification</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Choose a reporting framework and the sectors you want to work with.</p>
-    </header>
-
-    {loadError && <div role="alert" className="mb-6 rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm">
-      <p>{loadError}</p><div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" onClick={restore}>Retry loading</Button><Button variant="outline" onClick={() => setReplaceUnreadable(true)}>Start a new selection</Button></div>
-    </div>}
-    <p role="status" aria-live="polite" className="sr-only">{notice}</p>
-
-    <div className="grid flex-1 content-start items-start gap-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8">
-      <FrameworkSelector value={framework.id} onChange={changeFramework} />
-      <section aria-labelledby="sectors-heading" className="min-w-0 rounded-2xl border bg-card p-4 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div><h2 id="sectors-heading" className="text-xl font-semibold">Sectors</h2><p className="mt-1 text-xs text-muted-foreground">{framework.name}</p></div>
-          <div className="relative w-full sm:w-64">
-            <label htmlFor="sector-search" className="sr-only">Search sectors by name or code</label>
-            <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-            <Input id="sector-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search sector or code…" className="h-11 rounded-xl pl-9 pr-11" />
-            {query && <Button variant="ghost" size="icon" className="absolute right-0.5 top-0.5 h-10 w-10" aria-label="Clear search" onClick={() => { setQuery(""); document.getElementById("sector-search")?.focus(); }}><X className="h-4 w-4" /></Button>}
-          </div>
-        </div>
-        <p className="mb-4 mt-5 text-xs leading-relaxed text-muted-foreground">Select a sector to include its categories. Use the arrow to choose individual categories.</p>
-        {search && <p role="status" className="mb-3 text-xs text-primary">{matches} matching {matches === 1 ? "category" : "categories"}</p>}
-        {framework.hierarchy.length === 0 ? <p role="status" className="rounded-xl bg-muted p-5 text-sm">This framework has no verified hierarchy available.</p>
-          : search && !framework.hierarchy.some((node) => matchesBranch(node, search)) ? <div className="rounded-xl border border-dashed p-8 text-center">
-            <p className="font-medium">No matching sectors or codes</p><p className="mt-2 text-sm text-muted-foreground">Try “Livestock”, “3.A” or “Waste”. Your selection is unchanged.</p>
-            <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); document.getElementById("sector-search")?.focus(); }}>Clear search</Button>
-          </div> : <SectorHierarchy nodes={framework.hierarchy} selected={selected} expanded={expanded} query={search} onExpand={expand} onSelect={select} />}
-        <details className="mt-5 border-t pt-3 text-xs leading-relaxed text-muted-foreground">
-          <summary className="w-fit cursor-pointer rounded py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">About this classification</summary>
-          <p className="mt-2">This selector includes sector and category levels through codes such as 3.A.1. Finer reporting detail is not included. A selection does not indicate that emissions data are available.</p>
-          {framework.source && <a href={framework.source.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-start gap-1.5 rounded text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{framework.source.title}<ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0" /></a>}
-          <p className="mt-2">{framework.source?.pages}. Codes use dots between segments; chemical formulas use subscripts.</p>
-          <p className="mt-3">Time series, district review, recalculation, submission and scenarios are not connected to this selection yet.</p>
-        </details>
-      </section>
-    </div>
-    <SelectionSummary framework={framework} selected={selected} dirty={dirty} savedAt={saved?.savedAt} blocked={!!loadError} saveError={saveError}
-      onSave={save} onRemove={(node) => select(node, false)} onReset={restore} onClear={() => { setSelected(new Set()); setNotice("Selection cleared. Save to update your saved selection."); }} />
-
-    <AlertDialog open={!!pendingFramework} onOpenChange={(open) => { if (!open) setPendingFramework(null); }}>
-      <AlertDialogContent className="max-h-[85dvh] w-[calc(100%-2rem)] overflow-y-auto rounded-2xl" onCloseAutoFocus={(event) => { event.preventDefault(); document.getElementById(`framework-${framework.id}`)?.focus(); }}>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Switch to {pendingFramework?.name}?</AlertDialogTitle>
-          <AlertDialogDescription>The categories in these frameworks cannot be matched automatically. {selected.size ? `All ${selected.size} categories below will be cleared so you can choose again.` : "The new framework starts with an empty selection."} Your saved selection stays available until you save again.</AlertDialogDescription>
-        </AlertDialogHeader>
-        {!!migration?.unmapped.length && <div className="max-h-60 overflow-y-auto rounded-xl border p-3"><p className="mb-2 text-sm font-semibold">Categories to remove</p><ul className="space-y-2 text-sm">{nodes.filter((node) => migration.unmapped.includes(node.code)).map((node) => <li key={node.code}><span className="mr-2 font-mono text-xs">{node.code}</span>{node.label}</li>)}</ul></div>}
-        <AlertDialogFooter><AlertDialogCancel>Keep current framework</AlertDialogCancel><AlertDialogAction onClick={confirmFramework}>{selected.size ? "Remove categories and switch" : "Switch framework"}</AlertDialogAction></AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-    <AlertDialog open={replaceUnreadable} onOpenChange={setReplaceUnreadable}>
-      <AlertDialogContent className="w-[calc(100%-2rem)] rounded-2xl">
-        <AlertDialogHeader><AlertDialogTitle>Replace the unreadable selection?</AlertDialogTitle><AlertDialogDescription>Your previous selection cannot be restored here. Saving a new selection will replace its stored record for {countryName}.</AlertDialogDescription></AlertDialogHeader>
-        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { setLoadError(""); setSaved(null); }}>Start a new selection</AlertDialogAction></AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+  const selectScope = (selection: ClassificationSelection, step = 2) => {
+    const changed = active.selection.frameworkId !== selection.frameworkId || [...active.selection.selectedCodes].sort().join() !== [...selection.selectedCodes].sort().join();
+    if (changed && active.sources.length) { setSelectionReset(selection); return false; }
+    return update({ ...(changed ? { selection } : {}), activeCategory: selection.selectedCodes.includes(active.activeCategory) ? active.activeCategory : selection.selectedCodes[0] ?? '', step }, 'Classification scope saved');
+  };
+  const steps = ['Classification & sector', 'Time series', 'Recalculation', 'Review & submit'];
+  const filtered = exercises.filter(e => e.name.toLowerCase().includes(query.toLowerCase())).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b pb-3"><div className="flex flex-wrap items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/5 text-primary"><FileStack className="h-5 w-5" /></span><div><p className="text-sm font-semibold">Sector Classification</p><p className="mt-0.5 text-xs text-muted-foreground">{countryName} · inventory workspace</p></div>{active && <Badge>{active.name}</Badge>}</div><div className="flex items-center gap-3">{active && <Button variant="ghost" size="sm" onClick={() => setActiveId(null)}><FolderOpen className="mr-2 h-4 w-4" />All exercises</Button>}<span className="text-xs text-muted-foreground">{saveError ? 'Unsaved changes' : 'Stored on this device'}</span></div></div>
+    {initial.error && <Panel className="mb-5 border-destructive/40"><p role="alert" className="text-sm">{initial.error}</p><Button variant="outline" className="mt-3" onClick={() => window.location.reload()}>Retry loading</Button></Panel>}
+    {saveError && <Panel className="mb-5 border-destructive/40"><p role="alert" className="text-sm">{saveError}</p><div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" onClick={() => persist(exercises)}>Retry save</Button><Button variant="outline" onClick={() => downloadFile('inventory-exercises-backup.json', JSON.stringify(exercises, null, 2))}>Export backup</Button></div></Panel>}
+    {active ? <>
+      <nav aria-label="Exercise progress" className="mb-4 grid grid-cols-2 gap-2 rounded-2xl border bg-card p-3 lg:grid-cols-4">{steps.map((step, index) => <button key={step} aria-current={active.step === index + 1 ? 'step' : undefined} disabled={index > 0 && !active.selection.selectedCodes.length} onClick={() => update({ step: index + 1 })} className={`flex items-center gap-3 rounded-lg px-2 py-2 text-left text-xs sm:text-sm ${active.step === index + 1 ? 'font-semibold text-foreground' : 'text-muted-foreground'} disabled:opacity-40`}><span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${active.step === index + 1 ? 'border-primary bg-primary text-primary-foreground' : 'bg-muted/40'}`}>{index + 1}</span>{step}</button>)}</nav>
+      {active.sample && <div role="note" className="mb-4 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-2.5 text-xs text-muted-foreground"><FlaskConical className="h-4 w-4 shrink-0 text-amber-600" /><p><strong className="text-foreground">Sample exercise.</strong> All observations are synthetic training data for eight illustrative districts. These are not official inventory or Climate TRACE figures.</p></div>}
+      {active.step === 1 && <ClassificationWorkspace key={`${active.id}-${active.selection.frameworkId}`} countryCode={countryCode} countryName={countryName} selection={active.selection} onContinue={selectScope} onSaveSelection={selection => selectScope(selection, 1)} />}
+      {active.step === 2 && <TimeSeries key={`${active.id}-${active.activeCategory}`} exercise={active} update={update} />}
+      {active.step === 3 && <Recalculation exercise={active} update={update} />}
+      {active.step === 4 && <InventoryReview exercise={active} update={update} />}
+    </> : <>
+      <header className="mb-8 pt-3"><p className="mb-3 text-xs font-semibold uppercase tracking-[.18em] text-primary">From selection to submission</p><h1 className="font-display text-4xl font-semibold tracking-tight">Exercises</h1><p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">Open a new data collection round, or pick up an exercise already in progress. Compare evidence, choose your sources, and document every decision.</p></header>
+      <div className="grid items-stretch gap-6 lg:grid-cols-[minmax(280px,.85fr)_minmax(0,1.65fr)]"><Panel className="flex flex-col !p-7"><span className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Plus className="h-7 w-7" /></span><h2 className="text-xl font-semibold">Start a new exercise</h2><p className="mt-3 text-sm leading-7 text-muted-foreground">Choose a classification and sector, compare candidate time series against collected data, then build a consistent inventory for review.</p><ul className="mb-8 mt-6 space-y-4 text-sm text-muted-foreground">{['Import your reference and candidate datasets', 'Choose a source for each district or entry', 'Recalculate historical estimates with lineage', 'Export a complete package for your reviewer'].map(item => <li className="flex items-start gap-3" key={item}><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />{item}</li>)}</ul><Button className="mt-auto h-12 w-full" disabled={!!initial.error} onClick={() => setNewOpen(true)}>New exercise<ArrowRight className="ml-2 h-4 w-4" /></Button><Button className="mt-3 h-11" variant="outline" disabled={!!initial.error} onClick={() => add(createSampleExercise(countryCode))}><FlaskConical className="mr-2 h-4 w-4" />Explore a sample exercise</Button></Panel>
+        <Panel className="!p-7"><div className="mb-6 flex flex-wrap items-start justify-between gap-4"><div><h2 className="text-xl font-semibold">Continue a previous exercise</h2><p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">Reopen at the step where you left off. Exercises here belong to {countryName} and this browser.</p></div><div className="relative w-full sm:w-48"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input aria-label="Search exercises" className="pl-9" placeholder="Search…" value={query} onChange={e => setQuery(e.target.value)} /></div></div>
+          <div className="space-y-3">{filtered.slice(0, showAll ? undefined : 4).map(exercise => <button className="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border bg-background/50 p-5 text-left transition-colors hover:border-primary/40 hover:bg-primary/5" key={exercise.id} onClick={() => setActiveId(exercise.id)}><span className="min-w-0"><span className="block font-semibold">{exercise.name}</span><span className="mt-2 block text-xs text-muted-foreground">{getFramework(exercise.selection.frameworkId)?.name} · {exercise.selection.selectedCodes.length} categories · Edited {new Date(exercise.updatedAt).toLocaleDateString()}</span></span><span className="flex items-center gap-3"><Badge tone={exercise.status === 'ready' ? 'good' : 'neutral'}>{exercise.sample ? 'Sample · ' : ''}{exercise.status === 'ready' ? 'Ready for sign-off' : `In progress · step ${exercise.step}`}</Badge><ArrowRight className="h-4 w-4 text-muted-foreground" /></span></button>)}</div>
+          {!filtered.length && <div className="my-8 rounded-xl border border-dashed p-8 text-center"><FolderOpen className="mx-auto mb-3 h-8 w-8 text-muted-foreground/50" /><h3 className="text-sm font-medium">{query ? 'No exercises match your search' : 'Your next inventory starts here'}</h3><p className="mt-2 text-xs text-muted-foreground">{query ? 'Try a different exercise name.' : 'Start with your own data, or explore the sample to see the full workflow.'}</p></div>}
+          {filtered.length > 4 && <div className="mt-5 flex justify-end border-t pt-3"><Button variant="link" onClick={() => setShowAll(!showAll)}>{showAll ? 'Show recent exercises' : `View all ${filtered.length} exercises`}</Button></div>}
+          <div className="mt-7 border-t pt-5"><p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">One connected workflow</p><div className="mt-4 grid grid-cols-2 gap-4 text-xs text-muted-foreground">{steps.map((s, i) => <span className="flex items-center gap-2" key={s}><span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">{i + 1}</span>{s}</span>)}</div></div>
+        </Panel></div>
+      <div className="mt-6 flex flex-wrap items-center gap-3"><label className="cursor-pointer rounded-lg border bg-card px-4 py-2 text-xs font-medium">Restore exercise backup<input aria-label="Restore exercise backup" type="file" accept=".json,application/json" className="sr-only" disabled={!!initial.error} onChange={e => { void restoreBackup(e.target.files?.[0]); e.target.value = ''; }} /></label>{restoreError && <p role="alert" className="text-xs text-destructive">{restoreError}</p>}</div>
+      <p className="mt-6 text-xs text-muted-foreground">Exercise data stays in this browser. Export a backup from an exercise before clearing browser data or moving to another device.</p>
+    </>}
+    {active && <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground"><button className="inline-flex items-center gap-2 hover:text-foreground" onClick={() => setActiveId(null)}><ArrowLeft className="h-3.5 w-3.5" />Back to exercises</button><Button variant="link" size="sm" onClick={() => downloadFile('inventory-exercise-backup.json', JSON.stringify(exportPackage(active), null, 2))}>Export exercise backup</Button></div>}
+    <Dialog open={newOpen} onOpenChange={setNewOpen}><DialogContent><DialogHeader><DialogTitle>Start a new exercise</DialogTitle><DialogDescription>Name this collection round for {countryName}. You can then choose the reporting categories and import your data.</DialogDescription></DialogHeader><form onSubmit={e => { e.preventDefault(); if (name.trim()) add(createExercise(countryCode, name, inherit ? savedSelection ?? undefined : undefined)); }}><label className="text-sm">Exercise name<Input autoFocus className="mt-2" placeholder="e.g. AFOLU 2025" value={name} maxLength={120} onChange={e => setName(e.target.value)} /></label>{savedSelection?.selectedCodes.length > 0 && <label className="mt-4 flex items-start gap-2 text-sm"><input type="checkbox" checked={inherit} onChange={e => setInherit(e.target.checked)} className="mt-1" />Start with my previously saved category selection ({savedSelection.selectedCodes.length} categories)</label>}<Button className="mt-5 w-full" type="submit" disabled={!name.trim()}>Create exercise</Button></form></DialogContent></Dialog>
+    <Dialog open={!!selectionReset} onOpenChange={open => { if (!open) setSelectionReset(null); }}><DialogContent><DialogHeader><DialogTitle>Start a revised scope?</DialogTitle><DialogDescription>This exercise already contains source data and decisions. Create a new exercise with the revised categories so the original data and history remain available.</DialogDescription></DialogHeader><Button onClick={() => { const next = createExercise(countryCode, `${active.name} · revised scope`, selectionReset); next.step = 2; add(next); setSelectionReset(null); }}>Create exercise with revised scope</Button></DialogContent></Dialog>
   </div>;
 }
