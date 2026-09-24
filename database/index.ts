@@ -29,10 +29,24 @@ export function isDatabaseConfigured(): boolean {
  * simply stop the app from starting.
  *
  * Set DATABASE_SSL=require or DATABASE_SSL=disable to override the guess.
+ *
+ * Supabase signs its Postgres certificates with its own root authority, which
+ * is not in Node's default trust store, so full verification fails with
+ * "self-signed certificate in certificate chain". DATABASE_SSL_CA holds that
+ * root certificate (PEM text, from the Supabase dashboard) so the connection
+ * stays verified rather than falling back to no-verify.
  */
+function configuredCa(): string | undefined {
+  const pem = process.env.DATABASE_SSL_CA?.trim();
+  // Hosting dashboards often store multi-line values with literal "\n".
+  return pem ? pem.replace(/\\n/g, "\n") : undefined;
+}
+
 function resolveSslConfig(connectionString: string): pg.PoolConfig["ssl"] {
   const explicit = process.env.DATABASE_SSL?.trim().toLowerCase();
+  const ca = configuredCa();
   if (explicit === "disable" || explicit === "false") return undefined;
+  if (ca && explicit !== "no-verify") return { ca, rejectUnauthorized: true };
   if (explicit === "require" || explicit === "true") return { rejectUnauthorized: true };
   // Some managed providers issue certificates signed by their own authority.
   // This is the escape hatch for those, and it is deliberately explicit so that
@@ -48,15 +62,33 @@ function resolveSslConfig(connectionString: string): pg.PoolConfig["ssl"] {
   }
 }
 
+/**
+ * pg lets ssl settings in the connection string (sslmode, sslrootcert, …)
+ * replace the ssl object passed alongside it, so a copied "?sslmode=require"
+ * would silently discard the CA configured above.
+ */
+function stripSslParams(connectionString: string): string {
+  try {
+    const url = new URL(connectionString);
+    for (const key of [...url.searchParams.keys()]) {
+      if (key.toLowerCase().startsWith("ssl")) url.searchParams.delete(key);
+    }
+    return url.toString();
+  } catch {
+    return connectionString;
+  }
+}
+
 export function getPool(): pg.Pool {
   if (!isDatabaseConfigured()) {
     throw new Error("DATABASE_URL is not configured");
   }
   if (!pool) {
-    const connectionString = process.env.DATABASE_URL as string;
+    const rawConnectionString = process.env.DATABASE_URL as string;
+    const connectionString = stripSslParams(rawConnectionString);
     pool = new Pool({
       connectionString,
-      ssl: resolveSslConfig(connectionString),
+      ssl: resolveSslConfig(rawConnectionString),
       // The API runs as short-lived serverless functions, and every warm
       // instance keeps its own pool. Left at the default of ten, a handful of
       // concurrent instances is enough to exhaust the database's connection
