@@ -98,8 +98,8 @@ export function TopNav() {
           </Sheet>
         </div>
       </div>
-      <nav aria-label="Primary navigation" className="hidden items-center gap-1 border-t border-border/60 px-6 md:flex lg:px-8">
-        {shortcuts.map((item) => <NavLink key={item.url} to={item.url} end={item.url === "/"} className="relative flex min-h-11 items-center gap-2 border-b-2 border-transparent px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" activeClassName="border-primary bg-primary/5 text-foreground">
+      <nav aria-label="Primary navigation" className="hidden items-center gap-1 overflow-x-auto border-t border-border/60 px-6 md:flex lg:px-8">
+        {shortcuts.map((item) => <NavLink key={item.url} to={item.url} end={item.url === "/"} className="relative flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground" activeClassName="border-primary bg-primary/5 text-foreground">
           <item.icon className="h-4 w-4" aria-hidden="true" />{item.title}
         </NavLink>)}
         {current && !shortcuts.includes(current) && <span className="ml-3 border-l pl-4 text-sm font-medium text-foreground">{current.title}</span>}

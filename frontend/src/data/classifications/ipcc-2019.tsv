@@ -1,0 +1,109 @@
+1	Energy
+1.A	Fuel Combustion Activities
+1.A.1	Energy Industries
+1.A.2	Manufacturing Industries and Construction
+1.A.3	Transport
+1.A.4	Other Sectors
+1.A.5	Non-Specified
+1.B	Fugitive Emissions from Fuels
+1.B.1	Solid Fuels
+1.B.2	Oil and Natural Gas
+1.B.3	Other Emissions from Energy Production
+1.C	Carbon Dioxide Transport and Storage
+1.C.1	Transport of CO₂
+1.C.2	Injection and Storage
+1.C.3	Other
+2	Industrial Processes and Product Use
+2.A	Mineral Industry
+2.A.1	Cement Production
+2.A.2	Lime Production
+2.A.3	Glass Production
+2.A.4	Other Process Uses of Carbonates
+2.A.5	Other (please specify)
+2.B	Chemical Industry
+2.B.1	Ammonia Production
+2.B.2	Nitric Acid Production
+2.B.3	Adipic Acid Production
+2.B.4	Caprolactam, Glyoxal and Glyoxylic Acid Production
+2.B.5	Carbide Production
+2.B.6	Titanium Dioxide Production
+2.B.7	Soda Ash Production
+2.B.8	Petrochemical and Carbon Black Production
+2.B.9	Fluorochemical Production
+2.B.10	Hydrogen Production
+2.B.11	Other (Please specify)
+2.C	Metal Industry
+2.C.1	Iron and Steel Production
+2.C.2	Ferroalloys Production
+2.C.3	Aluminium Production
+2.C.4	Magnesium Production
+2.C.5	Lead Production
+2.C.6	Zinc Production
+2.C.7	Rare Earths
+2.C.8	Other (please specify)
+2.D	Non-Energy Products from Fuels and Solvent Use
+2.D.1	Lubricant Use
+2.D.2	Paraffin Wax Use
+2.D.3	Solvent Use
+2.D.4	Other (please specify)
+2.E	Electronics Industry
+2.E.1	Integrated Circuit or Semiconductor
+2.E.2	Displays
+2.E.3	Photovoltaics
+2.E.4	Microelectromechanical systems (MEMS)
+2.E.5	Other (please specify)
+2.F	Product Uses as Substitutes for Ozone Depleting Substances
+2.F.1	Refrigeration and Air Conditioning
+2.F.2	Foam Blowing Agents
+2.F.3	Fire Protection
+2.F.4	Aerosols
+2.F.5	Solvents
+2.F.6	Other Applications (please specify)
+2.G	OTHER PRODUCT MANUFACTURE AND USE
+2.G.1	Electrical Equipment
+2.G.2	Halogenated Gases from Other Product Uses
+2.G.3	N₂O from Product Uses
+2.G.4	Other (Please specify)
+2.H	Other
+2.H.1	Pulp and Paper Industry
+2.H.2	Food and Beverages Industry
+2.H.3	Other (please specify)
+3	Agriculture, Forestry and Other Land Use
+3.A	Livestock
+3.A.1	Enteric Fermentation
+3.A.2	Manure Management
+3.B	Land
+3.B.1	Forest Land
+3.B.2	Cropland
+3.B.3	Grassland
+3.B.4	Wetlands
+3.B.5	Settlements
+3.B.6	Other Land
+3.C	Aggregate Sources and Non-CO₂ Emissions Sources on Land
+3.C.1	Emissions from Biomass Burning
+3.C.2	Liming
+3.C.3	Urea Application
+3.C.4	Direct N₂O Emissions from Managed Soils
+3.C.5	Indirect N₂O Emissions from Managed Soils
+3.C.6	Indirect N₂O Emissions from Manure Management
+3.C.7	Rice Cultivation
+3.C.8	Other (please specify)
+3.D	Other
+3.D.1	Harvested Wood Products
+3.D.2	Other (please specify)
+4	Waste
+4.A	Solid Waste Disposal
+4.A.1	Managed Waste Disposal Sites
+4.A.2	Unmanaged Waste Disposal Sites
+4.A.3	Uncategorised Waste Disposal Sites
+4.B	Biological Treatment of Solid Waste
+4.C	Incineration and Open Burning of Waste
+4.C.1	Waste Incineration
+4.C.2	Open Burning of Waste
+4.D	Wastewater Treatment and Discharge
+4.D.1	Domestic Wastewater Treatment and Discharge
+4.D.2	Industrial Wastewater Treatment and Discharge
+4.E	Other (please specify)
+5	Other
+5.A	Indirect N₂O Emissions from the Atmospheric Deposition of Nitrogen in NOₓ and NH₃
+5.B	Other (please specify)

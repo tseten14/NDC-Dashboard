@@ -55,6 +55,7 @@ const PolicyDocumentView = lazy(() => import("./pages/PolicyDocumentView.tsx"));
 
 const MapExplorer = lazy(() => import("./pages/MapExplorer.tsx"));
 const DistrictTranslator = lazy(() => import("./pages/DistrictTranslator.tsx"));
+const SectorClassification = lazy(() => import("./pages/SectorClassification.tsx"));
 const DataIngestion = lazy(() => import("./pages/DataIngestion.tsx"));
 const MyWork = lazy(() => import("./pages/MyWork.tsx"));
 const StrategyLibrary = lazy(() => import("./pages/StrategyLibrary.tsx"));
@@ -186,6 +187,7 @@ function ProtectedShell() {
                   <Route path="/policy-impact" element={<LazyPage><PolicyImpact /></LazyPage>} />
                   <Route path="/map" element={<LazyPage><MapExplorer /></LazyPage>} />
                   <Route path="/district-translator" element={<LazyPage><DistrictTranslator /></LazyPage>} />
+                  <Route path="/sector-classification" element={<LazyPage><SectorClassification /></LazyPage>} />
                   <Route path="/docs" element={<LazyPage><Documentation /></LazyPage>} />
 
                   {/* Climate Risk & Vulnerability */}

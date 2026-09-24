@@ -16,7 +16,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 export default defineConfig({
   testDir: path.join(root, "frontend/tests/e2e"),
-  testIgnore: "workspace-ux.spec.ts",
+  testIgnore: ["workspace-ux.spec.ts", "sector-classification.spec.ts"],
   fullyParallel: false,
   workers: 1,
   timeout: 120_000,

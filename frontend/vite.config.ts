@@ -16,6 +16,11 @@ export default defineConfig(({ mode }) => {
   return {
   root: __dirname,
   envDir: path.resolve(__dirname, ".."),
+  // Sector Classification is lazy-loaded. Prepare its controls at startup so
+  // an older optimizer cache cannot serve stale dependency URLs on first visit.
+  optimizeDeps: {
+    include: ["@radix-ui/react-alert-dialog", "@radix-ui/react-radio-group"],
+  },
   server: {
     host: "localhost",
     port: 8080,
