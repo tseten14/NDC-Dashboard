@@ -71,9 +71,11 @@ export interface DealPitch {
   ndcTarget: string;
   annualMtCO2e: number;
   readiness: ReadinessGap[];
-  evidence: EvidenceLinks;
-  evaluation: Evaluation;
   milestones: Milestone[];
+  /** Absent until the pitch is packaged with links back to Explorer evidence. */
+  evidence?: EvidenceLinks;
+  /** Absent until a funder has reviewed the pitch. */
+  evaluation?: Evaluation;
 }
 
 /* ── Pitches ─────────────────────────────────────────────────────────── */

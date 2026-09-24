@@ -25,6 +25,7 @@ import policyImpactRouter from "../routes/policyImpact.js";
 import policyAiRouter from "../routes/policyAi.js";
 import dashboardAiRouter from "../routes/dashboardAi.js";
 import authSessionRouter from "../routes/authSession.js";
+import marketplaceRouter from "../routes/marketplace.js";
 import { logger, httpLoggerOptions } from "./logger.js";
 import { createCorsMiddleware } from "./middleware/cors.js";
 import { createHelmetMiddleware, permissionsPolicyMiddleware } from "./middleware/security.js";
@@ -121,6 +122,7 @@ export function createApp() {
   app.use("/v1", policyImpactRouter);
   app.use("/v1", policyAiRouter);
   app.use("/v1", dashboardAiRouter);
+  app.use("/v1", marketplaceRouter);
 
   const useMock = isMockMode();
   app.use("/v1", useMock ? mockEmissionsRouter : emissionsRouter);

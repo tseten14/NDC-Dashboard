@@ -123,6 +123,37 @@ export const auditLog = pgTable("audit_log", {
 });
 
 /* ===========================================================================
+ * Marketplace deals — the pitch-evaluate-deliver pipeline
+ *
+ * One flat table with JSONB columns for readiness, evaluation, milestones,
+ * and evidence links. Appropriate for a pipeline of 5–50 deals that are
+ * managed through the admin UI, not a high-write transactional workload.
+ * ===========================================================================*/
+
+export const marketplaceDeals = pgTable("marketplace_deals", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  ministry: text("ministry").notNull(),
+  sector: text("sector").notNull(),
+  sectorId: text("sector_id").notNull(),
+  geography: text("geography").notNull(),
+  stage: text("stage").notNull().default("Concept"),
+  problem: text("problem").notNull(),
+  intervention: text("intervention").notNull(),
+  askM: numeric("ask_m", { precision: 12, scale: 2 }).notNull(),
+  coFinanceM: numeric("co_finance_m", { precision: 12, scale: 2 }).notNull(),
+  annualMtCO2e: numeric("annual_mt_co2e", { precision: 12, scale: 4 }).notNull(),
+  instrument: text("instrument").notNull(),
+  ndcTarget: text("ndc_target").notNull(),
+  readiness: jsonb("readiness").notNull().default([]),
+  evidence: jsonb("evidence").notNull().default({}),
+  evaluation: jsonb("evaluation").notNull().default({}),
+  milestones: jsonb("milestones").notNull().default([]),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/* ===========================================================================
  * My Work — delivery activities ("tickets") workflow
  *
  * Server-side home for the activities currently held in browser localStorage

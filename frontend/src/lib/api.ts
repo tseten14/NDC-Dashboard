@@ -102,6 +102,45 @@ async function postJSON<T>(
   return res.json() as Promise<T>;
 }
 
+async function putJSON<T>(
+  path: string,
+  body: unknown,
+  headers: HeadersInit = {},
+  init: RequestInit = {},
+): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify(body),
+    ...init,
+  });
+  if (!res.ok) {
+    const payload = await res.json().catch(() => null);
+    const detail =
+      payload && typeof payload === "object" && "error" in payload
+        ? String(payload.error)
+        : `${res.status} ${res.statusText}`;
+    throw new Error(detail);
+  }
+  return res.json() as Promise<T>;
+}
+
+async function deleteJSON<T = { ok: boolean }>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, { method: "DELETE", ...init });
+  if (!res.ok) {
+    const payload = await res.json().catch(() => null);
+    const detail =
+      payload && typeof payload === "object" && "error" in payload
+        ? String(payload.error)
+        : `${res.status} ${res.statusText}`;
+    throw new Error(detail);
+  }
+  return res.json() as Promise<T>;
+}
+
 export type NdcSectorKey = "afolu" | "energy" | "transport" | "ippu" | "agriculture" | "waste";
 export type SectorStatus = "on_track" | "at_risk" | "mixed" | "off_track" | "unknown";
 
@@ -1023,4 +1062,19 @@ export const documentsApi = {
       `/api/v1/documents/mcf/search${qs ? `?${qs}` : ""}`,
     );
   },
+};
+
+/* ── Marketplace ─────────────────────────────────────────────────────── */
+
+import type { DealPitch } from "@/data/mwp-marketplace-data";
+
+export const marketplaceApi = {
+  listDeals: () => getJSON<{ deals: DealPitch[]; count: number }>("/api/v1/marketplace/deals"),
+  getDeal: (id: string) => getJSON<{ deal: DealPitch }>(`/api/v1/marketplace/deals/${id}`),
+  createDeal: (data: Partial<DealPitch>) =>
+    postJSON<{ deal: DealPitch }>("/api/v1/marketplace/deals", data, {}, withCredentials),
+  updateDeal: (id: string, data: Partial<DealPitch>) =>
+    putJSON<{ deal: DealPitch }>(`/api/v1/marketplace/deals/${id}`, data, {}, withCredentials),
+  deleteDeal: (id: string) =>
+    deleteJSON(`/api/v1/marketplace/deals/${id}`, withCredentials),
 };
