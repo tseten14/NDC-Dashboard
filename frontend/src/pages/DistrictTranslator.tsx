@@ -90,8 +90,8 @@ export default function DistrictTranslator() {
       <aside id="translator-tools" tabIndex={-1} className="scroll-mt-16 rounded-xl border bg-card p-4 xl:overflow-y-auto" aria-label="Area tools">
         <div className="mb-4 flex items-center gap-2"><MapPinned className="h-5 w-5 text-emerald-600" /><div><h1 className="font-display text-lg font-bold">District Translator</h1><p className="text-xs text-muted-foreground">Turn a map area into local evidence.</p></div></div>
         <div className="grid grid-cols-2 gap-2">
-          <Button size="sm" variant={mode === "draw" ? "default" : "outline"} aria-pressed={mode === "draw"} onClick={() => { clear(); setMode("draw"); }}><Pentagon className="mr-1 h-4 w-4" />Draw</Button>
           <Button size="sm" variant={mode === "district" ? "default" : "outline"} aria-pressed={mode === "district"} onClick={() => { clear(); setMode("district"); }}><MousePointer2 className="mr-1 h-4 w-4" />District</Button>
+          <Button size="sm" variant={mode === "draw" ? "default" : "outline"} aria-pressed={mode === "draw"} onClick={() => { clear(); setMode("draw"); }}><Pentagon className="mr-1 h-4 w-4" />Draw</Button>
         </div>
         <p className="mt-3 rounded-lg bg-muted p-3 text-xs leading-relaxed text-muted-foreground">{mode === "draw" ? "Click to place vertices, then Finish or double-click. Keyboard: focus the map, pan with arrows, Enter adds the center point, Shift+Enter finishes." : "Choose a district by name or click its boundary. Calculations use the full 2020 UBOS boundary."}</p>
         {mode === "district" && <label className="mt-3 block text-xs">District<select aria-label="Select district" className="mt-1 w-full rounded-md border bg-background p-2" value={selection?.districtId ?? ""} disabled={!boundaries.data} onChange={(event) => {
