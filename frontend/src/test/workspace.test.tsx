@@ -25,7 +25,7 @@ describe("workspace navigation", () => {
   it("keeps District Translator and Marketplace visible and marks the current page", () => {
     mountNavigation();
     const links = within(screen.getByRole("navigation", { name: "Primary navigation" })).getAllByRole("link");
-    expect(links.map((link) => link.textContent)).toEqual(["Home", "Emissions Map", "District Translator", "Sector Classification", "Dashboard", "Marketplace", "Database"]);
+    expect(links.map((link) => link.textContent)).toEqual(["Home", "Emissions Map", "District Translator", "Sector Classification", "Scenario Analysis", "Dashboard", "Marketplace", "Database"]);
     expect(links[2]).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveAttribute("href", "#main-content");
     expect(document.title).toContain("District Translator");
@@ -51,7 +51,7 @@ describe("workspace navigation", () => {
 });
 
 describe("startup and recovery", () => {
-  it.each(["/", "/map", "/district-translator", "/sector-classification", "/docs", "/activities/new", "/my-work", "/ingest"])("does not load national dashboard requests for %s", (path) => {
+  it.each(["/", "/map", "/district-translator", "/sector-classification", "/scenario-analysis", "/docs", "/activities/new", "/my-work", "/ingest"])("does not load national dashboard requests for %s", (path) => {
     expect(routeNeedsEmissions(path)).toBe(false);
   });
   it.each(["/dashboard", "/ndc", "/library", "/exports", "/dashboard/"])("loads shared data where required: %s", (path) => {
