@@ -91,8 +91,10 @@ export function MeasuredVsNdcChart({
     },
   ];
 
-  const maxVal = Math.max(measuredValue, ndcReference);
+  const maxVal = Math.max(measuredValue, ndcReference, 0);
   const xMax = maxVal * 1.12;
+  // A net sink (negative AFOLU total) needs room left of zero, or its bar is clipped.
+  const xMin = Math.min(measuredValue, ndcReference, 0) * 1.12;
   const gap = Math.abs(measuredValue - ndcReference);
   const onTrack = higherIsBetter ? measuredValue >= ndcReference : measuredValue <= ndcReference;
 
@@ -127,7 +129,7 @@ export function MeasuredVsNdcChart({
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border) / 0.6)" />
-          <XAxis type="number" domain={[0, xMax]} hide />
+          <XAxis type="number" domain={[xMin, xMax]} hide />
           <YAxis
             type="category"
             dataKey="label"
@@ -140,7 +142,7 @@ export function MeasuredVsNdcChart({
             cursor={{ fill: "hsl(var(--muted) / 0.35)" }}
             content={<CompareTooltip formatValue={formatValue} unit={unit} />}
           />
-          <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={22} isAnimationActive animationDuration={700}>
+          <Bar dataKey="value" radius={measuredValue < 0 ? 0 : [0, 6, 6, 0]} maxBarSize={22} isAnimationActive animationDuration={700}>
             {rows.map((row) => (
               <Cell
                 key={row.id}
@@ -149,9 +151,24 @@ export function MeasuredVsNdcChart({
             ))}
             <LabelList
               dataKey="value"
-              position="right"
-              formatter={(v: number) => `${formatValue(v)} ${unit}`}
-              style={{ fontSize: 10, fontWeight: 600, fill: "hsl(var(--foreground))" }}
+              content={({ x, y, width, height, value }) => {
+                const nx = Number(x);
+                const nw = Number(width);
+                // Negative bars grow left from zero; keep the label clear of the category names.
+                const labelX = Math.max(nx, nx + nw) + 5;
+                return (
+                  <text
+                    x={labelX}
+                    y={Number(y) + Number(height) / 2}
+                    dominantBaseline="central"
+                    fontSize={10}
+                    fontWeight={600}
+                    fill="hsl(var(--foreground))"
+                  >
+                    {`${formatValue(Number(value))} ${unit}`}
+                  </text>
+                );
+              }}
             />
           </Bar>
         </BarChart>

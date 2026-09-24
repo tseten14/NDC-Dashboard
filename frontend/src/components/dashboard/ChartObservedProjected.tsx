@@ -13,6 +13,7 @@ import {
   CartesianGrid,
   ComposedChart,
   Line,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip as RTooltip,
   XAxis,
@@ -194,6 +195,19 @@ export function filterBarChartYears<T extends { year: number }>(
   return without2030.filter((r) => r.year <= latestYear);
 }
 
+/**
+ * The most recent reported point. Zero-filled district years are skipped, but
+ * negatives are kept: AFOLU is a net carbon sink in most Climate TRACE years.
+ */
+export function latestReportedPoint<T extends { year: number; value: number | null }>(
+  points: T[],
+): T | undefined {
+  const reported = points.filter((p) => p.value != null && Number.isFinite(p.value));
+  const nonZero = reported.filter((p) => p.value !== 0);
+  const pool = nonZero.length > 0 ? nonZero : reported;
+  return pool.reduce<T | undefined>((latest, p) => (latest == null || p.year > latest.year ? p : latest), undefined);
+}
+
 /** Y-axis domain with padding so bars, projection, and NDC reference lines aren't clipped. */
 export function chartValueExtent(
   rows: ObservedProjectedRow[],
@@ -204,17 +218,39 @@ export function chartValueExtent(
     if (includeReference) base.push(r.target ?? null, r.bauPath ?? null);
     return base.filter((v): v is number => v != null && Number.isFinite(v));
   });
-  const positive = values.filter((v) => v > 0);
-  const usable = positive.length > 0 ? positive : values;
+  // Zero-filled district years are ignored so they don't flatten the scale;
+  // negative values (net sinks) are real and must stay inside the domain.
+  const nonZero = values.filter((v) => v !== 0);
+  const usable = nonZero.length > 0 ? nonZero : values;
   if (usable.length === 0) return [0, 1];
 
   const min = Math.min(...usable);
   const max = Math.max(...usable);
   const span = max - min;
-  const pad = span > 0 ? span * 0.12 : Math.max(max * 0.15, max === 0 ? 1 : 1);
-  const yMin = positive.length > 0 ? Math.max(0, min - pad) : min - pad;
+  const pad = span > 0 ? span * 0.12 : Math.max(Math.abs(max) * 0.15, 1);
+  if (min < 0) return [min - pad, Math.max(0, max + pad)];
+  const yMin = Math.max(0, min - pad);
   const yMax = max + pad;
   return yMin === yMax ? [0, Math.max(yMax, 1)] : [yMin, yMax];
+}
+
+/**
+ * Evenly spaced ticks that include 0, for series crossing zero.
+ *
+ * With an explicit non-round domain Recharts spaces ticks between the raw
+ * bounds, so a mixed-sign series gets labels like 84.7 / -35 / -165 and no
+ * zero line. Returns undefined when the domain does not cross zero.
+ */
+export function signedAxisTicks(yMin: number, yMax: number, intervals = 5): number[] | undefined {
+  if (!(yMin < 0 && yMax > 0)) return undefined;
+  const raw = (yMax - yMin) / intervals;
+  const magnitude = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * magnitude).find((s) => s >= raw) ?? raw;
+  const start = Math.floor(yMin / step) * step;
+  const end = Math.ceil(yMax / step) * step;
+  const ticks: number[] = [];
+  for (let t = start; t <= end + step / 2; t += step) ticks.push(Number(t.toPrecision(12)));
+  return ticks;
 }
 
 /** Estimate Y-axis width from formatted tick labels so they don't clip. */
@@ -416,6 +452,10 @@ export function ObservedProjectedComposedChart({
     ? data
     : filterBarChartYears(data, (row) => row.observedValue);
   const [yMin, yMax] = chartValueExtent(plotData, includeReference);
+  const signedTicks = signedAxisTicks(yMin, yMax);
+  const yDomain: [number, number] = signedTicks
+    ? [signedTicks[0], signedTicks[signedTicks.length - 1]]
+    : [yMin, yMax];
   const yAxisWidth = estimateYAxisWidth(plotData, formatTick, includeReference);
   const anchorYear = lastObservedYearFromRows(plotData);
   const lastYear = plotData[plotData.length - 1]?.year ?? null;
@@ -468,7 +508,8 @@ export function ObservedProjectedComposedChart({
               }
             />
             <YAxis
-              domain={[yMin, yMax]}
+              domain={yDomain}
+              ticks={signedTicks}
               tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
               tickFormatter={formatTick}
               stroke="hsl(var(--border))"
@@ -479,6 +520,7 @@ export function ObservedProjectedComposedChart({
               tickCount={5}
               allowDecimals
             />
+            {signedTicks && <ReferenceLine y={0} stroke="hsl(var(--muted-foreground) / 0.6)" />}
             <RTooltip
               content={
                 <ObservedProjectedTooltip

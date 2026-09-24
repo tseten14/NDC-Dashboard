@@ -33,6 +33,7 @@ import {
   buildObservedProjectedRows,
   chartYAxisUnit,
   filterBarChartYears,
+  latestReportedPoint,
 } from "@/components/dashboard/ChartObservedProjected";
 import { MeasuredVsNdcChart } from "@/components/dashboard/MeasuredVsNdcChart";
 import { ClimateTraceDatasetOverview } from "@/components/dashboard/ClimateTraceDatasetOverview";
@@ -241,9 +242,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
         ? "Indicators API observed"
         : "Observed data";
 
-  const latestObserved =
-    [...observedData.historicalData].reverse().find((p) => p.value != null && p.value > 0) ??
-    [...observedData.historicalData].reverse().find((p) => p.value != null);
+  const latestObserved = latestReportedPoint(observedData.historicalData);
   // Proxy data is always in MtCO2e regardless of the indicator's native unit
   const yUnit = usingProxyData ? "MtCO₂e" : chartYAxisUnit(selectedTarget.unit);
 
