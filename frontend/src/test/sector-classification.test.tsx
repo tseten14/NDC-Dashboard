@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CLASSIFICATION_FRAMEWORKS, DEFAULT_FRAMEWORK, getFramework } from "@/data/classifications";
 import { categoryCodes, flattenSectors, matchesBranch, matchesSector, planFrameworkChange, readClassificationSelection, saveClassificationSelection, selectionKey, selectionState, toggleCategory } from "@/lib/sector-classification";
 import { CountryProvider } from "@/context/CountryContext";
-import SectorClassification from "@/pages/SectorClassification";
+import SectorClassification from "@/components/classification/ClassificationWorkspace";
 
 const afolu = DEFAULT_FRAMEWORK.hierarchy[2];
 const livestock = afolu.children[0];
