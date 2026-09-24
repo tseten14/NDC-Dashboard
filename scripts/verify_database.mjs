@@ -37,6 +37,7 @@ const APP_TABLES = [
   "policy_documents",
   "policy_passage_documents",
   "policy_passages",
+  "marketplace_deals",
 ];
 
 const FOREIGN_KEYS = [

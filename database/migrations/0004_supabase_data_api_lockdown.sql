@@ -35,6 +35,8 @@ ALTER TABLE "policy_passage_documents" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 ALTER TABLE "policy_passages" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
+ALTER TABLE "marketplace_deals" ENABLE ROW LEVEL SECURITY;
+--> statement-breakpoint
 ALTER TABLE "schema_migrations" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 DO $$
@@ -49,7 +51,7 @@ BEGIN
         'activities', 'activity_target_links', 'activity_outputs',
         'activity_evidence', 'activity_validations',
         'policy_documents', 'policy_passage_documents', 'policy_passages',
-        'schema_migrations'
+        'marketplace_deals', 'schema_migrations'
       ] LOOP
         EXECUTE format('REVOKE ALL ON TABLE public.%I FROM %I', tbl, api_role);
       END LOOP;

@@ -13,10 +13,21 @@ export default defineConfig({
   workers: 1,
   use: { baseURL: runningServerUrl ?? "http://127.0.0.1:4173", trace: "retain-on-failure", actionTimeout: 15_000, navigationTimeout: 30_000 },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  webServer: runningServerUrl ? undefined : {
-    command: "npm run preview -- --host 127.0.0.1 --port 4173 --strictPort",
-    url: "http://127.0.0.1:4173",
-    reuseExistingServer: !process.env.CI,
-    cwd: root,
-  },
+  // The preview build proxies /api to API_PORT (8787), so the API must run too;
+  // without it the District Translator never receives its district list.
+  webServer: runningServerUrl ? undefined : [
+    {
+      command: "npm run start:api",
+      url: "http://127.0.0.1:8787/api/v1/health",
+      reuseExistingServer: !process.env.CI,
+      cwd: root,
+      env: { API_PORT: "8787" },
+    },
+    {
+      command: "npm run preview -- --host 127.0.0.1 --port 4173 --strictPort",
+      url: "http://127.0.0.1:4173",
+      reuseExistingServer: !process.env.CI,
+      cwd: root,
+    },
+  ],
 });
