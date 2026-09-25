@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useCountry } from "@/context/CountryContext";
 import { useCurrentRole } from "@/hooks/use-current-role";
+import { LOGIN_AUTH_ENABLED } from "@/lib/auth-config";
 import { lockOperatorSession } from "@/lib/operator-session";
 import { isPrimaryNavVisible } from "@/lib/role-capabilities";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
@@ -75,7 +76,7 @@ export function TopNav() {
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
-          <DropdownMenu>
+          {LOGIN_AUTH_ENABLED && <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-10 w-10" aria-label="Account menu"><UserRound className="h-4 w-4" /></Button>
             </DropdownMenuTrigger>
@@ -84,7 +85,7 @@ export function TopNav() {
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => { void leave(); }}><LogOut className="mr-2 h-4 w-4" />Sign out</DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu>}
           <Sheet open={open} onOpenChange={(nextOpen) => { if (nextOpen) menuPath.current = pathname; setOpen(nextOpen); }}>
             <SheetTrigger asChild>
               <Button variant="outline" className="h-10 gap-2 md:ml-2" aria-label="Open all tools">

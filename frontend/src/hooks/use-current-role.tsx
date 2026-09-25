@@ -10,7 +10,7 @@
  * must be protected is enforced by the API, not by hiding a button.
  */
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { DEFAULT_ROLES } from "@/lib/auth-config";
+import { DEFAULT_ROLES, LOCAL_USER, LOGIN_AUTH_ENABLED } from "@/lib/auth-config";
 import { supabaseAuth } from "@/lib/supabase-auth";
 import { readPreference, writePreference } from "@/lib/preferences";
 import {
@@ -92,13 +92,14 @@ function loadStoredRoles(userId: string): AppRole[] {
 }
 
 export function CurrentRoleProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<AppUser | null>(LOGIN_AUTH_ENABLED ? null : LOCAL_USER);
+  const [loading, setLoading] = useState(LOGIN_AUTH_ENABLED);
   const [availableRoles, setAvailableRoles] = useState<AppRole[]>([]);
   const [activeRole, setActiveRoleState] = useState<AppRole | null>(null);
   const userId = user?.id;
 
   useEffect(() => {
+    if (!LOGIN_AUTH_ENABLED) return;
     if (!supabaseAuth) {
       setLoading(false);
       return;

@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { LOGIN_AUTH_ENABLED } from "@/lib/auth-config";
 
 const url = import.meta.env.VITE_SUPABASE_URL?.trim();
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
@@ -20,7 +21,7 @@ const authFetch: typeof fetch = (input, init) => {
 
 // Only the publishable key belongs in the browser. Supabase Auth persists
 // accounts in the project's auth.users table and stores no password here.
-export const supabaseAuth = url && key
+export const supabaseAuth = LOGIN_AUTH_ENABLED && url && key
   ? createClient(url, key, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
       global: { fetch: authFetch },

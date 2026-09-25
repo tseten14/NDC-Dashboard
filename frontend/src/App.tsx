@@ -12,7 +12,7 @@
 import { Suspense, useEffect, useRef, type ReactNode } from "react";
 import { lazyWithRetry as lazy } from "@/lib/lazy-with-retry";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -24,6 +24,7 @@ import { useAppState, AppStateContext } from "@/hooks/use-app-state";
 import { CockpitProvider } from "@/hooks/use-cockpit";
 import { CurrentRoleProvider } from "@/hooks/use-current-role";
 import { AuthGate } from "@/components/AuthGate";
+import { LOGIN_AUTH_ENABLED } from "@/lib/auth-config";
 import { CountryGate } from "@/components/CountryGate";
 import { CountryProvider } from "@/context/CountryContext";
 import { OperatorSessionProvider } from "@/hooks/use-operator-session";
@@ -250,7 +251,7 @@ const App = () => (
             <OperatorSessionProvider>
             <CurrentRoleProvider>
               <Routes>
-                <Route path="/auth" element={<LazyPage><Auth /></LazyPage>} />
+                <Route path="/auth" element={LOGIN_AUTH_ENABLED ? <LazyPage><Auth /></LazyPage> : <Navigate to="/select-country" replace />} />
                 <Route
                   path="/select-country"
                   element={

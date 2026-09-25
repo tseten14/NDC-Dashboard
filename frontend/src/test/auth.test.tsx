@@ -25,13 +25,13 @@ afterEach(() => {
 });
 
 describe("account entry", () => {
-  it("redirects a signed-out visitor to the login page and remembers their destination", () => {
+  it("opens the workspace for a visitor without a login session", () => {
     render(<MemoryRouter initialEntries={["/my-work"]}><Routes>
-      <Route path="/my-work" element={<AuthGate><p>Private workspace</p></AuthGate>} />
+      <Route path="/my-work" element={<AuthGate><p>Workspace</p></AuthGate>} />
       <Route path="/auth" element={<p>Sign in here</p>} />
     </Routes></MemoryRouter>);
-    expect(screen.getByText("Sign in here")).toBeInTheDocument();
-    expect(screen.queryByText("Private workspace")).not.toBeInTheDocument();
+    expect(screen.getByText("Workspace")).toBeInTheDocument();
+    expect(screen.queryByText("Sign in here")).not.toBeInTheDocument();
   });
 
   it("sends email and display name to Supabase when anyone creates an account", async () => {

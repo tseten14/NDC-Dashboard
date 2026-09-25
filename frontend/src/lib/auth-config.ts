@@ -1,4 +1,7 @@
-/** Local app identity (no remote auth). */
+/** Temporarily open the workspace without a site-wide login. */
+export const LOGIN_AUTH_ENABLED = false;
+
+/** Stable browser-local identity for workspace records while login is off. */
 
 export const LOCAL_USER = {
   id: "local-user",

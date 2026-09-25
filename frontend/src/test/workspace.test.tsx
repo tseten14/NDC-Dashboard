@@ -24,6 +24,7 @@ function mountNavigation(path = "/district-translator") {
 describe("workspace navigation", () => {
   it("keeps District Translator and Marketplace visible and marks the current page", () => {
     mountNavigation();
+    expect(screen.queryByRole("button", { name: "Account menu" })).not.toBeInTheDocument();
     const links = within(screen.getByRole("navigation", { name: "Primary navigation" })).getAllByRole("link");
     expect(links.map((link) => link.textContent)).toEqual(["Home", "Emissions Map", "District Translator", "Sector Classification", "Scenario Analysis", "Dashboard", "Marketplace", "Database"]);
     expect(links[2]).toHaveAttribute("aria-current", "page");

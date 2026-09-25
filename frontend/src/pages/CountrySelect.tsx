@@ -10,6 +10,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { COUNTRY_OPTIONS, type CountryCode } from "@/data/countries";
 import { useCountry } from "@/context/CountryContext";
 import { useCurrentRole } from "@/hooks/use-current-role";
+import { LOGIN_AUTH_ENABLED } from "@/lib/auth-config";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,12 +110,12 @@ export default function CountrySelect() {
       <LandingBackdrop />
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col justify-start px-4 py-8 sm:justify-center sm:px-6 sm:py-10 lg:py-14">
-        <div className="mb-8 flex items-center justify-end gap-3 sm:mb-10">
+        {LOGIN_AUTH_ENABLED && <div className="mb-8 flex items-center justify-end gap-3 sm:mb-10">
           {user?.email && <span className="hidden max-w-[220px] truncate text-xs text-muted-foreground sm:block">{user.email}</span>}
           <Button type="button" variant="outline" size="sm" onClick={() => { void handleSignOut(); }} disabled={signingOut} className="gap-2 bg-card/80 backdrop-blur-sm">
             <LogOut className="h-4 w-4" />{signingOut ? "Signing out…" : "Sign out"}
           </Button>
-        </div>
+        </div>}
         <div className="grid items-center gap-10 lg:grid-cols-[1fr,minmax(0,420px)] lg:gap-14 xl:grid-cols-[1.1fr,minmax(0,440px)]">
           {/* Hero column */}
           <div className="landing-fade-up landing-stagger-1 text-center lg:text-left">
