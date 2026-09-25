@@ -59,6 +59,7 @@ const SectorClassification = lazy(() => import("./pages/SectorClassification.tsx
 const ScenarioAnalysis = lazy(() => import("./pages/ScenarioAnalysis.tsx"));
 const DataIngestion = lazy(() => import("./pages/DataIngestion.tsx"));
 const MyWork = lazy(() => import("./pages/MyWork.tsx"));
+const Auth = lazy(() => import("./pages/Auth.tsx"));
 const StrategyLibrary = lazy(() => import("./pages/StrategyLibrary.tsx"));
 const ExecutiveOverview = lazy(() => import("./pages/ExecutiveOverview.tsx"));
 const DeliveryAccountability = lazy(() => import("./pages/DeliveryAccountability.tsx"));
@@ -249,6 +250,7 @@ const App = () => (
             <OperatorSessionProvider>
             <CurrentRoleProvider>
               <Routes>
+                <Route path="/auth" element={<LazyPage><Auth /></LazyPage>} />
                 <Route
                   path="/select-country"
                   element={

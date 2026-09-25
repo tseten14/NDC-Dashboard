@@ -10,7 +10,8 @@
  * must be protected is enforced by the API, not by hiding a button.
  */
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { LOCAL_USER, DEFAULT_ROLES } from "@/lib/auth-config";
+import { DEFAULT_ROLES } from "@/lib/auth-config";
+import { supabaseAuth } from "@/lib/supabase-auth";
 import { readPreference, writePreference } from "@/lib/preferences";
 import {
   canExport as canExportFmt,
@@ -54,7 +55,7 @@ interface RoleCtx {
   availableRoles: AppRole[];
   setActiveRole: (r: AppRole) => void;
   grantRole: (r: AppRole) => void;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   canCreateActivity: () => boolean;
   canEditActivityAsCreator: () => boolean;
   canApproveMapping: () => boolean;
@@ -74,9 +75,9 @@ const Ctx = createContext<RoleCtx | null>(null);
 const ACTIVE_ROLE_KEY = "uganda-ndc-active-role";
 const ROLES_KEY = "uganda-ndc-available-roles";
 
-function loadStoredRoles(): AppRole[] {
+function loadStoredRoles(userId: string): AppRole[] {
   try {
-    const raw = readPreference("localStorage", ROLES_KEY);
+    const raw = readPreference("localStorage", `${ROLES_KEY}:${userId}`);
     if (raw) {
       const parsed: unknown = JSON.parse(raw);
       if (Array.isArray(parsed)) {
@@ -91,36 +92,63 @@ function loadStoredRoles(): AppRole[] {
 }
 
 export function CurrentRoleProvider({ children }: { children: ReactNode }) {
-  const [user] = useState<AppUser>(LOCAL_USER);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [availableRoles, setAvailableRoles] = useState<AppRole[]>([]);
   const [activeRole, setActiveRoleState] = useState<AppRole | null>(null);
+  const userId = user?.id;
 
   useEffect(() => {
-    const roles = loadStoredRoles();
-    setAvailableRoles(roles);
-    const stored = readPreference("localStorage", ACTIVE_ROLE_KEY) as AppRole | null;
-    setActiveRoleState(stored && roles.includes(stored) ? stored : "Admin");
-    setLoading(false);
+    if (!supabaseAuth) {
+      setLoading(false);
+      return;
+    }
+    let mounted = true;
+    const { data: { subscription } } = supabaseAuth.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      setUser(session?.user ? { id: session.user.id, email: session.user.email ?? "" } : null);
+      setLoading(false);
+    });
+    supabaseAuth.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) setUser(session?.user ? { id: session.user.id, email: session.user.email ?? "" } : null);
+    }).catch(() => {
+      if (mounted) setUser(null);
+    }).finally(() => { if (mounted) setLoading(false); });
+    return () => { mounted = false; subscription.unsubscribe(); };
   }, []);
 
+  useEffect(() => {
+    if (!userId) {
+      setAvailableRoles([]);
+      setActiveRoleState(null);
+      return;
+    }
+    // Role choices are prototype UI preferences, scoped to the signed-in user.
+    const roles = loadStoredRoles(userId);
+    setAvailableRoles(roles);
+    const stored = readPreference("localStorage", `${ACTIVE_ROLE_KEY}:${userId}`) as AppRole | null;
+    setActiveRoleState(stored && roles.includes(stored) ? stored : "Admin");
+  }, [userId]);
+
   const setActiveRole = useCallback((r: AppRole) => {
-    writePreference("localStorage", ACTIVE_ROLE_KEY, r);
+    if (!user) return;
+    writePreference("localStorage", `${ACTIVE_ROLE_KEY}:${user.id}`, r);
     setActiveRoleState(r);
-  }, []);
+  }, [user]);
 
   const grantRole = useCallback((r: AppRole) => {
     setAvailableRoles((prev) => {
       const next = prev.includes(r) ? prev : [...prev, r];
-      writePreference("localStorage", ROLES_KEY, JSON.stringify(next));
+      if (user) writePreference("localStorage", `${ROLES_KEY}:${user.id}`, JSON.stringify(next));
       return next;
     });
     setActiveRole(r);
-  }, [setActiveRole]);
+  }, [setActiveRole, user]);
 
-  const signOut = useCallback(() => {
-    writePreference("localStorage", ACTIVE_ROLE_KEY, null);
-    setActiveRoleState("Admin");
+  const signOut = useCallback(async () => {
+    if (!supabaseAuth) return;
+    const { error } = await supabaseAuth.auth.signOut();
+    if (error) throw error;
   }, []);
 
   const canCreateActivity = useCallback(
