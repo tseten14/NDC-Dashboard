@@ -8,10 +8,10 @@ Socio-Economic Impact Forecasting for the NDC Data Explorer — maps policy inte
 KCI case JSON (data/policy-cases/*.json)
         │
         ▼
-services/policyCaseData.js ──► routes/policyImpact.js (/api/v1/*)
+backend/services/policyCaseData.js ──► backend/routes/policyImpact.js (/api/v1/*)
         │
         ▼
-services/policyImpactEngine.js (rule-based matching + aggregation)
+backend/services/policyImpactEngine.js (rule-based matching + aggregation)
         │
         ▼
 frontend /policy-impact (wizard + results dashboard)

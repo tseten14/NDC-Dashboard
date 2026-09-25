@@ -4,6 +4,12 @@ All notable changes to the Uganda NDC Data Explorer are documented here.
 
 ## [Unreleased]
 
+### September 2026 documentation and access
+
+- Site-wide account login is temporarily disabled; the country picker and browser-local role preference remain. Operator unlock still protects ingestion and other server writes.
+- District Translator now starts with district selection. Custom Draw controls are hidden while their implementation remains in source.
+- User and engineering documentation now describe the current navigation, separate dashboard/map/translator Climate TRACE products, operator sessions, and release provenance. Translator published-release metadata was checked against Climate TRACE's 24 September 2026 release 5.11.0; the API itself does not report its dataset release.
+
 ### Performance
 
 Measured on a throttled connection (1.6 Mbps, 4x CPU slowdown) — the situation

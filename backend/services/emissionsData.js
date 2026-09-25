@@ -156,7 +156,7 @@ async function buildReconciliation(refYear) {
     missing_slugs,
     slug_breakdown: breakdown,
     note:
-      "country_total from rankings; sector_sum is all 9 TRACE slugs; ui_sector_sum excludes mineral-extraction and uses NDC buckets.",
+      "country_total from rankings; sector_sum is all 10 TRACE slugs; ui_sector_sum excludes mineral-extraction and uses NDC buckets.",
   };
 }
 

@@ -3,10 +3,10 @@ import { climateTraceUrl, fetchUpstream, CLIMATE_TRACE_API_VERSION, CLIMATE_TRAC
 import { climateTraceSourcesResponseSchema } from "../../../shared/schemas/climateTrace.schema.js";
 
 export const TRACE_RELEASE = {
-  version: "5.10.0",
-  published_at: "2026-08-27",
-  data_through: "2026-06",
-  verified_at: "2026-09-20",
+  version: "5.11.0",
+  published_at: "2026-09-24",
+  data_through: "2026-07",
+  verified_at: "2026-09-25",
   url: "https://climatetrace.org/data",
 };
 export const TRANSLATOR_YEARS = Array.from({ length: Number(TRACE_RELEASE.data_through.slice(0, 4)) - 2020 }, (_, index) => 2021 + index);

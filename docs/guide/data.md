@@ -9,11 +9,12 @@ This document helps developers and reviewers know **what is real**, **what is in
 | Dashboard observed/progress | `/api/v1/emissions/dashboard`, `timeseries`, `progress` | National (2015+) or district (2021+) |
 | Top emitting sources | `/api/v1/emissions/sources` | Located rows only; do not sum to sector total |
 | Spatial certainty | `/api/v1/emissions/spatial-confidence` | Located vs spatially uncertain split |
-| Emissions map | `/api/v1/emissions/map` | Geolocated centroids; may truncate at 25k rows |
+| Emissions map | `/api/v1/emissions/map` | Geolocated centroids; capped at 3,000 upstream rows and reports `truncated` |
+| District Translator | `/api/v1/emissions/translator/*` and `/polygon-insights` | Mapped source centroids within pinned 2020 UBOS district boundaries; not an aggregate district inventory |
 | AI 2030 | `/api/v1/emissions/predictions` | Trend model on CT history |
 | Trackability panel | `/api/v1/emissions/trackability` | From `config/measurableVariables.js` |
 
-Figures are converted to MtCO₂e for display only. Sector reconciliation rules are in `PROJECT_DOCUMENTATION.txt` § B2a.
+Figures are converted from tonnes to MtCO₂e. Dashboard aggregates include spatially uncertain emissions; source maps and Translator omit unlocated rows. Sector reconciliation reports a delta and missing slugs, so exact equality must be checked rather than assumed. See [Climate TRACE integration](../dev/climate-trace-integration.md).
 
 ## Policy document corpus (Climate Policy Radar export)
 
@@ -67,7 +68,7 @@ Build/validate corpus: `npm run build:policy-cases` (`scripts/build_policy_cases
 | Quick scan | No | Profiling report only |
 | Mapped import (confirm) | Yes, when `DATABASE_URL` set | Indicator targets (forest, electricity, CSA, wetlands, capacity) show ingested observations + provenance badge |
 
-Does **not** replace Climate TRACE MtCO₂e on emissions sectors. Requires `INGEST_API_KEY` / `VITE_INGEST_API_KEY` for writes.
+Does **not** replace Climate TRACE MtCO₂e on emissions sectors. Both browser import paths require an operator session obtained with the server-side `INGEST_API_KEY` passphrase; automated clients can use an `x-api-key` header. Do not put the key in a `VITE_` variable.
 
 ## Browser-only
 
@@ -75,6 +76,7 @@ Does **not** replace Climate TRACE MtCO₂e on emissions sectors. Requires `INGE
 | ---- | ------- | ----- |
 | User-created activities | `localStorage` | Per browser |
 | Role selection | `localStorage` | Local UI permissions only |
+| Site identity | Browser-local `LOCAL_USER` while site login is disabled | Not a verified person or authorization for server writes |
 
 ## Mock mode
 

@@ -111,9 +111,9 @@ export default function Documentation() {
 
         {/* Roles */}
         <section className="space-y-3">
-          <SectionTitle icon={Users}>Your role (top-right)</SectionTitle>
+          <SectionTitle icon={Users}>Your role (top bar)</SectionTitle>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Controls edit rights only. National emissions and NDC text do not change when you switch role.
+            The role selector changes visible tools and workflow actions. It is a browser preference, not an account or security credential. National emissions and NDC text do not change when you switch role.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {ALL_ROLES.map((r) => (
@@ -129,14 +129,13 @@ export default function Documentation() {
         <section className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 space-y-1.5">
           <p className="text-xs font-bold text-foreground">How navigation is organised</p>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            The <strong className="text-foreground">top bar</strong> lists primary tools in order:
-            Home → Emissions Map → Dashboard → Data Ingestion → AI 2030 → Policy Impact →
-            Climate Finance → Policy Documents → Marketplace → Database → Documentation.
+            The <strong className="text-foreground">top bar</strong> shows shortcuts to Home, Emissions Map,
+            District Translator, Sector Classification, Scenario Analysis, Dashboard, Marketplace, and Database.
           </p>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            The <strong className="text-foreground">left sidebar</strong> groups deeper pages into{" "}
-            <strong className="text-foreground">five decision questions</strong> (Q1–Q5). Each group is
-            collapsible. Advanced pages (Strategy Library, Climate Risk, etc.) sit below the primary list.
+            Open <strong className="text-foreground">All tools</strong> for the full menu, grouped into Explore,
+            Plan &amp; deliver, and Manage &amp; learn. The five decision questions below are a guide to choosing
+            a page; they are not a separate sidebar.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1 pt-1">
             {[
@@ -172,7 +171,7 @@ export default function Documentation() {
         <section className="space-y-4">
           <SectionTitle icon={LayoutGrid}>Q1–Q5 decision pages</SectionTitle>
           <p className="text-xs sm:text-sm text-muted-foreground -mt-2 max-w-4xl">
-            Found inside the five question groups in the sidebar. The three pages marked <strong className="text-foreground">NEW</strong> use illustrative data — replace with real figures for official use.
+            Use these links when working through the five decision questions. Pages with illustrative data need verified figures before official use.
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {ADVANCED_FEATURES.map((f) => (

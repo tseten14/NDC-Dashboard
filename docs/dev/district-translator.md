@@ -2,9 +2,13 @@
 
 ## Data and releases
 
-The translator reads the current Climate TRACE v7 API (OpenAPI specification 7.2.0 verified 20 September 2026). The latest published database release verified on that date is **5.10.0**, published 27 August 2026, with monthly data through June 2026. References: https://climatetrace.org/data and https://api.climatetrace.org/v7/docs/index.html.
+The translator reads the current Climate TRACE v7 API. The latest published database release checked on **25 September 2026** is **5.11.0**, published 24 September 2026, with monthly data through July 2026. References: https://climatetrace.org/data and https://api.climatetrace.org/v7/docs/index.html.
 
-The API does not identify its underlying database release in source replies. Reports therefore carry both the verified **published release** and `api_dataset_release: null`. Do not claim that the API has independently attested to release 5.10.0. Requests always query its live endpoint, with an hour-long in-memory cache and shared in-flight requests. The timestamp is when that source dataset was fetched, not when a polygon was drawn. Each trend year retains its own retrieval timestamp. Metadata can be reviewed and updated in `backend/services/translator/climateTrace.js` after each release. The default complete year remains 2025; 2026 is available as partial-year context and is excluded from annual YoY comparisons.
+The API does not identify its underlying database release in source replies. Reports therefore carry both the verified **published release** and `api_dataset_release: null`. Do not claim that the API has independently attested to release 5.11.0. Requests always query its live endpoint, with an hour-long in-memory cache and shared in-flight requests. The timestamp is when that source dataset was fetched, not when a polygon was drawn. Each trend year retains its own retrieval timestamp. Metadata can be reviewed and updated in `backend/services/translator/climateTrace.js` after each release. The default complete year remains 2025; 2026 is available as partial-year context and is excluded from annual YoY comparisons.
+
+## Current website behavior
+
+The District Translator page starts in district-selection mode. Choose a name or click a boundary; change year and sector filters, inspect coverage, and export CSV or GeoJSON. Custom Draw mode, its point controls, and drawing instructions are temporarily hidden with `DRAW_ENABLED=false` in `frontend/src/pages/DistrictTranslator.tsx`. The map and server polygon code remain in place. Changing the flag back requires UI and spatial regression checks before release.
 
 ## Source accuracy
 
@@ -22,7 +26,7 @@ Full analysis geometries are the 135 **2020 district boundaries**, sourced from 
 
 These replace the earlier unnamed 151 county geometries, which were incorrectly called districts. 2020 boundaries do not represent all subsequent administrative changes. Their `shapeID` values are boundary identifiers, **not GADM IDs**; no approximate name-based GADM join is asserted. The map uses the matching simplified display file. District selection submits the identifier, and the server resolves the original full geometry. Analysis and exports use that full geometry.
 
-Custom polygons support holes and disjoint parts; validate structure, finite WGS84 coordinates, closure, unique vertices, topology, 512 total positions and 300,000 km² maximum area. Reject polygons extending outside the union of the intersected district geometries, including edges that cross a national boundary even if vertices are inside. Clipping intersects actual polygons and Turf computes spherical geodesic area. The overlap percentage denominator is the **selected polygon area**. Numerical containment tolerance is `max(1 square metre, selection area × 1e-8)`; tiny geometric slivers can fall within that tolerance. Points on a polygon boundary (including a hole boundary) are included.
+The retained custom-polygon API supports holes and disjoint parts; it validates structure, finite WGS84 coordinates, closure, unique vertices, topology, 512 total positions and 300,000 km² maximum area. It rejects polygons extending outside the union of the intersected district geometries, including edges that cross a national boundary even if vertices are inside. Clipping intersects actual polygons and Turf computes spherical geodesic area. The overlap percentage denominator is the **selected polygon area**. Numerical containment tolerance is `max(1 square metre, selection area × 1e-8)`; tiny geometric slivers can fall within that tolerance. Points on a polygon boundary (including a hole boundary) are included.
 
 ## Planet and additional providers
 

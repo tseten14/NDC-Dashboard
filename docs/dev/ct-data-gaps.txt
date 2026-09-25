@@ -1,6 +1,9 @@
 Uganda NDC Data Explorer — Application Data Gaps & Climate TRACE Requests
 ================================================================================
 Document date: 22 May 2026
+Archive note (25 September 2026): release numbers and feature states below are
+historical to this May 2026 request. For the current API integration, release
+verification and spatial limits, see docs/dev/climate-trace-integration.md.
 Project: Uganda NDC Data Explorer (national MRV cockpit prototype)
 API in use: Climate TRACE API v7 (https://api.climatetrace.org/v7)
             NOTE: "v7" is the API version (endpoints/features), NOT the data version.

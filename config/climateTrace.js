@@ -24,7 +24,7 @@ export const INVENTORY_YEAR_MIN = 2015;
 /** Latest complete inventory year (current calendar year may be incomplete). */
 export function latestInventoryYear() {
   const y = new Date().getFullYear();
-  // Cap at 2025: CT v7 March 2026 dataset confirmed through 2025.
+  // Cap at the last verified complete annual year; 2026 remains partial.
   return Math.min(2025, Math.max(INVENTORY_YEAR_MIN, y >= 2026 ? y - 1 : y));
 }
 

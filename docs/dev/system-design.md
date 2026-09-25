@@ -8,7 +8,7 @@ End-to-end architecture and workflows for the application. For file-level layout
 
 **Purpose:** Decision-support cockpit for Uganda’s climate commitments — compare official NDC targets to observed emissions, explore policy and finance options, and support MRV-style workflows (ingest, export, risk views).
 
-**Primary users (local roles, no remote SSO):**
+**Primary users (site login temporarily disabled; roles are browser preferences):**
 
 | Role | Typical use |
 |------|-------------|
@@ -17,7 +17,7 @@ End-to-end architecture and workflows for the application. For file-level layout
 | Executive / briefing | Home gap panel, PDF export |
 | Finance / programme | Climate Finance, Policy Impact |
 
-**Country scope:** Uganda is fully supported (national + 56 districts). Other countries may appear in the country gate but are not wired to live data.
+**Country scope:** Uganda is fully supported. The main dashboard maps 56 Climate TRACE GADM districts; District Translator uses a separate pinned set of 135 2020 UBOS boundaries. Other countries may appear in the country gate but are not wired to live data.
 
 ---
 
@@ -70,11 +70,11 @@ flowchart TB
 
 | Command | Result |
 |---------|--------|
-| `npm run dev` | Frontend only |
+| `npm run dev` | Full bootstrap: environment, bundled data checks, live verifications, web and API |
 | `npm run start:api` | API only |
-| `npm run dev:all` | Both (recommended) |
+| `npm run dev:servers` | Web and API without bootstrap verifications |
 
-Environment: copy `.env.example` → `.env`. Key flags: `USE_MOCK_DATA`, `DATABASE_URL`, `USE_DB_FALLBACK`, `INGEST_API_KEY`.
+Environment: copy `.env.example` → `.env`. Key flags: `SKIP_DEV_VERIFY`, `USE_MOCK_DATA`, `DATABASE_URL`, `USE_DB_FALLBACK`, `INGEST_API_KEY`. `npm run dev` creates `.env` if missing.
 
 ### 3.2 Production (Vercel)
 
@@ -95,8 +95,8 @@ flowchart TB
   Boot -.-> PG
 ```
 
-- SPA built from `frontend/` → served as static assets.
-- `/api/*` rewritten to `api/index.js` (same Express app as local via `server/createApp.js`).
+- SPA built from `frontend/` and copied to `public/` by `scripts/prepare-vercel-public.mjs`.
+- `/api/*` rewritten to `api/index.js` (same Express app as local via `backend/server/createApp.js`).
 - Cold start runs `bootstrapDatabase()` when `DATABASE_URL` is set.
 
 ---
@@ -194,16 +194,19 @@ sequenceDiagram
 
 ### 5.2 Data ingestion (mapped import)
 
-**Entry:** `/ingest` → upload CSV/JSON → map columns → confirm.
+**Entry:** `/ingest` opens Quick scan. Both Quick scan and Data Pipeline require an operator unlock. Data Pipeline maps and confirms CSV/JSON observations.
 
 ```mermaid
 sequenceDiagram
   participant User
   participant SPA as Ingest page
   participant API as ingest API
+  participant Auth as Operator session
   participant PG as PostgreSQL
   participant Dash as Dashboard
 
+  User->>Auth: Unlock with operator passphrase
+  Auth-->>SPA: HttpOnly session cookie
   User->>SPA: Upload + map columns
   SPA->>API: POST /ingest/scan
   API-->>SPA: Suggested mapping
@@ -215,11 +218,11 @@ sequenceDiagram
     Dash->>API: Load observations
     Dash-->>User: Provenance badge
   else No database
-    API-->>SPA: Validated only
+    API-->>SPA: Persistence unavailable
   end
 ```
 
-**Requires:** `DATABASE_URL`, `INGEST_API_KEY` / `VITE_INGEST_API_KEY`.  
+**Requires:** `DATABASE_URL` for persistent mapped import and server-only `INGEST_API_KEY` for protected actions. Do not put the key in a `VITE_` variable. Quick scan profiles files but does not persist observations.
 **Affects:** Indicator-panel targets only (not Climate TRACE MtCO₂e sectors yet).
 
 ---
@@ -304,7 +307,7 @@ flowchart TB
 - **Interactions:** Hover tooltip; click opens compact pinned popup (name, sector, MtCO₂e).
 - **Public links:** `https://climatetrace.org/inventory?country=UGA&sector=...` (see `data-lineage.ts`).
 
-District/national via same geography params as dashboard. Totals on the map page may exceed sum of visible bubbles — spatially uncertain emissions are in aggregates, not every point.
+District/national use the same geography parameters as the dashboard. The map feed is limited to 3,000 upstream rows and reports `truncated`; its `total_mtco2e` sums returned located points. The dashboard aggregate can be larger because it includes spatially uncertain emissions.
 
 ---
 
@@ -318,7 +321,7 @@ sequenceDiagram
   participant SPA as Dashboard
   participant Facts as fact_ledger
   participant API as POST /dashboard/analyze
-  participant OAI as OpenAI GPT-5.6 Sol
+  participant OAI as Configured OpenAI model
   participant Cit as dashboardAiCitations
 
   User->>SPA: Quick action or chat question
@@ -354,7 +357,7 @@ sequenceDiagram
 | Climate fund projects | `mcf-projects.json` | `npm run build:mcf` |
 | Intervention pathway | `transport-theory-of-change.ts` | bundled |
 
-Passage search is hidden until query/topic active; results group by document. Document AI (`/documents/view`) uses `routes/policyAi.js` with PDF fetch + GPT-5.6 Sol.
+Passage search is hidden until query/topic active; results group by document. Document AI (`/documents/view`) uses `backend/routes/policyAi.js` with PDF fetch and a configured OpenAI model.
 
 ---
 
@@ -381,21 +384,30 @@ Uses live `EmissionsDataContext` when API is reachable.
 
 ---
 
+### 5.11 District Translator and Climate TRACE source selection
+
+`/district-translator` currently opens in **District** mode. The custom Draw control and its instructions are hidden; polygon implementation remains in the code for later use. A district picker or boundary click sends a 2020 UBOS `shapeID` to `POST /api/v1/emissions/polygon-insights`, which resolves the full server-side boundary. The browser also loads metadata, simplified display boundaries and a year-specific source layer through `/emissions/translator/*`.
+
+The translator paginates `/v7/sources` for `gadmId=UGA`, validates and deduplicates rows, then filters centroids within the selected geometry. It reports mapped sources, sector splits, coverage, trend and exports. Administrative centroids can represent larger areas, so these totals are **not** complete territorial emissions and must not be compared directly with the dashboard's aggregate GADM district values. The selected year's pagination must complete; failed historical years are marked unavailable. See [district-translator.md](./district-translator.md) and [climate-trace-integration.md](./climate-trace-integration.md).
+
+---
+
 ## 6. API surface (grouped)
 
 | Group | Prefix | Responsibility |
 |-------|--------|----------------|
-| Health | `/v1/health`, `/v1/health/full` | Liveness, CT latency, persistence mode |
-| Emissions | `/v1/emissions/*` | Dashboard, timeseries, progress, map, predictions |
-| Dashboard AI | `POST /v1/dashboard/analyze` | NDC AI over fact ledger (OpenAI) |
-| Cockpit | `/v1/indicators/panel`, `/v1/catalog/*` | Indicator targets, activities, mitigation |
-| Documents | `/v1/documents/*` | Policy corpus, CPR passages, MCF projects |
-| Policy AI | `POST /v1/policy-ai/*` | PDF document analysis (OpenAI) |
-| Policy Impact | `/v1/policy-impact/*` | Forecast + case library |
-| Ingest | `/v1/ingest/*` | Scan, confirm, jobs (writes need API key) |
-| Persistence | `/v1/targets/:id/observations` | Postgres-backed observations |
-| Risk | `/v1/risk/*` | Illustrative seed choropleth |
-| Mock | `/v1/mock/*` | Fixture mode when `USE_MOCK_DATA=true` |
+| Health | `/api/v1/health`, `/api/v1/health/full` | Liveness, CT latency, persistence mode |
+| Emissions | `/api/v1/emissions/*` | Dashboard, timeseries, progress, map, predictions, translator metadata/sources and polygon insights |
+| Dashboard AI | `POST /api/v1/dashboard/analyze` | NDC AI over fact ledger (OpenAI) |
+| Cockpit | `/api/v1/indicators/panel`, `/api/v1/catalog/*` | Indicator targets, activities, mitigation |
+| Documents | `/api/v1/documents/*` | Policy corpus, CPR passages, MCF projects |
+| Policy AI | `POST /api/v1/policy-ai/*` | PDF document analysis (OpenAI) |
+| Policy Impact | `/api/v1/policy-impact/*` | Forecast + case library |
+| Ingest | `/api/v1/ingest/*` | Scan, confirm, jobs (writes need operator session or server key) |
+| Operator session | `/api/v1/auth/session` | Inspect, unlock and lock protected browser actions |
+| Persistence | `/api/v1/targets/:id/observations` | Postgres-backed observations |
+| Risk | `/api/v1/risk/*` | Illustrative seed choropleth |
+| Mock | `/api/v1/mock/*` | Fixture mode when `USE_MOCK_DATA=true` |
 
 Full route list: [architecture.md](./architecture.md) and `PROJECT_DOCUMENTATION.txt` Part B.
 
@@ -424,10 +436,10 @@ Entry point is `bootstrapDatabase()` on API cold start (see table below).
 | `fallback` | `USE_DB_FALLBACK=true`, no DB | Climate TRACE + memory catalog | Limited |
 | `disabled` | Default local dev | Climate TRACE | Not stored |
 
-Postgres host (Supabase, Neon, etc.) is **only** a connection string — no Supabase SDK in app code.
+Postgres host (Supabase, Neon, etc.) is a database connection string. The separate Supabase Auth SDK remains in the frontend source but is disabled by `LOGIN_AUTH_ENABLED=false`.
 
-**Schema:** `db/schema.ts` (Drizzle) — `targets`, `observations`, `ingest_jobs`, `audit_log`.  
-**Migrations:** `drizzle/migrations/` — applied on bootstrap or `npm run db:migrate`.
+**Schema:** `database/schema.ts` (Drizzle) — `targets`, `observations`, `ingest_jobs`, `audit_log`.
+**Migrations:** `database/migrations/` — applied on bootstrap or `npm run db:migrate`.
 
 ---
 
@@ -486,13 +498,14 @@ Client recalculates from live API fields in `progressFromLiveApiFields` so stale
 
 | Concern | Approach |
 |---------|----------|
-| Authentication | Local roles only — `AuthGate` is a no-op; roles gate UI features |
+| Site access | `LOGIN_AUTH_ENABLED=false` bypasses `AuthGate`, redirects `/auth` to country selection and uses `LOCAL_USER`; Supabase login code remains in source |
+| Operator writes | `POST /api/v1/auth/session` exchanges an operator passphrase for an HttpOnly cookie; browser writes require a valid session and same-site origin; server jobs can use `x-api-key` |
 | AI features | `OPENAI_API_KEY` required for NDC AI (`/dashboard/analyze`) and Policy document AI |
-| Ingest writes | `x-api-key` header (`INGEST_API_KEY`) |
+| Ingest writes | Fail closed without configured `INGEST_API_KEY`; never expose it through a `VITE_` variable |
 | CORS | `FRONTEND_ORIGIN` allowlist |
 | Rate limits | Read vs ingest-write limiters on `/v1` |
 | Mock mode | `USE_MOCK_DATA=true` — fixtures, no CT calls |
-| Caching | In-memory NodeCache for CT responses (24h TTL) |
+| Caching | Country snapshot 24h; source, map and slug-year responses 1h; translator sources 1h |
 | Logging | Pino HTTP + structured events |
 
 ---
@@ -513,15 +526,14 @@ Client recalculates from live API fields in `progressFromLiveApiFields` so stale
 ```
 ndc-data-explorer/
 ├── frontend/src/          React UI
-├── routes/                Express routers
-├── services/              Business logic (CT, predictions, policy, persistence)
+├── backend/server.js       Local Express entry
+├── backend/routes/         Express routers
+├── backend/services/       Business logic (CT, predictions, policy, persistence)
 ├── shared/                progress.js, Zod schemas
 ├── config/                NDC targets, districts, catalog
 ├── data/                  Policy cases, documents JSON, risk seed
-├── db/                    Drizzle + bootstrap + seed
-├── drizzle/migrations/    SQL migrations
+├── database/              Drizzle schema, bootstrap, seed and migrations
 ├── api/index.js           Vercel entry
-├── server.js              Local API entry
 └── docs/                  This folder
 ```
 
@@ -532,6 +544,8 @@ ndc-data-explorer/
 | Document | Focus |
 |----------|--------|
 | [architecture.md](./architecture.md) | File paths, routes, dev proxy |
+| [climate-trace-integration.md](./climate-trace-integration.md) | Upstream requests, sector mapping, reconciliation and limits |
+| [district-translator.md](./district-translator.md) | Spatial source contract and boundary provenance |
 | [../guide/data.md](../guide/data.md) | Live vs indicative vs localStorage |
 | [deploy.md](./deploy.md) | Env vars, Postgres on Vercel |
 | [policy-engine.md](./policy-engine.md) | KCI matching detail |
@@ -540,4 +554,4 @@ ndc-data-explorer/
 
 ---
 
-*Last aligned: June 2026 — NDC 2022 targets, Climate TRACE v7 (through 2025), NDC AI fact ledger, CPR passages + MCF corpus, MapLibre emissions map, demo/Brazil chat removed.*
+*Last aligned: 25 September 2026 — site login disabled, District Translator drawing hidden, Climate TRACE API v7 and published data release 5.11.0 distinguished.*

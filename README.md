@@ -2,14 +2,14 @@
 
 Web application for exploring Uganda’s Nationally Determined Contribution (NDC) data: decision-support cockpit, emissions map, climate finance screening, strategy library, climate risk views, and role-based delivery tools.
 
-**Documentation:** [PROJECT_DOCUMENTATION.txt](docs/PROJECT_DOCUMENTATION.txt) (full non-technical + technical reference). Also [docs/README.md](docs/README.md) (architecture, data honesty, deploy). In-app guide at `/docs`.
+**Documentation:** [Complete application and engineering guide (PDF)](docs/NDC-Data-Explorer-Complete-Guide.pdf). The in-app guide remains at `/docs`. A [Climate TRACE CSV extract](data/exports/climate-trace-uganda-sources-2021-2025.csv) is available for Qlik evaluation.
 
 ## What you can do (in plain terms)
 
 - **See Uganda’s emissions by sector** (AFOLU, Energy, Transport, IPPU, Agriculture, Waste), pulled live from Climate TRACE and compared to Uganda’s Updated NDC targets (September 2022).
 - **Switch between National and District views.** On the NDC dashboard, use the **Geography** toggle: *National* shows the whole country (from 2015); *District* lets you pick one of **56 districts** (from 2021) — e.g. Kampala, Wakiso, Gulu. District numbers are observed emissions shown *for context*; NDC targets are national, so districts are not given a pass/fail score.
 - **Export** the current view to Excel, PDF, or a CRT/BTR-style CSV — each file is labelled with the geography you’re viewing.
-- **Accuracy:** every figure is the live Climate TRACE value (only converted to MtCO₂e). Sector totals reconcile exactly to Uganda’s national total, and each district total matches Climate TRACE’s district total exactly.
+- **Read the limits:** dashboard aggregate totals include spatially uncertain emissions, while source maps and District Translator include located records. The API reports reconciliation deltas and missing coverage; consult [Climate TRACE integration](docs/dev/climate-trace-integration.md) before comparing them.
 
 ## Stack
 
@@ -17,6 +17,7 @@ Web application for exploring Uganda’s Nationally Determined Contribution (NDC
 - **Emissions map:** MapLibre GL JS (3D satellite/terrain, token-free Esri World Imagery + AWS terrain tiles)
 - **API:** Express (`backend/server.js`) — Climate TRACE live (API v7) + bundled catalog/risk data
 - **Mapped ingest:** Postgres when `DATABASE_URL` is set (indicator targets); otherwise ingest confirm is disabled
+- **Site access:** site-wide Supabase login is temporarily disabled; country and role are browser preferences. Protected import and other operator actions still require a server-issued operator session.
 - **Activities / roles:** Browser `localStorage` (personal drafts + role preference)
 
 ## Project structure
@@ -24,7 +25,7 @@ Web application for exploring Uganda’s Nationally Determined Contribution (NDC
 ```
 frontend/        React + Vite + TypeScript UI (pages, components, hooks)
 backend/         Server-side code
-  server.js        Express entry (local dev + Vercel)
+  server.js        Express entry for local development
   server/          App factory + middleware
   routes/          HTTP route handlers (/api/v1/*)
   services/        Business logic (Climate TRACE, ingest, policy, predictions)
@@ -64,23 +65,30 @@ SKIP_DEV_VERIFY=true npm run dev
 - **App:** http://localhost:8080  
 - **API:** http://localhost:8787 (proxied as `/api` from Vite in dev)
 
-Pick a country, choose a role from the top bar, and explore. **Home** (`/`) is the landing page; **Emissions Map** (`/map`) and **Dashboard** (`/dashboard`) are the primary analysis screens.
+No account is required to browse. Pick a country, choose a role from the top bar, and explore. **Home** (`/`) is the landing page; **Emissions Map** (`/map`) and **Dashboard** (`/dashboard`) are primary analysis screens.
 
-## Navigation (primary top bar)
+## Navigation
+
+The top bar shows shortcuts; **All tools** opens the full menu grouped into Explore, Plan & deliver, and Manage & learn. Visibility depends on the selected role. The routes below remain registered in `frontend/src/App.tsx`.
 
 | Route | Screen |
 | ----- | ------ |
 | `/` | Home (NDC gap priorities panel for decision-makers) |
 | `/map` | Emissions map — 3D satellite/terrain basemap (MapLibre GL) |
+| `/district-translator` | Select a 2020 UBOS district for mapped Climate TRACE source insights; custom drawing is temporarily hidden |
+| `/sector-classification` | Choose reporting sector codes |
+| `/scenario-analysis` | Compare actions and policy evidence |
 | `/dashboard` | NDC cockpit (targets, observed, progress, **NDC AI**) |
 | `/ingest` | Data ingestion (mapped import → Postgres; quick scan profiling) |
 | `/ai-2030` | 2030 sector predictions |
 | `/policy-impact` | Socio-economic impact forecasting (KCI case analogies) |
 | `/climate-finance` | Indicative finance / fund screening |
 | `/documents` | Policy corpus + CPR passages + MCF projects |
+| `/mwp-marketplace` | Pre-authored mitigation investment deals |
+| `/my-work` | Browser-local activities and submissions |
 | `/docs` | User guide + system design |
 
-Advanced sidebar: Strategy Library, My Work, Climate Risk, and legacy cockpit pages.
+Additional pages include Strategy Library, Climate Risk, and legacy cockpit routes; use the in-app Documentation links or direct URLs.
 
 ## NDC targets — Uganda Updated NDC (September 2022)
 
@@ -109,6 +117,7 @@ The dashboard covers all mitigation and key adaptation targets from Uganda's Upd
 | Observed emissions / progress (national **and** district) | Express → [Climate TRACE](https://api.climatetrace.org/v7/docs/index.html) (API v7) |
 | District list (56 Uganda districts) | Express → `config/ugandaDistrictGadm.js` (from Climate TRACE GADM) |
 | Top emitting sources (asset/source-level) | Express → Climate TRACE `GET /v7/sources` |
+| District Translator | Express → paginated Climate TRACE `/v7/sources` + pinned 2020 UBOS district boundaries (135); distinct from dashboard GADM districts |
 | Activities & mitigation catalog | Express → `config/ndcCockpitCatalog.js` |
 | Climate risk map | Express → `data/seeds/riskSeed.js` |
 | My Work / activities | `localStorage` in this browser |
@@ -127,7 +136,7 @@ Endpoints: `GET /api/v1/emissions/dashboard`, `/timeseries`, `/progress` (all ac
 
 Catalog: `GET /api/v1/catalog/activities`, `GET /api/v1/catalog/mitigation-options` (indicative abatement/cost fields — see [docs/guide/data.md](docs/guide/data.md)).
 
-> Note: "v7" is the Climate TRACE **API** version (which endpoints exist), not the data version. The data is released monthly (latest v5.8.0) and the API always serves the latest. User-facing labels read "Climate TRACE" (no version).
+> "v7" is the Climate TRACE **API** version, not the dataset release. The [published data page](https://climatetrace.org/data) listed release 5.11.0 on 25 September 2026; the API does not identify its underlying release in each reply. The dashboard caps complete annual history at 2025 and the translator marks 2026 partial. See [the integration contract](docs/dev/climate-trace-integration.md).
 
 Set `USE_MOCK_DATA=true` in `.env` for offline fixture mode (no Climate TRACE calls). The API logs a startup banner and exposes `mock_mode` on `/api/health` and `/api/v1/health`.
 
@@ -139,12 +148,12 @@ Set `USE_MOCK_DATA=true` in `.env` for offline fixture mode (no Climate TRACE ca
 | `SEED_DB` | Run bundled seed on bootstrap (`true` for first deploy) |
 | `FRONTEND_ORIGIN` | Only browser origin allowed by CORS (default `http://localhost:8080`) |
 | `INGEST_API_KEY` | Shared secret for **write** endpoints (`POST` under `/api/v1/ingest/*`) |
-| `VITE_INGEST_API_KEY` | Same value in the frontend `.env` so the ingest UI can send `x-api-key` |
+| `VITE_INGEST_API_KEY` | Legacy variable; do not use it. The browser exchanges an operator passphrase for an HttpOnly session cookie. Never bundle `INGEST_API_KEY` into frontend code. |
 | `LOG_LEVEL` | Pino log level (`info` default) |
 | `TRUST_PROXY_HOPS` | Number of reverse proxies in front of the API (default: 1 on Vercel, 0 locally). Rate limits are per visitor only when this is right — see below |
 | `INGEST_STORE_PATH` | Override where file-mode imports are written (used by tests to stay isolated) |
 
-**Write auth:** Include header `x-api-key: <INGEST_API_KEY>` on all ingest `POST` requests (upload, confirm, scan, import). `GET` routes stay public.
+**Write auth:** Browser operators use `/api/v1/auth/session` to obtain a short-lived HttpOnly cookie, then same-origin requests use that session. Non-browser jobs may send `x-api-key: <INGEST_API_KEY>`. Protected writes reject requests when the server key is not configured. Public read endpoints stay open.
 
 **Rate limits (per IP):**
 
@@ -191,4 +200,4 @@ Environment switches worth knowing:
 
 ## Deploy
 
-See [docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md). In short: build the frontend (`npm run build`), host `frontend/dist/`, and run `backend/server.js` with same-origin `/api` or set `VITE_API_BASE_URL` to your API host.
+See [docs/dev/deploy.md](docs/dev/deploy.md). Vercel serves the built React app and routes same-origin `/api/*` to `api/index.js`, which mounts the shared Express app.

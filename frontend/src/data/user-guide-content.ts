@@ -20,17 +20,17 @@ export const GETTING_STARTED = [
   {
     step: "1",
     title: "Pick your country",
-    text: "On first visit you choose Uganda — the only country with a full data cockpit today. Use the globe icon in the top bar anytime to switch or return to the country screen.",
+    text: "No site account is needed right now. On first visit choose Uganda — the only country with a full data cockpit today. Use Change country in the top bar to return to the country screen.",
   },
   {
     step: "2",
     title: "Choose your role",
-    text: "Use the dropdown in the top-right (e.g. Decision maker, MRV officer). This only controls what you can edit in the app — it does not change national statistics.",
+    text: "Use the role selector in the top bar (for example, MRV Officer or Senior Decision-Maker). It changes visible tools and workflow actions, not national statistics. It is a browser preference, not an account or security credential.",
   },
   {
     step: "3",
     title: "Navigate by decision question",
-    text: "The top bar lists Home, Emissions Map, Dashboard, and other primary tools. The left sidebar is organised into five questions: Q1 Are we on track? · Q2 Which interventions work? · Q3 Where are the bottlenecks? · Q4 Where do we invest next? · Q5 Are we aligned? The Home page also shows a Decision Cockpit with three quick-start links.",
+    text: "The top bar shows shortcuts. Open All tools for Explore, Plan & deliver, and Manage & learn pages. The Home page links to decision paths, and this guide links to additional pages.",
   },
   {
     step: "4",
@@ -137,7 +137,7 @@ export const BASIC_FEATURES: FeatureGuide[] = [
     purpose: "Profile ad-hoc files (quick scan) or import structured observation rows into the database (mapped import).",
     steps: [
       "Open Data Ingestion from the menu.",
-      "Mapped import (default): upload CSV or JSON with year, value, optional source, and target_id columns; review auto-mapping; confirm.",
+      "Unlock the operator session for either import path. Quick scan opens first; use Data Pipeline for mapped CSV or JSON import, review auto-mapping, then confirm.",
       "After confirm, read the success panel — it states how many rows were stored and which dashboard targets they affect.",
       "Quick scan: switch tab to upload CSV, JSON, PDF, or text for profiling only (no database write).",
       "GIS upload and live connectors remain work in progress.",
@@ -147,7 +147,7 @@ export const BASIC_FEATURES: FeatureGuide[] = [
     result:
       "Mapped import: stored observation rows plus an audit JSON under data/ingest-imports. Quick scan: a triage report in the browser.",
     limitations:
-      "Requires Postgres for persistence. Ingested data is unverified until MRV sign-off. Does not replace Climate TRACE emissions on MtCO₂e targets. PDF mapped import is analysis-only unless exported to CSV/JSON.",
+      "Both paths require an operator unlock. Mapped import requires Postgres for persistence. Ingested data is unverified until MRV sign-off and does not replace Climate TRACE emissions on MtCO₂e targets. PDF mapped import is analysis-only unless exported to CSV/JSON.",
     youWillSee: [
       "Mapped import drop zone and column mapper",
       "Post-import summary (storage location, target keys, dashboard link)",
@@ -216,7 +216,7 @@ export const BASIC_FEATURES: FeatureGuide[] = [
       "Tab Intervention pathway: read the urban transport logic model (interventions → behaviour → outcomes).",
     ],
     howItWorks:
-      "Document library: CPR export (~207 Uganda documents) as searchable metadata. Key documents tab: passage corpus from npm run build:passages — topic search with deduplicated labels. MCF tab: ~167 fund projects from npm run build:mcf. Document AI fetches the actual PDF (contentUrl resolved via catalogId when needed), sends up to 8,000 characters to OpenAI GPT-5.6 Sol, and returns structured analysis with page citations [p.N].",
+      "Document library: CPR export (~207 Uganda documents) as searchable metadata. Key documents tab: passage corpus from npm run build:passages — topic search with deduplicated labels. MCF tab: ~167 fund projects from npm run build:mcf. Document AI fetches the actual PDF (contentUrl resolved via catalogId when needed), sends up to 8,000 characters to the configured OpenAI model, and returns structured analysis with page citations [p.N].",
     result:
       "Fast access to 200+ document titles with official links, plus AI-generated structured briefs grounded in the real PDF — helping users digest dense policy documents in minutes.",
     limitations: "AI reads up to 8,000 characters of the PDF (first 70% + last 20% — very long documents may miss the middle). Always verify AI responses against the original document. Intervention pathway is illustrative, not attribution of CO₂ reductions.",
@@ -277,6 +277,22 @@ export const BASIC_FEATURES: FeatureGuide[] = [
     youWillSee: ["3D satellite map of Uganda with sized/coloured bubbles", "Hover tooltip and click popup per source", "Sector legend", "Year and total summary"],
   },
   {
+    title: "District Translator",
+    to: "/district-translator",
+    who: "District planners, GIS and MRV teams",
+    purpose: "Inspect mapped Climate TRACE source records within a selected Uganda district.",
+    steps: [
+      "Open District Translator from Explore in All tools.",
+      "Choose a district by name or click its boundary on the map.",
+      "Select a year and optional sector filters, then read the area insights and coverage notes.",
+      "Download CSV or GeoJSON when you need the selected source records and provenance.",
+    ],
+    howItWorks: "The server resolves the selected 2020 UBOS district boundary and filters paginated Climate TRACE v7 source centroids for that year. It reports mapped records, not a complete territorial inventory. Drawing custom polygons is temporarily hidden.",
+    result: "A district-level source view with sector breakdown, annual trend, coverage, and exports.",
+    limitations: "These 135 UBOS boundaries differ from the dashboard's 56 Climate TRACE GADM districts. Administrative centroids can represent a larger area; their whole source value is included when the centroid is inside. Missing-location sources are excluded. Do not compare this mapped total directly with the dashboard aggregate.",
+    youWillSee: ["District picker and clickable boundaries", "Year and sector filters", "Mapped source totals and coverage", "CSV and GeoJSON exports"],
+  },
+  {
     title: "Documentation",
     to: "/docs",
     who: "Anyone who needs definitions or process clarity",
@@ -296,7 +312,7 @@ export const ADVANCED_FEATURES: FeatureGuide[] = [
     who: "Programme managers, finance officers — Q3: Where are the bottlenecks?",
     purpose: "See committed, disbursed, and spent amounts for each active project at a glance — and spot which ones are falling behind on disbursement.",
     steps: [
-      "Open Financial Flows from the Q3 sidebar group.",
+      "Open Financial Flows from this guide's Q3 decision pages.",
       "Read the three summary cards: Total Committed, Total Disbursed, and average Disbursement Rate.",
       "Scan the colour-coded table: green ≥ 70% disbursed, amber 40–69%, red below 40%.",
       "Sort by the % Disbursement column to find the most delayed projects.",
@@ -313,7 +329,7 @@ export const ADVANCED_FEATURES: FeatureGuide[] = [
     who: "Investment planners, MRV teams — Q2: Which interventions work?",
     purpose: "Rank interventions by cost per tonne of CO₂ avoided (USD/tCO2e) to support prioritisation decisions.",
     steps: [
-      "Open Cost Effectiveness from the Q2 sidebar group.",
+      "Open Cost Effectiveness from this guide's Q2 decision pages.",
       "Review the three stat cards: best cost/tCO2e, total mitigation potential, and average cost.",
       "Click any column header to sort — cost/tCO2e ascending shows the best-value interventions first.",
       "The top three rows are highlighted as Best Value; check their co-benefit badges for jobs, biodiversity, etc.",
@@ -330,7 +346,7 @@ export const ADVANCED_FEATURES: FeatureGuide[] = [
     who: "Coordination teams, planning officers — Q5: Are we aligned?",
     purpose: "See which institution owns which NDC actions, spot overlapping mandates, and find focal points across government and partners.",
     steps: [
-      "Open Institutional Map from the Q5 sidebar group.",
+      "Open Institutional Map from this guide's Q5 decision pages.",
       "Check the Mandate Overlaps alert at the top — actions owned by more than one actor are flagged.",
       "Browse the four columns: Government Ministries, Regulatory Bodies, Development Partners, UN Agencies.",
       "Click a card's action badges to see which NDC activity they are responsible for.",
@@ -346,7 +362,7 @@ export const ADVANCED_FEATURES: FeatureGuide[] = [
     to: "/library",
     who: "Policy analysts linking NDC to national plans",
     purpose: "See how NDP IV, Tenfold, Vision 2040, and NDC indicators relate.",
-    steps: ["Expand Advanced in the sidebar.", "Open Strategy Library.", "Search or filter indicators.", "Follow links toward NDC targets where matched."],
+    steps: ["Open Strategy Library from this guide.", "Search or filter indicators.", "Follow links toward NDC targets where matched."],
     howItWorks: "Bundled indicator registry in the app, with best-effort links to NDC target IDs.",
     result: "Policy alignment view across strategies — seeded and uploaded indicators mixed.",
     limitations: "Not all indicators have live measured series.",
@@ -476,11 +492,12 @@ export const SECTORS = [
 ];
 
 export const DATA_SOURCES_TABLE = [
-  { area: "Observed emissions & map", source: "Climate TRACE (live API)", whatYouGet: "Annual totals, sources, district splits", caveat: "Independent inventory — may differ from national GHG reports" },
+  { area: "Observed emissions & map", source: "Climate TRACE (live API v7)", whatYouGet: "Aggregate annual totals and mapped sources", caveat: "Map is capped at 3,000 upstream rows; located sources do not sum to the territorial total" },
+  { area: "District Translator", source: "Climate TRACE v7 sources + pinned 2020 UBOS boundaries", whatYouGet: "Centroid-filtered district source records", caveat: "135 boundaries differ from the dashboard's 56 GADM districts; not a complete territorial inventory" },
   { area: "NDC targets & activities", source: "Uganda Updated NDC 2022 (bundled)", whatYouGet: "Official pledge text, baselines, 2030 goals", caveat: "Updated when config is refreshed" },
   { area: "Mitigation costs / abatement", source: "NDC catalogue (indicative)", whatYouGet: "Screening economics", caveat: "Not audited project costs" },
   { area: "Policy documents", source: "Climate Policy Radar export + passages + MCF build", whatYouGet: "Metadata, CPR/PDF links, searchable passages, fund projects", caveat: "Passage/M CF corpora are build-time snapshots — not live CPR API" },
-  { area: "NDC AI (Dashboard)", source: "OpenAI GPT-5.6 Sol + fact ledger", whatYouGet: "Cited prose analysis of live dashboard context", caveat: "Quotes only ledger numbers; requires API key; not official UNFCCC text" },
+  { area: "NDC AI (Dashboard)", source: "Configured OpenAI model + fact ledger", whatYouGet: "Cited prose analysis of live dashboard context", caveat: "Quotes only ledger numbers; requires API key; not official UNFCCC text" },
   { area: "Your activities in Database", source: "This browser only", whatYouGet: "Personal drafts", caveat: "Not shared nationally" },
   { area: "Climate Risk maps", source: "Illustrative seed data", whatYouGet: "Illustrative prioritisation", caveat: "Not operational hazard models" },
   { area: "Financial Flows (/financial-flow)", source: "Seed-activities registry (illustrative)", whatYouGet: "Committed → disbursed → spent by project", caveat: "Not live IFMS/treasury data — replace for official use" },
@@ -515,7 +532,7 @@ export const GLOSSARY: { term: string; def: string }[] = [
   { term: "Financial Flows", def: "The /financial-flow page showing committed → disbursed → spent per project. Illustrative data until connected to a live financial system." },
   { term: "Cost Effectiveness (USD/tCO2e)", def: "Cost per tonne of CO₂ equivalent avoided — used on the /cost-effectiveness page to rank interventions by value for money." },
   { term: "Institutional Map", def: "The /institutional-map page showing which ministry, agency, or partner owns each NDC action, with mandate overlap detection." },
-  { term: "Q1–Q5", def: "The five decision questions that organise the sidebar navigation: Are we on track? · Which interventions work? · Where are the bottlenecks? · Where do we invest next? · Are we aligned?" },
+  { term: "Q1–Q5", def: "Five decision questions used to explain the app's deeper pages: Are we on track? · Which interventions work? · Where are the bottlenecks? · Where do we invest next? · Are we aligned?" },
   { term: "Disbursement rate", def: "Disbursed ÷ Committed, expressed as %. Used on Financial Flows to flag delayed projects (red < 40%, amber 40–69%, green ≥ 70%)." },
 ];
 
@@ -531,9 +548,11 @@ export const FAQ: { q: string; a: string }[] = [
     q: "Will uploaded files change the Dashboard?",
     a: "Mapped import can — when Postgres is connected, confirmed rows are stored as observations and appear on indicator targets (forest, electricity, CSA, wetlands, capacity) with an “Ingested” badge. Quick scan never writes data. Climate TRACE MtCO₂e charts are unchanged by ingest today.",
   },
-  { q: "What does my role change?", a: "Edit permissions only, not national totals." },
-  { q: "How is the sidebar organised?", a: "Primary tools appear in the top bar (Home, Emissions Map, Dashboard, …). The left sidebar groups deeper pages into five decision questions (Q1–Q5). Each group is collapsible." },
-  { q: "Where do I start if I want to know whether we are on track?", a: "Open the Q1 group in the sidebar and go to Dashboard. The Decision Cockpit on the Home page also has a direct 'Check NDC progress' link." },
+  { q: "Do I need an account?", a: "No site-wide sign-in is required right now. Your selected country, role, and personal activity records live in this browser. Import and other protected operator actions still require the separate operator unlock." },
+  { q: "Can I draw a custom area in District Translator?", a: "Custom-area drawing is temporarily hidden. Choose a district by name or click its boundary instead." },
+  { q: "What does my role change?", a: "It changes which tools and workflow actions are shown, not national emissions totals. It is a browser preference, not authorization for protected API writes." },
+  { q: "Where are all the tools?", a: "The top bar shows shortcuts. Open All tools for the Explore, Plan & deliver, and Manage & learn groups." },
+  { q: "Where do I start if I want to know whether we are on track?", a: "Open Dashboard from the top bar or All tools. The Decision Cockpit on Home also links to NDC progress." },
   { q: "Are the financial flow and cost-effectiveness numbers real?", a: "No — they are illustrative estimates synthesised from the NDC activity registry. They are clearly labelled with an Illustrative badge. Replace the underlying seed data with real project accounts and IFMS figures before using them in official reports." },
   { q: "How do I trace a project from progress to bottleneck to finance?", a: "The app has a decision chain: from Dashboard (Q1) click indicators to see delivery status on Delivery & Accountability (Q2/Q3), then use the 'Check finance' button on each activity to jump to Finance & Investment (Q3). The Evidence & MRV page links back to Delivery at the bottom." },
   { q: "What is the Institutional Map for?", a: "It shows which ministry or partner owns which NDC action, and flags where mandates overlap. It is built from the actors data in the app and is illustrative — update the actors registry to reflect actual institutional arrangements." },

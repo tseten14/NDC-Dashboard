@@ -5,10 +5,10 @@ This repo deploys as **one Vercel project**: static React UI + Express API as a 
 ## Quick deploy
 
 1. Install [Vercel CLI](https://vercel.com/docs/cli) (optional) or use the Vercel GitHub integration.
-2. From the repo root:
+2. From the repo root, deploy the linked project to production (or push to the connected production branch):
 
 ```bash
-npx vercel
+vercel --prod --yes
 ```
 
 3. Follow prompts (link to your Git repo or deploy from local).
@@ -29,8 +29,10 @@ No `VITE_API_BASE_URL` is required in production — the frontend calls `/api/v1
 | `SEED_DB` | No | Set `true` on first deploy to seed `targets` / `observations` from bundled catalog |
 | `USE_DB_FALLBACK` | No | Set `true` to serve in-memory seed when Postgres is unavailable (dev/demo only) |
 | `INGEST_API_KEY` | For ingest writes | Server-side key for `POST /api/v1/ingest/*` confirm/upload |
-| `VITE_INGEST_API_KEY` | For ingest writes | Same value exposed to the browser for mapped file import |
+| `VITE_INGEST_API_KEY` | No | Legacy setting; leave unset. Do not expose the operator passphrase in a browser bundle. |
 | `FRONTEND_ORIGIN` | Production | Your Vercel app URL (e.g. `https://your-project.vercel.app`) for CORS |
+
+Site-wide Supabase login is temporarily off through `LOGIN_AUTH_ENABLED=false` in `frontend/src/lib/auth-config.ts`. The `/auth` route redirects to country selection. `INGEST_API_KEY` still protects server writes: the browser exchanges an operator passphrase at `/api/v1/auth/session` for an HttpOnly cookie; non-browser jobs can send the key in `x-api-key`. Keep the server key private.
 
 ### Postgres setup (ministry pilot)
 
@@ -47,7 +49,7 @@ No `VITE_API_BASE_URL` is required in production — the frontend calls `/api/v1
 | **Live stakeholder demo** | `false` | Pre-warm with `GET /api/v1/health/full` 2–3 min before presenting |
 | **Reliable offline demo** | `true` | Bonn-style events; no Climate TRACE dependency |
 
-Bookmark before stage time: `/api/v1/health/full` and `/dashboard?demo=1&sector=transport`
+Bookmark before stage time: `/api/v1/health/full` and `/dashboard?sector=transport`.
 
 ## Limits on Vercel
 
@@ -58,13 +60,15 @@ Bookmark before stage time: `/api/v1/health/full` and `/dashboard?demo=1&sector=
 | Pandas charts | Yes (if Python installed) | JavaScript fallback only |
 | API timeout | — | 60s max (`vercel.json`) |
 
-For full pandas ingest and larger uploads, run the API on Railway/Render and deploy **only the frontend** to Vercel with `VITE_API_BASE_URL=https://your-api-host`.
+For full pandas ingest and larger uploads, run the API on a service that supports them and set `VITE_API_BASE_URL` to that API host in the frontend deployment.
 
-## Local development (unchanged)
+## Local development
 
 ```bash
-npm run dev:all
+npm run dev
 ```
+
+Use `npm run dev:servers` to start web and API without the live verification bootstrap.
 
 - Web: http://localhost:8080  
 - API: http://localhost:8787/api/v1/...
@@ -75,8 +79,8 @@ npm run dev:all
 |------|------|
 | `vercel.json` | Build → `public/`, rewrite `/api/*` → `api/index.js`, SPA fallback |
 | `api/index.js` | Express under `/api` + `bootstrapDatabase()` on cold start |
-| `server.js` | Local `listen()` + DB bootstrap; not used by Vercel rewrites |
-| `server/createApp.js` | Route definitions mounted at `/api/v1/*` and `/api/health` |
+| `backend/server.js` | Local `listen()` + DB bootstrap; not used by Vercel rewrites |
+| `backend/server/createApp.js` | Route definitions mounted at `/api/v1/*` and `/api/health` |
 
 ## Troubleshooting
 
