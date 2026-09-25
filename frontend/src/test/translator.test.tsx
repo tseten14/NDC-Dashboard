@@ -2,10 +2,10 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import DistrictTranslator from "@/pages/DistrictTranslator";
-import { emissionsApi, type PolygonInsightsResponse } from "@/lib/api";
+import { emissionsApi, type PolygonInsightsResponse, type TranslatorGeometry } from "@/lib/api";
 import { csvCell, formatEmissions, translatorCsv, translatorGeoJson } from "@/lib/translator";
 
-vi.mock("@/components/map/DistrictTranslatorMap", () => ({ default: ({ onAddPoint, onFinish }: { onAddPoint: (point: [number, number]) => void; onFinish: () => void }) => <div><button onClick={() => { onAddPoint([32.54, 0.29]); onAddPoint([32.61, 0.31]); onAddPoint([32.57, 0.36]); }}>Place vertices</button><button onClick={onFinish}>Finish on map</button></div> }));
+vi.mock("@/components/map/DistrictTranslatorMap", () => ({ default: ({ mode, onSelectDistrict }: { mode: string; onSelectDistrict: (nextGeometry: TranslatorGeometry, name: string, id: string) => void }) => <div data-testid="translator-map" data-mode={mode}><button onClick={() => onSelectDistrict(geometry, "Kampala", "kampala")}>Select on map</button></div> }));
 vi.mock("@/lib/api", () => ({ emissionsApi: { translatorMetadata: vi.fn(), translatorDistricts: vi.fn(), translatorSources: vi.fn(), polygonInsights: vi.fn() } }));
 
 const geometry = { type: "Polygon" as const, coordinates: [[[32.54, 0.29], [32.61, 0.31], [32.57, 0.36], [32.54, 0.29]]] };
@@ -29,20 +29,20 @@ function mount() {
 }
 
 describe("District Translator interactions", () => {
-  it("draws, undoes, clears, and prevents stale results after clear", async () => {
+  it("starts in district mode with drawing hidden and prevents stale results after clear", async () => {
     let resolve: (value: PolygonInsightsResponse) => void;
     vi.mocked(emissionsApi.polygonInsights).mockImplementation(() => new Promise((done) => { resolve = done; }));
     mount();
     await screen.findByRole("button", { name: "2025" });
-    fireEvent.click(screen.getByText("Place vertices"));
-    expect(screen.getByRole("button", { name: "Finish" })).toBeEnabled();
-    fireEvent.click(screen.getByRole("button", { name: "Undo point" }));
-    expect(screen.getByRole("button", { name: "Finish" })).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
-    fireEvent.click(screen.getByText("Place vertices"));
-    fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+    expect(screen.getByTestId("translator-map")).toHaveAttribute("data-mode", "district");
+    expect(screen.getByRole("combobox", { name: "Select district" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Draw" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Finish" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Undo point" })).not.toBeInTheDocument();
+    expect(screen.getByText("Choose a district to calculate mapped emissions.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Select on map" }));
     await waitFor(() => expect(emissionsApi.polygonInsights).toHaveBeenCalledOnce());
-    fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start over" }));
     await act(async () => resolve(result));
     expect(screen.getByRole("heading", { name: "Select an area" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "CSV" })).not.toBeInTheDocument();
@@ -51,7 +51,6 @@ describe("District Translator interactions", () => {
     mount();
     await screen.findByRole("checkbox", { name: "Power" });
     expect(screen.getByRole("checkbox", { name: "Power" })).toBeChecked();
-    fireEvent.click(screen.getByRole("button", { name: "District" }));
     await waitFor(() => expect(screen.getByRole("combobox", { name: "Select district" })).toBeEnabled());
     fireEvent.change(screen.getByRole("combobox", { name: "Select district" }), { target: { value: "kampala" } });
     await screen.findByRole("button", { name: "CSV" });
@@ -62,13 +61,12 @@ describe("District Translator interactions", () => {
     await waitFor(() => expect(vi.mocked(emissionsApi.polygonInsights).mock.calls.at(-1)?.[0]).toMatchObject({ district_id: "kampala", year: 2026 }));
     expect(screen.getByRole("heading", { name: "Kampala" })).toBeInTheDocument();
   });
-  it("shows a useful invalid-polygon message and retry", async () => {
-    vi.mocked(emissionsApi.polygonInsights).mockRejectedValue(new Error("polygon_self_intersects"));
+  it("shows an analysis failure and retry for a selected district", async () => {
+    vi.mocked(emissionsApi.polygonInsights).mockRejectedValue(new Error("polygon_insights_failed"));
     mount();
     await screen.findByRole("button", { name: "2025" });
-    fireEvent.click(screen.getByText("Place vertices"));
-    fireEvent.click(screen.getByRole("button", { name: "Finish" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("crosses itself");
+    fireEvent.click(screen.getByRole("button", { name: "Select on map" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Climate TRACE analysis could not finish");
     expect(screen.getByRole("button", { name: "Retry analysis" })).toBeInTheDocument();
   });
 });

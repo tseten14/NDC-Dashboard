@@ -63,6 +63,9 @@ export default function DistrictTranslatorMap(props: Props) {
       map.setLayoutProperty("trace-points", "visibility", current.showSources ? "visible" : "none");
       map.setPaintProperty("trace-points", "circle-opacity", current.geometry ? ["case", ["==", ["get", "inside"], 1], 0.95, 0.15] : 0.65);
       map.getCanvas().style.cursor = current.mode === "draw" && !current.geometry ? "crosshair" : "";
+      map.getCanvas().setAttribute("aria-label", current.mode === "draw"
+        ? "District map. Arrow keys pan; Enter adds a point at the center; Shift Enter finishes; Escape clears."
+        : "District map. Click a district boundary to select it; arrow keys pan the map.");
       if (current.selectedDistrictId && current.selectedDistrictId !== focusedDistrictId && current.geometry) {
         const coordinates = current.geometry.type === "Polygon" ? current.geometry.coordinates.flat() : current.geometry.coordinates.flat(2);
         const bounds = new maplibregl.LngLatBounds();
@@ -109,7 +112,6 @@ export default function DistrictTranslatorMap(props: Props) {
       if (propsRef.current.mode === "draw" && !propsRef.current.geometry) propsRef.current.onFinish();
     });
     const canvas = map.getCanvas();
-    canvas.setAttribute("aria-label", "District map. Arrow keys pan; Enter adds a point at the center; Shift Enter finishes; Escape clears.");
     const keydown = (event: KeyboardEvent) => {
       if (propsRef.current.mode !== "draw") return;
       if (event.key === "Escape") { event.preventDefault(); propsRef.current.onClear(); }

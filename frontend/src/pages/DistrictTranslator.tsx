@@ -10,8 +10,11 @@ import { cn } from "@/lib/utils";
 
 function titleize(value: string) { return value.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
 
+// Keep polygon drawing available in code for a later release.
+const DRAW_ENABLED = false;
+
 export default function DistrictTranslator() {
-  const [mode, setMode] = useState<"draw" | "district">("draw");
+  const [mode, setMode] = useState<"draw" | "district">(DRAW_ENABLED ? "draw" : "district");
   const [draft, setDraft] = useState<[number, number][]>([]);
   const draftRef = useRef<[number, number][]>([]);
   const [selection, setSelection] = useState<{ geometry: TranslatorGeometry; name: string; districtId?: string } | null>(null);
@@ -89,21 +92,21 @@ export default function DistrictTranslator() {
     <div className="grid gap-3 xl:h-full xl:min-h-0 xl:grid-cols-[280px_minmax(0,1fr)_380px]">
       <aside id="translator-tools" tabIndex={-1} className="scroll-mt-16 rounded-xl border bg-card p-4 xl:overflow-y-auto" aria-label="Area tools">
         <div className="mb-4 flex items-center gap-2"><MapPinned className="h-5 w-5 text-emerald-600" /><div><h1 className="font-display text-lg font-bold">District Translator</h1><p className="text-xs text-muted-foreground">Turn a map area into local evidence.</p></div></div>
-        <div className="grid grid-cols-2 gap-2">
+        {DRAW_ENABLED && <div className="grid grid-cols-2 gap-2">
           <Button size="sm" variant={mode === "district" ? "default" : "outline"} aria-pressed={mode === "district"} onClick={() => { clear(); setMode("district"); }}><MousePointer2 className="mr-1 h-4 w-4" />District</Button>
           <Button size="sm" variant={mode === "draw" ? "default" : "outline"} aria-pressed={mode === "draw"} onClick={() => { clear(); setMode("draw"); }}><Pentagon className="mr-1 h-4 w-4" />Draw</Button>
-        </div>
+        </div>}
         <p className="mt-3 rounded-lg bg-muted p-3 text-xs leading-relaxed text-muted-foreground">{mode === "draw" ? "Click to place vertices, then Finish or double-click. Keyboard: focus the map, pan with arrows, Enter adds the center point, Shift+Enter finishes." : "Choose a district by name or click its boundary. Calculations use the full 2020 UBOS boundary."}</p>
         {mode === "district" && <label className="mt-3 block text-xs">District<select aria-label="Select district" className="mt-1 w-full rounded-md border bg-background p-2" value={selection?.districtId ?? ""} disabled={!boundaries.data} onChange={(event) => {
           const feature = boundaries.data?.features.find((entry) => entry.properties?.shapeID === event.target.value);
           if (feature) selectDistrict(feature.geometry, feature.properties.shapeName, feature.properties.shapeID);
           else clear();
         }}><option value="">Choose district…</option>{boundaries.data?.features.slice().sort((first, second) => first.properties.shapeName.localeCompare(second.properties.shapeName)).map((feature) => <option key={feature.properties.shapeID} value={feature.properties.shapeID}>{feature.properties.shapeName}</option>)}</select></label>}
-        <div className="mt-3 grid grid-cols-3 gap-2">
+        {DRAW_ENABLED && <div className="mt-3 grid grid-cols-3 gap-2">
           <Button size="sm" variant="outline" aria-label="Undo point" onClick={undo} disabled={!draft.length && !selection}><Undo2 className="h-4 w-4" /></Button>
           <Button size="sm" onClick={finish} disabled={mode !== "draw" || draft.length < 3 || !!selection}>Finish</Button>
           <Button size="sm" variant="outline" aria-label="Clear selection" onClick={clear}><X className="h-4 w-4" /></Button>
-        </div>
+        </div>}
         <Button className="mt-2 w-full" size="sm" variant="ghost" onClick={clear}><RotateCcw className="mr-1 h-4 w-4" />Start over</Button>
         <fieldset className="mt-4 border-t pt-3"><legend className="text-xs font-bold">Year</legend><div className="flex flex-wrap gap-1">{metadata.data?.years.map((value) => <button key={value} aria-pressed={selectedYear === value} className={cn("rounded-md px-2 py-2 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500", selectedYear === value ? "bg-emerald-600 text-white" : "bg-muted")} onClick={() => setYear(value)}>{value}{value > metadata.data.default_year ? "*" : ""}</button>)}</div><p className="mt-2 text-[11px] text-muted-foreground">* Partial year. Annual comparisons use complete years.</p></fieldset>
         <fieldset className="mt-4 border-t pt-3"><legend className="text-xs font-bold">Sector filter</legend><div className="mb-2 flex gap-3"><button className="text-xs underline" onClick={() => setSelectedSectors(null)}>All sectors</button><button className="text-xs underline" onClick={() => setSelectedSectors([])}>No sectors</button></div>{sectors.map((sector) => <label key={sector} className="mb-2 flex items-center gap-2 text-xs"><input type="checkbox" checked={selectedSectors === null || selectedSectors.includes(sector)} onChange={(event) => setSelectedSectors((current) => event.target.checked ? [...(current ?? sectors), sector].filter((value, index, entries) => entries.indexOf(value) === index) : (current ?? sectors).filter((value) => value !== sector))} />{titleize(sector)}</label>)}</fieldset>
@@ -124,7 +127,7 @@ export default function DistrictTranslator() {
 
       <aside id="translator-insights" tabIndex={-1} className="scroll-mt-16 rounded-xl border bg-card p-4 xl:overflow-y-auto" aria-label="Area insights" aria-live="polite" aria-busy={!!selection && analysis.isFetching}>
         <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">Area insights</p><h2 className="font-display text-xl font-bold">{selection?.name ?? "Select an area"}</h2>
-        {!selection && <p className="mt-6 text-sm text-muted-foreground">Draw a polygon or choose a district to calculate mapped emissions.</p>}
+        {!selection && <p className="mt-6 text-sm text-muted-foreground">{DRAW_ENABLED ? "Draw a polygon or choose a district" : "Choose a district"} to calculate mapped emissions.</p>}
         {selection && analysis.isFetching && <p className="mt-4 text-sm"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Analyzing source records and available years…</p>}
         {(toolError || (selection && analysis.error)) && <div role="alert" className="mt-4 rounded-lg border border-destructive/30 p-3 text-sm text-destructive">{toolError ?? translatorError(analysis.error)}{selection && <Button variant="outline" size="sm" className="mt-2 block" onClick={() => void analysis.refetch()}>Retry analysis</Button>}</div>}
         {result && !analysis.isFetching && !analysis.isError && <div className="mt-4 space-y-4">
