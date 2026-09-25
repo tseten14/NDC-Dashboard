@@ -9,6 +9,10 @@
   },
   "rewrites": [
     {
+      "source": "/supabase-auth/:path*",
+      "destination": "https://ddjtzopugqtazrtwinzj.supabase.co/auth/v1/:path*"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api"
     },
@@ -50,6 +54,13 @@
     {
       "source": "/api/(.*)",
       "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    },
+    {
+      "source": "/supabase-auth/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" },
+        { "key": "x-vercel-enable-rewrite-caching", "value": "0" }
+      ]
     }
   ],
   "functions": {
