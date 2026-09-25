@@ -1,12 +1,13 @@
-/**
- * Sign-in gate.
- *
- * Wraps screens that require a signed-in user. Currently a pass-through
- * placeholder — real authentication is not yet wired up.
- */
 import { ReactNode } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useCurrentRole } from "@/hooks/use-current-role";
 
-/** App runs without a remote sign-in gate. */
 export function AuthGate({ children }: { children: ReactNode }) {
+  const { user, loading } = useCurrentRole();
+  const location = useLocation();
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground" role="status">Checking your session…</div>;
+  }
+  if (!user) return <Navigate to="/auth" replace state={{ from: location }} />;
   return <>{children}</>;
 }

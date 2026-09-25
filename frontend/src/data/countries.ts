@@ -1,8 +1,7 @@
 /**
  * The list of countries offered on the front page.
  *
- * Uganda is the only one with a complete dataset; Mongolia is shown as coming
- * soon so the intended scope is visible.
+ * Uganda has a complete dataset; Mongolia is the next planned country.
  */
 export type CountryCode = "UG" | "MN";
 

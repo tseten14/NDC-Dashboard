@@ -3,18 +3,21 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useCountry } from "@/context/CountryContext";
 import { useCurrentRole } from "@/hooks/use-current-role";
+import { lockOperatorSession } from "@/lib/operator-session";
 import { isPrimaryNavVisible } from "@/lib/role-capabilities";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { ArrowUpRight, Globe2, LayoutGrid, Leaf, Menu } from "lucide-react";
+import { ArrowUpRight, Globe2, LayoutGrid, Leaf, LogOut, Menu, UserRound } from "lucide-react";
 import { PRIMARY_NAV } from "@/lib/navigation";
+import { toast } from "sonner";
 
 
 export function TopNav() {
   const { country, clearCountry } = useCountry();
-  const { activeRole, loading } = useCurrentRole();
+  const { activeRole, loading, user, signOut } = useCurrentRole();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -34,6 +37,18 @@ export function TopNav() {
     setOpen(false);
     clearCountry();
     navigate("/select-country");
+  };
+
+  const leave = async () => {
+    let importLockFailed = false;
+    try { await lockOperatorSession(); } catch { importLockFailed = true; }
+    try {
+      await signOut();
+      navigate("/auth", { replace: true });
+      if (importLockFailed) toast.error("Signed out, but import access could not be locked on this device.");
+    } catch {
+      toast.error("Could not sign out. Please try again.");
+    }
   };
 
   return (
@@ -60,6 +75,16 @@ export function TopNav() {
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-10 w-10" aria-label="Account menu"><UserRound className="h-4 w-4" /></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-w-[min(90vw,280px)]">
+              <DropdownMenuLabel className="truncate text-xs font-normal">{user?.email}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => { void leave(); }}><LogOut className="mr-2 h-4 w-4" />Sign out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Sheet open={open} onOpenChange={(nextOpen) => { if (nextOpen) menuPath.current = pathname; setOpen(nextOpen); }}>
             <SheetTrigger asChild>
               <Button variant="outline" className="h-10 gap-2 md:ml-2" aria-label="Open all tools">
