@@ -3,9 +3,6 @@
  *
  * The right-hand column — how far the observed figures leave Uganda from the
  * pledge, as a percentage and an on-track judgement.
- *
- * The formula is printed on the panel rather than hidden, because a progress
- * percentage is meaningless unless the reader can see how it was calculated.
  */
 import { useMemo, type ReactNode } from "react";
 import { type NDCTarget, type ProgressStatus } from "@/data/uganda-ndc-data";
@@ -212,10 +209,6 @@ export function ProgressTowardTargetColumn({ selectedTarget, footer, scroll = tr
               }
             />
             )}
-            <ProgressFormulaBlock
-              selectedTarget={selectedTarget}
-              isEmissionsCapTarget={isEmissionsCapTarget}
-            />
             {footer}
           </div>,
         )}
@@ -280,49 +273,12 @@ export function ProgressTowardTargetColumn({ selectedTarget, footer, scroll = tr
 
               {capProgressBar}
               {goalProgressBar}
-
-              <ProgressFormulaBlock
-                selectedTarget={selectedTarget}
-                isEmissionsCapTarget={isEmissionsCapTarget}
-              />
             </CardContent>
           </Card>
 
           {footer}
         </div>,
       )}
-    </div>
-  );
-}
-
-function ProgressFormulaBlock({
-  selectedTarget,
-  isEmissionsCapTarget,
-}: {
-  selectedTarget: NDCTarget;
-  isEmissionsCapTarget: boolean;
-}) {
-  const isTrueReduction =
-    selectedTarget.metricType === "emissions-reduction" &&
-    selectedTarget.targetValue < selectedTarget.baselineValue;
-
-  let template: string;
-
-  if (isEmissionsCapTarget) {
-    template =
-      "Progress = (without new policies − measured) ÷ (without new policies − pledge limit) × 100";
-  } else if (isTrueReduction) {
-    template = "Progress = (starting point − measured) ÷ (starting point − goal) × 100";
-  } else {
-    template = "Progress = (measured − starting point) ÷ (goal − starting point) × 100";
-  }
-
-  return (
-    <div className="mt-3 w-full min-w-0 px-2.5 py-2 rounded-md bg-muted/40 border border-border text-center">
-      <p className="text-[9px] uppercase tracking-wide font-semibold text-muted-foreground mb-1">
-        Progress formula
-      </p>
-      <p className="text-[10px] text-foreground break-words leading-relaxed">{template}</p>
     </div>
   );
 }
