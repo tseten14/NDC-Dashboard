@@ -17,6 +17,7 @@ export const timeseriesPointSchema = z.object({
 
 export const progressResponseSchema = z.object({
   sector: z.string(),
+  progress_comparable: z.boolean().optional(),
   unit: z.string().optional(),
   label: z.string().optional(),
   condition: z.string().optional(),
@@ -67,8 +68,8 @@ export const emissionsDashboardSchema = z.object({
   on_track: z.number(),
   off_track: z.number(),
   mixed: z.number(),
-  impl_gaps: z.number().optional(),
-  mrv_gaps: z.number().optional(),
+  impl_gaps: z.number().nullable().optional(),
+  mrv_gaps: z.number().nullable().optional(),
   global_rank: z.number().nullable(),
   total_co2e_mtco2e: z.number().nullable(),
   yoy_change_mtco2e: z.number().nullable(),
@@ -76,6 +77,7 @@ export const emissionsDashboardSchema = z.object({
   from_cache: z.boolean(),
   data_source: z.string(),
   api_docs_url: z.string().optional(),
+  total_timeseries: z.array(timeseriesPointSchema).optional(),
   timeseries: z.record(z.array(timeseriesPointSchema)),
   progress: z.record(progressResponseSchema),
   sectors: z.record(sectorSummarySchema),

@@ -7,7 +7,7 @@ const runningServerUrl = process.env.NDC_UX_BASE_URL;
 
 export default defineConfig({
   testDir: "../frontend/tests/e2e",
-  testMatch: ["workspace-ux.spec.ts", "sector-classification.spec.ts", "scenario-analysis.spec.ts"],
+  testMatch: ["workspace-ux.spec.ts", "dashboard-accuracy.spec.ts", "sector-classification.spec.ts", "scenario-analysis.spec.ts"],
   outputDir: "../test-results",
   timeout: 120_000,
   workers: 1,

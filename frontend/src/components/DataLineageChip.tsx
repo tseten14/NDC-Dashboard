@@ -22,7 +22,7 @@ interface DataLineageChipProps {
 
 export const DataLineageChip = memo(function DataLineageChip({ lineage, className }: DataLineageChipProps) {
   const asOfLabel = lineage.asOf
-    ? new Date(lineage.asOf).toLocaleDateString("en-UG", { day: "numeric", month: "short", year: "numeric" })
+    ? new Date(lineage.asOf).toLocaleDateString("en-UG", { day: "numeric", month: "short", year: "numeric", ...(/^\d{4}-\d{2}-\d{2}$/.test(lineage.asOf) ? { timeZone: "UTC" } : {}) })
     : "—";
 
   return (

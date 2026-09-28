@@ -41,6 +41,7 @@ import {
   getSlugBreakdownForYear,
   getMissingSlugsForSectorYear,
   getLocationTotalMt,
+  getLocationTimeseries,
 } from "./climateTraceTimeseries.js";
 import { computeSectorProgress } from "../../shared/progress.js";
 import { safeParseOrLog } from "../../shared/validate.js";
@@ -74,9 +75,10 @@ function priorFromSeries(series, beforeYear) {
   return null;
 }
 
-function traceYoYPct(series, latestYear, latestValue) {
+export function traceYoYPct(series, latestYear, latestValue) {
   if (latestValue == null || latestYear == null) return null;
   const prior = priorFromSeries(series, latestYear);
+  if (prior?.year !== latestYear - 1 || prior.value < 0) return null;
   if (prior?.value == null || prior.value === 0) return null;
   return +(((latestValue - prior.value) / prior.value) * 100).toFixed(1);
 }
@@ -90,7 +92,7 @@ export async function getTimeseries(sector, since, to, gadmId = UGANDA_NATIONAL_
   }
   const range = defaultInventoryRange();
   const sinceY = since ?? range.since;
-  const toY = to ?? range.to;
+  const toY = Math.min(to ?? range.to, latestInventoryYear());
   return getUiSectorTimeseries(sector, sinceY, toY, gadmId);
 }
 
@@ -175,10 +177,12 @@ export async function getEmissionsDashboard(since, to, options = {}) {
   const range = defaultInventoryRange();
   const minYear = isDistrict ? SUBNATIONAL_INVENTORY_YEAR_MIN : range.since;
   const sinceY = Math.max(since ?? range.since, minYear);
-  const toY = to ?? range.to;
+  const toY = Math.min(to ?? range.to, latestInventoryYear());
   const refYear = Math.min(toY, latestInventoryYear());
 
+  const livePromise = isDistrict ? Promise.resolve(null) : fetchLiveUgandaSnapshot(refYear);
   await warmSlugYears(sinceY, toY, gadmId);
+  const total_timeseries = await getLocationTimeseries(sinceY, toY, gadmId);
 
   const timeseries = {};
   const progress = {};
@@ -193,18 +197,18 @@ export async function getEmissionsDashboard(since, to, options = {}) {
       const latest = latestFromSeries(series);
       const prog = computeProgress(latest?.value ?? null, sector, latest?.year ?? null);
       const missingSlugs =
-        latest?.year != null ? await getMissingSlugsForSectorYear(sector, latest.year, gadmId) : [];
+        await getMissingSlugsForSectorYear(sector, refYear, gadmId);
 
       const slugParts = {};
-      if (latest?.year != null && SECTOR_MAP[sector]) {
-        const { breakdown } = await getSlugBreakdownForYear(latest.year, gadmId);
+      if (SECTOR_MAP[sector]) {
+        const { breakdown } = await getSlugBreakdownForYear(refYear, gadmId);
         for (const slug of SECTOR_MAP[sector]) {
           slugParts[slug] = breakdown[slug] ?? null;
         }
       }
 
       slug_breakdown_by_sector[sector] = {
-        reference_year: latest?.year ?? refYear,
+        reference_year: refYear,
         slugs: SECTOR_MAP[sector] ?? [],
         values_mt: slugParts,
         missing_slugs: missingSlugs,
@@ -214,11 +218,12 @@ export async function getEmissionsDashboard(since, to, options = {}) {
 
       // District observed emissions cannot be scored against national NDC
       // baselines/targets, so progress is reported as unknown in district view.
-      const progressPct = isDistrict ? null : prog?.progress_pct ?? null;
-      const progressStatus = isDistrict ? "unknown" : prog?.status ?? "unknown";
+      const progressPct = isDistrict || latest?.year !== refYear || missingSlugs.length ? null : prog?.progress_pct ?? null;
+      const progressStatus = progressPct == null ? "unknown" : prog?.status ?? "unknown";
 
       progress[sector] = {
         sector,
+        progress_comparable: !isDistrict && t.progress_comparable !== false && latest?.year === refYear,
         unit: "MtCO2e",
         label: t.label,
         condition: t.condition,
@@ -277,23 +282,15 @@ export async function getEmissionsDashboard(since, to, options = {}) {
     // Use Climate TRACE's exact all-sector district total (matches CT exactly
     // and includes sectors like mineral-extraction not shown as UI cards).
     total_co2e_mtco2e = await getLocationTotalMt(refYear, gadmId);
-    if (total_co2e_mtco2e == null) {
-      const districtSectorValues = SECTOR_KEYS.map((s) => sectors[s].latest_value);
-      total_co2e_mtco2e =
-        districtSectorValues.length === SECTOR_KEYS.length &&
-        districtSectorValues.every((v) => v != null)
-          ? +districtSectorValues.reduce((a, b) => a + b, 0).toFixed(2)
-          : null;
-    }
     reconciliation = undefined;
   } else {
     try {
-      live = await fetchLiveUgandaSnapshot();
+      live = await livePromise;
     } catch (e) {
       live = { co2e_mtco2e: null, rank: null, yoy_change_mtco2e: null, stale: true, error: e.message };
     }
     reconciliation = await buildReconciliation(refYear);
-    total_co2e_mtco2e = live.co2e_mtco2e;
+    total_co2e_mtco2e = await getLocationTotalMt(refYear, gadmId);
     yoy_change_mtco2e = live.yoy_change_mtco2e;
     global_rank = live.rank;
     data_stale = !!live.stale;
@@ -303,7 +300,8 @@ export async function getEmissionsDashboard(since, to, options = {}) {
   const payload = {
     since: sinceY,
     to: toY,
-    inventory_year: latestInventoryYear(),
+    inventory_year: refYear,
+    total_timeseries,
     gas: "co2e_100yr",
     geography: isDistrict ? "district" : "national",
     gadm_id: gadmId,
@@ -312,12 +310,12 @@ export async function getEmissionsDashboard(since, to, options = {}) {
     on_track,
     off_track,
     mixed,
-    impl_gaps: 0,
-    mrv_gaps: 1,
+    impl_gaps: null,
+    mrv_gaps: null,
     global_rank,
     total_co2e_mtco2e,
     yoy_change_mtco2e,
-    data_stale,
+    data_stale: data_stale || total_co2e_mtco2e == null || Object.values(timeseries).some((series) => series.some((point) => point.value == null)),
     from_cache,
     data_source: isDistrict
       ? `Climate TRACE (live API) — ${districtName ?? gadmId}`
@@ -337,7 +335,7 @@ export async function getEmissionsDashboard(since, to, options = {}) {
     },
   };
 
-  safeParseOrLog(emissionsDashboardSchema, payload, "emissions.dashboard");
+  if (!safeParseOrLog(emissionsDashboardSchema, payload, "emissions.dashboard").ok) throw new Error("Invalid dashboard payload");
   return payload;
 }
 
@@ -389,8 +387,8 @@ export async function getProvenancePayload() {
 
   const missingSlugs = reconciliation?.missing_slugs?.length ?? 0;
   const deltaPct = reconciliationDeltaPct(reconciliation);
-  let validated = !dataStale && missingSlugs === 0 && (deltaPct == null || deltaPct <= 5);
-  let qa_qc_status = "OK";
+  let validated = !!reconciliation && !dataStale && missingSlugs === 0 && reconciliation.country_total_mt != null && reconciliation.sector_sum_mt != null && (deltaPct != null ? deltaPct <= 5 : reconciliation.delta_mt === 0);
+  let qa_qc_status = validated ? "OK" : "Warning";
   if (missingSlugs > 0 || dataStale) {
     validated = false;
     qa_qc_status = "Warning";

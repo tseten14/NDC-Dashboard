@@ -406,6 +406,7 @@ export interface GeographyOpts {
 }
 
 export interface ProgressResponse {
+  progress_comparable?: boolean;
   sector: NdcSectorKey;
   unit: "MtCO2e";
   label: string;
@@ -454,6 +455,7 @@ export interface EmissionsCoverage {
 }
 
 export interface EmissionsDashboard {
+  total_timeseries?: TimeseriesPoint[];
   since: number;
   to: number;
   inventory_year: number;
@@ -462,8 +464,8 @@ export interface EmissionsDashboard {
   on_track: number;
   off_track: number;
   mixed: number;
-  impl_gaps: number;
-  mrv_gaps: number;
+  impl_gaps: number | null;
+  mrv_gaps: number | null;
   global_rank: number | null;
   total_co2e_mtco2e: number | null;
   yoy_change_mtco2e: number | null;
@@ -487,8 +489,8 @@ export interface EmissionsSummary {
   on_track: number;
   off_track: number;
   mixed: number;
-  impl_gaps: number;
-  mrv_gaps: number;
+  impl_gaps: number | null;
+  mrv_gaps: number | null;
   global_rank: number | null;
   total_co2e_mtco2e: number | null;
   yoy_change_mtco2e: number | null;

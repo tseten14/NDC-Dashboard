@@ -220,31 +220,9 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
     if (issues.length > 0) reportIssues(issues);
   }, [dashboardQuery.data]);
 
-  // Economy-wide observed series = sum of all CT sectors per year (replaces fabricated t0 mock data)
-  const economyWideTimeseries = useMemo(() => {
-    const d = dashboardQuery.data;
-    if (!d?.timeseries) return [];
-    const years = new Set<number>();
-    for (const s of CLIMATE_TRACE_API_SECTORS) {
-      for (const p of d.timeseries[s as keyof typeof d.timeseries] ?? []) years.add(p.year);
-    }
-    return Array.from(years)
-      .sort((a, b) => a - b)
-      .map((year) => {
-        let total = 0;
-        let complete = true;
-        for (const s of CLIMATE_TRACE_API_SECTORS) {
-          const pts = d.timeseries[s as keyof typeof d.timeseries] ?? [];
-          const pt = (pts as { year: number; value: number | null }[]).find((x) => x.year === year);
-          if (pt?.value == null) {
-            complete = false;
-            break;
-          }
-          total += pt.value;
-        }
-        return { year, value: complete ? Math.round(total * 100) / 100 : null };
-      });
-  }, [dashboardQuery.data]);
+  // Use Climate TRACE's all-sector aggregate, including mineral extraction.
+  // Older/missing payloads stay unavailable instead of summing a subset.
+  const economyWideTimeseries = useMemo(() => dashboardQuery.data?.total_timeseries ?? [], [dashboardQuery.data]);
 
   const progressBySector = useMemo(() => {
     return dashboardQuery.data?.progress ?? {};
@@ -314,13 +292,12 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
         const ind = indicatorPanelQuery.data?.targets?.[t.id];
         const ok = !!(ind?.timeseries?.length && !indicatorPanelQuery.error);
         if (ok) good++;
-      } else {
-        const obs = getObservedDataForTarget(t.id);
-        if (obs?.provenance.isValidated && obs.provenance.qaqcStatus === "ok") good++;
+      } else if (t.sectorId === "economy-wide" && dashboardQuery.data?.total_timeseries?.some((p) => p.value != null)) {
+        good++;
       }
     }
     return total ? Math.round((good / total) * 100) : 0;
-  }, [timeseriesBySector, sectorError, indicatorPanelQuery.data, indicatorPanelQuery.error]);
+  }, [timeseriesBySector, sectorError, indicatorPanelQuery.data, indicatorPanelQuery.error, dashboardQuery.data]);
 
   const dashboardLastRefreshIso = useMemo(() => {
     if (isApiReachable && dashboardQuery.dataUpdatedAt) {
@@ -369,8 +346,7 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
         return { ...calculateProgress(target, obs), source: "catalog" };
       }
 
-      const obs = getObservedDataForTarget(target.id);
-      return { ...calculateProgress(target, obs), source: "mock" };
+      return { percent: null, status: "unknown", source: "api" };
     },
     [
       progressBySector,

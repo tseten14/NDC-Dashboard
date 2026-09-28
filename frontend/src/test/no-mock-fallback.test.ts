@@ -17,6 +17,7 @@ import {
   isIndicatorPanelTarget,
 } from "../lib/emissions-integration";
 import { ndcTargets } from "../data/uganda-ndc-data";
+import { isMockMode } from "../../../backend/routes/health.js";
 import { NDC_TARGETS } from "../../../config/ndcTargets.js";
 
 // ── Mock-mode flag ────────────────────────────────────────────────────────────
@@ -142,5 +143,20 @@ describe("Indicator panel targets cannot be mistaken for CT district data", () =
       const isEmissionsUnit = t.unit.toLowerCase().replace(/\s/g, "").includes("mtco");
       expect(isEmissionsUnit, `${t.id} (${t.unit}) looks like an emissions target but is in the indicator panel`).toBe(false);
     }
+  });
+});
+
+
+describe("production refuses demo mode", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("cannot mount mock emissions on Vercel or NODE_ENV=production", () => {
+    vi.stubEnv("USE_MOCK_DATA", "true");
+    vi.stubEnv("NODE_ENV", "production");
+    expect(isMockMode()).toBe(false);
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("VERCEL", "1");
+    expect(isMockMode()).toBe(false);
+    vi.stubEnv("VERCEL", "");
+    expect(isMockMode()).toBe(true);
   });
 });

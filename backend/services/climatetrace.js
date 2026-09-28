@@ -32,12 +32,12 @@ import { logCacheAccess, logger } from "../server/logger.js";
 
 const cache = new NodeCache({ stdTTL: 86400 }); // 24h
 const LIVE_CACHE_KEY = `ct:live:UGA:${CLIMATE_TRACE_API_VERSION}`;
-const LIVE_CACHE_TTL_SEC = 86400;
+const LIVE_CACHE_TTL_SEC = 3600;
 
-function liveCacheAgeSeconds() {
-  const ttlMs = cache.getTtl(LIVE_CACHE_KEY);
+function liveCacheAgeSeconds(key) {
+  const ttlMs = cache.getTtl(key);
   if (ttlMs == null || ttlMs <= 0) return null;
-  return Math.max(0, LIVE_CACHE_TTL_SEC - Math.round(ttlMs / 1000));
+  return Math.max(0, LIVE_CACHE_TTL_SEC - Math.round((ttlMs - Date.now()) / 1000));
 }
 
 function refreshLiveCacheSize() {
@@ -47,20 +47,20 @@ function refreshLiveCacheSize() {
 /**
  * Latest-year Uganda snapshot from Climate TRACE v7 rankings + national aggregate.
  */
-export async function fetchLiveUgandaSnapshot() {
-  const cached = cache.get(LIVE_CACHE_KEY);
+export async function fetchLiveUgandaSnapshot(year = latestInventoryYear()) {
+  const key = `${LIVE_CACHE_KEY}:${year}`;
+  const cached = cache.get(key);
   if (cached) {
     recordCacheAccess({ hit: true });
-    logCacheAccess({ key: LIVE_CACHE_KEY, hit: true, age_seconds: liveCacheAgeSeconds() });
+    logCacheAccess({ key, hit: true, age_seconds: liveCacheAgeSeconds(key) });
     refreshLiveCacheSize();
     return { ...cached, from_cache: true };
   }
 
   recordCacheAccess({ hit: false });
-  logCacheAccess({ key: LIVE_CACHE_KEY, hit: false, age_seconds: null });
+  logCacheAccess({ key, hit: false, age_seconds: null });
 
   try {
-    const year = latestInventoryYear();
     const ranking = await fetchUgandaCountryRanking(year);
 
     let previousRank = null;
@@ -88,12 +88,12 @@ export async function fetchLiveUgandaSnapshot() {
       fetched_at: new Date().toISOString(),
     };
 
-    cache.set(LIVE_CACHE_KEY, result);
+    cache.set(key, result, LIVE_CACHE_TTL_SEC);
     refreshLiveCacheSize();
     return result;
   } catch (err) {
     logger.error({ err, event: "climatetrace_live_failed" }, err.message);
-    const stale = cache.get(LIVE_CACHE_KEY);
+    const stale = cache.get(key);
     const safeError = "Climate TRACE data is temporarily unavailable.";
     if (stale) return { ...stale, stale: true, error: safeError };
     return {

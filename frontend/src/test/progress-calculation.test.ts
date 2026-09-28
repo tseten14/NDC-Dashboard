@@ -46,13 +46,14 @@ describe("calculateProgressPercent — emissions cap targets (target > baseline)
 });
 
 describe("progressFromLiveApiFields (stale API progress_pct)", () => {
-  it("recalculates 100% for AFOLU when API still returns 0", async () => {
+  it("does not score forestry-only data against the full AFOLU pledge", async () => {
     const { progressFromLiveApiFields } = await import("@/lib/emissions-integration");
     const { ndcTargets } = await import("@/data/uganda-ndc-data");
     const afolu = ndcTargets.find((t) => t.id === "t1")!;
     const result = progressFromLiveApiFields(
       {
         sector: "afolu",
+        progress_comparable: false,
         unit: "MtCO2e",
         label: "AFOLU",
         condition: "Mixed",
@@ -69,15 +70,14 @@ describe("progressFromLiveApiFields (stale API progress_pct)", () => {
       },
       afolu,
     );
-    expect(result.percent).toBe(100);
-    expect(result.status).toBe("on-track");
+    expect(result.percent).toBeNull();
+    expect(result.status).toBe("unknown");
   });
 });
 
 describe("computeSectorProgress", () => {
-  it("marks AFOLU cap progress using BAU metadata from config", () => {
+  it("leaves AFOLU progress unknown because the observed scope differs", () => {
     const result = computeSectorProgress(27.84, NDC_TARGETS.afolu, 2024);
-    expect(result?.progress_pct).toBe(100);
-    expect(result?.progress_method).toBe("bau_cap");
+    expect(result).toBeNull();
   });
 });

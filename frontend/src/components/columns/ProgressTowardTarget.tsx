@@ -102,7 +102,7 @@ export function ProgressTowardTargetColumn({ selectedTarget, footer, scroll = tr
     indicatorTargets: emissions.indicatorTargets,
   });
   const isNationalOnlyTarget =
-    isIndicatorPanelTarget(selectedTarget) || selectedTarget.sectorId === "economy-wide";
+    isIndicatorPanelTarget(selectedTarget);
   const districtNote = emissions.isDistrictView ? (
     isNationalOnlyTarget ? (
       <div className="p-2 rounded-md bg-muted/60 border border-border text-[11px] text-muted-foreground">
@@ -185,7 +185,9 @@ export function ProgressTowardTargetColumn({ selectedTarget, footer, scroll = tr
               hint={
                 districtProgressBlocked
                   ? "District progress is not scored against national NDC targets. See the Observed Data column for district emissions."
-                  : "Progress requires observed values for the selected reporting period."
+                  : pr?.progress_comparable === false
+                    ? "The observed data does not cover the same activities as this national pledge, or the latest year is missing. A progress score cannot be calculated reliably."
+                    : "Progress requires observed values for the selected reporting period."
               }
             />
             <ProgressFormulaBlock

@@ -9,7 +9,7 @@
  * match exactly.
  */
 import { useState, type ReactNode } from "react";
-import { type NDCTarget, type ObservedDataSet, type TimeMode, getObservedDataForTarget, bau2030ForTarget } from "@/data/uganda-ndc-data";
+import { type NDCTarget, type ObservedDataSet, type TimeMode, bau2030ForTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import {
   buildLiveObservedDataSet,
@@ -81,6 +81,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
   }
 
   const apiSector = getClimateTraceSectorForTarget(selectedTarget);
+  const isEconomyWide = selectedTarget.sectorId === "economy-wide";
   const ts = apiSector ? emissions.timeseriesBySector[apiSector] : undefined;
   const pr = apiSector ? emissions.progressBySector[apiSector] : undefined;
   const observedMode = emissions.getObservedMode(selectedTarget);
@@ -120,7 +121,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
     emissions.indicatorPanelLoading &&
     !indEntry;
 
-  if (fetchingLive || fetchingProxy || fetchingIndicator) {
+  if (fetchingLive || fetchingProxy || fetchingIndicator || (isEconomyWide && emissions.summaryIsLoading)) {
     return <ColumnLoadingState title="Observed Data" />;
   }
 
@@ -148,7 +149,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
     emissions.economyWideTimeseries.length > 0 &&
     emissions.isApiReachable
   ) {
-    // Economy-wide: use CT-derived aggregate (sum of all sector timeseries) — real data, not mock
+    // Economy-wide: use CT-derived aggregate (all-sector total returned by Climate TRACE) — real data, not mock
     observedData = buildLiveObservedDataSet(
       selectedTarget,
       emissions.economyWideTimeseries,
@@ -192,7 +193,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
     // NoDataPlaceholder below is shown with a district-specific hint.
     observedData = undefined;
   } else {
-    observedData = getObservedDataForTarget(selectedTarget.id);
+    observedData = undefined;
   }
 
   if (apiSector && emissions.sectorError[apiSector]) {
@@ -232,7 +233,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
     bauRef != null &&
     selectedTarget.targetValue > selectedTarget.baselineValue;
   const hasNullGaps =
-    (apiSector || usingProxyData) &&
+    (apiSector || usingProxyData || isEconomyWide) &&
     observedData.historicalData.some((p) => p.value == null);
   const observedSeriesLabel = usingProxyData
     ? `${getProxySectorLabel(selectedTarget)} observed`
@@ -257,7 +258,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
     (p) => p.observedValue,
   );
 
-  const showNdcTarget = !isDistrictView && chartData.some((d) => d.target != null);
+  const showNdcTarget = !isDistrictView && pr?.progress_comparable !== false && chartData.some((d) => d.target != null);
   const ndcGoal = showNdcTarget ? selectedTarget.targetValue : null;
   const isGrowthTarget =
     !isCapChart &&
@@ -275,7 +276,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
   const measuredCompareLabel = observedSeriesLabel.replace(/\s*observed\s*$/i, "").trim() || "Measured";
 
   const lineageSource: "api" | "catalog" | "mock" =
-    observedMode === "live" && (apiSector || usingProxyData)
+    observedMode === "live" && (apiSector || usingProxyData || isEconomyWide)
       ? "api"
       : observedMode === "live" && isIndicatorPanelTarget(selectedTarget)
         ? "catalog"
@@ -349,27 +350,23 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
           {isProjected ? "Projected Path" : "Observed Data"}
         </h3>
         {/* District badge — direct CT or proxy CT (both are real per-district data) */}
-        {emissions.isDistrictView && emissions.districtName && (!!apiSector || usingProxyData) && (
+        {emissions.isDistrictView && emissions.districtName && (!!apiSector || usingProxyData || isEconomyWide) && (
           <Badge variant="outline" className="text-[8px] h-4 gap-0.5 shrink-0">
             <MapPin className="h-2.5 w-2.5" />
             {emissions.districtName}
           </Badge>
         )}
         {/* National badge only when in district view with no district data at all */}
-        {emissions.isDistrictView && !apiSector && !usingProxyData && (
+        {emissions.isDistrictView && !apiSector && !usingProxyData && !isEconomyWide && (
           <Badge variant="outline" className="text-[8px] h-4 gap-0.5 shrink-0 text-muted-foreground">
             National
           </Badge>
         )}
-        {((apiSector || usingProxyData) ||
-          (isIndicatorPanelTarget(selectedTarget) &&
-            !usingProxyData &&
-            observedMode === "live" &&
-            !apiSector)) && <ClimateTraceApiBadge />}
+        {(apiSector || usingProxyData || isEconomyWide) && <ClimateTraceApiBadge />}
         {hasIngestedObs && (
           <DataProvenanceBadge count={ingestedRows.length} source={ingestSourceLabel} />
         )}
-        {(apiSector || usingProxyData) && (
+        {(apiSector || usingProxyData || isEconomyWide) && (
           <button
             type="button"
             onClick={() => setViewSourceOpen(true)}
@@ -425,7 +422,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             </div>
           )}
 
-          {!apiSector && !usingProxyData && isDistrictView && (
+          {!apiSector && !usingProxyData && !isEconomyWide && isDistrictView && (
             <div className="p-2 rounded-md bg-muted/60 border border-border text-xs leading-snug">
               <p className="text-foreground font-medium">National-level indicator</p>
               <p className="text-muted-foreground mt-0.5">
@@ -435,7 +432,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             </div>
           )}
 
-          {hasIngestedObs && !apiSector && !usingProxyData && (
+          {hasIngestedObs && !apiSector && !usingProxyData && !isEconomyWide && (
             <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs leading-snug">
               <p className="text-foreground font-medium">Includes file-ingested observations</p>
               <p className="text-muted-foreground mt-0.5">
@@ -445,7 +442,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             </div>
           )}
 
-          {apiSector && observedMode === "live" && !isDistrictView && liveProgress && (
+          {apiSector && observedMode === "live" && !isDistrictView && liveProgress?.progress_comparable !== false && liveProgress && (
             <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs leading-snug">
               <p className="text-foreground font-medium">What you&apos;re seeing</p>
               <p className="text-muted-foreground mt-0.5">
@@ -458,6 +455,8 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
               )}
             </div>
           )}
+
+          {pr?.progress_comparable === false && !isDistrictView && <p className="text-sm text-muted-foreground">{pr.scope_note} A progress score is unavailable because the coverage or reporting year does not match the pledge comparison.</p>}
 
           {hasNullGaps && (
             <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -530,7 +529,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                 showBauPath={projectionShowBau}
                 capTarget={isCapChart}
                 onBarClick={
-                  apiSector || usingProxyData
+                  apiSector || usingProxyData || isEconomyWide
                     ? (point) =>
                         setClickedPoint({
                           year: point.year,
@@ -546,16 +545,9 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
                 showBauPath={projectionShowBau}
                 showProjected={showProjection}
                 capTarget={isCapChart}
-                dataSourceHref={
-                  observedMode === "live" &&
-                  (apiSector ||
-                    usingProxyData ||
-                    (isIndicatorPanelTarget(selectedTarget) && !usingProxyData && !apiSector))
-                    ? CLIMATE_TRACE_API_DOCS_URL
-                    : undefined
-                }
+                dataSourceHref={observedMode === "live" && (apiSector || usingProxyData || isEconomyWide) ? CLIMATE_TRACE_API_DOCS_URL : undefined}
               />
-              {(apiSector || usingProxyData) && !clickedPoint && (
+              {(apiSector || usingProxyData || isEconomyWide) && !clickedPoint && (
                 <p className="text-[9px] text-muted-foreground/60 mt-1 px-1">
                   Click any {isProjected ? "measured point" : "bar"} to trace its data source
                 </p>
@@ -581,7 +573,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
           {clickedPoint && (
             <DataProvenancePanel
               year={clickedPoint.year}
-              value={clickedPoint.value}
+              value={clickedPoint.value * chartDisplay.scale}
               unit={chartDisplay.unitLabel}
               sector={usingProxyData ? null : (apiSector ?? null)}
               sectorLabel={observedSeriesLabel}
@@ -589,7 +581,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             />
           )}
 
-          {(apiSector || usingProxyData) && (
+          {(apiSector || usingProxyData || isEconomyWide) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
               <Dialog>
                 <DialogTrigger asChild>

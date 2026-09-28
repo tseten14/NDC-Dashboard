@@ -558,10 +558,10 @@ export function ObservedProjectedComposedChart({
               <Line
                 dataKey="observedValue"
                 name={observedSeriesLabel}
-                type="monotone"
+                type="linear"
                 stroke="hsl(var(--chart-4))"
                 strokeWidth={2.5}
-                connectNulls
+                connectNulls={false}
                 isAnimationActive={false}
                 dot={{
                   r: 3,

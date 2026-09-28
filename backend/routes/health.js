@@ -28,7 +28,7 @@ const router = express.Router();
 const startedAt = Date.now();
 
 export function isMockMode() {
-  return process.env.USE_MOCK_DATA === "true";
+  return process.env.USE_MOCK_DATA === "true" && process.env.NODE_ENV !== "production" && !process.env.VERCEL;
 }
 
 router.get("/health", (_req, res) => {

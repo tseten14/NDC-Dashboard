@@ -24,7 +24,7 @@ import {
   reviewDashboardQaqc,
   uiStatusFromApiStatus,
 } from "@/lib/progress";
-import { bau2030ForTarget, getObservedDataForTarget } from "@/data/uganda-ndc-data";
+import { bau2030ForTarget } from "@/data/uganda-ndc-data";
 import type { ProgressResponse } from "@/lib/api";
 import { roundMtco2e } from "@/lib/emissions-units";
 
@@ -179,8 +179,8 @@ export function progressFromEconomyWideTimeseries(
   series: { year: number; value: number | null }[],
 ): { percent: number | null; status: ProgressStatus } {
   const latest = latestNonNullPoint(series);
-  if (!latest) return { percent: null, status: "unknown" };
-  return progressFromTargetAndLatest(target, latest.value, latest.year);
+  if (!latest || latest.year !== series.at(-1)?.year) return { percent: null, status: "unknown" };
+  return progressFromTargetAndLatest(target, latest.value, latest.year, { qaqcStatus: deriveTraceDataQuality({ timeseries: series }).qaqcStatus });
 }
 
 /** Latest observed point for progress display (API sector, economy-wide sum, or indicators). */
@@ -528,7 +528,8 @@ export function resolveObservedDataSetForTarget(
     );
   }
 
-  return getObservedDataForTarget(target.id) ?? null;
+  // Production observations must come from a successful API/catalog response.
+  return null;
 }
 
 /**
@@ -540,6 +541,7 @@ export function progressFromLiveApiFields(
   target: NDCTarget,
   qaqcHints: { dataStale?: boolean; reconciliationDeltaPct?: number | null } = {},
 ): { percent: number | null; status: ProgressStatus } {
+  if (pr.progress_comparable === false || pr.missing_slugs?.length || pr.latest_value == null) return { percent: null, status: "unknown" };
   return progressFromTargetAndLatest(target, pr.latest_value, pr.latest_year, {
     bau2030: pr.bau_2030 ?? bau2030ForTarget(target),
     qaqcStatus: qaqcFromLiveProgress(pr, qaqcHints),
@@ -552,12 +554,12 @@ export function progressFromLiveApiFields(
  * target value, so a per-district progress % cannot be computed honestly — the
  * district's observed data is shown for local context instead.
  *
- * Exceptions: indicator-panel and economy-wide targets are explicitly national —
+ * Exception: indicator-panel targets are explicitly national —
  * district selection has no effect, so their (national) score is kept and labelled
  * as such rather than blocked.
  */
 export function isDistrictProgressBlocked(target: NDCTarget, isDistrictView: boolean): boolean {
   if (!isDistrictView) return false;
-  if (isIndicatorPanelTarget(target) || target.sectorId === "economy-wide") return false;
+  if (isIndicatorPanelTarget(target)) return false;
   return true;
 }

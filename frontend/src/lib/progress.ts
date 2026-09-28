@@ -82,12 +82,15 @@ export function deriveTraceDataQuality(
     unit?: string;
   } = {},
 ): { qaqcStatus: QAQCStatus; isValidated: boolean; isEstimated: boolean } {
-  if (hints.timeseries?.length) {
+  if (hints.missingSlugs?.length) return { qaqcStatus: "missing", isValidated: false, isEstimated: true };
+  if (hints.reconciliationDeltaPct != null && hints.reconciliationDeltaPct > 5) return { qaqcStatus: "inconsistent", isValidated: false, isEstimated: true };
+  if (hints.dataStale) return { qaqcStatus: "warning", isValidated: false, isEstimated: true };
+  if (hints.timeseries) {
     const reviewed = reviewDashboardQaqc(hints.timeseries, hints.unit ?? "MtCO₂e");
+    if (hints.timeseries.some((p) => p.value == null) && reviewed.qaqcStatus === "ok") return { qaqcStatus: "warning", isValidated: false, isEstimated: true };
     return { ...reviewed, isEstimated: true };
   }
-
-  return { qaqcStatus: "ok", isValidated: true, isEstimated: true };
+  return { qaqcStatus: "ok", isValidated: false, isEstimated: true };
 }
 
 export function reconciliationDeltaPercent(

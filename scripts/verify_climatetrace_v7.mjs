@@ -1,134 +1,59 @@
-/**
- * Cross-check Climate TRACE v7 API responses vs our dashboard aggregation.
- * Run: node scripts/verify_climatetrace_v7.mjs
+/** Live reconciliation against raw Climate TRACE replies, not test fixtures.
+ * VERIFY_YEAR defaults to the latest complete year. VERIFY_GADM defaults to UGA.
+ * Optionally set VERIFY_APP_URL to compare a running/deployed API as well.
  */
-import { SECTOR_MAP, ALL_TRACE_SLUGS, NDC_TARGETS } from "../config/ndcTargets.js";
-import {
-  fetchSectorEmissionsForYear,
-  fetchUgandaCountryRanking,
-  toMtco2e,
-  climateTraceUrl,
-} from "../config/climateTrace.js";
-import { getUiSectorTimeseries } from "../backend/services/climateTraceTimeseries.js";
+import assert from "node:assert/strict";
+import { SECTOR_MAP, ALL_TRACE_SLUGS } from "../config/ndcTargets.js";
+import { climateTraceUrl, latestInventoryYear, CLIMATE_TRACE_GAS } from "../config/climateTrace.js";
+import { roundMtco2e } from "../shared/emissionsUnits.js";
+import { getEmissionsDashboard } from "../backend/services/emissionsData.js";
 
-const YEAR = parseInt(process.env.VERIFY_YEAR || "2023", 10);
-const GADM = "UGA";
-const DELTA_TOLERANCE_MT = parseFloat(process.env.VERIFY_DELTA_TOLERANCE || "0.1");
-
-async function fetchJson(url) {
-  const res = await fetch(url);
-  const text = await res.text();
-  if (!res.ok) throw new Error(`${res.status} ${url}\n${text.slice(0, 200)}`);
-  return JSON.parse(text);
+const year = Number(process.env.VERIFY_YEAR ?? latestInventoryYear());
+const gadm = process.env.VERIFY_GADM ?? "UGA";
+assert(Number.isInteger(year) && year >= 2015 && year <= latestInventoryYear(), "Use a complete inventory year");
+async function read(url) {
+  const r = await fetch(url, { signal: AbortSignal.timeout(60_000) });
+  assert(r.ok, `Request failed (${r.status}): ${url}`);
+  return r.json();
 }
-
-async function main() {
-  console.log("=== Climate TRACE v7 verification (Uganda) ===\n");
-  console.log(`Reference year: ${YEAR}\n`);
-
-  // 1) Country ranking (official total for comparison)
-  const rank = await fetchUgandaCountryRanking(YEAR);
-  const rankMt = toMtco2e(rank.emissionsQuantity);
-  console.log("1) Country ranking (/v7/rankings/countries)");
-  console.log(`   Total: ${rankMt} MtCO2e | Rank: #${rank.rank} | Raw tonnes: ${rank.emissionsQuantity}\n`);
-
-  // 2) Per-slug via our fetch helper (same as dashboard)
-  console.log("2) Per-sector slug (/v7/sources/emissions, one slug per request)");
-  const slugMt = {};
-  let slugSum = 0;
-  for (const slug of ALL_TRACE_SLUGS) {
-    const row = await fetchSectorEmissionsForYear(YEAR, slug);
-    slugMt[slug] = row?.mtco2e ?? null;
-    if (row?.mtco2e != null) slugSum += row.mtco2e;
-    console.log(`   ${slug.padEnd(28)} ${row?.mtco2e ?? "null"} Mt`);
-  }
-  slugSum = +slugSum.toFixed(2);
-  console.log(`   Sum of ${ALL_TRACE_SLUGS.length} slugs: ${slugSum} Mt\n`);
-
-  // 3) API pitfall: repeated sectors= param (only first sector returned)
-  const multiUrl = climateTraceUrl("/sources/emissions", {
-    year: YEAR,
-    gas: "co2e_100yr",
-    gadmId: GADM,
-    sectors: "power",
-  });
-  const multiUrlBad = `${multiUrl}&sectors=transportation&sectors=buildings`;
-  const multi = await fetchJson(multiUrlBad);
-  const multiMt = toMtco2e(
-    multi?.totals?.summaries?.find((s) => s.gas === "co2e_100yr")?.emissionsQuantity,
-  );
-  console.log("3) Multi-sector query pitfall (repeated sectors=)");
-  console.log(`   power+transport+buildings in one URL → ${multiMt} Mt (should ≈ power only: ${slugMt.power})\n`);
-
-  // 4) Our UI sector aggregation
-  console.log("4) Dashboard UI sectors (our SECTOR_MAP sum)");
-  const ui = {};
+function match(actual, expected, label) {
+  assert(expected != null && Number.isFinite(expected), `${label}: missing upstream value`);
+  assert.equal(actual, expected, `${label}: app does not match raw TRACE after unit conversion`);
+}
+const url = climateTraceUrl("/sources/emissions", { year, gas: CLIMATE_TRACE_GAS, gadmId: gadm });
+const raw = await read(url);
+const totalTonnes = raw.totals?.summaries?.find((s) => s.gas === CLIMATE_TRACE_GAS)?.emissionsQuantity;
+assert(Number.isFinite(totalTonnes), "Missing upstream total");
+const tonnes = {};
+for (const row of raw.sectors?.summaries ?? []) {
+  if (row.gas !== CLIMATE_TRACE_GAS) continue;
+  assert(Number.isFinite(row.emissionsQuantity), `Missing upstream sector: ${row.sector}`);
+  tonnes[row.sector] = (tonnes[row.sector] ?? 0) + row.emissionsQuantity;
+}
+for (const slug of ALL_TRACE_SLUGS) assert(Number.isFinite(tonnes[slug]), `Missing ${slug}`);
+const allSum = Object.values(tonnes).reduce((sum, value) => sum + value, 0);
+assert(Math.abs(allSum - totalTonnes) < 1, "Raw sector sum differs from raw country total by more than one tonne");
+const dashboards = [["local service", await getEmissionsDashboard(year, year, { gadmId: gadm })]];
+if (process.env.VERIFY_APP_URL) {
+  const base = process.env.VERIFY_APP_URL.replace(/\/$/, "");
+  const health = await read(`${base}/api/v1/health`);
+  assert.equal(health.mock_mode, false, "Deployed API is in mock mode");
+  dashboards.push(["deployed API", await read(`${base}/api/v1/emissions/dashboard?since=${year}&to=${year}&gadm_id=${gadm}`)]);
+}
+for (const [label, d] of dashboards) {
+  assert.equal(d.inventory_year, year);
+  assert.equal(d.gadm_id, gadm);
+  assert(!/mock|bundled/i.test(d.data_source));
+  match(d.total_co2e_mtco2e, roundMtco2e(totalTonnes / 1e6), `${label} total`);
+  match(d.total_timeseries?.find((p) => p.year === year)?.value, roundMtco2e(totalTonnes / 1e6), `${label} economy-wide chart`);
   for (const [sector, slugs] of Object.entries(SECTOR_MAP)) {
-    const vals = await Promise.all(slugs.map((s) => fetchSectorEmissionsForYear(YEAR, s)));
-    const parts = slugs.map((s, i) => ({ slug: s, mt: vals[i]?.mtco2e ?? null }));
-    const allPresent = parts.every((p) => p.mt != null);
-    const sum = allPresent ? +parts.reduce((a, p) => a + p.mt, 0).toFixed(2) : null;
-    ui[sector] = sum;
-    const detail = parts.map((p) => `${p.slug}=${p.mt}`).join(" + ");
-    console.log(`   ${sector.padEnd(12)} ${sum ?? "null"} Mt  (${detail})`);
+    const expected = roundMtco2e(slugs.reduce((sum, slug) => sum + tonnes[slug], 0) / 1e6);
+    match(d.timeseries[sector]?.[0]?.value, expected, `${label} ${sector} chart`);
+    match(d.progress[sector]?.latest_value, expected, `${label} ${sector} latest value`);
+    console.log(`${label}: ${sector} ${expected} MtCO2e — matches`);
   }
-  const uiSum = Object.values(ui).reduce((a, v) => a + (v ?? 0), 0);
-  console.log(`   Sum of ${Object.keys(ui).length} UI sectors: ${+uiSum.toFixed(2)} Mt (agriculture separate from AFOLU by design)\n`);
-
-  // 5) Timeseries service (cached path)
-  const afoluSeries = await getUiSectorTimeseries("afolu", YEAR, YEAR);
-  const energySeries = await getUiSectorTimeseries("energy", YEAR, YEAR);
-  console.log("5) getUiSectorTimeseries (dashboard code path)");
-  console.log(`   afolu ${YEAR}: ${afoluSeries[0]?.value} Mt`);
-  console.log(`   energy ${YEAR}: ${energySeries[0]?.value} Mt\n`);
-
-  // 6) Reconciliation
-  const gapRankVsSlugs = +(rankMt - slugSum).toFixed(2);
-  const gapRankVsUi = +(rankMt - uiSum).toFixed(2);
-  console.log("6) Reconciliation");
-  console.log(`   Ranking total − sum(all ${ALL_TRACE_SLUGS.length} slugs): ${gapRankVsSlugs} Mt`);
-  console.log(`   Ranking total − sum(${Object.keys(ui).length} UI sectors):  ${gapRankVsUi} Mt`);
-  console.log(
-    "   Note: Gaps are expected — ranking is all sectors; we map a subset to NDC buckets.",
-  );
-  console.log("   AFOLU uses forestry-and-land-use only (not agriculture slug).\n");
-
-  // 7) List available sectors from API metadata if present
-  try {
-    const meta = await fetchJson(climateTraceUrl("/sources/emissions", { year: YEAR, gadmId: GADM, gas: "co2e_100yr" }));
-    const sectorsInResponse = meta?.sectors ?? meta?.availableSectors ?? null;
-    if (sectorsInResponse) {
-      console.log("7) Sectors listed in unfiltered emissions response:", sectorsInResponse);
-    }
-  } catch {
-    /* optional */
-  }
-
-  // 8) Sanity: NDC baseline comparison (policy vs observed — not a bug)
-  console.log("\n8) NDC policy baselines vs Climate TRACE observed (2023) — different frameworks");
-  for (const [s, cfg] of Object.entries(NDC_TARGETS)) {
-    const baseline = cfg.baseline;
-    const obs = ui[s];
-    if (baseline == null || obs == null) continue;
-    const diff = +(obs - baseline).toFixed(2);
-    console.log(`   ${s}: NDC baseline ${baseline} vs TRACE ${obs} Mt (Δ ${diff})`);
-  }
-
-  let failed = false;
-  if (Math.abs(gapRankVsSlugs) > DELTA_TOLERANCE_MT) {
-    console.error(
-      `\nFAIL: |ranking − slug sum| = ${Math.abs(gapRankVsSlugs)} Mt exceeds tolerance ${DELTA_TOLERANCE_MT} Mt`,
-    );
-    failed = true;
-  } else {
-    console.log(`\nOK: ranking vs slug sum within ${DELTA_TOLERANCE_MT} Mt tolerance`);
-  }
-
-  console.log("\n=== Done ===");
-  if (failed) process.exit(1);
+  assert.equal(d.progress.afolu.progress_pct, null, "Forestry cannot score the full AFOLU pledge");
+  assert.equal(d.progress.agriculture.progress_pct, null, "No official standalone agriculture emissions pledge");
+  console.log(`${label}: ${gadm} ${year} total ${d.total_co2e_mtco2e} MtCO2e (${totalTonnes} raw tonnes) — matches`);
 }
-
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+console.log(`PASS: raw -> service -> dashboard; ${url}`);

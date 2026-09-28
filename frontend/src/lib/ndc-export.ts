@@ -1,5 +1,5 @@
 /**
- * NDC dashboard exports driven by live Climate TRACE data (with mock fallback).
+ * NDC dashboard exports driven by live Climate TRACE data.
  *
  * Unlike the legacy lib/export.ts (which always uses bundled climate-data
  * sectors), these functions read the live EmissionsDataContext so exports
@@ -51,7 +51,7 @@ function formatUnit(unit: string): string {
 }
 
 function formatDataSource(mode: "live" | "mock"): string {
-  return mode === "live" ? "Climate TRACE (live)" : "Illustrative reference data";
+  return mode === "live" ? "Climate TRACE (live)" : "Data unavailable";
 }
 
 function truncateText(text: string, maxLen: number): string {

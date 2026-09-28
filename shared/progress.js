@@ -137,7 +137,7 @@ export function uiStatusFromApiStatus(s) {
  * @param {number | null} latestYear
  */
 export function computeSectorProgress(latestValue, sectorConfig, latestYear = null) {
-  if (!sectorConfig || latestValue == null) return null;
+  if (!sectorConfig || latestValue == null || sectorConfig.progress_comparable === false) return null;
 
   const usesBauCap =
     sectorConfig.bau_2030 != null && sectorConfig.target > sectorConfig.baseline;

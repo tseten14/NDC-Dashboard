@@ -58,3 +58,33 @@ describe("buildProjectionPoints", () => {
     expect(points.every((p) => p.value > 0)).toBe(true);
   });
 });
+
+describe("production data failures", () => {
+  for (const id of ["t0", "t1", "t4", "t5", "t6", "t7"]) {
+    it(`${id} never substitutes the bundled example observations`, () => {
+      expect(resolveObservedDataSetForTarget(ndcTargets.find((t) => t.id === id)!, {
+        timeseriesBySector: {}, progressBySector: {}, economyWideTimeseries: [],
+        isApiReachable: false, getObservedMode: () => "mock",
+      })).toBeNull();
+    });
+  }
+});
+
+
+describe("district economy-wide progress", () => {
+  it("never compares a district total to a national NDC ceiling", async () => {
+    const { isDistrictProgressBlocked } = await import("@/lib/emissions-integration");
+    expect(isDistrictProgressBlocked(ndcTargets.find((t) => t.id === "t0")!, true)).toBe(true);
+  });
+});
+
+describe("data quality flags", () => {
+  it("does not validate missing, stale or unreconciled data", async () => {
+    const { deriveTraceDataQuality } = await import("@/lib/progress");
+    const timeseries = [{ year: 2024, value: 10 }, { year: 2025, value: 11 }];
+    expect(deriveTraceDataQuality({ timeseries, dataStale: true }).isValidated).toBe(false);
+    expect(deriveTraceDataQuality({ timeseries, missingSlugs: ["buildings"] }).qaqcStatus).toBe("missing");
+    expect(deriveTraceDataQuality({ timeseries, reconciliationDeltaPct: 10 }).qaqcStatus).toBe("inconsistent");
+    expect(deriveTraceDataQuality({ timeseries: [] }).isValidated).toBe(false);
+  });
+});

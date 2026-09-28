@@ -23,7 +23,7 @@ const TRACE_LATEST: Record<string, number> = {
 };
 
 describe("MtCO₂e sector targets — BAU-cap formula", () => {
-  const capSectors = ["afolu", "energy", "transport", "waste", "ippu"] as const;
+  const capSectors = ["energy", "transport", "waste", "ippu"] as const;
 
   for (const sector of capSectors) {
     it(`${sector}: progress is not clamped to 0% when latest is below the NDC ceiling`, () => {
@@ -39,10 +39,9 @@ describe("MtCO₂e sector targets — BAU-cap formula", () => {
     });
   }
 
-  it("agriculture CT slice uses baseline reduction (target < baseline)", () => {
+  it("agriculture has no standalone official target to score", () => {
     const result = computeSectorProgress(TRACE_LATEST.agriculture, NDC_TARGETS.agriculture, 2024);
-    expect(result?.progress_method).toBe("baseline_reduction");
-    expect(result?.progress_pct).toBeGreaterThan(0);
+    expect(result).toBeNull();
   });
 });
 

@@ -114,8 +114,8 @@ export async function fetchSectorEmissionsForYear(year, sectorSlug, gadmId = CLI
     throw new Error("Climate TRACE emissions response failed schema validation");
   }
   const summary =
-    parsed.data?.totals?.summaries?.find((s) => s.gas === CLIMATE_TRACE_GAS) ??
-    parsed.data?.totals?.summaries?.[0];
+    parsed.data?.totals?.summaries?.find((s) => s.gas === CLIMATE_TRACE_GAS);
+  if (parsed.data?.totals?.summaries?.length && !summary) throw new Error("Climate TRACE returned the wrong gas");
   const tonnes = summary?.emissionsQuantity;
   if (tonnes == null) return null;
   return { year, tonnes, mtco2e: toMtco2e(tonnes), location: parsed.data?.location ?? null };
@@ -155,13 +155,14 @@ export async function fetchLocationEmissions(year, gadmId = CLIMATE_TRACE_GADM_U
   if (!parsed.ok) throw new Error("Climate TRACE emissions response failed schema validation");
 
   const totalSummary =
-    parsed.data?.totals?.summaries?.find((s) => s.gas === CLIMATE_TRACE_GAS) ??
-    parsed.data?.totals?.summaries?.[0];
+    parsed.data?.totals?.summaries?.find((s) => s.gas === CLIMATE_TRACE_GAS);
+  if (parsed.data?.totals?.summaries?.length && !totalSummary) throw new Error("Climate TRACE returned the wrong gas");
   const bySector = {};
   for (const s of parsed.data?.sectors?.summaries ?? []) {
-    if (s.gas != null && s.gas !== CLIMATE_TRACE_GAS) continue;
+    if (s.gas !== CLIMATE_TRACE_GAS) continue;
     if (s.sector == null) continue;
-    bySector[s.sector] = (bySector[s.sector] ?? 0) + (s.emissionsQuantity ?? 0);
+    if (s.emissionsQuantity == null || bySector[s.sector] === null) bySector[s.sector] = null;
+    else bySector[s.sector] = (bySector[s.sector] ?? 0) + s.emissionsQuantity;
   }
   return {
     year,

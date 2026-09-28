@@ -15,6 +15,7 @@
  */
 export const NDC_TARGETS = {
   afolu: {
+    progress_comparable: false, // TRACE forestry alone does not cover the full AFOLU pledge.
     label: "AFOLU",
     variable_id: "forestry_landuse_emissions",
     baseline_year: 2015,
@@ -80,6 +81,7 @@ export const NDC_TARGETS = {
     category: "Emissions Reduction",
   },
   agriculture: {
+    progress_comparable: false, // No standalone official agriculture emissions target.
     // Climate TRACE-tracked component of the NDC AFOLU sector.
     // The NDC 2022 has no standalone agriculture mitigation target; agriculture
     // measures (agroforestry, livestock, irrigation) are part of the AFOLU sector.

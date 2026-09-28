@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
+import { formatEmissions } from "@/lib/translator";
 import { cn } from "@/lib/utils";
 
 const SECTOR_LABEL: Record<string, string> = {
@@ -141,7 +142,7 @@ export function LiveEmissionsBanner({
                   <Activity className="h-2.5 w-2.5" />
                   {SECTOR_LABEL[key] ?? key.toUpperCase()}{" "}
                   <span className="font-mono">
-                    {s.latest_value !== null ? `${s.latest_value.toFixed(1)} Mt` : "—"}
+                    {formatEmissions(s.latest_value)}
                   </span>
                 </Badge>
               ))}
@@ -156,13 +157,13 @@ export function LiveEmissionsBanner({
             )}
             {data.total_co2e_mtco2e != null && (
               <span>
-                Total <span className="font-mono">{data.total_co2e_mtco2e.toFixed(0)} Mt</span>
+                Total <span className="font-mono">{formatEmissions(data.total_co2e_mtco2e)}</span>
               </span>
             )}
             {recon?.sector_sum_mt != null && recon.reference_year && (
               <span title={recon.note}>
                 Slug sum ({recon.reference_year}){" "}
-                <span className="font-mono">{recon.sector_sum_mt.toFixed(1)} Mt</span>
+                <span className="font-mono">{formatEmissions(recon.sector_sum_mt)}</span>
                 {recon.delta_mt != null && Math.abs(recon.delta_mt) > 0.01 && (
                   <span className="text-at-risk"> (Δ {recon.delta_mt})</span>
                 )}
@@ -170,7 +171,7 @@ export function LiveEmissionsBanner({
             )}
             {data.data_stale && (
               <Badge variant="outline" className="h-4 text-[10px]">
-                stale rankings
+                incomplete or stale data
               </Badge>
             )}
             {data.from_cache && (
