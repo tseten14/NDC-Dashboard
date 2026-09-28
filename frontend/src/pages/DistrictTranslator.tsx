@@ -85,7 +85,6 @@ export default function DistrictTranslator() {
     setSelection({ geometry: nextGeometry, name, districtId });
     setToolError(null);
   };
-  const provider = metadata.data?.providers[0];
 
   return <div className="h-full min-h-0 overflow-y-auto overscroll-contain bg-background p-3 md:p-4 xl:overflow-hidden">
     <nav aria-label="Translator sections" className="sticky top-0 z-20 mb-3 flex gap-1 rounded-xl border bg-card p-1  xl:hidden">
@@ -93,12 +92,12 @@ export default function DistrictTranslator() {
     </nav>
     <div className="grid gap-3 xl:h-full xl:min-h-0 xl:grid-cols-[280px_minmax(0,1fr)_380px]">
       <aside id="translator-tools" tabIndex={-1} className="scroll-mt-16 rounded-xl border bg-card p-4 xl:overflow-y-auto" aria-label="Area tools">
-        <div className="mb-4 flex items-center gap-2"><MapPinned className="h-5 w-5 text-on-track" /><div><h1 className="font-display text-lg font-bold">District Translator</h1><p className="text-xs text-muted-foreground">Turn a map area into local evidence.</p></div></div>
+        <div className="mb-4 flex items-center gap-2"><MapPinned className="h-5 w-5 text-on-track" /><div><h1 className="font-display text-lg font-bold">District Translator</h1><p className="text-xs text-muted-foreground">Explore estimated greenhouse gas emissions by district.</p></div></div>
         {DRAW_ENABLED && <div className="grid grid-cols-2 gap-2">
           <Button size="sm" variant={mode === "district" ? "default" : "outline"} aria-pressed={mode === "district"} onClick={() => { clear(); setMode("district"); }}><MousePointer2 className="mr-1 h-4 w-4" />District</Button>
           <Button size="sm" variant={mode === "draw" ? "default" : "outline"} aria-pressed={mode === "draw"} onClick={() => { clear(); setMode("draw"); }}><Pentagon className="mr-1 h-4 w-4" />Draw</Button>
         </div>}
-        <p className="mt-3 rounded-lg bg-muted p-3 text-xs leading-relaxed text-muted-foreground">{mode === "draw" ? "Click to place vertices, then Finish or double-click. Keyboard: focus the map, pan with arrows, Enter adds the center point, Shift+Enter finishes." : "Choose a district by name or click its boundary. Calculations use the full 2020 UBOS boundary."}</p>
+        <p className="mt-3 rounded-lg bg-muted p-3 text-xs leading-relaxed text-muted-foreground">{mode === "draw" ? "Click to place vertices, then Finish or double-click. Keyboard: focus the map, pan with arrows, Enter adds the center point, Shift+Enter finishes." : "Choose a district below or click it on the map. District boundaries are from 2020."}</p>
         {mode === "district" && <label className="mt-3 block text-xs">District<select aria-label="Select district" className="mt-1 w-full rounded-md border bg-background p-2" value={selection?.districtId ?? ""} disabled={!boundaries.data} onChange={(event) => {
           const feature = boundaries.data?.features.find((entry) => entry.properties?.shapeID === event.target.value);
           if (feature) selectDistrict(feature.geometry, feature.properties.shapeName, feature.properties.shapeID);
@@ -110,11 +109,9 @@ export default function DistrictTranslator() {
           <Button size="sm" variant="outline" aria-label="Clear selection" onClick={clear}><X className="h-4 w-4" /></Button>
         </div>}
         <Button className="mt-2 w-full" size="sm" variant="ghost" onClick={clear}><RotateCcw className="mr-1 h-4 w-4" />Start over</Button>
-        <fieldset className="mt-4 border-t pt-3"><legend className="text-xs font-bold">Year</legend><div className="flex flex-wrap gap-1">{metadata.data?.years.map((value) => <button key={value} aria-pressed={selectedYear === value} className={cn("min-h-11 rounded-sm px-3 py-2 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring", selectedYear === value ? "bg-on-track text-white" : "bg-muted")} onClick={() => setYear(value)}>{value}{value > metadata.data.default_year ? "*" : ""}</button>)}</div><p className="mt-2 text-[11px] text-muted-foreground">* Partial year. Annual comparisons use complete years.</p></fieldset>
-        <fieldset className="mt-4 border-t pt-3"><legend className="text-xs font-bold">Sector filter</legend><div className="mb-2 flex gap-3"><button className="text-xs underline" onClick={() => setSelectedSectors(null)}>All sectors</button><button className="text-xs underline" onClick={() => setSelectedSectors([])}>No sectors</button></div>{sectors.map((sector) => <label key={sector} className="mb-2 flex items-center gap-2 text-xs"><input type="checkbox" checked={selectedSectors === null || selectedSectors.includes(sector)} onChange={(event) => setSelectedSectors((current) => event.target.checked ? [...(current ?? sectors), sector].filter((value, index, entries) => entries.indexOf(value) === index) : (current ?? sectors).filter((value) => value !== sector))} />{titleize(sector)}</label>)}</fieldset>
+        <fieldset className="mt-4 border-t pt-3"><legend className="text-xs font-bold">Year</legend><div className="flex flex-wrap gap-1">{metadata.data?.years.map((value) => <button key={value} aria-pressed={selectedYear === value} className={cn("min-h-11 rounded-sm px-3 py-2 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring", selectedYear === value ? "bg-on-track text-white" : "bg-muted")} onClick={() => setYear(value)}>{value}{value > metadata.data.default_year ? "*" : ""}</button>)}</div><p className="mt-2 text-[11px] text-muted-foreground">* Only part of the year is available.</p></fieldset>
+        <fieldset className="mt-4 border-t pt-3"><legend className="text-xs font-bold">Filter by activity</legend><div className="mb-2 flex gap-3"><button className="text-xs underline" onClick={() => setSelectedSectors(null)}>All sectors</button><button className="text-xs underline" onClick={() => setSelectedSectors([])}>No sectors</button></div>{sectors.map((sector) => <label key={sector} className="mb-2 flex items-center gap-2 text-xs"><input type="checkbox" checked={selectedSectors === null || selectedSectors.includes(sector)} onChange={(event) => setSelectedSectors((current) => event.target.checked ? [...(current ?? sectors), sector].filter((value, index, entries) => entries.indexOf(value) === index) : (current ?? sectors).filter((value) => value !== sector))} />{titleize(sector)}</label>)}</fieldset>
         <fieldset className="mt-4 border-t pt-3"><legend className="text-xs font-bold">Map layers</legend><label className="flex gap-2 text-xs"><input type="checkbox" checked={showDistricts || mode === "district"} disabled={mode === "district"} onChange={(event) => setShowDistricts(event.target.checked)} />District boundaries</label><label className="mt-2 flex gap-2 text-xs"><input type="checkbox" checked={showSources} onChange={(event) => setShowSources(event.target.checked)} />Climate TRACE sources</label></fieldset>
-        {provider && <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground"><a href={provider.published_release.url} target="_blank" rel="noreferrer" className="underline">Published release {provider.published_release.version}</a> · through {provider.published_release.data_through}. Live {provider.api_version} API; the API does not report its dataset release number.</p>}
-        {metadata.data && <p className="mt-3 text-[11px] text-muted-foreground">{metadata.data.boundary.note}</p>}
       </aside>
 
       <section id="translator-map" tabIndex={-1} className="relative min-h-[32rem] scroll-mt-16 overflow-hidden rounded-xl border bg-card xl:min-h-0" aria-label="Analysis map">
@@ -128,27 +125,55 @@ export default function DistrictTranslator() {
       </section>
 
       <aside id="translator-insights" tabIndex={-1} className="scroll-mt-16 rounded-xl border bg-card p-4 xl:overflow-y-auto" aria-label="Area insights" aria-live="polite" aria-busy={!!selection && analysis.isFetching}>
-        <p className="text-xs font-bold uppercase tracking-wider text-on-track">Area insights</p><h2 className="font-display text-xl font-bold">{selection?.name ?? "Select an area"}</h2>
-        {!selection && <p className="mt-6 text-sm text-muted-foreground">{DRAW_ENABLED ? "Draw a polygon or choose a district" : "Choose a district"} to calculate mapped emissions.</p>}
-        {selection && analysis.isFetching && <p className="mt-4 text-sm"><Loader2 className="mr-2 inline h-4 w-4 " />Analyzing source records and available years…</p>}
+        <p className="text-xs font-bold uppercase tracking-wider text-on-track">District summary</p><h2 className="font-display text-xl font-bold">{selection?.name ?? "Select an area"}</h2>
+        {!selection && <p className="mt-6 text-sm text-muted-foreground">{DRAW_ENABLED ? "Draw a polygon or choose a district" : "Choose a district"} to see its estimated greenhouse gas emissions.</p>}
+        {selection && analysis.isFetching && <p className="mt-4 text-sm"><Loader2 className="mr-2 inline h-4 w-4 " />Loading district estimates…</p>}
         {(toolError || (selection && analysis.error)) && <div role="alert" className="mt-4 rounded-lg border border-destructive/30 p-3 text-sm text-destructive">{toolError ?? translatorError(analysis.error)}{selection && <Button variant="outline" size="sm" className="mt-2 block" onClick={() => void analysis.refetch()}>Retry analysis</Button>}</div>}
         {result && !analysis.isFetching && !analysis.isError && <div className="mt-4 space-y-5">
-          {!result.period.complete_year && <p className="border-l-4 border-primary pl-3 text-sm">{result.period.label} is incomplete. Compare complete years for annual trends.</p>}
-          <div className="grid grid-cols-2 gap-2"><Metric label="Mapped emissions" value={formatEmissions(result.mapped_total_mtco2e)} /><Metric label="District area" value={result.area_km2.toLocaleString(undefined, { maximumFractionDigits: 0 }) + " km²"} /></div>
-          <p className="text-sm text-muted-foreground">Climate TRACE estimates for mapped source locations in this district, in CO₂e (100-year GWP). This is not a complete district inventory.</p>
-          {result.source_count === 0 && <p className="border p-3 text-sm">{selectedSectors?.length === 0 ? "No sectors selected. Choose All sectors to view data." : "No mapped source centers fall inside this boundary. The district may still have emissions."}</p>}
-          {result.missing_emissions_count > 0 && <p className="border p-3 text-sm">{result.missing_emissions_count} mapped records have no emissions estimate. The displayed sum includes only reported values.</p>}
-          <section><h3 className="text-base font-bold">By sector</h3>{result.sectors.length ? <div className="mt-2 divide-y border-y">{result.sectors.map((sector) => <div key={sector.sector} className="flex justify-between gap-3 py-2 text-sm"><span>{titleize(sector.sector)}</span><span className="text-right tabular-nums">{formatEmissions(sector.mtco2e)}</span></div>)}</div> : <p className="mt-2 text-sm text-muted-foreground">No mapped sectors for this selection.</p>}</section>
-          {selectedSectors === null && result.period.complete_year && <section className="border-t pt-4" aria-label="National comparison">
-            <h3 className="text-base font-bold">National context</h3>
-            {reconciliation.isFetching && <p role="status" className="mt-2 text-sm">Loading national comparison…</p>}
-            {reconciliation.isError && <p role="alert" className="mt-2 text-sm">The national comparison is unavailable. <button className="text-primary underline" onClick={() => void reconciliation.refetch()}>Retry</button></p>}
-            {reconciliation.data && <><dl className="mt-2 space-y-2 text-sm"><div className="flex justify-between gap-2"><dt>Climate TRACE Uganda aggregate</dt><dd className="text-right font-semibold">{formatEmissions(reconciliation.data.national_aggregate_mtco2e)}</dd></div><div className="flex justify-between gap-2"><dt>Mapped records across {reconciliation.data.boundary_count} districts</dt><dd className="text-right font-semibold">{formatEmissions(reconciliation.data.mapped_district_rollup_mtco2e)}</dd></div><div className="flex justify-between gap-2 border-t pt-2"><dt>Difference between these estimates</dt><dd className="text-right font-semibold">{formatEmissions(reconciliation.data.difference_mtco2e)}</dd></div></dl><p className="mt-3 text-sm text-muted-foreground">The national estimate includes emissions without a precise location. The district rollup assigns each mapped source center once, including administrative estimates that may cover a larger area. These figures measure different coverage and are not expected to match.</p>{reconciliation.data.missing_emissions_count > 0 && <p className="mt-2 text-sm text-muted-foreground">A difference is unavailable because {reconciliation.data.missing_emissions_count} mapped records have no emissions estimate.</p>}{reconciliation.data.unmatched_source_count > 0 && <p className="mt-2 text-sm text-muted-foreground">{reconciliation.data.unmatched_source_count} mapped source centers could not be assigned to a 2020 district boundary.</p>}</>}
-          </section>}
-          {selectedSectors !== null && <p className="border-t pt-3 text-sm text-muted-foreground">National context is shown when All sectors is selected, so the values use the same sector scope.</p>}
-          <section className="border-t pt-4 text-sm" aria-label="Data source"><h3 className="font-bold">Where this data comes from</h3><p className="mt-2">Climate TRACE public API {result.provenance.api_version}. <a className="text-primary underline" href={result.provenance.api_url} target="_blank" rel="noreferrer">API reference</a> · <a className="text-primary underline" href={result.provenance.published_release.url} target="_blank" rel="noreferrer">published release {result.provenance.published_release.version}</a>.</p><p className="mt-2 text-muted-foreground">Source data retrieved {new Date(result.provenance.retrieved_at).toLocaleString()}. Boundary: {result.boundary_provenance.year} · <a className="text-primary underline" href={result.boundary_provenance.url} target="_blank" rel="noreferrer">UBOS / WHO / UN OCHA</a>. The API does not report its dataset release number.</p></section>
-          <details className="border-t pt-4 text-sm"><summary className="cursor-pointer font-bold text-primary">Data and method</summary>
+          {!result.period.complete_year && <p className="border-l-4 border-primary pl-3 text-sm">{result.period.label} covers only part of the year. It cannot be compared with a full year.</p>}
+          <Metric label={`Estimated net emissions · ${result.year}`} value={formatEmissions(result.mapped_total_mtco2e)} />
+          <p className="text-sm text-muted-foreground">Gases released minus gases removed from the air. Only sources on the map are included, so this is not a complete district total.</p>
+          <details className="text-sm">
+            <summary className="cursor-pointer font-semibold text-primary">What do these numbers mean?</summary>
+            <div className="mt-2 space-y-2 text-muted-foreground">
+              <p>Greenhouse gases warm the planet. Carbon dioxide equivalent (CO₂e) lets us compare different gases by their warming effect over 100 years.</p>
+              <p>One tonne is 1,000 kilograms. A thousand tonnes (kt) is 1,000 tonnes; a million tonnes (Mt) is 1,000,000 tonnes.</p>
+              <p>A minus sign (−) means more gases were removed from the air than released in the data shown, for example by forests.</p>
+            </div>
+          </details>
+          {(result.mapped_total_mtco2e !== null && result.mapped_total_mtco2e < 0 || result.sectors.some((sector) => sector.mtco2e !== null && sector.mtco2e < 0)) && <p className="text-sm text-muted-foreground">Minus values mean more gases were removed than released.</p>}
+          {result.source_count === 0 && <p className="border p-3 text-sm">{selectedSectors?.length === 0 ? "No activities selected. Choose All sectors to view data." : "No sources are placed on the map in this district. This does not mean it has no emissions."}</p>}
+          {result.missing_emissions_count > 0 && <p className="border p-3 text-sm">{result.missing_emissions_count} sources have no estimate. The total includes only the values available.</p>}
+          <section><h3 className="text-base font-bold">Emissions by activity</h3>{result.sectors.length ? <div className="mt-2 divide-y border-y">{result.sectors.map((sector) => <div key={sector.sector} className="flex justify-between gap-3 py-2 text-sm"><span>{titleize(sector.sector)}</span><span className="max-w-[52%] text-right tabular-nums">{formatEmissions(sector.mtco2e)}</span></div>)}</div> : <p className="mt-2 text-sm text-muted-foreground">No activity data for this selection.</p>}</section>
+          {selectedSectors === null && result.period.complete_year && <details className="border-t pt-4 text-sm">
+            <summary className="cursor-pointer font-bold text-primary">Compare with Uganda overall</summary>
+            <section aria-label="National comparison" className="mt-3">
+              <p className="text-muted-foreground">Both estimates come from Climate TRACE for {result.year}. They cover different sources, so a difference does not mean the data is wrong.</p>
+              {reconciliation.isFetching && <p role="status" className="mt-2">Loading comparison…</p>}
+              {reconciliation.isError && <p role="alert" className="mt-2">The comparison is unavailable. <button className="text-primary underline" onClick={() => void reconciliation.refetch()}>Retry</button></p>}
+              {reconciliation.data && <>
+                <dl className="mt-3 divide-y border-y">
+                  <div className="py-2"><dt>Whole-country estimate</dt><dd className="font-semibold">{formatEmissions(reconciliation.data.national_aggregate_mtco2e)}</dd></div>
+                  <div className="py-2"><dt>Sources on the map, across all {reconciliation.data.boundary_count} districts</dt><dd className="font-semibold">{formatEmissions(reconciliation.data.mapped_district_rollup_mtco2e)}</dd></div>
+                  <div className="py-2"><dt>Difference</dt><dd className="font-semibold">{formatEmissions(reconciliation.data.difference_mtco2e)}</dd></div>
+                </dl>
+                <p className="mt-3 text-muted-foreground">The whole-country figure also includes sources without a map location. Each mapped source is counted in one district, even if its estimate covers a wider area.</p>
+                {reconciliation.data.missing_emissions_count > 0 && <p className="mt-2 text-muted-foreground">Some sources have no estimate, so the difference cannot be calculated.</p>}
+                {reconciliation.data.unmatched_source_count > 0 && <p className="mt-2 text-muted-foreground">{reconciliation.data.unmatched_source_count} sources could not be placed in a district.</p>}
+              </>}
+            </section>
+          </details>}
+          {selectedSectors !== null && <p className="border-t pt-3 text-sm text-muted-foreground">Select All sectors to compare with Uganda overall.</p>}
+          <section className="border-t pt-4 text-sm" aria-label="Data source">
+            <h3 className="font-bold">Where the data comes from</h3>
+            <p className="mt-2">Emissions: <a className="text-primary underline" href={result.provenance.published_release.url} target="_blank" rel="noreferrer">Climate TRACE</a>, which estimates greenhouse gases from human activities.</p>
+            <p className="mt-2 text-muted-foreground">Data fetched {new Date(result.provenance.retrieved_at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}. These are estimates and may change.</p>
+          </section>
+          <details className="border-t pt-4 text-sm"><summary className="cursor-pointer font-bold text-primary">How these estimates are calculated</summary>
             <div className="mt-3 space-y-4">
+              <p>District area: {result.area_km2.toLocaleString(undefined, { maximumFractionDigits: 0 })} square kilometres.</p>
+              <p>District boundaries: {result.boundary_provenance.year} · <a className="text-primary underline" href={result.boundary_provenance.url} target="_blank" rel="noreferrer">Uganda Bureau of Statistics and UN partners</a>.</p>
+              <p>Technical source: <a className="text-primary underline" href={result.provenance.api_url} target="_blank" rel="noreferrer">Climate TRACE API {result.provenance.api_version}</a> · <a className="text-primary underline" href={result.provenance.published_release.url} target="_blank" rel="noreferrer">published release {result.provenance.published_release.version}</a>. The API does not report its dataset release number. Retrieved {new Date(result.provenance.retrieved_at).toLocaleString()}.</p>
               <p>A mapped record is one Climate TRACE source and subsector estimate; it does not always represent a unique facility. {result.source_count.toLocaleString()} records are inside this area. {result.asset_count} are facilities and {result.administrative_source_count} are administrative-area estimates.</p>
               <p>Facilities: {formatEmissions(result.asset_total_mtco2e)}. Administrative estimates: {formatEmissions(result.administrative_total_mtco2e)}. Administrative values cover larger areas; this view includes their full estimate when the center falls inside the boundary.</p>
               {result.unknown_source_count > 0 && <p>Unclassified records: {result.unknown_source_count}, with {formatEmissions(result.unknown_total_mtco2e)} in reported values.</p>}
@@ -160,7 +185,7 @@ export default function DistrictTranslator() {
               <p>{result.boundary_provenance.note}</p>
             </div>
           </details>
-          <div className="grid grid-cols-2 gap-2"><Button size="sm" variant="outline" onClick={() => downloadAnalysis(result, selection!.name, "geojson")}><Download className="mr-1 h-4 w-4" />GeoJSON</Button><Button size="sm" onClick={() => downloadAnalysis(result, selection!.name, "csv")}><Download className="mr-1 h-4 w-4" />CSV</Button></div>
+          <div><p className="mb-2 text-sm font-semibold">Download this data</p><div className="grid grid-cols-2 gap-2"><Button size="sm" variant="outline" onClick={() => downloadAnalysis(result, selection!.name, "geojson")}><Download className="mr-1 h-4 w-4" />Map file</Button><Button size="sm" onClick={() => downloadAnalysis(result, selection!.name, "csv")}><Download className="mr-1 h-4 w-4" />Spreadsheet</Button></div><p className="mt-2 text-xs text-muted-foreground">Map file: GeoJSON · Spreadsheet: CSV</p></div>
         </div>}
       </aside>
     </div>

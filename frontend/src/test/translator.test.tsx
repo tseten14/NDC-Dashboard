@@ -39,13 +39,13 @@ describe("District Translator interactions", () => {
     expect(screen.queryByRole("button", { name: "Draw" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Finish" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Undo point" })).not.toBeInTheDocument();
-    expect(screen.getByText("Choose a district to calculate mapped emissions.")).toBeInTheDocument();
+    expect(screen.getByText("Choose a district to see its estimated greenhouse gas emissions.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Select on map" }));
     await waitFor(() => expect(emissionsApi.polygonInsights).toHaveBeenCalledOnce());
     fireEvent.click(screen.getByRole("button", { name: "Start over" }));
     await act(async () => resolve(result));
     expect(screen.getByRole("heading", { name: "Select an area" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "CSV" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Spreadsheet" })).not.toBeInTheDocument();
   });
   it("selects a district by ID and updates filters without redrawing", async () => {
     mount();
@@ -53,7 +53,7 @@ describe("District Translator interactions", () => {
     expect(screen.getByRole("checkbox", { name: "Power" })).toBeChecked();
     await waitFor(() => expect(screen.getByRole("combobox", { name: "Select district" })).toBeEnabled());
     fireEvent.change(screen.getByRole("combobox", { name: "Select district" }), { target: { value: "kampala" } });
-    await screen.findByRole("button", { name: "CSV" });
+    await screen.findByRole("button", { name: "Spreadsheet" });
     expect(vi.mocked(emissionsApi.polygonInsights).mock.calls.at(-1)?.[0]).toMatchObject({ district_id: "kampala", geometry: undefined, year: 2025 });
     fireEvent.click(screen.getByRole("button", { name: "No sectors" }));
     await waitFor(() => expect(vi.mocked(emissionsApi.polygonInsights).mock.calls.at(-1)?.[0].sectors).toEqual([]));
@@ -90,7 +90,7 @@ describe("Translator exports and precision", () => {
   });
   it("distinguishes unavailable estimates, zero, and small removals", () => {
     expect(formatEmissions(null)).toBe("Unavailable");
-    expect(formatEmissions(0)).toBe("0 t");
-    expect(formatEmissions(-0.000000125)).toBe("-0.125 t");
+    expect(formatEmissions(0)).toBe("0 tonnes");
+    expect(formatEmissions(-0.000000125)).toBe("-0.125 tonnes");
   });
 });

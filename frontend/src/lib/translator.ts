@@ -8,9 +8,9 @@ export function sourceKey(point: MapSourcePoint) {
 export function formatEmissions(value: number | null) {
   if (value == null || !Number.isFinite(value)) return "Unavailable";
   const magnitude = Math.abs(value);
-  if (magnitude >= 1) return `${value.toLocaleString(undefined, { maximumFractionDigits: 3 })} Mt`;
-  if (magnitude >= 0.001) return `${(value * 1000).toLocaleString(undefined, { maximumFractionDigits: 2 })} kt`;
-  return `${(value * 1e6).toLocaleString(undefined, { maximumFractionDigits: 3 })} t`;
+  if (magnitude >= 1) return `${value.toLocaleString(undefined, { maximumFractionDigits: 3 })} million tonnes`;
+  if (magnitude >= 0.001) return `${(value * 1000).toLocaleString(undefined, { maximumFractionDigits: 2 })} thousand tonnes`;
+  return `${(value * 1e6).toLocaleString(undefined, { maximumFractionDigits: 3 })} tonnes`;
 }
 
 export function translatorError(error: unknown) {
