@@ -91,6 +91,12 @@ async function fetchPdfBuffer(url) {
 }
 
 async function extractTextWithPages(buffer) {
+  // pdfjs v5 reads DOMMatrix/Path2D/ImageData at import time, and Node has none
+  // of them. pdf-parse/worker installs them from @napi-rs/canvas and preloads the
+  // pdfjs worker. Its imports are static, so Vercel's file tracer bundles the
+  // native canvas binary; pdfjs alone loads it through a dynamic require that
+  // the tracer cannot see.
+  await import("pdf-parse/worker");
   try {
     const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
     const loadingTask = pdfjs.getDocument({
