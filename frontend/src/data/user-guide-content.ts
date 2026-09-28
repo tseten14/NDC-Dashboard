@@ -264,7 +264,7 @@ export const BASIC_FEATURES: FeatureGuide[] = [
     who: "Anyone who needs a geographic picture of sources",
     purpose: "See where major emission sources are located in Uganda and how sectors compare for a chosen year.",
     steps: [
-      "Open Emissions Map (top bar — second item after Home).",
+      "Open Emissions Map from the top bar. Dashboard is the first item after Home.",
       "Select year and sector filters as offered on screen.",
       "Pan, zoom, and tilt the 3D satellite map; hover bubbles for a tooltip.",
       "Click a bubble for a compact pinned popup with source name, sector, and MtCO₂e.",

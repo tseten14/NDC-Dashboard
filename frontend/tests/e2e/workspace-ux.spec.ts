@@ -13,6 +13,10 @@ test("home loads without dashboard requests; all tools remain accessible", async
   page.on("pageerror", (error) => { crashes.push(error.message); });
   await openUganda(page);
   await page.waitForLoadState("networkidle");
+  const primaryLinks = page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link");
+  await expect(primaryLinks.nth(0)).toHaveText("Home");
+  await expect(primaryLinks.nth(1)).toHaveText("Dashboard");
+  await expect(page.locator("#workspace-tools-heading + p + div").getByRole("link").first()).toHaveText(/Dashboard/);
   expect(requests.filter((url) => /\/emissions\/(dashboard|districts)|\/catalog\/|\/indicators\/panel/.test(url))).toEqual([]);
   await expect(page.getByRole("combobox", { name: "Switch active role" })).toContainText("Admin");
   await page.screenshot({ path: "test-results/ux-home-desktop-light.png" });

@@ -25,8 +25,8 @@ describe("workspace navigation", () => {
     mountNavigation();
     expect(screen.queryByRole("button", { name: "Account menu" })).not.toBeInTheDocument();
     const links = within(screen.getByRole("navigation", { name: "Primary navigation" })).getAllByRole("link");
-    expect(links.map((link) => link.textContent)).toEqual(["Home", "Emissions Map", "District Translator", "Sector Classification", "Dashboard", "Marketplace", "Database"]);
-    expect(links[2]).toHaveAttribute("aria-current", "page");
+    expect(links.map((link) => link.textContent)).toEqual(["Home", "Dashboard", "Emissions Map", "District Translator", "Sector Classification", "Marketplace", "Database"]);
+    expect(links[3]).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveAttribute("href", "#main-content");
     expect(document.title).toContain("District Translator");
   });
@@ -44,6 +44,12 @@ describe("workspace navigation", () => {
     const primary = screen.getByRole("navigation", { name: "Primary navigation" });
     const links = within(primary).getAllByRole("link").map((link) => link.textContent);
     expect(links.indexOf("Sector Classification")).toBe(links.indexOf("District Translator") + 1);
+  });
+  it("keeps Dashboard directly after Home in the header and first in the Home tool list", () => {
+    mountNavigation();
+    const primary = within(screen.getByRole("navigation", { name: "Primary navigation" })).getAllByRole("link");
+    expect(primary.slice(0, 2).map((link) => link.textContent)).toEqual(["Home", "Dashboard"]);
+    expect(PRIMARY_NAV.filter((item) => item.url !== "/")[0]?.title).toBe("Dashboard");
   });
   it("keeps Scenario Analysis in All tools without a header tab", () => {
     const title = "Scenario Analysis";
