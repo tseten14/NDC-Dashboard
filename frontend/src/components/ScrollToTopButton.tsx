@@ -37,7 +37,9 @@ export function ScrollToTopButton() {
           : e.target instanceof HTMLElement
             ? e.target
             : null;
-      if (!el || !el.closest("#main-content")) return;
+      // Chat panels mark themselves data-no-scroll-top: the button would sit
+      // over their send box, and their own scroll area needs no shortcut.
+      if (!el || !el.closest("#main-content") || el.closest("[data-no-scroll-top]")) return;
       scrollerRef.current = el;
       if (frame === 0) frame = requestAnimationFrame(measure);
     };

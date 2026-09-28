@@ -407,7 +407,7 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
   }, [isLoading, callAnalyzeApi]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" data-no-scroll-top>
       <div className="shrink-0 px-4 py-3 border-b border-border bg-card">
         <div className="flex items-center gap-2">
           <BookOpen className="h-3.5 w-3.5 text-primary" />
@@ -513,6 +513,7 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
             onClick={() => runChat(chatInput)}
             disabled={!chatInput.trim() || isLoading}
             className="h-9 px-3 shrink-0"
+            aria-label="Send question to Policy AI"
           >
             <Send className="h-3.5 w-3.5" />
           </Button>

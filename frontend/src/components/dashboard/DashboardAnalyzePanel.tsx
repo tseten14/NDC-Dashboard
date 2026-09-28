@@ -458,6 +458,7 @@ export function DashboardAnalyzePanel({ selectedSector, selectedTarget }: Dashbo
             onClick={() => runChat(chatInput)}
             disabled={!chatInput.trim() || isLoading}
             className="h-9 px-3 shrink-0"
+            aria-label="Send question to NDC AI"
           >
             <Send className="h-3.5 w-3.5" />
           </Button>
