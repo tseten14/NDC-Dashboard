@@ -468,7 +468,8 @@ export function calculateProgress(target: NDCTarget, observedData?: ObservedData
     return { percent: null, status: "unknown" };
   }
 
-  return calculateProgressUnified(
+  const latestYear = latestObservedYear(observedData.historicalData);
+  const result = calculateProgressUnified(
     {
       baselineYear: target.baselineYear,
       baselineValue: target.baselineValue,
@@ -479,10 +480,16 @@ export function calculateProgress(target: NDCTarget, observedData?: ObservedData
     },
     {
       latestValue,
-      latestYear: latestObservedYear(observedData.historicalData),
+      latestYear,
       qaqcStatus: observedData.provenance.qaqcStatus,
     },
   );
+  // A lone baseline-year figure is the pledge's starting point, not evidence
+  // that later years stayed there.
+  if (result.percent != null && latestYear != null && latestYear <= target.baselineYear) {
+    return { percent: result.percent, status: "unknown" };
+  }
+  return result;
 }
 
 export function getDataCompleteness(): number {

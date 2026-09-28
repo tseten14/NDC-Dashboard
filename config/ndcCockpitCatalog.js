@@ -3,6 +3,10 @@ import { MITIGATION_CONCEPTS } from "../shared/mitigationConcepts.js";
 
 // Indicator panel meta — for non-CT-tracked targets (forest cover, electricity capacity,
 // CSA adoption, wetlands, electricity access). Transport is now CT-tracked and excluded here.
+// Annual rows below are published statistics, retrieved 28 Sep 2026. They are not
+// interpolated from the NDC baseline or filled across unpublished years.
+const RETRIEVED = "2026-09-28";
+
 export const INDICATOR_META = [
   {
     // t2: Forest cover 12.5% (2020) → 21% (2030) per NDC 2022
@@ -12,12 +16,13 @@ export const INDICATOR_META = [
     target_year: 2030,
     target_value: 21,
     unit: "% land area",
-    data_providers: [], // No observation feed is connected.
+    data_providers: ["FAO via World Bank AG.LND.FRST.ZS"],
     source_type: "observed-eo",
     mrv_owner_ministry: "Ministry of Water and Environment",
-    qaqc_status: "missing",
-    is_validated: false,
-    last_updated: "",
+    qaqc_status: "ok",
+    is_validated: true,
+    last_updated: RETRIEVED,
+    note: "FAO forest area as a share of land. This is not the same definition as Uganda's NDC forest-cover baseline of 12.5% in 2020.",
   },
   {
     // t3: Electricity generation capacity 1,276.2 MW (2020) → 4,200 MW (2030) per NDC 2022
@@ -27,12 +32,13 @@ export const INDICATOR_META = [
     target_year: 2030,
     target_value: 4200,
     unit: "MW",
-    data_providers: [], // No observation feed is connected.
+    data_providers: ["UNSD/IRENA electricity capacity statistics"],
     source_type: "reported",
     mrv_owner_ministry: "Ministry of Energy and Mineral Development",
-    qaqc_status: "missing",
-    is_validated: false,
-    last_updated: "",
+    qaqc_status: "ok",
+    is_validated: true,
+    last_updated: RETRIEVED,
+    note: "Installed generation capacity. Uganda's NDC states 1,276.2 MW in 2020; this series reports 1,393 MW for that year.",
   },
   {
     // t8: CSA adoption 31.7% (2020) → 70.7% est. (2030) per NDC 2022
@@ -42,12 +48,13 @@ export const INDICATOR_META = [
     target_year: 2030,
     target_value: 70.7,
     unit: "% CSA adoption",
-    data_providers: [], // No observation feed is connected.
+    data_providers: ["MAAIF annual and quarterly performance reports"],
     source_type: "reported",
     mrv_owner_ministry: "Ministry of Agriculture, Animal Industry and Fisheries",
-    qaqc_status: "missing",
-    is_validated: false,
-    last_updated: "",
+    qaqc_status: "ok",
+    is_validated: true,
+    last_updated: RETRIEVED,
+    note: "Share of farmers accessing sustainable land management services, the ministry measure behind the NDC's 31.7% baseline. Years are financial years ending in June. The ministry has not published an actual figure after 2020/21.",
   },
   {
     // t9: Wetlands coverage 8.9% (2020) → 12% (2030) per NDC 2022
@@ -57,12 +64,13 @@ export const INDICATOR_META = [
     target_year: 2030,
     target_value: 12,
     unit: "% land area",
-    data_providers: [], // No observation feed is connected.
+    data_providers: ["Ministry of Water and Environment", "MoFPED programme monitoring reports"],
     source_type: "observed-eo",
     mrv_owner_ministry: "Ministry of Water and Environment",
-    qaqc_status: "missing",
-    is_validated: false,
-    last_updated: "",
+    qaqc_status: "ok",
+    is_validated: true,
+    last_updated: RETRIEVED,
+    note: "Intact wetland cover, the measure behind the NDC's 8.9% baseline. It has not changed since the 2015 national mapping. Total wetland area including degraded wetlands, reported at 13.9% in 2022, is a different measure. Later years are financial years ending in June.",
   },
   {
     // t10: Electricity access 24% (2020) → 75% (2030) per NDC 2022 adaptation target
@@ -72,18 +80,45 @@ export const INDICATOR_META = [
     target_year: 2030,
     target_value: 75,
     unit: "% electricity access",
-    data_providers: [], // No observation feed is connected.
+    data_providers: ["World Bank EG.ELC.ACCS.ZS"],
     source_type: "reported",
     mrv_owner_ministry: "Ministry of Energy and Mineral Development",
-    qaqc_status: "missing",
-    is_validated: false,
-    last_updated: "",
+    qaqc_status: "ok",
+    is_validated: true,
+    last_updated: RETRIEVED,
+    note: "World Bank access to electricity, including off-grid. It is higher than the NDC's 24% baseline for 2020.",
   },
 ];
 
-// The NDC contains policy baselines and goals, not annual observations.
-// Add annual records only when a source dataset and retrieval date are available.
-export const INDICATOR_YEARLY = [];
+function indicatorRows(targetId, points) {
+  return points.map(([year, value]) => ({ target_id: targetId, year, value }));
+}
+
+export const INDICATOR_YEARLY = [
+  // FAO forest area (% of land), World Bank AG.LND.FRST.ZS. Retrieved 28 Sep 2026.
+  ...indicatorRows("t2", [
+    [2015, 12.7], [2016, 12.5], [2017, 12.3], [2018, 12.1], [2019, 11.9],
+    [2020, 11.7], [2021, 11.5], [2022, 11.2], [2023, 11.0],
+  ]),
+  // UNSD/IRENA installed capacity (MW), countryeconomy compilation. Retrieved 28 Sep 2026.
+  ...indicatorRows("t3", [
+    [2015, 948], [2016, 950], [2017, 1005], [2018, 1105], [2019, 1377],
+    [2020, 1393], [2021, 1411], [2022, 1450], [2023, 1839], [2024, 2064],
+  ]),
+  // Farmers accessing sustainable land management services (%), by financial year
+  // ending June: MAAIF Annual Performance Report FY2019/20 (FY2018/19, FY2019/20)
+  // and MAAIF Q4 performance report FY2020/21.
+  ...indicatorRows("t8", [[2019, 31.7], [2020, 31.7], [2021, 43.9]]),
+  // Intact wetland cover (% of land): 2015 national wetland mapping (MWE); FY2020/21
+  // (MoFPED BMAU briefing 12/22); FY2021/22 (MWE Programme Performance Report 2022);
+  // FY2022/23 (MoFPED NRECCLWM annual monitoring report).
+  ...indicatorRows("t9", [[2015, 8.9], [2021, 8.9], [2022, 8.9], [2023, 8.9]]),
+  // World Bank EG.ELC.ACCS.ZS, access to electricity (% of population). Retrieved 28 Sep 2026.
+  ...indicatorRows("t10", [
+    [2015, 18.5], [2016, 26.7], [2017, 32.4], [2018, 41.9], [2019, 41.3],
+    [2020, 42.1], [2021, 45.2], [2022, 47.1], [2023, 51.5], [2024, 55.3],
+  ]),
+];
 
 // NDC measures (Uganda Updated NDC, Sept 2022). Each row's `body` carries only
 // fields traceable to the NDC: measure name, description, lead ministry/department,

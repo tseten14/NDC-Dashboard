@@ -442,6 +442,13 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             </div>
           )}
 
+          {!apiSector && !usingProxyData && !isEconomyWide && !isDistrictView && indEntry?.meta.note && (
+            <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs leading-snug">
+              <p className="text-foreground font-medium">What you&apos;re seeing</p>
+              <p className="text-muted-foreground mt-0.5">{indEntry.meta.note}</p>
+            </div>
+          )}
+
           {apiSector && observedMode === "live" && !isDistrictView && liveProgress?.progress_comparable !== false && liveProgress && (
             <div className="p-2 rounded-md bg-primary/5 border border-primary/20 text-xs leading-snug">
               <p className="text-foreground font-medium">What you&apos;re seeing</p>

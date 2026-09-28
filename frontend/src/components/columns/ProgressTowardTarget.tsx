@@ -163,6 +163,8 @@ export function ProgressTowardTargetColumn({ selectedTarget, footer, scroll = tr
     ) : null;
 
   // One concise plain-language sentence on where this pledge stands.
+  const baselineOnly =
+    liveLatest != null && liveLatest.year <= selectedTarget.baselineYear;
   const statusNarrative =
     status === "on-track"
       ? "On track to meet this 2030 pledge — keeping current measures should hold the course."
@@ -170,9 +172,12 @@ export function ProgressTowardTargetColumn({ selectedTarget, footer, scroll = tr
         ? "Progress has begun, but stronger or faster action is needed to reach the 2030 goal."
         : status === "off-track"
           ? "Off track — current efforts are not yet bending the numbers toward the 2030 goal."
-          : "Not enough recent data to judge progress toward the 2030 goal.";
+          : baselineOnly
+            ? `The latest published figure is the ${liveLatest.year} baseline. Later measurements are not connected, so this pledge is not scored as on or off track.`
+            : "Not enough recent data to judge progress toward the 2030 goal.";
 
   if (!hasProgressData) {
+    const measuredButUnscored = liveLatest != null && !districtProgressBlocked;
     return (
       <div className={rootCls}>
         <div className="px-3 py-2 border-b border-border bg-muted/50">
@@ -181,15 +186,32 @@ export function ProgressTowardTargetColumn({ selectedTarget, footer, scroll = tr
         {wrap(
           <div className="p-4 space-y-3">
             {districtNote}
+            {measuredButUnscored ? (
+              <Card>
+                <CardContent className="p-4 space-y-2 text-xs leading-snug">
+                  <p className="text-foreground font-medium">
+                    Latest measured ({liveLatest.year}):{" "}
+                    <span className="tabular-nums">
+                      {liveLatest.value.toLocaleString(undefined, { maximumFractionDigits: 2 })} {selectedTarget.unit}
+                    </span>
+                  </p>
+                  <p className="text-muted-foreground">
+                    {pr?.scope_note
+                      ? `${pr.scope_note} A progress percentage is not shown, because this measurement does not cover the same activities as the pledge.`
+                      : "A progress percentage is not shown, because this measurement does not cover the same activities as the pledge."}
+                  </p>
+                  {liveLatest.value >= 0 ? capProgressBar : null}
+                </CardContent>
+              </Card>
+            ) : (
             <NoDataPlaceholder
               hint={
                 districtProgressBlocked
                   ? "District progress is not scored against national NDC targets. See the Observed Data column for district emissions."
-                  : pr?.progress_comparable === false
-                    ? "The observed data does not cover the same activities as this national pledge, or the latest year is missing. A progress score cannot be calculated reliably."
-                    : "Progress requires observed values for the selected reporting period."
+                  : "Progress requires observed values for the selected reporting period."
               }
             />
+            )}
             <ProgressFormulaBlock
               selectedTarget={selectedTarget}
               isEmissionsCapTarget={isEmissionsCapTarget}

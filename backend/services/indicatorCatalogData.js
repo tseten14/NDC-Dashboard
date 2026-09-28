@@ -52,6 +52,7 @@ export async function getIndicatorPanel(since = 2015, to = 2024) {
         // A plausibility check does not verify a figure against its source.
         isValidated: m.is_validated === true && reviewed.isValidated,
         lastUpdated: m.last_updated,
+        ...(m.note ? { note: m.note } : {}),
       },
       timeseries,
     };

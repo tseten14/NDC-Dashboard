@@ -38,22 +38,31 @@ describe("verified data boundaries", () => {
     expect(getLastRefreshTimestamp()).toBeNull();
   });
 
-  it("retains policy goals but does not fabricate indicator observations or provider connections", async () => {
+  it("serves a sourced observation for every non-emissions indicator", async () => {
     const panel = await getIndicatorPanel(2015, 2030);
     expect(panel.t3.meta.targetValue).toBe(4200);
-    for (const entry of Object.values(panel) as IndicatorPanelEntry[]) {
-      expect(entry.timeseries).toEqual([]);
-      expect(entry.meta.isValidated).toBe(false);
-      expect(entry.meta.qaqcStatus).toBe("missing");
-      expect(entry.meta.dataProviders).toEqual([]);
-      expect(entry.meta.lastUpdated).toBe("");
+    for (const id of ["t2", "t3", "t8", "t9", "t10"]) {
+      const entry = panel[id] as IndicatorPanelEntry;
+      const years = entry.timeseries.filter((point) => point.value != null).map((point) => point.year);
+      expect(years.length, id).toBeGreaterThanOrEqual(3);
+      expect(Math.max(...years), id).toBeGreaterThan(entry.meta.baselineYear);
+      expect(entry.meta.dataProviders.length, id).toBeGreaterThan(0);
+      expect(entry.meta.lastUpdated, id).not.toBe("");
     }
+    const forest = (panel.t2 as IndicatorPanelEntry).timeseries;
+    const y2020 = forest.find((point) => point.year === 2020)?.value;
+    const y2023 = forest.find((point) => point.year === 2023)?.value;
+    expect(y2023).toBeLessThan(y2020!);
   });
 
   it("does not turn an unreviewed source into verified data because its numbers look plausible", async () => {
     const panel = await getIndicatorPanel();
     const target = ndcTargets.find((row) => row.id === "t2")!;
-    const entry = { ...panel.t2, timeseries: [{ year: 2023, value: 14 }, { year: 2024, value: 15 }] } as IndicatorPanelEntry;
+    const entry = {
+      ...panel.t2,
+      meta: { ...panel.t2.meta, isValidated: false },
+      timeseries: [{ year: 2023, value: 14 }, { year: 2024, value: 15 }],
+    } as IndicatorPanelEntry;
     expect(buildIndicatorPanelObservedDataSet(target, entry).provenance.isValidated).toBe(false);
     const imported = buildIngestedObservedDataSet(target, [{ year: 2024, value: 15, source: "ingest:annual report", as_of: "2025-01-01", is_validated: false }]);
     expect(imported?.historicalData[0].value).toBe(15);

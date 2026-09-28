@@ -321,6 +321,7 @@ export interface IndicatorPanelMeta {
   qaqcStatus: string;
   isValidated: boolean;
   lastUpdated: string;
+  note?: string;
 }
 
 export interface IndicatorPanelEntry {

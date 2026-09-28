@@ -20,6 +20,7 @@ export const indicatorPanelMetaSchema = z.object({
   qaqcStatus: z.string(),
   isValidated: z.boolean(),
   lastUpdated: z.string(),
+  note: z.string().optional(),
 });
 
 export const indicatorPanelEntrySchema = z.object({
