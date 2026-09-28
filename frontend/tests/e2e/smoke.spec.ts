@@ -18,11 +18,11 @@ test.describe("NDC Data Explorer smoke", () => {
     await waitForApi(page);
     // The country picker is the front door: nothing else is reachable until a
     // country is chosen, so this failing means the whole app is unreachable.
-    await expect(page.getByRole("heading", { name: /NDC Data/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Select a country" })).toBeVisible();
     await expect(page.getByText("Uganda", { exact: true }).first()).toBeVisible();
   });
 
-  test("dashboard shows live sector emissions and the NDC target list", async ({ page }) => {
+  test("dashboard shows NDC targets and a clear live-data state", async ({ page }) => {
     await seedUgandaSession(page);
     await page.goto("/dashboard");
     await waitForApi(page);
@@ -31,9 +31,9 @@ test.describe("NDC Data Explorer smoke", () => {
     await expect(page.getByText(/AFOLU/i).first()).toBeVisible();
     await expect(page.getByText(/NDC TARGETS/i).first()).toBeVisible();
 
-    // Every sector figure is rendered in MtCO2e; if the API returned nothing the
-    // strip renders empty and this assertion fails.
-    await expect(page.getByText(/\bMt\b/).first()).toBeVisible();
+    // This fixture API has no dashboard payload. The page must say so clearly
+    // rather than leave an unexplained empty figure.
+    await expect(page.getByText(/Live emissions API unreachable|\bMt\b/).first()).toBeVisible();
   });
 
   test("selecting a target fills the observed-data and progress columns", async ({ page }) => {

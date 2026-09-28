@@ -17,8 +17,7 @@ test('scenario: actions, site timing, policy decisions, results and restored exp
   const crashes: string[] = []; page.on('pageerror', e => crashes.push(e.message));
   await sample(page);
   await expect(page.getByRole('checkbox', { name: 'Anaerobic digestion of manure', exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: 'Switch to light mode' }).click();
-  await page.waitForTimeout(450);
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
   await page.screenshot({ path: 'test-results/scenario-actions.png' });
   await page.getByRole('button', { name: 'Edit Feed quality and additives', exact: true }).click();
   await page.getByRole('spinbutton', { name: 'Reduction at full uptake (%)', exact: true }).fill('25');

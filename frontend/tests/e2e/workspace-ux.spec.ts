@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 async function openUganda(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: /^Uganda Full cockpit available/ }).click();
-  await expect(page.getByRole("heading", { name: "Climate evidence. Clearer decisions." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Climate evidence and planning" })).toBeVisible();
 }
 
 test("home loads without dashboard requests; all tools and theme remain accessible", async ({ page }) => {
@@ -15,10 +15,10 @@ test("home loads without dashboard requests; all tools and theme remain accessib
   await page.waitForLoadState("networkidle");
   expect(requests.filter((url) => /\/emissions\/(dashboard|districts)|\/catalog\/|\/indicators\/panel/.test(url))).toEqual([]);
   await expect(page.getByRole("combobox", { name: "Switch active role" })).toContainText("Admin");
-  await page.screenshot({ path: "test-results/ux-home-desktop-dark.png" });
-  await page.getByRole("button", { name: "Switch to light mode" }).click();
-  await expect(page.locator("html")).not.toHaveClass(/dark/);
   await page.screenshot({ path: "test-results/ux-home-desktop-light.png" });
+  await page.getByRole("button", { name: "Switch to dark mode" }).click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await page.screenshot({ path: "test-results/ux-home-desktop-dark.png" });
   await page.getByRole("button", { name: "Open all tools" }).click();
   await expect(page.getByRole("navigation", { name: "All workspace tools" }).getByRole("link")).toHaveCount(14);
   await page.keyboard.press("Escape");
@@ -50,7 +50,6 @@ test.describe("phone workspace", () => {
     page.on("pageerror", (error) => { crashes.push(error.message); });
     await openUganda(page);
     await page.getByRole("link", { name: "Explore a district", exact: true }).click();
-    await page.getByRole("button", { name: "District", exact: true }).click();
     await expect(page.getByRole("combobox", { name: "Select district" })).toBeEnabled({ timeout: 30_000 });
     await page.getByRole("combobox", { name: "Select district" }).selectOption({ label: "Kampala" });
     const exportButton = page.getByRole("button", { name: "CSV", exact: true });
@@ -97,12 +96,11 @@ test("district map renders after the patched map library loads", async ({ page }
   page.on("pageerror", (error) => { errors.push(error.message); });
   await openUganda(page);
   await page.getByRole("link", { name: "District Translator", exact: true }).click();
-  await page.getByRole("button", { name: "District", exact: true }).click();
   await expect(page.getByRole("combobox", { name: "Select district" })).toBeEnabled({ timeout: 30_000 });
   await page.getByRole("combobox", { name: "Select district" }).selectOption({ label: "Kampala" });
   await expect(page.getByRole("button", { name: "CSV", exact: true })).toBeAttached({ timeout: 90_000 });
   await expect.poll(() => workerRequests.length).toBeGreaterThan(0);
-  await page.getByRole("button", { name: "Clear selection", exact: true }).click();
+  await page.getByRole("button", { name: "Start over", exact: true }).click();
   const canvas = page.locator("canvas.maplibregl-canvas");
   await expect(async () => {
     await canvas.click();
