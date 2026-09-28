@@ -14,6 +14,8 @@ import { Globe2, LogOut, Menu, UserRound } from "lucide-react";
 import { PRIMARY_NAV } from "@/lib/navigation";
 import { toast } from "sonner";
 
+const ALL_TOOLS_ONLY_PATHS = new Set(["/sector-classification", "/scenario-analysis"]);
+
 
 export function TopNav() {
   const { country, clearCountry } = useCountry();
@@ -26,7 +28,8 @@ export function TopNav() {
   const visible = PRIMARY_NAV.filter((item) => isPrimaryNavVisible(activeRole, item.url));
   const current = PRIMARY_NAV.find((item) => item.url === "/" ? pathname === "/" : pathname === item.url || pathname.startsWith(`${item.url}/`));
   const shortcuts = visible.filter(
-    (item) => item.group === "Explore" || item.url === "/mwp-marketplace" || item.url === "/my-work",
+    (item) => !ALL_TOOLS_ONLY_PATHS.has(item.url) &&
+      (item.group === "Explore" || item.url === "/mwp-marketplace" || item.url === "/my-work"),
   );
 
   useEffect(() => { setOpen(false); }, [pathname, activeRole]);
@@ -123,7 +126,7 @@ export function TopNav() {
         {shortcuts.map((item) => <NavLink key={item.url} to={item.url} end={item.url === "/"} className="flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-[3px] border-transparent px-3 text-sm font-medium text-foreground" activeClassName="border-primary font-bold text-primary">
           {item.title}
         </NavLink>)}
-        {current && !shortcuts.includes(current) && <span className="ml-3 border-l pl-4 text-sm font-medium text-foreground">{current.title}</span>}
+        {current && !shortcuts.includes(current) && !ALL_TOOLS_ONLY_PATHS.has(current.url) && <span className="ml-3 border-l pl-4 text-sm font-medium text-foreground">{current.title}</span>}
       </nav>
       {pathname !== "/" && <nav aria-label="Breadcrumb" className="mx-auto max-w-[90rem] border-t border-border px-4 py-2 text-sm sm:px-6 lg:px-8">
         <NavLink to="/" end activeClassName="" className="text-primary underline underline-offset-2">Home</NavLink>

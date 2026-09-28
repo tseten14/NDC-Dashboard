@@ -25,7 +25,7 @@ describe("workspace navigation", () => {
     mountNavigation();
     expect(screen.queryByRole("button", { name: "Account menu" })).not.toBeInTheDocument();
     const links = within(screen.getByRole("navigation", { name: "Primary navigation" })).getAllByRole("link");
-    expect(links.map((link) => link.textContent)).toEqual(["Home", "Emissions Map", "District Translator", "Sector Classification", "Scenario Analysis", "Dashboard", "Marketplace", "Database"]);
+    expect(links.map((link) => link.textContent)).toEqual(["Home", "Emissions Map", "District Translator", "Dashboard", "Marketplace", "Database"]);
     expect(links[2]).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveAttribute("href", "#main-content");
     expect(document.title).toContain("District Translator");
@@ -38,6 +38,17 @@ describe("workspace navigation", () => {
     fireEvent.click(within(menu).getByRole("link", { name: /Documentation/ }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(document.title).toContain("Documentation");
+  });
+  it.each([
+    ["Sector Classification", "/sector-classification"],
+    ["Scenario Analysis", "/scenario-analysis"],
+  ])("keeps %s in All tools without showing it as a header tab", (title, path) => {
+    mountNavigation(path);
+    const primary = screen.getByRole("navigation", { name: "Primary navigation" });
+    expect(within(primary).queryByText(title)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open all tools" }));
+    const allTools = screen.getByRole("navigation", { name: "All workspace tools" });
+    expect(within(allTools).getByRole("link", { name: new RegExp(title) })).toHaveAttribute("href", path);
   });
   it("preserves role-specific visibility in shortcuts and the tool menu", () => {
     role.activeRole = "FieldOfficer";
