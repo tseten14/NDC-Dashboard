@@ -72,10 +72,10 @@ export function ControlBar({
             <button
               onClick={() => onGeographyChange("national")}
               className={cn(
-                "px-3 py-1 text-xs font-medium transition-colors",
+                "px-3 py-1 text-xs font-medium ",
                 geographyLevel === "national"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:bg-muted"
+                  : "bg-background text-muted-foreground "
               )}
             >
               National
@@ -83,10 +83,10 @@ export function ControlBar({
             <button
               onClick={() => onGeographyChange("district")}
               className={cn(
-                "px-3 py-1 text-xs font-medium transition-colors border-l border-input",
+                "px-3 py-1 text-xs font-medium  border-l border-input",
                 geographyLevel === "district"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:bg-muted"
+                  : "bg-background text-muted-foreground "
               )}
             >
               District
@@ -94,7 +94,7 @@ export function ControlBar({
           </div>
           {geographyLevel === "district" && (
             <Select value={selectedDistrictId || ""} onValueChange={(v) => onDistrictChange(v || null)}>
-              <SelectTrigger className="w-[140px] h-7 text-xs">
+              <SelectTrigger aria-label="Select district" className="w-[140px] h-7 text-xs">
                 <SelectValue placeholder="Select district" />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">

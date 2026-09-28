@@ -20,8 +20,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CountUpNumber } from "@/components/dashboard/CountUpNumber";
 import { EmissionsMap3D } from "@/components/map/EmissionsMap3D";
+import { MAP_SECTOR_COLORS, MAP_SECTOR_FALLBACK } from "@/lib/visual-palette";
 import {
-  Loader2, AlertCircle, Map as MapIcon, Layers,
+  AlertCircle, Layers,
   TrendingUp, TrendingDown, Factory,
 } from "lucide-react";
 import ugandaGeo from "@/data/uganda-adm2.geo.json";
@@ -30,21 +31,7 @@ const GEO = ugandaGeo as unknown as FeatureCollection;
 // Climate TRACE v7 (March 2026 dataset) is confirmed through 2025.
 const YEARS = [2021, 2022, 2023, 2024, 2025];
 
-/** Climate-tech sector palette — saturated for crisp map bubbles */
-const SECTOR_COLORS: Record<string, string> = {
-  "forestry-and-land-use": "#16a34a",
-  agriculture: "#d97706",
-  transportation: "#0284c7",
-  buildings: "#7c3aed",
-  waste: "#ea580c",
-  power: "#ef4444",
-  manufacturing: "#0d9488",
-  "fossil-fuel-operations": "#64748b",
-  "mineral-extraction": "#c2410c",
-  "fluorinated-gases": "#db2777",
-};
-const FALLBACK_COLOR = "#94a3b8";
-const sectorColor = (s: string) => SECTOR_COLORS[s] ?? FALLBACK_COLOR;
+const sectorColor = (s: string) => MAP_SECTOR_COLORS[s] ?? MAP_SECTOR_FALLBACK;
 const bubbleKey = (p: MapSourcePoint, i: number) => `${p.id ?? "x"}-${i}`;
 
 function titleize(slug: string): string {
@@ -182,30 +169,26 @@ export default function MapExplorer() {
   return (
     <ScrollArea className="h-full">
       <div className="mx-auto max-w-7xl p-4 pb-8 space-y-4">
-        {/* Dark header — Climate TRACE dashboard style, themed to app greens */}
-        <div className="overflow-hidden rounded-xl border border-sidebar-border shadow-sm">
-          <div className="bg-[hsl(var(--sidebar-background))] px-5 py-4 sm:py-5 text-sidebar-foreground">
+        <div className="overflow-hidden rounded-sm border border-border">
+          <div className="bg-card px-5 py-4 sm:py-5 text-foreground">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <MapIcon className="h-5 w-5 text-sidebar-primary" />
-                  <h1 className="font-brand text-xl sm:text-2xl font-bold tracking-tight">Uganda</h1>
-                </div>
-                <p className="text-xs sm:text-sm text-sidebar-foreground/70 max-w-xl">
+                <h1 className="mb-1 text-2xl font-bold">Uganda emissions map</h1>
+                <p className="text-sm text-muted-foreground max-w-xl">
                   Geolocated emission sources · {year} · CO₂e 100-yr GWP · Climate TRACE
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <div className="flex rounded-lg overflow-hidden border border-sidebar-border/60">
+                <div className="flex flex-wrap overflow-hidden rounded-sm border border-border" aria-label="Map year">
                   {YEARS.map((y) => (
                     <button
                       key={y}
                       onClick={() => setYear(y)}
                       className={cn(
-                        "px-3 py-1.5 text-xs font-medium tabular-nums transition-colors",
+                        "min-h-11 border-r border-border px-3 py-2 text-sm font-medium tabular-nums",
                         y === year
-                          ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                          : "bg-sidebar-accent/40 text-sidebar-foreground/80 hover:bg-sidebar-accent",
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-card text-foreground",
                       )}
                     >
                       {y}
@@ -219,11 +202,10 @@ export default function MapExplorer() {
 
         {/* KPI row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-on-track/12 via-card to-card overflow-hidden dash-card-hover gradient-border-card">
+          <Card className="border border-border bg-card">
             <CardContent className="p-4 relative">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-on-track/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-              <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Total emissions</p>
-              <p className="mt-1 text-2xl sm:text-3xl font-bold tabular-nums text-on-track">
+              <p className="text-sm font-semibold text-muted-foreground">Total emissions</p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
                 {query.isLoading || data?.total_mtco2e == null ? (
                   "…"
                 ) : (
@@ -235,11 +217,10 @@ export default function MapExplorer() {
               </p>
             </CardContent>
           </Card>
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-sky-500/10 via-card to-card overflow-hidden dash-card-hover">
+          <Card className="border border-border bg-card">
             <CardContent className="p-4 relative">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-sky-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-              <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Tracked sources</p>
-              <p className="mt-1 text-2xl sm:text-3xl font-bold tabular-nums text-sky-600 dark:text-sky-400">
+              <p className="text-sm font-semibold text-muted-foreground">Tracked sources</p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
                 {query.isLoading ? "…" : (data?.point_count ?? 0).toLocaleString()}
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -247,10 +228,9 @@ export default function MapExplorer() {
               </p>
             </CardContent>
           </Card>
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-chart-2/12 via-card to-card overflow-hidden">
+          <Card className="border border-border bg-card">
             <CardContent className="p-4 relative">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-chart-2/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-              <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Leading sector</p>
+              <p className="text-sm font-semibold text-muted-foreground">Leading sector</p>
               <p className="mt-1 text-lg sm:text-xl font-bold text-foreground truncate">
                 {topSector ? titleize(topSector.sector) : "—"}
               </p>
@@ -263,13 +243,13 @@ export default function MapExplorer() {
 
         {/* 3D satellite map — bubble size ∝ emissions */}
         <div className="mx-auto w-full max-w-6xl px-1">
-          <Card className="overflow-hidden border-border/80 shadow-md dash-card-hover">
-            <CardContent className="p-3 sm:p-4 map-globe-stage">
+          <Card className="overflow-hidden border-border/80  dash-card-hover">
+            <CardContent className="bg-card p-3 sm:p-4">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-5">
                 {/* Sectors — left gutter */}
                 <aside className="shrink-0 lg:w-44 xl:w-48 order-2 lg:order-1">
-                  <div className="rounded-lg border border-white/10 bg-black/45 backdrop-blur-sm px-3 py-2.5 lg:py-3 shadow-sm">
-                    <p className="text-[9px] uppercase tracking-wider font-semibold text-slate-300 mb-2">Sectors</p>
+                  <div className="rounded-sm border border-border bg-card px-3 py-2.5 lg:py-3">
+                    <p className="mb-2 text-sm font-semibold text-foreground">Sectors</p>
                     <ul className="space-y-0.5">
                       {(data?.sectors ?? []).map((s) => {
                         const pct = data?.total_mtco2e
@@ -283,28 +263,28 @@ export default function MapExplorer() {
                               type="button"
                               onClick={() => handleSectorHighlight(s.sector)}
                               className={cn(
-                                "map-legend-item flex w-full items-center gap-2 text-left text-[10px] rounded-md px-2 py-1 hover:bg-white/10",
+                                "map-legend-item flex min-h-9 w-full items-center gap-2 rounded-sm border border-transparent px-2 py-1 text-left text-sm text-foreground",
                                 isActive && "is-active",
                                 isHidden && "opacity-35",
                               )}
                             >
                               <span
                                 className={cn(
-                                  "h-2.5 w-2.5 rounded-full shrink-0 ring-2 ring-offset-1 ring-offset-[#0c1018] transition-shadow",
+                                  "h-2.5 w-2.5 rounded-full shrink-0 border border-foreground",
                                   isActive && "ring-current",
                                 )}
                                 style={{ background: sectorColor(s.sector), color: sectorColor(s.sector) }}
                               />
-                              <span className="flex-1 min-w-0 leading-tight text-slate-100">{titleize(s.sector)}</span>
+                              <span className="flex-1 min-w-0 leading-tight text-foreground">{titleize(s.sector)}</span>
                               {pct != null && (
-                                <span className="tabular-nums text-slate-400 shrink-0">{pct}%</span>
+                                <span className="tabular-nums text-muted-foreground shrink-0">{pct}%</span>
                               )}
                             </button>
                           </li>
                         );
                       })}
                     </ul>
-                    <p className="text-[9px] text-slate-400 mt-2 border-t border-white/10 pt-2 leading-snug">
+                    <p className="mt-2 border-t border-border pt-2 text-sm leading-snug text-muted-foreground">
                       Bubble size ∝ emissions · click a bubble for details · click a sector to highlight
                     </p>
                   </div>
@@ -315,10 +295,10 @@ export default function MapExplorer() {
                   ref={wrapRef}
                   className="relative flex-1 min-w-0 order-1 lg:order-2 w-full max-w-[min(100%,560px)] lg:max-w-none mx-auto"
                 >
-                  <div className="relative w-full aspect-[4/3] min-h-[380px] max-h-[min(72vh,540px)] rounded-xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
+                  <div className="relative w-full aspect-[4/3] min-h-[380px] max-h-[min(72vh,540px)] overflow-hidden rounded-sm border border-border">
                     {query.isLoading && (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-[#060a12]/85 backdrop-blur-sm text-sm text-slate-300 rounded-lg">
-                        <Loader2 className="h-5 w-5 animate-spin text-primary" /> Loading {year} sources…
+                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-card text-base text-foreground">
+                        Loading {year} sources…
                       </div>
                     )}
                     {query.isError && (
@@ -340,7 +320,7 @@ export default function MapExplorer() {
                     />
                     {hoveredPoint && (
                       <div
-                        className="pointer-events-none absolute z-20 max-w-[260px] rounded-lg border border-border/80 bg-popover/95 backdrop-blur-md px-3 py-2.5 shadow-xl dash-crossfade"
+                        className="pointer-events-none absolute z-20 max-w-[260px] rounded-lg border border-border/80 bg-popover/95  px-3 py-2.5  dash-crossfade"
                         style={{
                           left: Math.min(tip.x + 14, (wrapRef.current?.clientWidth ?? 400) - 270),
                           top: tip.y + 14,
@@ -378,33 +358,33 @@ export default function MapExplorer() {
                         ? ((sectorRow.mtco2e ?? 0) / data.total_mtco2e) * 100
                         : null;
                     return (
-                    <div className="map-globe-summary rounded-lg border border-white/10 bg-black/45 px-3 py-2.5 text-left lg:text-right shadow-sm">
-                      <p className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">{year}</p>
-                      <p className="text-xl sm:text-2xl font-bold tabular-nums text-emerald-400 leading-tight">
+                    <div className="rounded-sm border border-border bg-card px-3 py-2.5 text-left lg:text-right">
+                      <p className="text-sm font-semibold text-muted-foreground">{year}</p>
+                      <p className="text-2xl font-bold tabular-nums text-foreground leading-tight">
                         <CountUpNumber
                           value={shownValue}
                           format={(v) => (v >= 1 ? v.toFixed(1) : v.toFixed(2))}
                           durationMs={1100}
                         />
                       </p>
-                      <p className="text-[9px] text-slate-400">
+                      <p className="text-sm text-muted-foreground">
                         {sectorRow ? "Mt CO₂e — this sector" : "Mt CO₂e mapped"}
                       </p>
                       {sectorRow ? (
-                        <p className="mt-2 pt-2 border-t border-white/10 text-[10px] lg:text-right dash-crossfade">
+                        <p className="mt-2 border-t border-border pt-2 text-sm lg:text-right">
                           <span className="inline-flex items-center gap-1.5">
                             <span className="h-2 w-2 rounded-full" style={{ background: sectorColor(highlightedSector!) }} />
-                            <span className="font-medium text-slate-100">{titleize(highlightedSector!)}</span>
+                            <span className="font-medium text-foreground">{titleize(highlightedSector!)}</span>
                           </span>
                           {sectorPct != null && (
-                            <span className="block text-slate-400">{sectorPct.toFixed(1)}% of mapped total</span>
+                            <span className="block text-muted-foreground">{sectorPct.toFixed(1)}% of mapped total</span>
                           )}
                         </p>
                       ) : null}
                     </div>
                     );
                   })() : (
-                    <div className="rounded-lg border border-dashed border-white/15 px-3 py-4 text-[10px] text-slate-400 text-center lg:text-right">
+                    <div className="rounded-sm border border-dashed border-border px-3 py-4 text-sm text-muted-foreground text-center lg:text-right">
                       Totals load with map data
                     </div>
                   )}
@@ -416,7 +396,7 @@ export default function MapExplorer() {
 
         {/* Bottom row: insights */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card className="border-border/80 shadow-sm">
+            <Card className="border-border/80 ">
               <CardContent className="p-4">
                 <h3 className="text-xs font-semibold text-foreground mb-2">Where emissions are changing</h3>
                 <p className="text-[10px] text-muted-foreground mb-2">Year-over-year by sector ({year - 1} → {year})</p>
@@ -443,7 +423,7 @@ export default function MapExplorer() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/80 shadow-sm">
+            <Card className="border-border/80 ">
               <CardContent className="p-4">
                 <h3 className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">
                   <Factory className="h-3.5 w-3.5 text-primary" />
@@ -483,8 +463,8 @@ export default function MapExplorer() {
                     type="button"
                     onClick={() => toggleSector(s.sector)}
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-all hover:shadow-sm",
-                      off ? "opacity-40 border-border bg-muted/50" : "border-transparent shadow-sm",
+                      "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px]  ",
+                      off ? "opacity-40 border-border bg-muted/50" : "border-transparent ",
                     )}
                     style={off ? undefined : { background: `${sectorColor(s.sector)}18`, borderColor: `${sectorColor(s.sector)}55` }}
                   >

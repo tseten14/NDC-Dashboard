@@ -16,7 +16,7 @@ export function FrameworkSelector({ value, onChange }: { value: string; onChange
     <div id="framework-options" className={cn(!showOptions && "hidden lg:block")}>
     <RadioGroup value={value} onValueChange={onChange} aria-labelledby="framework-heading" className="gap-3" orientation="vertical">
       {CLASSIFICATION_FRAMEWORKS.map((framework) => <label key={framework.id}
-        className={cn("flex cursor-pointer items-start gap-3 rounded-xl border bg-card px-4 py-3 transition-colors",
+        className={cn("flex cursor-pointer items-start gap-3 rounded-xl border bg-card px-4 py-3 ",
           value === framework.id ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border",
           framework.unavailableReason && "cursor-not-allowed bg-muted/30")}>
         <RadioGroupItem id={`framework-${framework.id}`} className="mt-1 shrink-0" value={framework.id} disabled={!!framework.unavailableReason}

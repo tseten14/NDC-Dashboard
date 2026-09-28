@@ -109,8 +109,8 @@ export default function InstitutionalMap() {
 
           {/* Mandate Overlaps Alert */}
           {overlaps.length > 0 && (
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-1.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1">
+            <div className="rounded-lg border border-border bg-muted p-3 space-y-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-at-risk dark:text-at-risk flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" /> Mandate Overlaps — activities with multiple ownership roles
               </p>
               {overlaps.map((o, i) => (
@@ -137,7 +137,7 @@ export default function InstitutionalMap() {
                   </Card>
                 ) : (
                   grouped[category].map(actor => (
-                    <Card key={actor.id} className="hover:border-primary/40 transition-colors">
+                    <Card key={actor.id} className="hover:border-primary/40 ">
                       <CardContent className="p-3 space-y-1.5">
                         <div>
                           <p className="text-[11px] font-semibold text-foreground leading-tight">{actor.display_name}</p>

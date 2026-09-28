@@ -27,8 +27,8 @@ export function TopContextBar() {
           <div className="flex rounded-md border border-input overflow-hidden">
             {[{ id: "all" as const, label: "All" }, ...strategies.filter(s => s.is_active).map(s => ({ id: s.id, label: s.name }))].map(s => (
               <button key={s.id} onClick={() => setActiveStrategy(s.id)}
-                className={cn("px-2 py-1 text-[10px] font-medium transition-colors border-r border-input last:border-r-0",
-                  activeStrategy === s.id ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"
+                className={cn("px-2 py-1 text-[10px] font-medium  border-r border-input last:border-r-0",
+                  activeStrategy === s.id ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground "
                 )}>
                 {s.label}
               </button>
@@ -42,8 +42,8 @@ export function TopContextBar() {
           <div className="flex rounded-md border border-input overflow-hidden">
             {(["policy", "economic"] as const).map(m => (
               <button key={m} onClick={() => setViewMode(m)}
-                className={cn("px-2.5 py-1 text-[10px] font-medium transition-colors border-r border-input last:border-r-0",
-                  viewMode === m ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"
+                className={cn("px-2.5 py-1 text-[10px] font-medium  border-r border-input last:border-r-0",
+                  viewMode === m ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground "
                 )}>
                 {m === "policy" ? "Policy" : "Economic"}
               </button>

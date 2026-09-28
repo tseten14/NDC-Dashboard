@@ -142,7 +142,7 @@ export function TopEmittingSources() {
   if (query.isLoading) {
     return (
       <div className="flex items-center justify-center gap-2 p-6 text-xs text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Loading top emitting sources…
+        <Loader2 className="h-4 w-4 " /> Loading top emitting sources…
       </div>
     );
   }
@@ -232,7 +232,7 @@ export function TopEmittingSources() {
             </thead>
             <tbody>
               {sources.map((s, i) => (
-                <tr key={`${s.id ?? i}-${i}`} className="border-t border-border/60 hover:bg-muted/30">
+                <tr key={`${s.id ?? i}-${i}`} className="border-t border-border/60 ">
                   <td className="px-3 py-1.5 text-muted-foreground tabular-nums">{i + 1}</td>
                   <td className="px-3 py-1.5">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -245,7 +245,7 @@ export function TopEmittingSources() {
                       {s.is_asset ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full cursor-help shrink-0">
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-on-track bg-muted border border-border px-1.5 py-0.5 rounded-full cursor-help shrink-0">
                               <ShieldCheck className="h-2.5 w-2.5" />
                               CT Verified
                             </span>
@@ -297,7 +297,7 @@ export function TopEmittingSources() {
               onClick={() => setLimit((l) => Math.min(l + PAGE_SIZE, MAX_LIMIT))}
               disabled={query.isFetching}
             >
-              {query.isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+              {query.isFetching ? <Loader2 className="h-3 w-3 " /> : <Plus className="h-3 w-3" />}
               Load more
             </Button>
           </div>

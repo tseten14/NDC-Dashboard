@@ -44,13 +44,13 @@ function fmt(n: number) {
 }
 
 function PctBar({ pct }: { pct: number }) {
-  const color = pct >= 0.7 ? "bg-green-500" : pct >= 0.4 ? "bg-amber-500" : "bg-red-500";
+  const color = pct >= 0.7 ? "bg-on-track" : pct >= 0.4 ? "bg-at-risk" : "bg-off-track";
   return (
     <div className="flex items-center gap-1.5">
       <div className="w-20 h-2 rounded-full bg-muted overflow-hidden">
         <div className={cn("h-full rounded-full", color)} style={{ width: `${Math.min(100, pct * 100).toFixed(0)}%` }} />
       </div>
-      <span className={cn("text-[10px] font-semibold", pct >= 0.7 ? "text-green-600 dark:text-green-400" : pct >= 0.4 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400")}>
+      <span className={cn("text-[10px] font-semibold", pct >= 0.7 ? "text-on-track dark:text-on-track" : pct >= 0.4 ? "text-at-risk dark:text-at-risk" : "text-off-track dark:text-off-track")}>
         {(pct * 100).toFixed(0)}%
       </span>
     </div>
@@ -96,7 +96,7 @@ export default function FinancialFlow() {
             <Card>
               <CardContent className="p-3">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Avg Disbursement Rate</p>
-                <p className={cn("text-xl font-bold mt-0.5", avgDisbRate >= 0.7 ? "text-green-600 dark:text-green-400" : avgDisbRate >= 0.4 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400")}>
+                <p className={cn("text-xl font-bold mt-0.5", avgDisbRate >= 0.7 ? "text-on-track dark:text-on-track" : avgDisbRate >= 0.4 ? "text-at-risk dark:text-at-risk" : "text-off-track dark:text-off-track")}>
                   {(avgDisbRate * 100).toFixed(1)}%
                 </p>
               </CardContent>
@@ -120,7 +120,7 @@ export default function FinancialFlow() {
                 </thead>
                 <tbody>
                   {rows.map(({ activity, committed, disbursed, spent, disbRate }) => (
-                    <tr key={activity.id} className="border-b border-border/30 hover:bg-muted/20">
+                    <tr key={activity.id} className="border-b border-border/30 ">
                       <td className="py-1.5 px-2 font-medium text-foreground max-w-[200px]">
                         <p className="truncate">{activity.name}</p>
                         <p className="text-[9px] text-muted-foreground truncate">{activity.implementing_entity}</p>

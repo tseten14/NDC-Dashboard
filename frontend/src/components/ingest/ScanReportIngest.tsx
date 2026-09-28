@@ -420,7 +420,7 @@ export function ScanReportIngest() {
         <div
           onDrop={onDrop}
           onDragOver={(e) => e.preventDefault()}
-          className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition cursor-pointer"
+          className="border-2 border-dashed border-border rounded-lg p-8 text-center   cursor-pointer"
           onClick={() => inputRef.current?.click()}
         >
           <UploadCloud className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
@@ -475,7 +475,7 @@ export function ScanReportIngest() {
                 </Badge>
                 <button
                   onClick={() => removeFile(i)}
-                  className="text-muted-foreground hover:text-destructive"
+                  className="text-muted-foreground "
                   aria-label={`Remove ${f.name}`}
                 >
                   <X className="h-3.5 w-3.5" />
@@ -501,7 +501,7 @@ export function ScanReportIngest() {
       {(phase === "uploading" || phase === "scanning") && (
         <div className="space-y-2 p-3 rounded border border-border bg-muted/30">
           <div className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <Loader2 className="h-4 w-4  text-primary" />
             <span className="text-xs font-medium">
               {phase === "uploading" ? `Uploading… ${progress}%` : "Reading your files…"}
             </span>
@@ -582,7 +582,7 @@ function ReportView({ report, onReset }: { report: ScanReport; onReset: () => vo
       </div>
       {(summary.json_mode === "repair" || summary.qc) && (
         <details className="rounded border border-border bg-muted/20 p-2">
-          <summary className="text-[10px] font-semibold text-muted-foreground cursor-pointer hover:text-foreground">
+          <summary className="text-[10px] font-semibold text-muted-foreground cursor-pointer ">
             More detail for data officers
           </summary>
           <div className="mt-2 space-y-2">
@@ -841,7 +841,7 @@ function AiInsightsCard({ insights }: { insights: AiInsights }) {
       {/* Next step */}
       {insights.next_step && (
         <div className="flex items-start gap-2 pt-1 border-t border-border/40">
-          <Lightbulb className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
+          <Lightbulb className="h-3 w-3 text-at-risk shrink-0 mt-0.5" />
           <p className="text-[11px] text-foreground font-medium leading-snug">
             <span className="text-muted-foreground font-normal">Next step: </span>{insights.next_step}
           </p>
@@ -861,7 +861,7 @@ function AiInsightsCard({ insights }: { insights: AiInsights }) {
                     href={s.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary font-medium hover:underline underline-offset-2"
+                    className="text-primary font-medium  underline-offset-2"
                   >
                     {s.label}
                   </a>
@@ -1425,7 +1425,7 @@ export function AnalysisCard({
 
       {!paragraphMode && analysis.numbers && analysis.numbers.length > 0 && (
         <details className="mt-3">
-          <summary className="text-[9px] uppercase text-muted-foreground font-semibold cursor-pointer hover:text-foreground">
+          <summary className="text-[9px] uppercase text-muted-foreground font-semibold cursor-pointer ">
             All figures mentioned ({analysis.numbers.length})
           </summary>
           <p className="text-[10px] text-muted-foreground mt-1 mb-1">
@@ -1443,7 +1443,7 @@ export function AnalysisCard({
 
       {columns && columns.length > 0 && (
         <details className="mt-3">
-          <summary className="text-[9px] uppercase text-muted-foreground font-semibold cursor-pointer hover:text-foreground">
+          <summary className="text-[9px] uppercase text-muted-foreground font-semibold cursor-pointer ">
             Column details ({columns.length})
           </summary>
           <div className="max-h-44 overflow-auto border border-border rounded mt-1">
@@ -1499,7 +1499,7 @@ export function AnalysisCard({
 
       {(preview || (kind === "json_object" && sample) || (Array.isArray(sample) && sample.length > 0)) && (
         <details className="mt-3">
-          <summary className="text-[9px] uppercase text-muted-foreground font-semibold cursor-pointer hover:text-foreground">
+          <summary className="text-[9px] uppercase text-muted-foreground font-semibold cursor-pointer ">
             Original file snippet
           </summary>
           <pre className="text-[10px] bg-muted/30 p-2 rounded max-h-40 overflow-auto whitespace-pre-wrap break-words mt-1">

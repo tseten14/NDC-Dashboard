@@ -72,8 +72,8 @@ export default function Indicators() {
               const active = ind.indicator_id === selected?.indicator_id;
               return (
                 <button key={ind.indicator_id} onClick={() => setSelectedId(ind.indicator_id)}
-                  className={cn("w-full text-left p-2 rounded border transition-colors",
-                    active ? "bg-accent/10 border-accent" : "border-border hover:bg-muted/40")}>
+                  className={cn("w-full text-left p-2 rounded border ",
+                    active ? "bg-accent/10 border-accent" : "border-border ")}>
                   <div className="flex items-start gap-1.5">
                     <Icon className="h-3 w-3 mt-0.5 text-muted-foreground" />
                     <div className="min-w-0 flex-1">
@@ -148,7 +148,7 @@ export default function Indicators() {
                   {outgoingLinks.map(l => {
                     const t = getIndicator(l.target_indicator_id);
                     return (
-                      <button key={l.interlinkage_id} onClick={() => setSelectedId(l.target_indicator_id)} className="w-full text-left p-1.5 rounded border border-border hover:bg-muted/40">
+                      <button key={l.interlinkage_id} onClick={() => setSelectedId(l.target_indicator_id)} className="w-full text-left p-1.5 rounded border border-border ">
                         <p className="text-[10px] font-semibold text-foreground">→ {t?.indicator_name}</p>
                         <p className="text-[9px] text-muted-foreground mt-0.5 line-clamp-2">{l.transmission_mechanism}</p>
                       </button>
@@ -163,7 +163,7 @@ export default function Indicators() {
                   {incomingLinks.map(l => {
                     const s = getIndicator(l.source_indicator_id);
                     return (
-                      <button key={l.interlinkage_id} onClick={() => setSelectedId(l.source_indicator_id)} className="w-full text-left p-1.5 rounded border border-border hover:bg-muted/40">
+                      <button key={l.interlinkage_id} onClick={() => setSelectedId(l.source_indicator_id)} className="w-full text-left p-1.5 rounded border border-border ">
                         <p className="text-[10px] font-semibold text-foreground">← {s?.indicator_name}</p>
                         <p className="text-[9px] text-muted-foreground mt-0.5 line-clamp-2">{l.transmission_mechanism}</p>
                       </button>

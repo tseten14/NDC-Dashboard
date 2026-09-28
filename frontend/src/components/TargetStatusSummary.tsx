@@ -96,7 +96,7 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           Climate TRACE API unavailable — status summary cannot be calculated.
           <button
-            className="ml-1 underline underline-offset-2 hover:no-underline"
+            className="ml-1 underline underline-offset-2 "
             onClick={() => window.location.reload()}
           >
             Retry
@@ -127,7 +127,7 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
             <button
               key={s.target.id}
               onClick={() => onSelectTarget(s.target.id, s.target.sectorId)}
-              className="group flex items-center gap-1 px-1.5 py-0.5 rounded border border-border hover:border-primary hover:bg-primary/5 transition-colors shrink-0 dash-fade-up"
+              className="group flex items-center gap-1 px-1.5 py-0.5 rounded border border-border    shrink-0 dash-fade-up"
               style={{ animationDelay: `${0.2 + i * 0.07}s` }}
               title={plain.summary}
             >
@@ -135,7 +135,7 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
               <span className="text-[10px] font-medium truncate max-w-[180px]">
                 {s.target.sectorId.toUpperCase()} · {plain.summary.slice(0, 48)}…
               </span>
-              <ChevronRight className="h-2.5 w-2.5 text-muted-foreground group-hover:text-primary" />
+              <ChevronRight className="h-2.5 w-2.5 text-muted-foreground " />
             </button>
           );
           })}
@@ -155,7 +155,7 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
 function Stat({ icon, label, value, hint, index = 0 }: { icon: React.ReactNode; label: string; value: number; hint?: string; index?: number }) {
   return (
     <div
-      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-background border border-border shadow-sm dash-fade-up dash-card-hover"
+      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-background border border-border  dash-fade-up dash-card-hover"
       style={{ animationDelay: `${index * 0.07}s` }}
       title={hint}
     >

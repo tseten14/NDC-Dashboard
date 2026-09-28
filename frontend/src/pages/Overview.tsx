@@ -54,7 +54,7 @@ export default function Overview() {
                 </thead>
                 <tbody>
                   {filteredActivities.map(a => (
-                    <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30">
+                    <tr key={a.id} className="border-b border-border/50 ">
                       <td className="py-1.5 px-2 font-medium text-foreground">{a.title}</td>
                       {strategies.filter(s => s.is_active).map(s => (
                         <td key={s.id} className="text-center py-1.5 px-2">

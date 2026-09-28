@@ -219,7 +219,7 @@ export function ProgressTowardTargetColumn({ selectedTarget, footer, scroll = tr
                     strokeWidth="8"
                     strokeLinecap="round"
                     strokeDasharray={`${(displayPercent / 100) * 327} 327`}
-                    className="transition-all duration-700"
+                    className="transition-all "
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -346,7 +346,7 @@ function CapProgressScale({
       <div className="relative h-3 rounded-full bg-muted overflow-visible">
         {/* current emissions fill */}
         <div
-          className={cn("absolute top-0 bottom-0 left-0 rounded-full transition-all", tone.bar)}
+          className={cn("absolute top-0 bottom-0 left-0 rounded-full ", tone.bar)}
           style={{ width: `${leftPct(latest)}%` }}
         />
         {/* NDC ceiling marker */}
@@ -433,7 +433,7 @@ function GoalProgressScale({
 
       {/* Track: starting point (left) → 2030 goal (right) */}
       <div className="relative h-3 rounded-full bg-muted overflow-visible">
-        <div className={cn("absolute top-0 bottom-0 left-0 rounded-full transition-all", tone.bar)} style={{ width: `${fillPct}%` }} />
+        <div className={cn("absolute top-0 bottom-0 left-0 rounded-full ", tone.bar)} style={{ width: `${fillPct}%` }} />
         {/* goal marker at right edge */}
         <div className="absolute -top-1 -bottom-1 right-0 w-[2px] bg-on-track z-10" />
       </div>

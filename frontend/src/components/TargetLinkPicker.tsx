@@ -118,7 +118,7 @@ export function TargetLinkPicker({ links, onChange }: Props) {
                 onClick={() => addLink(t)}
                 disabled={already}
                 className={cn(
-                  "w-full text-left flex items-start gap-2 p-1.5 rounded text-[11px] transition-colors",
+                  "w-full text-left flex items-start gap-2 p-1.5 rounded text-[11px] ",
                   already ? "opacity-40 cursor-not-allowed" : "hover:bg-muted"
                 )}
               >

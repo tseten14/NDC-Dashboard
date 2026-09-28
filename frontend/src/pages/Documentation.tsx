@@ -69,7 +69,7 @@ export default function Documentation() {
               and API boundaries).
             </p>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              New here? Start on <Link to="/" className="text-primary font-medium hover:underline">Home</Link>, then
+              New here? Start on <Link to="/" className="text-primary font-medium ">Home</Link>, then
               return for full detail on every screen.
             </p>
           </div>
@@ -95,7 +95,7 @@ export default function Documentation() {
             {GETTING_STARTED.map((s) => (
               <li
                 key={s.step}
-                className="flex gap-3 rounded-lg border border-border bg-card p-4 shadow-sm h-full"
+                className="flex gap-3 rounded-lg border border-border bg-card p-4  h-full"
               >
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
                   {s.step}
@@ -117,7 +117,7 @@ export default function Documentation() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {ALL_ROLES.map((r) => (
-              <div key={r.id} className="rounded-lg border bg-card px-4 py-3 shadow-sm">
+              <div key={r.id} className="rounded-lg border bg-card px-4 py-3 ">
                 <p className="text-sm font-semibold text-foreground">{r.label}</p>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">{r.description}</p>
               </div>
@@ -359,7 +359,7 @@ export default function Documentation() {
                 href="https://climatetrace.org"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-primary hover:underline"
+                className="inline-flex items-center gap-1 text-primary "
               >
                 Climate TRACE website <ExternalLink className="h-3 w-3" />
               </a>
@@ -376,7 +376,7 @@ export default function Documentation() {
                 <Accordion type="single" collapsible>
                   {GLOSSARY.map((g, i) => (
                     <AccordionItem key={g.term} value={`g${i}`} className="border-b last:border-0 px-2">
-                      <AccordionTrigger className="py-2.5 text-xs font-semibold hover:no-underline text-left">
+                      <AccordionTrigger className="py-2.5 text-xs font-semibold  text-left">
                         {g.term}
                       </AccordionTrigger>
                       <AccordionContent className="text-xs text-muted-foreground leading-relaxed pb-2">
@@ -396,7 +396,7 @@ export default function Documentation() {
                 <Accordion type="single" collapsible>
                   {FAQ.map((f, i) => (
                     <AccordionItem key={i} value={`f${i}`} className="border-b last:border-0 px-2">
-                      <AccordionTrigger className="py-2.5 text-xs font-semibold text-left hover:no-underline">
+                      <AccordionTrigger className="py-2.5 text-xs font-semibold text-left ">
                         {f.q}
                       </AccordionTrigger>
                       <AccordionContent className="text-xs text-muted-foreground leading-relaxed pb-2">
@@ -448,7 +448,7 @@ function SectionTitle({
 
 function FeatureGuideCard({ guide }: { guide: FeatureGuide }) {
   return (
-    <Card className="overflow-hidden shadow-sm h-full flex flex-col">
+    <Card className="overflow-hidden  h-full flex flex-col">
       <CardContent className="p-0 flex flex-col h-full">
         <div className="flex items-start justify-between gap-3 border-b border-border/60 bg-muted/30 px-4 py-3">
           <div className="min-w-0">
@@ -460,7 +460,7 @@ function FeatureGuideCard({ guide }: { guide: FeatureGuide }) {
           </div>
           <Link
             to={guide.to}
-            className="shrink-0 inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/10"
+            className="shrink-0 inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-xs font-medium text-primary "
           >
             Open <ArrowRight className="h-3.5 w-3.5" />
           </Link>
@@ -472,7 +472,7 @@ function FeatureGuideCard({ guide }: { guide: FeatureGuide }) {
 
         <Accordion type="single" collapsible className="px-1 flex-1">
           <AccordionItem value="details" className="border-0">
-            <AccordionTrigger className="px-3 py-2.5 text-xs font-semibold text-primary hover:no-underline">
+            <AccordionTrigger className="px-3 py-2.5 text-xs font-semibold text-primary ">
               Steps, implementation & limitations
             </AccordionTrigger>
             <AccordionContent className="px-3 pb-4 pt-0 space-y-4">
@@ -490,7 +490,7 @@ function FeatureGuideCard({ guide }: { guide: FeatureGuide }) {
 
               <GuideBlock icon={Cog} label="How the app implements it" text={guide.howItWorks} />
               <GuideBlock icon={CheckCircle2} label="What result you should expect" text={guide.result} tone="text-on-track" />
-              <GuideBlock icon={AlertCircle} label="What it is not / limitations" text={guide.limitations} tone="text-amber-700 dark:text-amber-500" />
+              <GuideBlock icon={AlertCircle} label="What it is not / limitations" text={guide.limitations} tone="text-at-risk dark:text-at-risk" />
 
               <div>
                 <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground mb-1.5">

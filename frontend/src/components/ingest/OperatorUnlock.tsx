@@ -30,7 +30,7 @@ export function OperatorUnlockGate({ children }: { children: ReactNode }) {
     return (
       <Card>
         <CardContent className="p-4 flex gap-3 items-start">
-          <ShieldAlert className="h-4 w-4 mt-0.5 text-amber-500 shrink-0" />
+          <ShieldAlert className="h-4 w-4 mt-0.5 text-at-risk shrink-0" />
           <div className="space-y-1">
             <p className="text-sm font-semibold">Importing is switched off on this server</p>
             <p className="text-xs text-muted-foreground">
@@ -117,7 +117,7 @@ export function OperatorSessionBadge() {
     <button
       type="button"
       onClick={() => void lock()}
-      className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+      className="text-[11px] text-muted-foreground  inline-flex items-center gap-1"
       title="Lock importing on this device"
     >
       <LockOpen className="h-3 w-3" /> Unlocked · lock now

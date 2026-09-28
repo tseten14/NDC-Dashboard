@@ -9,6 +9,7 @@ import { geoIdentity, geoPath, geoContains } from "d3-geo";
 import type { FeatureCollection } from "geojson";
 import type { MapSourcePoint } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { MAP_UI } from "@/lib/visual-palette";
 import ugandaGeo from "@/data/uganda-adm2.geo.json";
 
 const GEO = ugandaGeo as unknown as FeatureCollection;
@@ -34,11 +35,8 @@ export interface EmissionsSpikeMapProps {
 
 function choroplethFill(t: number): string {
   const clamped = Math.max(0, Math.min(1, t));
-  if (clamped < 0.03) return "#f8f7f4";
-  const h = 148;
-  const s = 18 + clamped * 34;
-  const l = 93 - clamped * 50;
-  return `hsl(${h} ${s}% ${l}%)`;
+  if (clamped < 0.03) return "#f4f5f6";
+  return `hsl(205 28% ${94 - clamped * 54}%)`;
 }
 
 function spikePx(mt: number | null | undefined, maxMt: number): number {
@@ -101,18 +99,14 @@ export function EmissionsSpikeMap({
     ctx.scale(sx, sy);
 
     // Background
-    const bg = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
-    bg.addColorStop(0, "#eef4f8");
-    bg.addColorStop(0.5, "#f9f8f5");
-    bg.addColorStop(1, "#eef2f8");
-    ctx.fillStyle = bg;
+    ctx.fillStyle = MAP_UI.surface;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
     // Districts
     for (const p of districtPaths) {
       const t = maxDistrictMt > 0 ? districtMt[p.key] / maxDistrictMt : 0;
       ctx.fillStyle = choroplethFill(t);
-      ctx.strokeStyle = "#d4dde6";
+      ctx.strokeStyle = MAP_UI.border;
       ctx.lineWidth = 0.45;
       const path = new Path2D(p.d);
       ctx.fill(path);

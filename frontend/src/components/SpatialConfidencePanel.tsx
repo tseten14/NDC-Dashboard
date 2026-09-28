@@ -74,7 +74,7 @@ export function SpatialConfidencePanel() {
 
       {query.isLoading && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
-          <Loader2 className="h-4 w-4 animate-spin" /> Computing spatial certainty…
+          <Loader2 className="h-4 w-4 " /> Computing spatial certainty…
         </div>
       )}
 
@@ -141,7 +141,7 @@ export function SpatialConfidencePanel() {
             href={data.methodology_url}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+            className="inline-flex items-center gap-1 text-[11px] text-primary "
           >
             Climate TRACE disaggregation methodology <ExternalLink className="h-3 w-3" />
           </a>

@@ -4,7 +4,6 @@
  * Walks through the path from satellite observation to a published emissions
  * figure, so a user can judge how much weight the estimate deserves.
  */
-import { useId } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -33,8 +32,8 @@ const PIPELINE_STAGES = [
   {
     title: "Find assets",
     short: "Assets",
-    border: "border-cyan-500/30",
-    bg: "bg-cyan-500/5",
+    border: "border-border",
+    bg: "bg-muted",
     items: [
       { label: "Public & commercial datasets", icon: FileSpreadsheet },
       { label: "Satellite imagery + ML", icon: ScanSearch },
@@ -44,8 +43,8 @@ const PIPELINE_STAGES = [
   {
     title: "Estimate activity",
     short: "Activity",
-    border: "border-teal-500/30",
-    bg: "bg-teal-500/5",
+    border: "border-border",
+    bg: "bg-muted",
     items: [
       { label: "Statistical models", icon: LineChart },
       { label: "Disaggregating production", icon: LineChart },
@@ -55,8 +54,8 @@ const PIPELINE_STAGES = [
   {
     title: "Gather model inputs",
     short: "Inputs",
-    border: "border-emerald-500/30",
-    bg: "bg-emerald-500/5",
+    border: "border-border",
+    bg: "bg-muted",
     items: [
       { label: "Emission factors", icon: Database },
       { label: "Fuel mix", icon: PieChart },
@@ -99,9 +98,9 @@ function CompactFlowchart() {
           <span
             className={cn(
               "rounded-md border px-1.5 py-0.5 text-[8px] font-medium leading-tight whitespace-nowrap",
-              i === 0 && "border-sky-500/30 bg-sky-500/10 text-foreground",
+              i === 0 && "border-border bg-muted text-foreground",
               i === 1 && "border-primary/30 bg-primary/10 text-foreground",
-              i === COMPACT_STEPS.length - 1 && "border-teal-800/40 bg-gradient-to-r from-slate-800 to-teal-900 text-white font-semibold",
+              i === COMPACT_STEPS.length - 1 && "border-border bg-gradient-to-r from-slate-800 to-teal-900 text-white font-semibold",
               i > 1 && i < COMPACT_STEPS.length - 1 && "border-border bg-muted/40 text-muted-foreground",
             )}
           >
@@ -115,7 +114,6 @@ function CompactFlowchart() {
 }
 
 function SatelliteImageryLogo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-  const gradId = useId();
   const box = size === "lg" ? "h-16 w-16" : size === "sm" ? "h-10 w-10" : "h-12 w-12";
   return (
     <div
@@ -125,18 +123,12 @@ function SatelliteImageryLogo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
     >
       <div
         className={cn(
-          "relative rounded-xl border border-sky-500/25 bg-gradient-to-br from-slate-800 via-slate-700 to-teal-900 shadow-sm overflow-hidden",
+          "relative rounded-xl border border-border bg-gradient-to-br from-slate-800 via-slate-700 to-teal-900  overflow-hidden",
           box,
         )}
       >
         <svg viewBox="0 0 48 48" className="absolute inset-0 h-full w-full" aria-hidden>
-          <defs>
-            <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="rgb(30 58 95)" />
-              <stop offset="100%" stopColor="rgb(15 76 69)" />
-            </linearGradient>
-          </defs>
-          <rect width="48" height="48" fill={`url(#${gradId})`} />
+          <rect width="48" height="48" fill="hsl(var(--chart-1))" />
           <path d="M0 28 Q12 22 24 28 T48 28" fill="none" stroke="rgb(56 189 176 / 0.35)" strokeWidth="0.75" />
           <rect x="10" y="30" width="4" height="3" rx="0.5" fill="rgb(255 255 255 / 0.25)" />
           <path d="M24 8 L16 38 L32 38 Z" fill="rgb(56 189 176 / 0.12)" />
@@ -172,7 +164,7 @@ function HorizontalFlowchart({ detailed = false }: { detailed?: boolean }) {
         {/* Planet */}
         <div
           className={cn(
-            "flex shrink-0 flex-col items-center justify-center rounded-xl border border-sky-500/30 bg-sky-500/8 text-center",
+            "flex shrink-0 flex-col items-center justify-center rounded-xl border border-border bg-muted text-center",
             large ? "w-[136px] min-h-[188px] gap-2.5 p-3.5" : "w-[100px] gap-1.5 p-2",
           )}
         >

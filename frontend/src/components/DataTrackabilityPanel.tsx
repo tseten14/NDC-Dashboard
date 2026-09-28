@@ -37,7 +37,7 @@ export function DataTrackabilityPanel({ country = "UGA" }: { country?: string })
   if (query.isLoading) {
     return (
       <div className="flex items-center justify-center gap-2 p-6 text-xs text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Loading trackability…
+        <Loader2 className="h-4 w-4 " /> Loading trackability…
       </div>
     );
   }

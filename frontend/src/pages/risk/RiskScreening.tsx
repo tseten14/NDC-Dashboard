@@ -65,7 +65,7 @@ export default function RiskScreening() {
   if (isLoading) {
     return (
       <div className="flex items-center gap-2 p-4 text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+        <Loader2 className="h-4 w-4  shrink-0" />
         <span className="text-xs">Loading risk screening data…</span>
       </div>
     );

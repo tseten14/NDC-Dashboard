@@ -72,7 +72,7 @@ export default function EvidenceMRV() {
                       const errCount = flags.filter(f => f.severity === "error").length;
                       const warnCount = flags.filter(f => f.severity === "warn").length;
                       return (
-                        <tr key={i.id} className="border-b border-border/30 hover:bg-muted/20">
+                        <tr key={i.id} className="border-b border-border/30 ">
                           <td className="py-1 px-2 font-medium text-foreground">{i.indicator_name}</td>
                           <td className="py-1 px-2">{i.strategy}</td>
                           <td className="py-1 px-2 text-muted-foreground">{i.data_source ?? "—"}</td>
@@ -114,7 +114,7 @@ export default function EvidenceMRV() {
             <CardContent className="p-3">
               <p className="text-[10px] text-foreground/80">
                 Need to investigate a bottleneck?{" "}
-                <Link to="/delivery" className="text-primary font-medium hover:underline">
+                <Link to="/delivery" className="text-primary font-medium ">
                   → View Delivery &amp; Accountability
                 </Link>
               </p>

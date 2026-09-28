@@ -12,7 +12,7 @@ export type DataHonestyKind = "live" | "indicative" | "illustrative";
 
 const STYLES: Record<DataHonestyKind, string> = {
   live: "bg-on-track/10 text-on-track border-on-track/30",
-  indicative: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30",
+  indicative: "bg-muted text-at-risk dark:text-at-risk border-border",
   illustrative: "bg-muted text-muted-foreground border-border",
 };
 

@@ -58,7 +58,7 @@ function NodeCard({
         node.kind === "attribute" && "border-border bg-muted/40",
         node.kind === "behaviour" && "border-border bg-card",
         isPeople && "border-accent/50 bg-accent/10 text-center py-3",
-        isShift && "border-sky-500/40 bg-sky-500/10 text-center py-2",
+        isShift && "border-border bg-muted text-center py-2",
         node.kind === "outcome" && "border-on-track/40 bg-on-track/5 text-foreground",
       )}
     >
@@ -68,15 +68,15 @@ function NodeCard({
       {isShift && (
         <div className="flex items-center justify-center gap-2 mb-1">
           <Car className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-          <ArrowRight className="h-3 w-3 text-sky-600" aria-hidden />
-          <Bike className="h-3.5 w-3.5 text-sky-600" aria-hidden />
+          <ArrowRight className="h-3 w-3 text-primary" aria-hidden />
+          <Bike className="h-3.5 w-3.5 text-primary" aria-hidden />
         </div>
       )}
       <span>{node.label}</span>
       {node.kind === "intervention" && node.documentHints && onFindDocuments && (
         <button
           type="button"
-          className="mt-1 flex items-center gap-0.5 text-[9px] text-primary hover:underline font-normal"
+          className="mt-1 flex items-center gap-0.5 text-[9px] text-primary  font-normal"
           onClick={() => onFindDocuments(node.documentHints!)}
         >
           <Search className="h-2.5 w-2.5" />
@@ -122,7 +122,7 @@ export function PolicyPathwayDiagram({
               {model.ndcTargetHint}
             </Badge>
           </div>
-          <p className="text-[10px] text-muted-foreground border-l-2 border-amber-500/50 pl-2">
+          <p className="text-[10px] text-muted-foreground border-l-2 border-border pl-2">
             <span className="font-medium text-foreground">Intended vs measured:</span>{" "}
             {model.measuredOutcomeNote}
           </p>
@@ -176,7 +176,7 @@ export function PolicyPathwayDiagram({
               <span className="font-medium">Related documents</span> on an intervention to search the corpus.
             </p>
             <p className="text-[9px] text-muted-foreground mt-2 italic">
-              Model adapted from NDC Align / data-driven transitions stakeholder materials (illustrative
+              Model adapted from NDC Align / data-driven s stakeholder materials (illustrative
               urban transport example).
             </p>
           </CardContent>

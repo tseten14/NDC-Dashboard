@@ -93,7 +93,7 @@ export function AppSidebar() {
           to="/"
           end
           aria-label="Go to home"
-          className={`border-b border-sidebar-border transition-colors hover:bg-sidebar-accent/40 ${collapsed ? "flex justify-center py-2.5" : "px-2.5 py-2.5 flex gap-2.5 items-center"}`}
+          className={`border-b border-sidebar-border   ${collapsed ? "flex justify-center py-2.5" : "px-2.5 py-2.5 flex gap-2.5 items-center"}`}
         >
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary/15 ring-1 ring-sidebar-primary/30">
             <img src="/app-icon.svg" alt="" className="h-6 w-6" width={24} height={24} />

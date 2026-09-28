@@ -192,7 +192,7 @@ export default function ActivityForm() {
       Your current role cannot create activities. Switch to Project Developer, Field Officer, Ministry Delivery Officer, or Admin.
     </div>;
   }
-  if (loading) return <div className="p-6 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (loading) return <div className="p-6 flex justify-center"><Loader2 className="h-5 w-5 " /></div>;
 
   return (
     <ScrollArea className="h-full">
@@ -336,10 +336,10 @@ export default function ActivityForm() {
 
         <div className="flex justify-end gap-2 sticky bottom-0 bg-background py-3 border-t border-border">
           <Button variant="outline" disabled={busy} onClick={() => save(false)} className="gap-1 text-xs">
-            {busy && <Loader2 className="h-3 w-3 animate-spin" />}<Save className="h-3 w-3" /> Save draft
+            {busy && <Loader2 className="h-3 w-3 " />}<Save className="h-3 w-3" /> Save draft
           </Button>
           <Button disabled={busy} onClick={() => save(true)} className="gap-1 text-xs">
-            {busy && <Loader2 className="h-3 w-3 animate-spin" />}<Send className="h-3 w-3" /> Submit for review
+            {busy && <Loader2 className="h-3 w-3 " />}<Send className="h-3 w-3" /> Submit for review
           </Button>
         </div>
       </div>

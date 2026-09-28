@@ -373,7 +373,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
           <button
             type="button"
             onClick={() => setViewSourceOpen(true)}
-            className="ml-auto flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            className="ml-auto flex items-center gap-0.5 text-[10px] text-muted-foreground   shrink-0"
             title="View data lineage and source audit"
           >
             <CodeXml className="h-3 w-3" />
@@ -658,7 +658,7 @@ function ClimateTraceApiBadge() {
       target="_blank"
       rel="noopener noreferrer"
       title="Open Climate TRACE API documentation"
-      className="inline-flex items-center gap-1.5 shrink-0 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary shadow-sm hover:bg-primary/15 hover:border-primary/50 transition-colors"
+      className="inline-flex items-center gap-1.5 shrink-0 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary    "
     >
       <Satellite className="h-3.5 w-3.5 shrink-0" aria-hidden />
       Climate Trace API

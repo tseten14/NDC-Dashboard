@@ -34,7 +34,7 @@ export function OfficialSourcesPanel({ sectorId, className, embedded = false }: 
   const body = (
     <>
         <div className="flex flex-wrap items-center gap-2">
-          <ClimatePolicyRadarBadge className="inline-flex items-center gap-1 shrink-0 rounded border border-primary/25 bg-primary/8 px-2 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/12 transition-colors" />
+          <ClimatePolicyRadarBadge className="inline-flex items-center gap-1 shrink-0 rounded border border-primary/25 bg-primary/8 px-2 py-0.5 text-[10px] font-semibold text-primary  " />
         </div>
         <p className="text-[10px] text-muted-foreground leading-snug">
           Laws, NDC submissions, and national plans ({CPR_PASSAGE_ATTRIBUTION}) Evidence only — not MRV.
@@ -52,7 +52,7 @@ export function OfficialSourcesPanel({ sectorId, className, embedded = false }: 
                 href={resolveCprLink(doc) ?? doc.documentUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline inline-flex items-start gap-1"
+                className="text-primary  inline-flex items-start gap-1"
               >
                 <span className="line-clamp-2">{doc.title}</span>
                 <ExternalLink className="h-2.5 w-2.5 shrink-0 mt-0.5" />
@@ -76,7 +76,7 @@ export function OfficialSourcesPanel({ sectorId, className, embedded = false }: 
       <CollapsibleTrigger asChild>
         <Button variant="outline" size="sm" className="group w-full justify-start text-xs gap-2">
           <span className="flex-1 text-left">📜 Official sources</span>
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground  group-data-[state=open]:rotate-180" />
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-2 rounded-md border border-border bg-card/80 px-2.5 py-2 space-y-1.5">

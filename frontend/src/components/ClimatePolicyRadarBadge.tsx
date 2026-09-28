@@ -16,7 +16,7 @@ export function ClimatePolicyRadarBadge({ className }: { className?: string }) {
       title={CPR_PASSAGE_ATTRIBUTION}
       className={
         className ??
-        "inline-flex items-center gap-1.5 shrink-0 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary shadow-sm hover:bg-primary/15 hover:border-primary/50 transition-colors"
+        "inline-flex items-center gap-1.5 shrink-0 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary    "
       }
     >
       <BookOpen className="h-3.5 w-3.5 shrink-0" aria-hidden />

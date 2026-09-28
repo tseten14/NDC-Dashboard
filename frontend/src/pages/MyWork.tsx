@@ -58,7 +58,7 @@ export default function MyWork() {
     setLoading(false);
   }, [user, activeRole]);
 
-  if (loading) return <div className="p-6 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (loading) return <div className="p-6 flex justify-center"><Loader2 className="h-5 w-5 " /></div>;
 
   return (
     <ScrollArea className="h-full">
@@ -109,7 +109,7 @@ export default function MyWork() {
             <CardContent className="space-y-1.5">
               {activities.length === 0 && <p className="text-[11px] text-muted-foreground">No activities yet.</p>}
               {activities.map((a) => (
-                <Link key={a.id} to={`/activities/${a.id}`} className="flex items-center gap-2 p-2 rounded border border-border hover:bg-muted/50">
+                <Link key={a.id} to={`/activities/${a.id}`} className="flex items-center gap-2 p-2 rounded border border-border ">
                   <span className="text-[11px] flex-1 truncate">{a.title}</span>
                   <span className="text-[10px] text-muted-foreground">{a.ministry || "—"}</span>
                   <WorkflowBadge state={a.workflow_state} />
@@ -131,7 +131,7 @@ export default function MyWork() {
             <CardContent className="space-y-1.5">
               {submittedForReview.length === 0 && <p className="text-[11px] text-muted-foreground">Nothing waiting.</p>}
               {submittedForReview.map((a) => (
-                <Link key={a.id} to={`/activities/${a.id}`} className="flex items-center gap-2 p-2 rounded border border-border hover:bg-muted/50">
+                <Link key={a.id} to={`/activities/${a.id}`} className="flex items-center gap-2 p-2 rounded border border-border ">
                   <span className="text-[11px] flex-1 truncate">{a.title}</span>
                   <span className="text-[10px] text-muted-foreground">{a.organization || "—"}</span>
                 </Link>

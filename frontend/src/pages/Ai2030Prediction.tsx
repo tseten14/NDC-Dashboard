@@ -29,7 +29,7 @@ import {
 
 const STATUS: Record<PredictionStatus, { label: string; blurb: string; cls: string; icon: typeof CheckCircle2 }> = {
   on_track:          { label: "On track",       blurb: "Likely to meet the 2030 climate target",         cls: "bg-on-track/10 text-on-track border-on-track/30",         icon: CheckCircle2 },
-  at_risk:           { label: "At risk",         blurb: "May miss the 2030 target if trend continues",   cls: "bg-amber-500/10 text-amber-600 border-amber-500/30",       icon: AlertTriangle },
+  at_risk:           { label: "At risk",         blurb: "May miss the 2030 target if trend continues",   cls: "bg-muted text-at-risk border-border",       icon: AlertTriangle },
   off_track:         { label: "Off track",       blurb: "Likely to overshoot the 2030 target",           cls: "bg-off-track/10 text-off-track border-off-track/30",       icon: XCircle },
   unknown:           { label: "No target set",   blurb: "No NDC commitment found for this sector",       cls: "bg-muted text-muted-foreground border-border",             icon: HelpCircle },
   insufficient_data: { label: "Not enough data", blurb: "Not enough historical data to make a forecast", cls: "bg-muted text-muted-foreground border-border",             icon: HelpCircle },
@@ -128,7 +128,7 @@ export default function Ai2030Prediction() {
         {query.isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i}><CardContent className="p-3"><div className="h-24 animate-pulse rounded bg-muted/40" /></CardContent></Card>
+              <Card key={i}><CardContent className="p-3"><div className="h-24  rounded bg-muted/40" /></CardContent></Card>
             ))}
           </div>
         )}
@@ -148,7 +148,7 @@ export default function Ai2030Prediction() {
             <Card>
               <CardContent className="p-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Summary label="On track" sub="Likely to meet 2030 goal" value={data.summary.on_track} cls="text-on-track" />
-                <Summary label="At risk" sub="Could miss if trend continues" value={data.summary.at_risk} cls="text-amber-600" />
+                <Summary label="At risk" sub="Could miss if trend continues" value={data.summary.at_risk} cls="text-at-risk" />
                 <Summary label="Off track" sub="Likely to miss 2030 goal" value={data.summary.off_track} cls="text-off-track" />
                 <div>
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Overall 2030 shortfall</p>
@@ -174,7 +174,7 @@ export default function Ai2030Prediction() {
                     type="button"
                     onClick={() => setFocus(key)}
                     className={cn(
-                      "text-left rounded-lg border bg-card p-3 transition hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40",
+                      "text-left rounded-lg border bg-card p-3   focus:outline-none focus:ring-2 focus:ring-primary/40",
                       focusKey === key && "border-primary/60 ring-1 ring-primary/30",
                     )}
                   >

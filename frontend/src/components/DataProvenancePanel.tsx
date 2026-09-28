@@ -34,7 +34,7 @@ export function DataProvenancePanel({ year, value, unit, sector, sectorLabel, on
       <button
         type="button"
         onClick={onDismiss}
-        className="absolute top-2.5 right-2.5 text-muted-foreground hover:text-foreground transition-colors"
+        className="absolute top-2.5 right-2.5 text-muted-foreground  "
         aria-label="Close provenance panel"
       >
         <X className="h-3 w-3" />
@@ -73,7 +73,7 @@ export function DataProvenancePanel({ year, value, unit, sector, sectorLabel, on
               href={lineage.ctPublicUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-primary font-medium hover:underline"
+              className="inline-flex items-center gap-1 text-primary font-medium "
             >
               View on Climate TRACE
               <ExternalLink className="h-2.5 w-2.5" />

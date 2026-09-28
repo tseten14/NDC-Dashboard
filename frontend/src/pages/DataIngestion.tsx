@@ -55,10 +55,10 @@ export default function DataIngestion() {
             <button
               type="button"
               onClick={() => setTab("scan")}
-              className={`text-left rounded-lg border p-3 transition-colors ${tab === "scan" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
+              className={`text-left rounded-lg border p-3  ${tab === "scan" ? "border-primary bg-primary/5" : "border-border "}`}
             >
               <div className="flex items-center gap-2 mb-1">
-                <Zap className="h-4 w-4 text-amber-500" />
+                <Zap className="h-4 w-4 text-at-risk" />
                 <span className="text-sm font-semibold text-foreground">Quick scan</span>
                 <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">Fast · first look</span>
               </div>
@@ -70,7 +70,7 @@ export default function DataIngestion() {
             <button
               type="button"
               onClick={() => setTab("files")}
-              className={`text-left rounded-lg border p-3 transition-colors ${tab === "files" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
+              className={`text-left rounded-lg border p-3  ${tab === "files" ? "border-primary bg-primary/5" : "border-border "}`}
             >
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <ShieldCheck className="h-4 w-4 text-primary" />

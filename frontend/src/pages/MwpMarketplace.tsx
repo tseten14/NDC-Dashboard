@@ -29,7 +29,7 @@ function ReadinessBar({ pitch }: { pitch: DealPitch }) {
     <div className="flex items-center gap-2 text-[11px]">
       <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all"
+          className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 "
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -44,11 +44,11 @@ function PipelineCard({ pitch }: { pitch: DealPitch }) {
       to={`/mwp-marketplace/${pitch.id}`}
       className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
     >
-      <Card className="h-full transition-all duration-200 group-hover:border-primary/30 group-hover:shadow-md group-hover:-translate-y-0.5">
+      <Card className="h-full     ">
         <CardContent className="p-4 space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-semibold text-foreground leading-snug group-hover:text-primary transition-colors">
+              <h3 className="text-sm font-semibold text-foreground leading-snug  ">
                 {pitch.title}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">{pitch.ministry}</p>
@@ -75,16 +75,16 @@ function PipelineCard({ pitch }: { pitch: DealPitch }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
               {pitch.evaluation?.decision === "interest" && (
-                <><CheckCircle2 className="h-3 w-3 text-emerald-500" /> Funder interest</>
+                <><CheckCircle2 className="h-3 w-3 text-on-track" /> Funder interest</>
               )}
               {pitch.evaluation?.decision === "questions" && (
-                <><Circle className="h-3 w-3 text-amber-500" /> Questions pending</>
+                <><Circle className="h-3 w-3 text-at-risk" /> Questions pending</>
               )}
               {pitch.evaluation?.decision === "pass" && (
                 <><Circle className="h-3 w-3 text-muted-foreground" /> Not ready</>
               )}
             </div>
-            <span className="text-[10px] text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+            <span className="text-[10px] text-primary opacity-0   flex items-center gap-0.5">
               Open deal room <ArrowRight className="h-3 w-3" />
             </span>
           </div>

@@ -314,7 +314,7 @@ export default function PolicyImpact() {
               <button
                 type="button"
                 className={cn(
-                  "text-[10px] px-2 py-1 rounded-md border transition-colors",
+                  "text-[10px] px-2 py-1 rounded-md border ",
                   step === s ? "bg-primary text-primary-foreground border-primary" : "bg-muted/30 text-muted-foreground",
                   i < stepIdx && "border-on-track/40",
                 )}
@@ -399,7 +399,7 @@ export default function PolicyImpact() {
                     key={el.id}
                     type="button"
                     className={cn(
-                      "text-left rounded-lg border p-3 text-xs transition-colors hover:bg-muted/40",
+                      "text-left rounded-lg border p-3 text-xs  ",
                       intervention?.id === el.id && "border-primary bg-primary/5",
                     )}
                     onClick={() => setIntervention(el)}
@@ -503,7 +503,7 @@ export default function PolicyImpact() {
             </Card>
 
             <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
-              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-600" />
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-at-risk" />
               {result.disclaimers[0] ??
                 "This is an illustrative comparison — not a prediction of what will happen in Uganda."}
             </p>

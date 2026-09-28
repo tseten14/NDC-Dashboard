@@ -201,7 +201,7 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
   };
 
   return (
-    <Card className="border-border shadow-none">
+    <Card className="border-border ">
       <CardContent className="p-4 space-y-3">
         <h4 className="text-xs font-bold text-foreground">{response.title}</h4>
 
@@ -211,7 +211,7 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
               <button
                 type="button"
                 onClick={() => toggleSection(si)}
-                className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+                className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground   w-full text-left"
               >
                 {openSections.has(si) ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 {section.heading}
@@ -239,7 +239,7 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
                   href={cprLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[10px] text-primary hover:underline truncate font-medium"
+                  className="text-[10px] text-primary  truncate font-medium"
                 >
                   {doc.title ?? doc.id}
                 </a>
@@ -251,7 +251,7 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
                   href={doc.contentUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[9px] text-muted-foreground hover:text-foreground shrink-0 underline"
+                  className="text-[9px] text-muted-foreground  shrink-0 underline"
                 >
                   PDF ↗
                 </a>
@@ -274,7 +274,7 @@ function AnalysisCard({ response, onFollowUp, doc }: { response: AiAnalysisRespo
                   key={q}
                   type="button"
                   onClick={() => onFollowUp(q)}
-                  className="text-[10px] px-2 py-1 rounded border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-muted-foreground hover:text-foreground text-left"
+                  className="text-[10px] px-2 py-1 rounded border border-border    text-muted-foreground  text-left"
                 >
                   {q}
                 </button>
@@ -303,7 +303,7 @@ function RichLine({ line, documentUrl }: { line: string; documentUrl?: string })
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline text-[9px] text-primary bg-primary/10 px-1 py-0.5 rounded ml-0.5 hover:bg-primary/20 underline underline-offset-2"
+                className="inline text-[9px] text-primary bg-primary/10 px-1 py-0.5 rounded ml-0.5  underline underline-offset-2"
               >
                 {`page ${pageNum} ↗`}
               </a>
@@ -439,8 +439,8 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
                 onClick={() => runAction(action.type, action.label)}
                 disabled={isLoading}
                 className={cn(
-                  "flex items-start gap-2 p-2.5 rounded-lg border border-border bg-card text-left transition-all",
-                  "hover:border-primary/40 hover:bg-primary/5",
+                  "flex items-start gap-2 p-2.5 rounded-lg border border-border bg-card text-left ",
+                  "hover:border-primary/40 ",
                   "disabled:opacity-50 disabled:cursor-not-allowed",
                 )}
               >
@@ -468,7 +468,7 @@ function AiPanel({ doc }: { doc: PolicyDocument }) {
             if (entry.kind === "loading") {
               return (
                 <div key={i} className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                  <Loader2 className="h-3.5 w-3.5  shrink-0" />
                   <span>Analysing: <span className="italic">{entry.label}</span>…</span>
                 </div>
               );
@@ -627,7 +627,7 @@ export default function PolicyDocumentView() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full gap-2 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin" />
+        <Loader2 className="h-5 w-5 " />
         <span className="text-sm">Loading document…</span>
       </div>
     );
@@ -661,7 +661,7 @@ export default function PolicyDocumentView() {
         </Button>
         <Separator orientation="vertical" className="h-4" />
         <p className="text-xs text-muted-foreground truncate flex-1">{doc.title}</p>
-        <ClimatePolicyRadarBadge className="hidden sm:inline-flex items-center gap-1 shrink-0 rounded border border-primary/25 bg-primary/8 px-2 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/12 transition-colors" />
+        <ClimatePolicyRadarBadge className="hidden sm:inline-flex items-center gap-1 shrink-0 rounded border border-primary/25 bg-primary/8 px-2 py-0.5 text-[10px] font-semibold text-primary  " />
         <div className="flex gap-1 shrink-0">
           {cprLink && (
             <Button size="sm" variant="outline" className="h-7 text-[10px]" asChild>

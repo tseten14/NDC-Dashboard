@@ -64,7 +64,7 @@ export function FrameworkDivergenceCallout({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-muted/40 transition-colors"
+        className="w-full px-3 py-2 flex items-center gap-2 text-left  "
         aria-expanded={open}
       >
         {open ? (

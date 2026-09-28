@@ -32,7 +32,7 @@ export default function Interlinkages() {
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] font-semibold text-muted-foreground">Sector:</span>
             <Select value={sectorFilter} onValueChange={(v: SectorV2 | "All") => setSectorFilter(v)}>
-              <SelectTrigger className="w-[140px] h-7 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger aria-label="Select sector" className="w-[140px] h-7 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="All">All sectors</SelectItem>
                 {(["AFOLU","Energy","Water","Transport","Waste","IPPU"] as SectorV2[]).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -47,7 +47,7 @@ export default function Interlinkages() {
             const src = getIndicator(link.source_indicator_id);
             const tgt = getIndicator(link.target_indicator_id);
             return (
-              <Card key={link.interlinkage_id} className="hover:shadow-md transition-shadow">
+              <Card key={link.interlinkage_id} className="hover:shadow-md ">
                 <CardContent className="p-3 space-y-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <div className="flex-1 min-w-0">

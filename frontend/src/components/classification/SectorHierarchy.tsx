@@ -28,7 +28,7 @@ export function SectorHierarchy({ nodes, selected, expanded, query, onExpand, on
       const status = node.children.length ? state === true ? "All included" : state === "indeterminate" ? `${count} of ${codes.length} included` : `${node.children.length} subcategories` : state ? "Included" : "Not selected";
       const childrenId = `sector-children-${node.code}`;
       return <li key={node.code}>
-        <div className={cn("flex items-center gap-1 rounded-xl border px-3 py-1 transition-colors",
+        <div className={cn("flex items-center gap-1 rounded-xl border px-3 py-1 ",
           state ? "border-primary/30 bg-primary/5" : "border-border bg-card", match && "ring-2 ring-primary/40")}>
           <label className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-3 py-2">
             <Checkbox checked={state} onCheckedChange={(checked) => onSelect(node, checked === true)}

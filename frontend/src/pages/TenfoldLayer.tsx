@@ -42,7 +42,7 @@ export default function TenfoldLayer() {
                   {tenfoldActivities.map(a => {
                     const anchor = a.strategy_links.find(l => l.strategy_id === "STRAT-TENFOLD")?.anchor_or_program_code;
                     return (
-                      <tr key={a.id} className="border-b border-border/30 hover:bg-muted/30">
+                      <tr key={a.id} className="border-b border-border/30 ">
                         <td className="py-1.5 px-2 font-medium text-foreground">{a.title}</td>
                         <td className="py-1.5 px-2"><Badge variant="outline" className="text-[9px] h-4">{anchor}</Badge></td>
                         <td className="py-1.5 px-2">{a.ministry_badges.join(", ")}</td>
@@ -71,7 +71,7 @@ export default function TenfoldLayer() {
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-1.5 bg-border rounded-full overflow-hidden">
-                        <div className={cn("h-full rounded-full transition-all", progress.status === "on-track" ? "bg-on-track" : progress.status === "at-risk" ? "bg-at-risk" : "bg-off-track")}
+                        <div className={cn("h-full rounded-full ", progress.status === "on-track" ? "bg-on-track" : progress.status === "at-risk" ? "bg-at-risk" : "bg-off-track")}
                           style={{ width: `${progress.pct}%` }} />
                       </div>
                       <span className="text-[10px] font-bold text-foreground">{progress.pct}%</span>

@@ -13,6 +13,7 @@ import type { Feature, FeatureCollection, Point } from "geojson";
 import type { MapLayerMouseEvent, GeoJSONSource, StyleSpecification } from "maplibre-gl";
 import type { MapSourcePoint } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { MAP_UI } from "@/lib/visual-palette";
 import ugandaGeo from "@/data/uganda-adm2.geo.json";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -126,7 +127,7 @@ export function EmissionsMap3D({
   const hoverRef = useRef(onPointHover);
   // rAF handles so mousemove/resize floods collapse to at most one update per
   // frame (the hover state update re-renders the whole page, and resize during
-  // the header-condense transition would otherwise thrash the GL canvas).
+  // the header-condense  would otherwise thrash the GL canvas).
   const rafRef = useRef({ hover: 0, resize: 0 });
   const lastHoverKeyRef = useRef<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -228,13 +229,13 @@ export function EmissionsMap3D({
             },
           },
           layers: [
-            { id: "bg", type: "background", paint: { "background-color": "#0a0f1a" } },
+            { id: "bg", type: "background", paint: { "background-color": MAP_UI.surface } },
             { id: "satellite", type: "raster", source: "satellite", paint: { "raster-fade-duration": 200 } },
           ],
           sky: {
-            "sky-color": "#0b1220",
-            "horizon-color": "#1b2a44",
-            "fog-color": "#0a0f1a",
+            "sky-color": MAP_UI.surface,
+            "horizon-color": MAP_UI.surface,
+            "fog-color": MAP_UI.surface,
             "sky-horizon-blend": 0.5,
             "horizon-fog-blend": 0.6,
             "fog-ground-blend": 0.4,
@@ -387,7 +388,7 @@ export function EmissionsMap3D({
         setReady(true);
       });
 
-      // Debounce to one resize per frame: the header-condense transition fires
+      // Debounce to one resize per frame: the header-condense  fires
       // a burst of ResizeObserver callbacks that would otherwise thrash the GL
       // canvas and stutter.
       resizeObserver = new ResizeObserver(() => {
@@ -442,14 +443,14 @@ export function EmissionsMap3D({
   return (
     <div
       ref={containerRef}
-      className={cn("emissions-map relative h-full w-full min-h-[360px] overflow-hidden bg-[#0a0f1a]", className)}
-      role="img"
-      aria-label="3D satellite map of Uganda; bubble size shows emissions, color shows sector"
+      className={cn("emissions-map relative h-full w-full min-h-[360px] overflow-hidden bg-card", className)}
+      role="region"
+      aria-label="Satellite emissions map of Uganda; bubble size shows emissions and color shows sector"
     >
       {loadError && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-[#0a0f1a] px-4 text-center">
-          <span className="text-sm font-medium text-slate-200">Map failed to load</span>
-          <span className="text-xs text-slate-400">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-card px-4 text-center">
+          <span className="text-base font-medium text-foreground">Map failed to load</span>
+          <span className="text-sm text-muted-foreground">
             Your browser may not support WebGL, or map tiles are unreachable.
           </span>
         </div>

@@ -69,7 +69,7 @@ export default function CausalChains() {
               const ind = getIndicator(step.indicator_id);
               return (
                 <div key={idx} className="flex items-center">
-                  <Card className="w-[200px] hover:shadow-md transition-shadow">
+                  <Card className="w-[200px]  ">
                     <CardContent className="p-3 space-y-1.5">
                       <div className="flex items-center justify-between">
                         <Badge variant="outline" className="text-[9px] h-4 bg-accent/10 text-accent border-accent/30">Step {step.step}</Badge>

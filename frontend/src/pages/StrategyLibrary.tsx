@@ -160,7 +160,7 @@ export default function StrategyLibrary() {
             <button key={s} onClick={() => setStrategy(s)}
               className={cn(
                 "px-2 py-1 text-[10px] font-medium border-r last:border-r-0 border-input",
-                strategy === s ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"
+                strategy === s ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground "
               )}>
               {s === "ALL" ? "All" : STRATEGY_LABEL[s]}
             </button>
@@ -187,7 +187,7 @@ export default function StrategyLibrary() {
           <Accordion type="multiple" className="space-y-2">
             {Object.entries(grouped).map(([strat, goals]) => (
               <AccordionItem key={strat} value={strat} className="border border-border rounded-md bg-card">
-                <AccordionTrigger className="px-3 py-2 text-xs font-semibold hover:no-underline">
+                <AccordionTrigger className="px-3 py-2 text-xs font-semibold ">
                   <div className="flex items-center gap-2">
                     <span>{strat}</span>
                     <Badge variant="outline" className="text-[9px] h-4 px-1">
@@ -199,7 +199,7 @@ export default function StrategyLibrary() {
                   <Accordion type="multiple" className="space-y-1">
                     {Object.entries(goals).map(([goal, indicators]) => (
                       <AccordionItem key={goal} value={goal} className="border-b border-border last:border-b-0">
-                        <AccordionTrigger className="text-[11px] py-1.5 hover:no-underline">
+                        <AccordionTrigger className="text-[11px] py-1.5 ">
                           <div className="flex items-center gap-2">
                             <span className="text-muted-foreground">{goal}</span>
                             <Badge variant="outline" className="text-[9px] h-4 px-1">{indicators.length}</Badge>
@@ -232,7 +232,7 @@ export default function StrategyLibrary() {
 function IndicatorRow({ row, onOpen }: { row: RegistryRow; onOpen: () => void }) {
   const navigate = useNavigate();
   return (
-    <div className="grid grid-cols-12 gap-2 items-center text-[10px] py-1 px-2 rounded hover:bg-muted/40 border border-transparent hover:border-border">
+    <div className="grid grid-cols-12 gap-2 items-center text-[10px] py-1 px-2 rounded  border border-transparent ">
       <div className="col-span-4 min-w-0">
         <p className="font-medium truncate" title={row.name}>{row.name}</p>
         <p className="text-muted-foreground truncate">{row.sector} · {row.unit}</p>

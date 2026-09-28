@@ -28,7 +28,7 @@ export function SelectionSummary({ framework, selected, dirty, savedAt, blocked,
   const groups = framework.hierarchy.filter((node) => categoryCodes(node).some((code) => selected.has(code)));
   const branches = selectedBranches(framework.hierarchy, selected);
   const label = (node: SectorNode) => node.code === "3" ? "AFOLU" : node.code === "2" ? "IPPU" : node.label;
-  return <section id="selection-summary" aria-label="Selection and saving" className="sticky bottom-0 z-20 mt-6 border-t bg-background/95 py-4 backdrop-blur-sm">
+  return <section id="selection-summary" aria-label="Selection and saving" className="sticky bottom-0 z-20 mt-6 border-t bg-background/95 py-4 ">
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
       <div className="min-w-0 flex-1 basis-56">
         <p className="text-xs text-muted-foreground">Selected · {framework.name}</p>

@@ -180,7 +180,7 @@ export function ViewSourceModal({ open, onOpenChange, sector, liveSnapshot }: Pr
                   target="_blank"
                   rel="noopener noreferrer"
                   className={cn(
-                    "inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline",
+                    "inline-flex items-center gap-1.5 text-xs font-medium text-primary ",
                   )}
                 >
                   Open Climate TRACE

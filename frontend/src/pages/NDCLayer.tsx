@@ -174,7 +174,7 @@ export default function NDCLayer() {
             Climate TRACE API unavailable. Displayed data may be stale or incomplete.
           </span>
           <button
-            className="ml-auto underline underline-offset-2 hover:no-underline shrink-0"
+            className="ml-auto underline underline-offset-2  shrink-0"
             onClick={handleRefresh}
           >
             Retry
@@ -210,7 +210,7 @@ export default function NDCLayer() {
         </div>
       )}
       {dashboardMode === "field" && (
-        <div className="px-3 py-1.5 border-b border-emerald-500/20 bg-emerald-500/5 text-[10px] text-muted-foreground">
+        <div className="px-3 py-1.5 border-b border-border bg-muted text-[10px] text-muted-foreground">
           <span className="font-semibold text-foreground">Field view:</span> district geography selected — use district selector and Emissions Map for local context.
         </div>
       )}
@@ -224,7 +224,7 @@ export default function NDCLayer() {
         <div className="flex items-center gap-1.5">
           <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Sector</span>
           <Select value={state.selectedSector} onValueChange={(v) => state.setSelectedSector(v)}>
-            <SelectTrigger className="w-[140px] h-7 text-xs">
+            <SelectTrigger aria-label="Select sector" className="w-[140px] h-7 text-xs">
               <span className="truncate">
                 {sectorDefinitions.find((s) => s.id === state.selectedSector)?.name ?? "Sector"}
               </span>
@@ -252,10 +252,10 @@ export default function NDCLayer() {
               disabled={dashboardPresets.lockGeography && dashboardPresets.geographyLevel !== "national"}
               onClick={() => state.setGeographyLevel("national")}
               className={cn(
-                "px-2 py-0.5 text-xs font-medium transition-colors",
+                "px-2 py-0.5 text-xs font-medium ",
                 state.geographyLevel === "national"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:bg-muted",
+                  : "bg-background text-muted-foreground ",
                 dashboardPresets.lockGeography && dashboardPresets.geographyLevel !== "national" && "opacity-50 cursor-not-allowed",
               )}
             >
@@ -273,10 +273,10 @@ export default function NDCLayer() {
                 }
               }}
               className={cn(
-                "px-2 py-0.5 text-xs font-medium transition-colors border-l border-input",
+                "px-2 py-0.5 text-xs font-medium  border-l border-input",
                 state.geographyLevel === "district"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:bg-muted",
+                  : "bg-background text-muted-foreground ",
                 dashboardPresets.lockGeography && dashboardPresets.geographyLevel !== "district" && "opacity-50 cursor-not-allowed",
               )}
             >

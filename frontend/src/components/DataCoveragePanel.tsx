@@ -19,7 +19,7 @@ export function DataCoveragePanel() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-muted/40 transition-colors"
+        className="w-full px-3 py-2 flex items-center gap-2 text-left  "
       >
         {open ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
         <Info className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -77,7 +77,7 @@ export function DataCoveragePanel() {
               href="/api/v1/provenance"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-primary hover:underline"
+              className="inline-flex items-center gap-1 text-primary "
             >
               API provenance <ExternalLink className="h-3 w-3" />
             </a>

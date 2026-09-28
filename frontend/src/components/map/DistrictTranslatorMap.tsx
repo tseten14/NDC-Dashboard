@@ -4,6 +4,7 @@ import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection, Geometry } from "geojson";
 import type { MapSourcePoint, TranslatorGeometry } from "@/lib/api";
 import { sourceKey } from "@/lib/translator";
+import { MAP_UI } from "@/lib/visual-palette";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 interface Props {
@@ -78,14 +79,14 @@ export default function DistrictTranslatorMap(props: Props) {
     syncRef.current = sync;
     map.on("load", () => {
       for (const id of ["districts", "selection", "draft", "trace"]) map.addSource(id, { type: "geojson", data: empty });
-      map.addLayer({ id: "district-fill", type: "fill", source: "districts", paint: { "fill-color": "#10b981", "fill-opacity": 0.04 } });
-      map.addLayer({ id: "district-lines", type: "line", source: "districts", paint: { "line-color": "#64748b", "line-width": 1, "line-opacity": 0.7 } });
-      map.addLayer({ id: "district-hover", type: "fill", source: "districts", paint: { "fill-color": "#34d399", "fill-opacity": 0.2 }, filter: ["==", ["get", "shapeID"], ""] });
-      map.addLayer({ id: "selection-fill", type: "fill", source: "selection", paint: { "fill-color": "#10b981", "fill-opacity": 0.2 } });
-      map.addLayer({ id: "selection-line", type: "line", source: "selection", paint: { "line-color": "#047857", "line-width": 3 } });
-      map.addLayer({ id: "draft-line", type: "line", source: "draft", filter: ["==", ["geometry-type"], "LineString"], paint: { "line-color": "#f59e0b", "line-width": 3, "line-dasharray": [2, 2] } });
-      map.addLayer({ id: "draft-points", type: "circle", source: "draft", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-radius": 5, "circle-color": "#f59e0b", "circle-stroke-color": "#fff", "circle-stroke-width": 2 } });
-      map.addLayer({ id: "trace-points", type: "circle", source: "trace", paint: { "circle-radius": ["case", ["==", ["get", "inside"], 1], 5, 3], "circle-color": ["case", ["==", ["get", "inside"], 1], "#ef4444", "#64748b"], "circle-stroke-color": "#fff", "circle-stroke-width": 0.5 } });
+      map.addLayer({ id: "district-fill", type: "fill", source: "districts", paint: { "fill-color": MAP_UI.primary, "fill-opacity": 0.04 } });
+      map.addLayer({ id: "district-lines", type: "line", source: "districts", paint: { "line-color": MAP_UI.muted, "line-width": 1, "line-opacity": 0.7 } });
+      map.addLayer({ id: "district-hover", type: "fill", source: "districts", paint: { "fill-color": MAP_UI.primary, "fill-opacity": 0.2 }, filter: ["==", ["get", "shapeID"], ""] });
+      map.addLayer({ id: "selection-fill", type: "fill", source: "selection", paint: { "fill-color": MAP_UI.selected, "fill-opacity": 0.2 } });
+      map.addLayer({ id: "selection-line", type: "line", source: "selection", paint: { "line-color": MAP_UI.selected, "line-width": 3 } });
+      map.addLayer({ id: "draft-line", type: "line", source: "draft", filter: ["==", ["geometry-type"], "LineString"], paint: { "line-color": MAP_UI.draft, "line-width": 3, "line-dasharray": [2, 2] } });
+      map.addLayer({ id: "draft-points", type: "circle", source: "draft", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-radius": 5, "circle-color": MAP_UI.draft, "circle-stroke-color": MAP_UI.surface, "circle-stroke-width": 2 } });
+      map.addLayer({ id: "trace-points", type: "circle", source: "trace", paint: { "circle-radius": ["case", ["==", ["get", "inside"], 1], 5, 3], "circle-color": ["case", ["==", ["get", "inside"], 1], MAP_UI.selected, MAP_UI.muted], "circle-stroke-color": MAP_UI.surface, "circle-stroke-width": 0.5 } });
       ready = true;
       sync();
     });

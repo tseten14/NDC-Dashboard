@@ -242,7 +242,7 @@ export function DealFormDialog({ open, onOpenChange, deal, onSaved }: Props) {
                 Cancel
               </Button>
               <Button onClick={handleSave} disabled={saving} className="text-xs gap-1.5">
-                {saving && <Loader2 className="h-3 w-3 animate-spin" />}
+                {saving && <Loader2 className="h-3 w-3 " />}
                 {isEdit ? "Save changes" : "Add deal"}
               </Button>
             </div>

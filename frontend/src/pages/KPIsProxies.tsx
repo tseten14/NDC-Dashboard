@@ -47,7 +47,7 @@ export default function KPIsProxies() {
                     const progress = computeKPIProgress(kpi);
                     const source = getDataSource(kpi.data_source_id);
                     return (
-                      <tr key={kpi.id} className={cn("border-b border-border/30 cursor-pointer hover:bg-muted/30", selectedKPI === kpi.id && "bg-accent/10")}
+                      <tr key={kpi.id} className={cn("border-b border-border/30 cursor-pointer ", selectedKPI === kpi.id && "bg-accent/10")}
                         onClick={() => setSelectedKPI(selectedKPI === kpi.id ? null : kpi.id)}>
                         <td className="py-1.5 px-1 font-medium text-foreground">{kpi.kpi_name}</td>
                         <td className="py-1.5 px-1"><Badge variant="outline" className="text-[8px] h-3">{kpi.category}</Badge></td>

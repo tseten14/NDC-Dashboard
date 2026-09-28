@@ -38,11 +38,11 @@ import {
 } from "lucide-react";
 
 const FUNDER_TONE: Record<string, string> = {
-  "World Bank": "bg-sky-500/10 text-sky-600 border-sky-500/30",
-  GCF: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
-  AfDB: "bg-amber-500/10 text-amber-600 border-amber-500/30",
-  GEF: "bg-violet-500/10 text-violet-600 border-violet-500/30",
-  Bilateral: "bg-rose-500/10 text-rose-600 border-rose-500/30",
+  "World Bank": "bg-muted text-primary border-border",
+  GCF: "bg-muted text-on-track border-border",
+  AfDB: "bg-muted text-at-risk border-border",
+  GEF: "bg-muted text-primary border-border",
+  Bilateral: "bg-muted text-off-track border-border",
   "Other MDB": "bg-muted text-muted-foreground border-border",
 };
 
@@ -140,10 +140,10 @@ export default function ClimateFinance() {
 
         {/* From Policy Impact context banner */}
         {hasIntervention && (
-          <Card className="border-sky-500/30 bg-sky-500/5">
+          <Card className="border-border bg-muted">
             <CardContent className="p-3 flex flex-wrap items-center justify-between gap-2 text-[11px]">
               <div className="flex items-start gap-2">
-                <Target className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
+                <Target className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <span>
                   <span className="font-semibold">Planning for: {proposalContext.projectName}</span>
                   {interventionParam ? <> · {interventionParam}</> : null} · {sectorLabel}
@@ -298,7 +298,7 @@ export default function ClimateFinance() {
               {screening && screening.challenges.length > 0 && (
                 <div>
                   <p className="text-[11px] font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
-                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                    <AlertTriangle className="h-3.5 w-3.5 text-at-risk" />
                     Potential challenges to flag early
                   </p>
                   <div className="space-y-2">
@@ -416,7 +416,7 @@ function Tile({
 
 function FinanceCard({ f }: { f: ActiveFinance }) {
   return (
-    <Card className="hover:border-primary/30 transition-colors">
+    <Card className="hover:border-primary/30 ">
       <CardContent className="p-3 space-y-1.5">
         <div className="flex items-start justify-between gap-2">
           <p className="text-xs font-bold text-foreground leading-tight">{f.programme}</p>
@@ -431,8 +431,8 @@ function FinanceCard({ f }: { f: ActiveFinance }) {
             className={cn(
               "text-[9px] h-4",
               f.status === "Active" ? "bg-on-track/10 text-on-track border-on-track/30"
-                : f.status === "Pipeline" ? "bg-amber-500/10 text-amber-600 border-amber-500/30"
-                  : "bg-sky-500/10 text-sky-600 border-sky-500/30",
+                : f.status === "Pipeline" ? "bg-muted text-at-risk border-border"
+                  : "bg-muted text-primary border-border",
             )}
           >
             {f.status} · {f.period}
@@ -443,7 +443,7 @@ function FinanceCard({ f }: { f: ActiveFinance }) {
           href={f.sourceUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-0.5 text-[10px] font-medium text-primary hover:underline"
+          className="inline-flex items-center gap-0.5 text-[10px] font-medium text-primary "
         >
           Source: {f.sourceLabel}
           <ExternalLink className="h-2.5 w-2.5 opacity-70" aria-hidden />
@@ -456,7 +456,7 @@ function FinanceCard({ f }: { f: ActiveFinance }) {
 function FitBadge({ fit }: { fit: FundFit }) {
   const style: Record<FundFit, string> = {
     high: "bg-on-track/10 text-on-track border-on-track/30",
-    medium: "bg-amber-500/10 text-amber-700 border-amber-500/30",
+    medium: "bg-muted text-at-risk border-border",
     low: "bg-muted text-muted-foreground border-border",
     ineligible: "bg-muted text-muted-foreground border-border",
   };
@@ -485,11 +485,11 @@ function ChallengeCard({ c }: { c: FinanceChallenge }) {
     <div
       className={cn(
         "rounded-md border px-3 py-2 text-[11px] flex gap-2",
-        c.severity === "warn" ? "border-amber-500/40 bg-amber-500/5" : "border-border/60",
+        c.severity === "warn" ? "border-border bg-muted" : "border-border/60",
       )}
     >
       {c.severity === "warn" ? (
-        <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
+        <AlertTriangle className="h-3.5 w-3.5 text-at-risk shrink-0 mt-0.5" />
       ) : (
         <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
       )}

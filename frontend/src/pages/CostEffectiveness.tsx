@@ -105,7 +105,7 @@ export default function CostEffectiveness() {
             <Card>
               <CardContent className="p-3">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Best Cost / tCO2e</p>
-                <p className="text-xl font-bold text-green-600 dark:text-green-400 mt-0.5">${bestCost.toLocaleString()}</p>
+                <p className="text-xl font-bold text-on-track dark:text-on-track mt-0.5">${bestCost.toLocaleString()}</p>
               </CardContent>
             </Card>
             <Card>
@@ -137,7 +137,7 @@ export default function CostEffectiveness() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-5 text-[10px] px-1 -ml-1 gap-0.5 font-semibold text-muted-foreground hover:text-foreground"
+                        className="h-5 text-[10px] px-1 -ml-1 gap-0.5 font-semibold text-muted-foreground "
                         onClick={() => setSortAsc(p => !p)}
                       >
                         <ArrowUpDown className="h-2.5 w-2.5" /> Cost / tCO2e
@@ -151,13 +151,13 @@ export default function CostEffectiveness() {
                   {rows.map((row, i) => {
                     const isBest = bestIds.has(row.id);
                     return (
-                      <tr key={row.id} className={cn("border-b border-border/30 hover:bg-muted/20", isBest && "bg-green-500/5")}>
+                      <tr key={row.id} className={cn("border-b border-border/30 ", isBest && "bg-muted")}>
                         <td className="py-1.5 px-2 text-muted-foreground font-mono">{i + 1}</td>
                         <td className="py-1.5 px-2">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-medium text-foreground">{row.name}</span>
                             {isBest && (
-                              <Badge className="text-[9px] h-4 bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30 border">
+                              <Badge className="text-[9px] h-4 bg-muted text-on-track dark:text-on-track border-border border">
                                 ⭐ Best value
                               </Badge>
                             )}

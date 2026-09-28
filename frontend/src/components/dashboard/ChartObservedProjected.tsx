@@ -98,7 +98,7 @@ export function ObservedProjectedLegend({
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:border-border transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground   "
             >
               <span
                 className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-3))] shrink-0"
@@ -122,7 +122,7 @@ export function ObservedProjectedLegend({
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:border-border transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground   "
             >
               <span
                 className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[hsl(var(--chart-2))] shrink-0"
@@ -159,7 +159,7 @@ export function ObservedProjectedLegend({
             href={dataSourceHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-0.5 font-medium text-primary hover:underline"
+            className="inline-flex items-center gap-0.5 font-medium text-primary "
           >
             {dataSourceLabel}
             <ExternalLink className="h-2.5 w-2.5" aria-hidden />
@@ -365,7 +365,7 @@ function ObservedProjectedTooltip({
   const bauPath = row?.bauPath;
 
   return (
-    <div className="rounded-md border border-border bg-card px-2.5 py-2 text-[11px] shadow-sm">
+    <div className="rounded-md border border-border bg-card px-2.5 py-2 text-[11px] ">
       <p className="font-medium text-foreground mb-1">{label}</p>
       {observed != null && (
         <p className="text-muted-foreground">
@@ -480,13 +480,6 @@ export function ObservedProjectedComposedChart({
             data={plotData}
             margin={{ top: 10, right: 8, left: 4, bottom: xAxisLabel ? 18 : 6 }}
           >
-            <defs>
-              {/* Climate-themed teal → deep green fill for the measured series */}
-              <linearGradient id="dash-measured-grad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(172 40% 34%)" />
-                <stop offset="100%" stopColor="hsl(152 32% 24%)" />
-              </linearGradient>
-            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis
               dataKey="year"
@@ -597,7 +590,7 @@ export function ObservedProjectedComposedChart({
               <Bar
                 dataKey="observedValue"
                 name={observedSeriesLabel}
-                fill="url(#dash-measured-grad)"
+                fill="hsl(var(--chart-4))"
                 radius={[2, 2, 0, 0]}
                 maxBarSize={showProjection ? 28 : 36}
                 minPointSize={2}

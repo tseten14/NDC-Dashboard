@@ -199,7 +199,7 @@ function DocLink({ href, children, ...props }: ComponentPropsWithoutRef<"a">) {
 
   if (href?.startsWith("/")) {
     return (
-      <a href={href} className="text-primary font-medium hover:underline" {...props}>
+      <a href={href} className="text-primary font-medium " {...props}>
         {children}
       </a>
     );
@@ -210,7 +210,7 @@ function DocLink({ href, children, ...props }: ComponentPropsWithoutRef<"a">) {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="text-primary font-medium hover:underline"
+      className="text-primary font-medium "
       {...props}
     >
       {children}

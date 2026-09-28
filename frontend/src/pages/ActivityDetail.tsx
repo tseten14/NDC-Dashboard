@@ -111,7 +111,7 @@ export default function ActivityDetail() {
     load();
   };
 
-  if (loading) return <div className="p-6 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (loading) return <div className="p-6 flex justify-center"><Loader2 className="h-5 w-5 " /></div>;
   if (!activity) return <div className="p-6 text-center text-sm">Activity not found.</div>;
 
   const isOwner = user?.id === activity.created_by;
@@ -215,7 +215,7 @@ export default function ActivityDetail() {
             {evidence.map(e => (
               <div key={e.id} className="flex items-center gap-2 py-1.5 border-b border-border last:border-0 text-[11px]">
                 <Badge variant="outline" className="text-[9px]">{e.evidence_type}</Badge>
-                <a href={e.link_or_file_ref} target="_blank" rel="noreferrer" className="flex-1 truncate text-primary hover:underline">{e.link_or_file_ref}</a>
+                <a href={e.link_or_file_ref} target="_blank" rel="noreferrer" className="flex-1 truncate text-primary ">{e.link_or_file_ref}</a>
                 <span className="text-[10px] text-muted-foreground">{e.notes}</span>
               </div>
             ))}

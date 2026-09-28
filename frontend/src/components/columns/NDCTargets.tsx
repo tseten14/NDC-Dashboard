@@ -129,7 +129,7 @@ function TargetCard({
       className={cn(
         "cursor-pointer mb-2 dash-card-hover",
         isActive
-          ? "ring-2 ring-accent border-accent shadow-md"
+          ? "ring-2 ring-accent border-accent "
           : "hover:border-muted-foreground/30"
       )}
       onClick={onClick}
@@ -138,7 +138,7 @@ function TargetCard({
         <div className="flex items-start gap-1">
           <button
             type="button"
-            className="shrink-0 mt-0.5 rounded p-0.5 hover:bg-muted"
+            className="shrink-0 mt-0.5 rounded p-0.5 "
             aria-label={isExpanded ? "Collapse target details" : "Expand target details"}
             onClick={onToggleExpand}
           >

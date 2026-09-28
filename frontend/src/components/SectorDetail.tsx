@@ -85,7 +85,7 @@ export function SectorDetail({ sector, dataView }: SectorDetailProps) {
         <CardContent>
           <div className="space-y-3">
             {sector.activities.map((activity) => (
-              <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
+              <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50   cursor-pointer">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{activity.name}</span>
@@ -121,7 +121,7 @@ export function SectorDetail({ sector, dataView }: SectorDetailProps) {
               <button
                 key={opt.id}
                 onClick={() => toast.success(`Decision "${opt.label}" recorded for ${sector.name}`)}
-                className="flex items-start gap-3 p-3 rounded-lg border border-border hover:border-accent hover:bg-accent/5 transition-colors text-left"
+                className="flex items-start gap-3 p-3 rounded-lg border border-border    text-left"
               >
                 <div className="mt-0.5">
                   {opt.type === "terminate" && <ArrowDownRight className="h-4 w-4 status-off-track" />}

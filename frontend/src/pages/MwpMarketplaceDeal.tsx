@@ -30,15 +30,15 @@ import {
 /* ── Score styling ───────────────────────────────────────────────────── */
 
 const SCORE_STYLE: Record<string, { icon: typeof CheckCircle2; color: string; label: string }> = {
-  strong:   { icon: CheckCircle2, color: "text-emerald-600 dark:text-emerald-400", label: "Strong" },
-  adequate: { icon: Circle,       color: "text-amber-600 dark:text-amber-400",   label: "Adequate" },
-  weak:     { icon: AlertCircle,  color: "text-rose-600 dark:text-rose-400",     label: "Weak" },
+  strong:   { icon: CheckCircle2, color: "text-on-track dark:text-on-track", label: "Strong" },
+  adequate: { icon: Circle,       color: "text-at-risk dark:text-at-risk",   label: "Adequate" },
+  weak:     { icon: AlertCircle,  color: "text-off-track dark:text-off-track",     label: "Weak" },
 };
 
 const DECISION_STYLE: Record<string, { bg: string; label: string }> = {
-  interest:  { bg: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30", label: "Funder interest expressed" },
-  questions: { bg: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30",       label: "Questions pending" },
-  pass:      { bg: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30",           label: "Not ready — needs more work" },
+  interest:  { bg: "bg-muted text-on-track dark:text-on-track border-border", label: "Funder interest expressed" },
+  questions: { bg: "bg-muted text-at-risk dark:text-at-risk border-border",       label: "Questions pending" },
+  pass:      { bg: "bg-muted text-off-track dark:text-off-track border-border",           label: "Not ready — needs more work" },
 };
 
 /* ── Sub-components ──────────────────────────────────────────────────── */
@@ -81,7 +81,7 @@ function MilestoneRow({ m }: { m: Milestone }) {
       <div className="flex flex-col items-center shrink-0 w-5">
         <div className={cn(
           "h-3 w-3 rounded-full border-2 mt-1",
-          isDone    && "bg-emerald-500 border-emerald-500",
+          isDone    && "bg-on-track border-border",
           isCurrent && "bg-primary border-primary ring-2 ring-primary/20",
           !isDone && !isCurrent && "bg-background border-muted-foreground/40",
         )} />
@@ -179,7 +179,7 @@ export default function MwpMarketplaceDeal() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 text-[10px] gap-1 text-destructive border-destructive/30 hover:bg-destructive/10"
+                    className="h-7 text-[10px] gap-1 text-destructive border-destructive/30 "
                     onClick={handleDelete}
                     disabled={deleting}
                   >
@@ -278,7 +278,7 @@ export default function MwpMarketplaceDeal() {
                     {deal.readiness.map((r) => (
                       <div key={r.label} className="flex items-center gap-2 text-xs">
                         {r.met ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                          <CheckCircle2 className="h-3.5 w-3.5 text-on-track shrink-0" />
                         ) : (
                           <Circle className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
                         )}
@@ -332,7 +332,7 @@ export default function MwpMarketplaceDeal() {
               </Card>
             )}
 
-            <Card className="border-amber-500/20 bg-amber-500/5">
+            <Card className="border-border bg-muted">
               <CardContent className="p-3 text-xs text-muted-foreground space-y-1">
                 <p className="font-semibold text-foreground">What this means for you</p>
                 <p>

@@ -36,7 +36,7 @@ export default function RiskDrilldown() {
   if (hL || cL || dL) {
     return (
       <div className="flex items-center gap-2 p-4 text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+        <Loader2 className="h-4 w-4  shrink-0" />
         <span className="text-xs">Loading drill-down data…</span>
       </div>
     );
@@ -61,8 +61,8 @@ export default function RiskDrilldown() {
                   <button
                     key={h.id}
                     onClick={() => setSelectedHazardId(h.id)}
-                    className={`w-full text-left rounded border p-2 transition-colors ${
-                      selected?.id === h.id ? "border-foreground bg-accent" : "border-border bg-card hover:bg-muted"
+                    className={`w-full text-left rounded border p-2  ${
+                      selected?.id === h.id ? "border-foreground bg-accent" : "border-border bg-card "
                     }`}
                   >
                     <div className="flex items-center justify-between">

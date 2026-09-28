@@ -36,13 +36,13 @@ export default function OwnershipFocals() {
         {/* Role filters */}
         <div className="flex flex-wrap gap-1">
           <button onClick={() => setRoleFilter(null)}
-            className={cn("px-2 py-0.5 text-[10px] rounded-md border transition-colors",
-              !roleFilter ? "bg-primary text-primary-foreground border-primary" : "border-input text-muted-foreground hover:bg-muted"
+            className={cn("px-2 py-0.5 text-[10px] rounded-md border ",
+              !roleFilter ? "bg-primary text-primary-foreground border-primary" : "border-input text-muted-foreground "
             )}>All ({actors.length})</button>
           {roles.map(r => (
             <button key={r} onClick={() => setRoleFilter(r)}
-              className={cn("px-2 py-0.5 text-[10px] rounded-md border transition-colors",
-                roleFilter === r ? "bg-primary text-primary-foreground border-primary" : "border-input text-muted-foreground hover:bg-muted"
+              className={cn("px-2 py-0.5 text-[10px] rounded-md border ",
+                roleFilter === r ? "bg-primary text-primary-foreground border-primary" : "border-input text-muted-foreground "
               )}>{r} ({actors.filter(a => a.project_role === r).length})</button>
           ))}
         </div>

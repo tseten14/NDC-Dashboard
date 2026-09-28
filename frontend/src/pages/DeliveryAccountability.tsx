@@ -48,7 +48,7 @@ export default function DeliveryAccountability() {
                 <div className="space-y-1">
                   {activeActivities.map(a => (
                     <button key={a.id} onClick={() => setSelectedAct(a.id)}
-                      className={cn("w-full text-left px-2 py-1.5 rounded text-[10px] border transition", selected?.id === a.id ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted/40")}>
+                      className={cn("w-full text-left px-2 py-1.5 rounded text-[10px] border ", selected?.id === a.id ? "border-primary bg-primary/10" : "border-transparent ")}>
                       <p className="font-medium text-foreground">{a.name}</p>
                       <div className="flex items-center gap-1 mt-0.5">
                         <Badge variant="outline" className="text-[9px] h-3.5">{a.status}</Badge>

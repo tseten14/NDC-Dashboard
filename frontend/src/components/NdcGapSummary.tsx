@@ -249,7 +249,7 @@ export function NdcGapSummary({ variant = "full", onSelectSector }: NdcGapSummar
   }
 
   return (
-    <Card className="border-primary/25 bg-gradient-to-br from-primary/[0.04] via-card to-card shadow-sm overflow-hidden">
+    <Card className="border-primary/25 bg-gradient-to-br from-primary/[0.04] via-card to-card  overflow-hidden">
       <CardContent className="p-4 sm:p-5 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -419,13 +419,13 @@ function SectorStatusRow({
   );
 
   const className =
-    "flex flex-wrap items-center gap-1.5 w-full text-left text-xs rounded-md border border-transparent hover:border-primary/30 hover:bg-primary/5 px-2 py-1.5 transition-colors group";
+    "flex flex-wrap items-center gap-1.5 w-full text-left text-xs rounded-md border border-transparent   px-2 py-1.5  group";
 
   if (onSelectSector) {
     return (
       <button type="button" className={className} onClick={() => onSelectSector(row.sectorId)}>
         {content}
-        <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary ml-auto shrink-0" />
+        <ChevronRight className="h-3 w-3 text-muted-foreground  ml-auto shrink-0" />
       </button>
     );
   }
@@ -433,7 +433,7 @@ function SectorStatusRow({
   return (
     <Link to={`/dashboard?sector=${row.sectorId}`} className={className}>
       {content}
-      <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary ml-auto shrink-0" />
+      <ChevronRight className="h-3 w-3 text-muted-foreground  ml-auto shrink-0" />
     </Link>
   );
 }
@@ -477,7 +477,7 @@ function PriorityCard({
   );
 
   const className =
-    "block w-full rounded-lg border border-border bg-card p-3 hover:border-primary/40 hover:bg-primary/[0.03] transition-colors text-left";
+    "block w-full rounded-lg border border-border bg-card p-3    text-left";
 
   if (onSelectSector) {
     return (
@@ -505,7 +505,7 @@ function PriorityChip({
 }) {
   const label = row.name;
   const cls = cn(
-    "inline-flex items-center gap-1 rounded border transition-colors shrink-0",
+    "inline-flex items-center gap-1 rounded border  shrink-0",
     STATUS_CLS[row.status],
     compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-xs",
     "hover:opacity-90",

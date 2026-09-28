@@ -32,7 +32,7 @@ export function ColumnLoadingState({ title = "Loading" }: { title?: string }) {
     <ColumnShell title={title}>
       <div className="flex-1 p-3 space-y-3" aria-busy="true" aria-label="Loading">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+          <Loader2 className="h-3.5 w-3.5  shrink-0" />
           <span>Loading data…</span>
         </div>
         <Skeleton className="skeleton-shimmer h-4 w-[75%]" />

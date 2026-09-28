@@ -69,7 +69,7 @@ export function GisIngest() {
       {step === "drop" && (
         <div onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
           onDragOver={e => e.preventDefault()}
-          className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition cursor-pointer"
+          className="border-2 border-dashed border-border rounded-lg p-8 text-center   cursor-pointer"
           onClick={() => document.getElementById("gis-input")?.click()}>
           <Globe2 className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
           <p className="text-xs text-foreground font-medium">Drop .geojson or zipped Shapefile (.zip) here</p>

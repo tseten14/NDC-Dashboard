@@ -322,12 +322,12 @@ export function FilesIngest() {
           onDragOver={(e) => e.preventDefault()}
           onClick={() => document.getElementById("pipeline-file-input")?.click()}
           className={cn(
-            "border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition",
-            uploading ? "opacity-60 pointer-events-none" : "border-border hover:border-primary",
+            "border-2 border-dashed rounded-lg p-10 text-center cursor-pointer ",
+            uploading ? "opacity-60 pointer-events-none" : "border-border ",
           )}
         >
           {uploading ? (
-            <Loader2 className="h-9 w-9 mx-auto text-primary animate-spin mb-2" />
+            <Loader2 className="h-9 w-9 mx-auto text-primary  mb-2" />
           ) : (
             <UploadCloud className="h-9 w-9 mx-auto text-muted-foreground mb-2" />
           )}
@@ -464,7 +464,7 @@ export function FilesIngest() {
                 >
                   {scanning ? (
                     <>
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Cleaning…
+                      <Loader2 className="h-3 w-3 mr-1 " /> Cleaning…
                     </>
                   ) : (
                     <>
@@ -483,7 +483,7 @@ export function FilesIngest() {
                 >
                   {confirming ? (
                     <>
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Saving…
+                      <Loader2 className="h-3 w-3 mr-1 " /> Saving…
                     </>
                   ) : (
                     <>
@@ -615,7 +615,7 @@ export function FilesIngest() {
               disabled={confirming}
               onClick={() => void doConfirm("append")}
             >
-              {confirming && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+              {confirming && <Loader2 className="h-3 w-3 mr-1 " />}
               Append Data
             </Button>
             <Button
@@ -625,7 +625,7 @@ export function FilesIngest() {
               disabled={confirming}
               onClick={() => void doConfirm("overwrite")}
             >
-              {confirming && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+              {confirming && <Loader2 className="h-3 w-3 mr-1 " />}
               Overwrite Data
             </Button>
           </DialogFooter>

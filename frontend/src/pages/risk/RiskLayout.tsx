@@ -36,10 +36,10 @@ export default function RiskLayout() {
               to={t.to}
               end={t.end}
               className={({ isActive }) =>
-                `text-[11px] px-2.5 py-1 rounded border transition-colors ${
+                `text-[11px] px-2.5 py-1 rounded border  ${
                   isActive
                     ? "bg-accent text-accent-foreground border-border"
-                    : "bg-transparent text-muted-foreground border-transparent hover:bg-muted hover:text-foreground"
+                    : "bg-transparent text-muted-foreground border-transparent  "
                 }`
               }
             >

@@ -101,7 +101,7 @@ function SourcesFooter({ sources }: { sources: AiSourceLink[] }) {
               target="_blank"
               rel="noopener noreferrer"
               title={`${c.claim ?? c.label}${c.url !== href ? ` · API: ${c.url}` : ""}`}
-              className="inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground   "
             >
               {slug}
               <ExternalLink className="h-2 w-2 opacity-60" aria-hidden />
@@ -147,7 +147,7 @@ function AnalysisCard({
 
 
   return (
-    <Card className="border-border shadow-none">
+    <Card className="border-border ">
       <CardContent className="p-4 space-y-3">
         <h4 className="text-xs font-bold text-foreground">{response.title}</h4>
 
@@ -157,7 +157,7 @@ function AnalysisCard({
               <button
                 type="button"
                 onClick={() => toggleSection(si)}
-                className="flex items-center gap-1 text-[11px] font-semibold text-foreground hover:text-primary transition-colors w-full text-left"
+                className="flex items-center gap-1 text-[11px] font-semibold text-foreground   w-full text-left"
               >
                 {openSections.has(si) ? (
                   <ChevronUp className="h-3 w-3 text-muted-foreground" />
@@ -197,7 +197,7 @@ function AnalysisCard({
                   key={q}
                   type="button"
                   onClick={() => onFollowUp(q)}
-                  className="text-[10px] px-2 py-1 rounded border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-muted-foreground hover:text-foreground text-left"
+                  className="text-[10px] px-2 py-1 rounded border border-border    text-muted-foreground  text-left"
                 >
                   {q}
                 </button>
@@ -372,8 +372,8 @@ export function DashboardAnalyzePanel({ selectedSector, selectedTarget }: Dashbo
                 onClick={() => runAction(action.type, action.label)}
                 disabled={isLoading}
                 className={cn(
-                  "flex items-start gap-2 p-2.5 rounded-lg border border-border bg-card text-left transition-all",
-                  "hover:border-primary/40 hover:bg-primary/5",
+                  "flex items-start gap-2 p-2.5 rounded-lg border border-border bg-card text-left ",
+                  "hover:border-primary/40 ",
                   "disabled:opacity-50 disabled:cursor-not-allowed",
                 )}
               >
@@ -403,7 +403,7 @@ export function DashboardAnalyzePanel({ selectedSector, selectedTarget }: Dashbo
             if (entry.kind === "loading") {
               return (
                 <div key={i} className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                  <Loader2 className="h-3.5 w-3.5  shrink-0" />
                   <span>
                     Analysing: <span className="italic">{entry.label}</span>…
                   </span>

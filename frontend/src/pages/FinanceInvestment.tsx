@@ -57,7 +57,7 @@ export default function FinanceInvestment() {
                   </thead>
                   <tbody>
                     {investable.map(i => (
-                      <tr key={i.id} className={cn("border-b border-border/30 hover:bg-muted/20 cursor-pointer", picked?.id === i.id && "bg-primary/5")}
+                      <tr key={i.id} className={cn("border-b border-border/30  cursor-pointer", picked?.id === i.id && "bg-primary/5")}
                         onClick={() => setPicked(i)}>
                         <td className="py-1 px-2 font-medium text-foreground">{i.indicator_name}</td>
                         <td className="py-1 px-2">{i.strategy}</td>
