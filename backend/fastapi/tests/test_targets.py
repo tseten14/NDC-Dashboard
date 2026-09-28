@@ -1,4 +1,8 @@
-"""CRUD tests for /api/v1/targets/ endpoints."""
+"""Verify create, read, update, and delete behavior for FastAPI emissions targets.
+
+The tests protect target years, values, units, and relationships in the parallel
+Python reference service.
+"""
 
 import pytest
 from httpx import AsyncClient

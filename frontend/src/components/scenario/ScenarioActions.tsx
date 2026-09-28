@@ -1,3 +1,8 @@
+/**
+ * Collects candidate actions and their user-supplied reduction, uptake, cost, and conditionality assumptions.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useState } from 'react';
 import { ArrowRight, Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';

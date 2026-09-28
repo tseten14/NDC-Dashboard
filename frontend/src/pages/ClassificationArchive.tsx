@@ -1,3 +1,8 @@
+/**
+ * Lists browser-saved sector-classification exercises and lets users resume or inspect their audit history.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";

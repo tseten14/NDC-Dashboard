@@ -1,3 +1,8 @@
+/**
+ * Verifies Data Integrity behavior so regressions cannot silently change a published value, evidence boundary, or user workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createServer } from "node:http";
 

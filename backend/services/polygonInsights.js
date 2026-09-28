@@ -1,3 +1,8 @@
+/**
+ * Filters mapped Climate TRACE sources by a selected district boundary and calculates transparent coverage summaries.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { BOUNDARY_PROVENANCE, districtById, geometryAreaKm2, pointInGeometry, validateTranslatorGeometry } from "./translator/geometry.js";
 import { getTranslatorSources, TRANSLATOR_YEARS, TRACE_PROVIDER, sumValues } from "./translator/climateTrace.js";
 

@@ -1,4 +1,8 @@
-"""Tests for the complex aggregation analytics endpoints."""
+"""Verify that FastAPI analytics aggregate emissions by the requested dimensions.
+
+These checks protect totals, filters, and empty results in the parallel Python
+service from database-query regressions.
+"""
 
 from datetime import date
 

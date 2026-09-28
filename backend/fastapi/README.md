@@ -1,39 +1,34 @@
-# Backend
+# Standalone FastAPI reference service
 
-The **Express API** lives at the repository root (`server.js`, `routes/`, `services/`).
+`backend/fastapi/` is a parallel Python implementation of core country, NDC, target, emissions, and analytics records. The default application and Vercel deployment use the Express service in `backend/`; this FastAPI service is not mounted by `npm run dev` or `api/index.js`.
 
-Run with:
+## Directory map
 
-```sh
-npm run start:api
-```
+| Path | Responsibility |
+| --- | --- |
+| `app/main.py` | FastAPI application construction |
+| `app/api/v1/` | Version-one HTTP endpoints |
+| `app/models/` | SQLAlchemy database records |
+| `app/schemas/` | Pydantic request and response validation |
+| `app/db/` | Async database sessions |
+| `alembic/` | Versioned Python-service database migrations |
+| `tests/` | Isolated async endpoint and analytics checks |
 
-Or together with the frontend:
+## Run independently
 
-```sh
-npm run dev:all
-```
+Use a Python 3.11 environment, install `requirements.txt`, set the service database URL, and run its ASGI application with Uvicorn. Run `pytest` from this directory for the Python suite.
 
-## Data sources
+Do not assume that adding an endpoint here changes the live React application. A feature intended for production must be implemented through the shared Express runtime or the deployment must be deliberately changed, documented, and tested.
 
-| Route prefix | Source |
-| ------------ | ------ |
-| `/api/v1/emissions/*` | Climate TRACE (live via API v7, cached in memory). Includes `sources`, `map`, `predictions`, `spatial-confidence`, `trackability`. "v7" is the API version, not the data version (data updates monthly). |
-| `/api/v1/indicators/*`, `/api/v1/catalog/*` | Bundled `config/ndcCockpitCatalog.js` |
-| `/api/v1/risk/*` | Bundled `data/seeds/riskSeed.js` |
-| `/api/v1/mock/*` | Fixtures when `USE_MOCK_DATA=true` |
-| `/api/v1/ingest/*` | Upload scan (CSV/JSON/PDF/TXT); tabular charts use **pandas** when installed |
+## Keeping implementations aligned
 
-### Ingest analysis (pandas)
+When this reference service is maintained, compare its units, target definitions, missing-data behavior, and schemas with:
 
-For accurate CSV/JSON charts (correct year totals, sector bars for the latest year only, national-row filtering):
+- `config/ndcTargets.js`
+- `config/climateTrace.js`
+- `backend/routes/`
+- `backend/services/`
+- `shared/progress.js`
+- [the codebase guide](../../docs/dev/codebase-guide.md)
 
-```sh
-pip install -r requirements-ingest.txt
-```
-
-Check: `GET /api/v1/ingest/health` → `analysis.python3: true`.
-
-Delivery activities are stored in the browser (`localStorage`) via `frontend/src/lib/activities-store.ts`.
-
-Full feature guide: [PROJECT_DOCUMENTATION.txt](../../docs/PROJECT_DOCUMENTATION.txt). API index: [../docs/README.md](../docs/README.md).
+The reference service must not introduce a second unofficial source for production NDC or Climate TRACE values.

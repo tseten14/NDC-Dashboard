@@ -1,3 +1,8 @@
+/**
+ * Reads and writes browser-local display and workspace preferences with stable defaults.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 export function readPreference(kind: "localStorage" | "sessionStorage", key: string): string | null {
   try {
     return window[kind].getItem(key);

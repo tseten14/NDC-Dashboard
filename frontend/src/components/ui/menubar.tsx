@@ -1,3 +1,8 @@
+/**
+ * Provides the shared Menubar interface primitive used across the application. It centralises accessible behavior and restrained styling so screens do not create inconsistent controls.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import * as React from "react";
 import * as MenubarPrimitive from "@radix-ui/react-menubar";
 import { Check, ChevronRight, Circle } from "lucide-react";

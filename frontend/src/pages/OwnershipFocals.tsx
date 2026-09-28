@@ -1,3 +1,8 @@
+/**
+ * Keeps ownership and contact assignments unavailable until the responsible institution supplies a confirmed roster.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { DataUnavailable } from "@/components/DataUnavailable";
 
 export default function OwnershipFocals() {

@@ -34,24 +34,18 @@ Build MCF corpus: `npm run build:mcf`. API endpoints: `/api/v1/documents/mcf/met
 | ---- | ---- | ----------- | ------- |
 | NDC targets | `config/ndcTargets.js`, `frontend/src/data/uganda-ndc-data.ts` | Dashboard | From Uganda Updated NDC Sept 2022 |
 | Activities | `config/ndcCockpitCatalog.js` | Activities dialog | NDC-traceable; no fabricated focal points |
-| Mitigation options | `config/ndcCockpitCatalog.js` | Mitigation tab | Abatement/cost **indicative**; hidden on Mitigation tab, used in Climate Finance |
+| Mitigation options | `config/ndcCockpitCatalog.js` | Mitigation tab | Qualitative planning concepts; unsupported abatement and cost values are unavailable |
 | Indicator panel targets | API + `measurableVariables` | Non-emissions charts | National indicators, not CT sectors |
 
 **June 2026 audit:** Removed unsourced focal points, foreign case studies, and assumed district lists except where NDC names locations. See `docs/dev/ct-data-gaps.txt` § E7.
 
-## Climate Finance — indicative only
+## Climate Finance — partial sourced register
 
-`frontend/src/lib/climate-finance.ts` and `climate-finance-pathways.ts` use catalogue `costEstimate` / `emissionsReductionPotential` for screening. UI must never imply audited project costs or investment advice. The page can show **live sector gap** from the same emissions predictions API as `NdcGapSummary`.
+The production register contains only the exact provider-sourced commitments for GCF FP034 and World Bank EASP P166685. It is not a national total, payment ledger, disbursement report, or investment recommendation. Unsupported catalogue costs and abatement estimates are not used as finance evidence.
 
-## Policy Impact — KCI analogies (indicative)
+## Policy Impact — unavailable pending verified evidence
 
-| Data | File | Shown in UI | Honesty |
-| ---- | ---- | ----------- | ------- |
-| KCI case corpus | `data/policy-cases/*.json` | `/policy-impact` wizard + results | Rule-based matching to UNFCCC KCI reports — not country-specific attribution |
-| TEF elements | `services/policyImpactEngine.js` | Intervention picker | Transition Element Framework labels |
-| Mitigation deep links | `frontend/src/lib/policy-impact-link.ts` | Dashboard Mitigation Options | Pre-fills wizard from catalogue option |
-
-Build/validate corpus: `npm run build:policy-cases` (`scripts/build_policy_cases.mjs`).
+The route and API remain in place, but production does not return a socio-economic forecast. Earlier demonstration cases did not contain document-specific quantitative effects that could support the displayed numbers. The server returns an explicit unavailable response until reviewed cases include a source document, page reference, units, geography, period, method, and effect values. See [policy-engine.md](../dev/policy-engine.md).
 
 ## NDC gap priorities panel
 

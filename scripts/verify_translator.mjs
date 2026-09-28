@@ -1,3 +1,8 @@
+/**
+ * Checks the live District Translator endpoints and their boundary, source, and reconciliation contracts.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import assert from "node:assert/strict";
 import { climateTraceUrl, fetchUpstream } from "../config/climateTrace.js";
 

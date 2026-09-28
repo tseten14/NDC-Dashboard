@@ -1,7 +1,12 @@
-/** Temporarily open the workspace without a site-wide login. */
+/**
+ * Defines the temporary open-workspace authentication mode and local identity.
+ *
+ * This switch affects browsing only. It does not grant access to operator actions,
+ * which remain protected by the server-issued operator session.
+ */
 export const LOGIN_AUTH_ENABLED = false;
 
-/** Stable browser-local identity for workspace records while login is off. */
+/** Stable browser-local identity for personal records while site login is off. */
 
 export const LOCAL_USER = {
   id: "local-user",

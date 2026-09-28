@@ -1,3 +1,8 @@
+/**
+ * Verifies Workspace Ux behavior so regressions cannot silently change a published value, evidence boundary, or user workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { test, expect, type Page } from "@playwright/test";
 
 async function openUganda(page: Page) {
@@ -44,6 +49,12 @@ test.describe("phone workspace", () => {
     await expect(page).toHaveURL(/\/docs$/);
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(page.locator("#main-content")).toBeFocused();
+    await expect(page.getByRole("region", { name: "Complete screen directory" }).locator("tbody tr")).toHaveCount(50);
+    await page.getByRole("tab", { name: "Codebase guide" }).click();
+    await expect(page.getByRole("heading", { name: "Codebase guide", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "6. Data trust rules", exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "System design" }).click();
+    await expect(page.getByRole("heading", { name: /System design/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Something went wrong" })).toHaveCount(0);
   });
 

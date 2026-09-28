@@ -1,3 +1,8 @@
+/**
+ * Provides the shared Resizable interface primitive used across the application. It centralises accessible behavior and restrained styling so screens do not create inconsistent controls.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { GripVertical } from "lucide-react";
 import * as ResizablePrimitive from "react-resizable-panels";
 

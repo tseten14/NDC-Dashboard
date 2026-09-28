@@ -1,3 +1,8 @@
+/**
+ * Classifies marketplace records by origin so bundled examples cannot be mistaken for user or institution data.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { createHash } from "node:crypto";
 
 // Exact fingerprints of the five former bundled demonstration pitches. This

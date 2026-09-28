@@ -1,3 +1,8 @@
+/**
+ * Verifies Mermaid Diagram behavior so regressions cannot silently change a published value, evidence boundary, or user workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { describe, it, expect } from "vitest";
 import { render, waitFor } from "@testing-library/react";
 import systemDesignMarkdown from "../../../docs/dev/system-design.md?raw";

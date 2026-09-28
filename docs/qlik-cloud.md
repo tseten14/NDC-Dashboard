@@ -18,7 +18,7 @@ The NDC values **do not come from Climate TRACE**. Climate TRACE measures observ
    - `https://YOUR-APP-DOMAIN/api/v1/qlik/targets.csv` — begins with `ndc_country,target_id,...`.
    - `https://YOUR-APP-DOMAIN/api/v1/qlik/emissions.csv` — begins with `observed_country,gadm_id,...`.
 
-The targets endpoint works without Climate TRACE. The emissions endpoint calls the app's live national dashboard service. If it returns a JSON error, resolve that error before setting up a Qlik reload. It intentionally returns HTTP 503 when the app runs with illustrative mock data.
+The targets endpoint works without Climate TRACE. The emissions endpoint calls the app's live national dashboard service. If it returns a JSON error, resolve that error before setting up a Qlik reload. It intentionally returns HTTP 503 when the server runs with offline development fixtures.
 
 ## Create and load the Qlik app
 

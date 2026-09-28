@@ -1,3 +1,8 @@
+/**
+ * Keeps cross-sector relationships unavailable until a verified relationship dataset and method are connected.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { DataUnavailable } from "@/components/DataUnavailable";
 
 export default function Interlinkages() {

@@ -1,3 +1,8 @@
+/**
+ * Builds annual Climate TRACE series for supported classification categories while preserving missing and partial years.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import NodeCache from "node-cache";
 import { CLASSIFICATION_MAPPINGS, classificationMapping } from "../../config/classificationMappings.js";
 import {

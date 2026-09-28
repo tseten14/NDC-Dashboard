@@ -1,3 +1,8 @@
+/**
+ * Keeps institutional assignments unavailable until an authoritative responsibility and focal-point roster is supplied.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { DataUnavailable } from "@/components/DataUnavailable";
 
 export default function InstitutionalMap() {

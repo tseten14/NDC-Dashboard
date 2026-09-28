@@ -1,3 +1,8 @@
+/**
+ * Verifies Dashboard Accuracy behavior so regressions cannot silently change a published value, evidence boundary, or user workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { test, expect } from "@playwright/test";
 
 // Live API checks run against the production build with USE_MOCK_DATA=false.

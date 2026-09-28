@@ -1,3 +1,8 @@
+/**
+ * Collects the scenario horizon, growth path, and action timing needed by the deterministic model.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge, Panel, Select } from '@/components/inventory/shared';

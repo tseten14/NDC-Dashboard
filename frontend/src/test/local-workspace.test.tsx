@@ -1,3 +1,8 @@
+/**
+ * Verifies Local Workspace behavior so regressions cannot silently change a published value, evidence boundary, or user workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { CurrentRoleProvider, useCurrentRole } from "@/hooks/use-current-role";

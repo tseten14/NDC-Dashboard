@@ -1,3 +1,8 @@
+/**
+ * Provides the shared Button interface primitive used across the application. It centralises accessible behavior and restrained styling so screens do not create inconsistent controls.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";

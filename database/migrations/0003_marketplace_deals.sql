@@ -1,4 +1,5 @@
--- Marketplace deals: pitch-evaluate-deliver pipeline
+-- Adds user-authored marketplace records for the pitch, evaluation, and delivery workflow.
+-- These rows are workspace records; the migration does not make them official funder projects.
 CREATE TABLE IF NOT EXISTS "marketplace_deals" (
   "id" text PRIMARY KEY NOT NULL,
   "title" text NOT NULL,

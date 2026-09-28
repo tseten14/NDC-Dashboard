@@ -1,3 +1,8 @@
+/**
+ * Renders selectable UBOS district boundaries and Climate TRACE source points for District Translator.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useEffect, useRef } from "react";
 import * as maplibregl from "@/lib/maplibre";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";

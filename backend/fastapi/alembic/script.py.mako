@@ -1,4 +1,9 @@
-"""${message}
+"""Template used by Alembic to create reviewable FastAPI database migrations.
+
+The generated module records its revision ancestry and exposes explicit upgrade
+and downgrade operations instead of mutating the database outside version control.
+
+${message}
 
 Revision ID: ${up_revision}
 Revises: ${down_revision | comma,n}

@@ -1,3 +1,8 @@
+/**
+ * Plots user-provided inventory series while keeping missing years distinct from zero values.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from 'recharts';
 import type { SeriesPoint } from '@/lib/inventory-workspace';
 

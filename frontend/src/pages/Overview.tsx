@@ -1,3 +1,8 @@
+/**
+ * Keeps the legacy overview unavailable because no connected source supports its former delivery and spending claims.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { DataUnavailable } from "@/components/DataUnavailable";
 
 export default function Overview() {

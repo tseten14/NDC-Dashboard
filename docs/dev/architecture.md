@@ -39,7 +39,7 @@ Site login is temporarily disabled by `frontend/src/lib/auth-config.ts`: `/auth`
 | `/climate-finance` | Climate finance | Partial sourced commitment register |
 | `/documents` | Policy documents | Library + CPR passages + MCF + pathway |
 | `/documents/view` | Document AI | Split-pane PDF analysis |
-| `/docs` | Documentation | User guide + system design (bundled markdown) |
+| `/docs` | Documentation | User guide, complete route directory, codebase guide, and system design |
 | `/mwp-marketplace` | Marketplace | Database-backed user project records; unavailable without persistence |
 | `/library`, `/my-work`, `/risk/*` | Advanced | Strategy, workbench, risk module |
 | `/executive`, `/delivery`, … | Legacy advanced | Older cockpit slices |

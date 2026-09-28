@@ -1,4 +1,8 @@
-"""CRUD tests for /api/v1/ndcs/ endpoints."""
+"""Verify create, read, update, and delete behavior for FastAPI NDC submissions.
+
+The tests ensure submissions remain linked to a real country and retain their
+version and source-document metadata.
+"""
 
 import pytest
 from httpx import AsyncClient

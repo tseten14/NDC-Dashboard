@@ -1,3 +1,8 @@
+/**
+ * Recognises stale lazy-loaded browser chunks after a deployment and performs one safe recovery reload.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 const RELOAD_FLAG = "ndc:chunk-reload";
 
 export function claimChunkReload(storage: Pick<Storage, "getItem" | "setItem">): boolean {

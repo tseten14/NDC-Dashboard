@@ -1,3 +1,8 @@
+/**
+ * Shows supported reporting categories and requests their annual series directly from Climate TRACE.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";

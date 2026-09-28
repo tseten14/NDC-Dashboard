@@ -2,7 +2,7 @@
 
 Web application for exploring Uganda’s Nationally Determined Contribution (NDC) data: decision-support cockpit, emissions map, climate finance screening, strategy library, climate risk views, and role-based delivery tools.
 
-**Documentation:** [Complete application and engineering guide (PDF)](docs/NDC-Data-Explorer-Complete-Guide.pdf). The in-app guide remains at `/docs`. Use the [Qlik Cloud setup guide](docs/qlik-cloud.md) to import live Climate TRACE emissions and the app's Uganda NDC target extract. A separate [Climate TRACE source-record CSV](data/exports/climate-trace-uganda-sources-2021-2025.csv) is available for source-level evaluation.
+**Documentation:** Start with the [documentation index](docs/README.md) or [codebase guide](docs/dev/codebase-guide.md). The in-app `/docs` page contains the user guide, every registered screen, the codebase guide, and system design. Use the [Qlik Cloud setup guide](docs/qlik-cloud.md) for the live Climate TRACE and Uganda NDC extracts.
 
 ## What you can do (in plain terms)
 
@@ -81,12 +81,12 @@ The top bar shows shortcuts; **All tools** opens the full menu grouped into Expl
 | `/dashboard` | NDC cockpit (targets, observed, progress, **NDC AI**) |
 | `/ingest` | Data ingestion (mapped import → Postgres; quick scan profiling) |
 | `/ai-2030` | 2030 sector predictions |
-| `/policy-impact` | Socio-economic impact forecasting (KCI case analogies) |
+| `/policy-impact` | Explicit unavailable state until quantitatively verified policy cases are connected |
 | `/climate-finance` | Indicative finance / fund screening |
 | `/documents` | Policy corpus + CPR passages + MCF projects |
 | `/mwp-marketplace` | Pre-authored mitigation investment deals |
 | `/my-work` | Browser-local activities and submissions |
-| `/docs` | User guide + system design |
+| `/docs` | User guide + route directory + codebase guide + system design |
 
 Additional pages include Strategy Library, Climate Risk, and legacy cockpit routes; use the in-app Documentation links or direct URLs.
 
@@ -119,10 +119,10 @@ The dashboard covers all mitigation and key adaptation targets from Uganda's Upd
 | Top emitting sources (asset/source-level) | Express → Climate TRACE `GET /v7/sources` |
 | District Translator | Express → paginated Climate TRACE `/v7/sources` + pinned 2020 UBOS district boundaries (135); distinct from dashboard GADM districts |
 | Activities & mitigation catalog | Express → `config/ndcCockpitCatalog.js` |
-| Climate risk map | Express → `data/seeds/riskSeed.js` |
+| Climate risk map | Unavailable; the retained prototype seed is not served as production evidence |
 | My Work / activities | `localStorage` in this browser |
 | Mapped ingest observations | Postgres `observations` table when `DATABASE_URL` set |
-| Policy Impact forecasts | Express → `data/policy-cases/*.json` (KCI analogies, rule-based matching) |
+| Policy Impact forecasts | Unavailable; demonstration cases are excluded until quantitatively verified evidence is approved |
 | Policy documents (CPR export) | `data/policy/documents.json` via `GET /api/v1/documents/*` |
 
 ### Emissions API geography
@@ -187,6 +187,7 @@ Exceeded limits return `429` with `{ "error": "rate_limited", "retry_after_secon
 | `npm run test` | Unit tests (Vitest) |
 | `npm run test:e2e` | Browser tests (Playwright) — drives the real app |
 | `npm run lint` | ESLint |
+| `npm run verify:docs` | Check source-file purpose headers and complete route documentation |
 | `npm run verify:all` | Live accuracy checks: Climate TRACE + 2030 predictions |
 | `npm run build:documents` | Regenerate policy JSON from CPR CSV export |
 

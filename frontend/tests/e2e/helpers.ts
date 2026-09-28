@@ -1,3 +1,8 @@
+/**
+ * Verifies Helpers behavior so regressions cannot silently change a published value, evidence boundary, or user workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import type { Page } from "@playwright/test";
 
 /** Wait until the proxied API responds (dev:all must be running). */

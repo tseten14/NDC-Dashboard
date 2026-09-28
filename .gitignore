@@ -1,3 +1,5 @@
+# Keeps generated builds, local environments, caches, credentials, and editor files out of version control.
+# Source data and reviewed exports must be added deliberately rather than hidden by broad directory rules.
 # Logs
 logs
 *.log

@@ -1,3 +1,8 @@
+/**
+ * Provides the shared Toaster interface primitive used across the application. It centralises accessible behavior and restrained styling so screens do not create inconsistent controls.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useToast } from "@/hooks/use-toast";
 import { Toast, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport } from "@/components/ui/toast";
 

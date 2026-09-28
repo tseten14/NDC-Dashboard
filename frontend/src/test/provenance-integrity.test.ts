@@ -1,3 +1,8 @@
+/**
+ * Verifies Provenance Integrity behavior so regressions cannot silently change a published value, evidence boundary, or user workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { describe, expect, it } from "vitest";
 import { buildDashboardFactLedger } from "@/lib/dashboard-ai-facts";
 import { SECTOR_LINEAGE } from "@/lib/data-lineage";

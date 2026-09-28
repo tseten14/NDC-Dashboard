@@ -1,3 +1,8 @@
+/**
+ * Explains the difference between aggregate emissions and mapped source coverage without converting that difference into a confidence score.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useQuery } from "@tanstack/react-query";
 import { emissionsApi } from "@/lib/api";
 import { useEmissionsData } from "@/context/EmissionsDataContext";

@@ -1,4 +1,9 @@
-/** User-facing copy for dashboard / policy AI HTTP errors. */
+/**
+ * Converts dashboard and policy AI HTTP failures into useful, non-technical copy.
+ *
+ * Server messages take priority, while rate limits and configuration failures get
+ * stable fallbacks that never expose credentials or internal stack details.
+ */
 export function aiRequestErrorMessage(
   status: number,
   err: { error?: string; message?: string; retry_after_seconds?: number },

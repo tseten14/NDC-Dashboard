@@ -1,3 +1,8 @@
+/**
+ * Coordinates framework selection, category navigation, saved exercises, and summaries for sector classification.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, Search, X } from "lucide-react";
 import { useCountry } from "@/context/CountryContext";

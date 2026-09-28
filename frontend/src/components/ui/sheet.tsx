@@ -1,3 +1,8 @@
+/**
+ * Provides the shared Sheet interface primitive used across the application. It centralises accessible behavior and restrained styling so screens do not create inconsistent controls.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";

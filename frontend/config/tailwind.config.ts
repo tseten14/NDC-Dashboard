@@ -1,3 +1,8 @@
+/**
+ * Maps Tailwind utilities to the application design tokens and the system font stack.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Config } from "tailwindcss";

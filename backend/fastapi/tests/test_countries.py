@@ -1,4 +1,8 @@
-"""CRUD tests for /api/v1/countries/ endpoints."""
+"""Verify create, read, update, and delete behavior for FastAPI country records.
+
+The tests guard the HTTP contract and validation used by clients of the parallel
+Python reference service.
+"""
 
 import pytest
 from httpx import AsyncClient

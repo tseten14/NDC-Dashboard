@@ -1,3 +1,8 @@
+/**
+ * Directs users to sourced strategy material after unsupported draft programme mappings were removed.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { DataUnavailable } from "@/components/DataUnavailable";
 
 export default function NDPIVLayer() {

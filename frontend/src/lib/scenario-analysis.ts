@@ -1,3 +1,8 @@
+/**
+ * Calculates deterministic planning scenarios from user-entered assumptions and a pinned inventory basis.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { z } from 'zod';
 import { getFramework } from '@/data/classifications';
 import { flattenSectors } from './sector-classification';

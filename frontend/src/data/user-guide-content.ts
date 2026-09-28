@@ -35,7 +35,7 @@ export const GETTING_STARTED = [
   {
     step: "4",
     title: "Start on the Dashboard for emissions",
-    text: "Select a sector (e.g. Transport), click one NDC target on the left, and read the centre chart (what we measure) and right column (are we on track). Use other menu items when you need maps, documents, or finance screening.",
+    text: "Select a sector (e.g. Transport), click one NDC target on the left, and read the centre chart (what we measure) and right column (are we on track). Use other menu items when you need maps, documents, or the sourced finance register.",
   },
   {
     step: "5",
@@ -109,25 +109,23 @@ export const BASIC_FEATURES: FeatureGuide[] = [
     to: "/policy-impact",
     who: "Socio-economic planners, gender/equity teams, policy designers",
     purpose:
-      "Forecast socio-economic outcomes of an intervention using UNFCCC KCI case analogies and the Transition Element Framework (TEF).",
+      "Check whether reviewed quantitative evidence is available for a socio-economic policy forecast.",
     steps: [
       "Open Policy Impact from the menu (or from Dashboard Mitigation Options).",
-      "Step 1 — set objective and sector (gap context may pre-fill from NDC priorities).",
-      "Step 2 — pick a TEF intervention type and scale/timeline sliders.",
-      "Step 3 — review matched KCI cases and confidence.",
-      "Step 4 — read impacts, trade-offs, and pathway diagram; link to Climate Finance for funding screening.",
+      "Read the evidence-availability notice.",
+      "Use Policy Documents to inspect the underlying policy sources.",
+      "Wait for reviewed cases with page-level quantitative evidence before using forecast results.",
     ],
     howItWorks:
-      "The server matches your intervention to curated KCI policy cases (rule-based: sector, intervention type, region, scale). Outcomes aggregate top matches with provenance strings — not ML or country-specific attribution.",
+      "The API fails closed while no approved quantitative case series is connected. Earlier demonstration cases were removed because their documents did not support the numerical effects shown.",
     result:
-      "A structured forecast of jobs, equity, and other socio-economic nodes plus explicit trade-offs — for workshop discussion, not legal commitments.",
+      "A clear unavailable state and a description of the evidence needed to enable the feature.",
     limitations:
-      "Indicative analogies only. Does not replace national impact assessments or gender analysis sign-off.",
+      "No socio-economic forecast, causal attribution, or confidence score is currently produced.",
     youWillSee: [
-      "Four-step wizard",
-      "Matched KCI cases with confidence %",
-      "Impact and trade-off cards",
-      "Link to Climate Finance with sector pre-filled",
+      "Verified evidence required notice",
+      "Explanation of removed demonstration estimates",
+      "Link to the policy evidence library",
     ],
   },
   {
@@ -516,8 +514,8 @@ export const GLOSSARY: { term: string; def: string }[] = [
   { term: "Intended outcome", def: "What policy aims for (NDC target, health, air quality)." },
   { term: "Measured outcome", def: "What satellites/models observe (Dashboard, Climate TRACE)." },
   { term: "Indicative", def: "Estimate for discussion — not audited." },
-  { term: "KCI", def: "UNFCCC Katowice Committee of Experts on Impacts — source reports for Policy Impact case studies." },
-  { term: "TEF", def: "Transition Element Framework — intervention taxonomy used in Policy Impact wizard." },
+  { term: "KCI", def: "UNFCCC Katowice Committee of Experts on Impacts. Its reports may inform future reviewed Policy Impact cases, but no quantitative case series is active today." },
+  { term: "TEF", def: "Transition Element Framework — a qualitative intervention taxonomy retained for a future evidence-backed Policy Impact workflow." },
   { term: "NDC AI", def: "Dashboard AI assistant that analyses live Climate TRACE + NDC context with per-paragraph citations to verified API/PDF URLs." },
   { term: "Fact ledger", def: "Pre-built list of quotable dashboard numbers with exact source URLs — NDC AI may only cite these figures." },
   { term: "NDC gap priorities", def: "Home/Dashboard panel ranking sectors by distance to 2030 goals using live or indicative data." },

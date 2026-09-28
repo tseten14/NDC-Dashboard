@@ -1,3 +1,8 @@
+/**
+ * Formats inventory exercise values, labels, and status details consistently across the review workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { downloadFile } from './inventory-workspace';
 export const seriesColors = { collected: '#a4643b', a: '#268577', b: '#527fa6', output: '#268577' };
 export const number = (value: number | null | undefined, digits = 2) => value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });

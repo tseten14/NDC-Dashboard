@@ -1,3 +1,8 @@
+/**
+ * Keeps the legacy indicator route unavailable until a confirmed registry and sourced observations are connected.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { DataUnavailable } from "@/components/DataUnavailable";
 
 export default function Indicators() {

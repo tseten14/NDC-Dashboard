@@ -1,3 +1,8 @@
+/**
+ * Explains the deterministic scenario result, allocated action effects, assumptions, and audit history.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useState } from 'react';
 import { Download, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';

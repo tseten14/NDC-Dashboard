@@ -1,4 +1,8 @@
-"""Shared async fixtures for the test suite."""
+"""Build isolated async database and HTTP fixtures for the FastAPI test suite.
+
+Every test receives a clean transaction so one endpoint test cannot make another
+pass or fail because of records left behind.
+"""
 
 import asyncio
 from collections.abc import AsyncGenerator

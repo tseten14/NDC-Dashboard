@@ -1,3 +1,8 @@
+/**
+ * Renders primary navigation, country and role controls, and the All tools menu in the shared application header.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";

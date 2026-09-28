@@ -1,3 +1,7 @@
+"""Creates database sessions and transaction boundaries for the standalone FastAPI reference service.
+
+Keep this module aligned with the active Express/React implementation when the parallel Python service is maintained.
+"""
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine

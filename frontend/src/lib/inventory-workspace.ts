@@ -1,3 +1,8 @@
+/**
+ * Stores and updates browser-local inventory comparison exercises while preserving their audit history.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import Papa from 'papaparse';
 import { z } from 'zod';
 import { DEFAULT_FRAMEWORK, getFramework } from '@/data/classifications';

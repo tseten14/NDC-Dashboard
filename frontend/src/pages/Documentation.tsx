@@ -31,15 +31,20 @@ import {
   GLOSSARY,
   FAQ,
 } from "@/data/user-guide-content";
+import { ROUTE_DIRECTORY } from "@/data/route-directory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BookOpen, Target, Satellite, HelpCircle, Palette, LayoutGrid, Users, ArrowRight,
   ExternalLink, CheckCircle2, AlertTriangle, XCircle, MinusCircle, ListOrdered,
-  Cog, Flag, AlertCircle, Workflow,
+  Cog, Flag, AlertCircle, Workflow, FileCode2,
 } from "lucide-react";
 
 const SystemDesignDoc = lazy(() =>
   import("@/components/docs/SystemDesignDoc").then((m) => ({ default: m.SystemDesignDoc })),
+);
+
+const CodebaseGuideDoc = lazy(() =>
+  import("@/components/docs/CodebaseGuideDoc").then((m) => ({ default: m.CodebaseGuideDoc })),
 );
 
 const STATUS_ICONS = {
@@ -65,8 +70,8 @@ export default function Documentation() {
               <h1 className="font-brand text-2xl sm:text-3xl font-bold text-foreground">Documentation</h1>
             </div>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-3xl">
-              User guide for day-to-day use, plus system design for developers (architecture, data flows,
-              and API boundaries).
+              Plain-language help for every registered screen, plus maintained codebase and system design
+              guides for developers and integrators.
             </p>
             <p className="text-xs sm:text-sm text-muted-foreground">
               New here? Start on <Link to="/" className="text-primary font-medium ">Home</Link>, then
@@ -84,6 +89,10 @@ export default function Documentation() {
             <TabsTrigger value="system-design" className="gap-1.5 px-4 py-2 text-sm">
               <Workflow className="h-4 w-4" />
               System design
+            </TabsTrigger>
+            <TabsTrigger value="codebase" className="gap-1.5 px-4 py-2 text-sm">
+              <FileCode2 className="h-4 w-4" />
+              Codebase guide
             </TabsTrigger>
           </TabsList>
 
@@ -107,6 +116,42 @@ export default function Documentation() {
               </li>
             ))}
           </ol>
+        </section>
+
+        <section className="space-y-4" aria-label="Complete screen directory">
+          <div>
+            <SectionTitle icon={Workflow}>Complete screen directory</SectionTitle>
+            <p className="mt-2 max-w-4xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
+              Every registered screen is listed here, including supporting detail pages and honest unavailable
+              states. “Workflow” means the result depends on user-entered or database-backed records.
+            </p>
+          </div>
+          <div className="overflow-x-auto rounded-md border border-border bg-card">
+            <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
+              <thead className="border-b border-border bg-muted/40">
+                <tr>
+                  <th className="px-3 py-2 font-semibold">Screen</th>
+                  <th className="px-3 py-2 font-semibold">Address</th>
+                  <th className="px-3 py-2 font-semibold">Status</th>
+                  <th className="px-3 py-2 font-semibold">What it contains</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ROUTE_DIRECTORY.map((route) => (
+                  <tr key={route.path} className="border-b border-border/70 last:border-0">
+                    <td className="px-3 py-2 font-medium text-foreground">{route.screen}</td>
+                    <td className="px-3 py-2 font-mono text-xs">
+                      {route.path.includes(":") ? route.path : (
+                        <Link className="text-primary underline" to={route.path}>{route.path}</Link>
+                      )}
+                    </td>
+                    <td className="px-3 py-2"><Badge variant="outline">{route.readiness}</Badge></td>
+                    <td className="px-3 py-2 text-muted-foreground">{route.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         {/* Roles */}
@@ -171,7 +216,8 @@ export default function Documentation() {
         <section className="space-y-4">
           <SectionTitle icon={LayoutGrid}>Q1–Q5 decision pages</SectionTitle>
           <p className="text-xs sm:text-sm text-muted-foreground -mt-2 max-w-4xl">
-            Use these links when working through the five decision questions. Pages with illustrative data need verified figures before official use.
+            Use these links when working through the five decision questions. Each page states whether its data is live,
+            versioned, user supplied, estimated, or unavailable.
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {ADVANCED_FEATURES.map((f) => (
@@ -340,15 +386,15 @@ export default function Documentation() {
                 <p>
                   Emissions use Climate TRACE API v7 aggregated to GADM 0/1. Map and sources use geolocated
                   facility rows; spatial-confidence separates located from spatially uncertain emissions (SUEs).
-                  NDC targets from config/ndcTargets.js. Policy JSON from CPR CSV build. Finance economics computed
-                  client-side from catalogue fields.
+                  NDC targets come from config/ndcTargets.js. Policy JSON is a build-time Climate Policy Radar
+                  snapshot. Climate Finance shows two provider-sourced commitments and keeps user budgets separate.
                 </p>
               ) : (
                 <p>
                   Think of the app as <strong className="text-foreground">three layers</strong>: (1) official pledges
                   and programmes from Uganda’s NDC, (2) independent observed emissions from Climate TRACE, (3) evidence
-                  documents and illustrative tools (finance screening, pathway diagram) that support decisions but do
-                  not replace government MRV.
+                  documents and user workflows. Planning estimates are labelled, and screens remain unavailable when
+                  the required evidence has not been connected.
                 </p>
               )}
               <p>
@@ -422,6 +468,16 @@ export default function Documentation() {
               }
             >
               <SystemDesignDoc />
+            </Suspense>
+          </TabsContent>
+
+          <TabsContent value="codebase" className="mt-0 pb-12">
+            <Suspense
+              fallback={
+                <p className="py-8 text-center text-sm text-muted-foreground">Loading codebase guide…</p>
+              }
+            >
+              <CodebaseGuideDoc />
             </Suspense>
           </TabsContent>
         </Tabs>

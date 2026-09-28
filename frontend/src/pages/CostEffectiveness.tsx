@@ -1,3 +1,8 @@
+/**
+ * Reports the evidence needed for cost-per-tonne analysis without ranking projects from unsupported cost or impact figures.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function CostEffectiveness() {

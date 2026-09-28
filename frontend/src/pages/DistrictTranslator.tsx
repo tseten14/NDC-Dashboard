@@ -1,3 +1,8 @@
+/**
+ * Lets users select a pinned UBOS district and inspect the Climate TRACE source records whose centroids fall inside it.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";

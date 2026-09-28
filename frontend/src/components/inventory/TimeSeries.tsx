@@ -1,3 +1,8 @@
+/**
+ * Compares collected and candidate annual series with transparent coverage and fit statistics.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { number, seriesColors, downloadChart } from '@/lib/inventory-presentation';
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Download, Plus, SlidersHorizontal } from 'lucide-react';

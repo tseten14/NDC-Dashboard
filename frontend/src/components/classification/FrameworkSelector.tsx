@@ -1,3 +1,8 @@
+/**
+ * Shows classification frameworks and disables any framework that does not have a verified hierarchy.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useState } from "react";
 import { CLASSIFICATION_FRAMEWORKS, getFramework } from "@/data/classifications";
 import { Button } from "@/components/ui/button";

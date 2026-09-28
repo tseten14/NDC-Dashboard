@@ -1,3 +1,8 @@
+/**
+ * Connects user-maintained activities to delivery milestones and accountability workflow context.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { CockpitBar } from "@/components/CockpitBar";

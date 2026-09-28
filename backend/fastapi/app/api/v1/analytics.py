@@ -1,3 +1,7 @@
+"""Implements the Analytics version-one endpoints for the standalone FastAPI reference service.
+
+Keep this module aligned with the active Express/React implementation when the parallel Python service is maintained.
+"""
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession

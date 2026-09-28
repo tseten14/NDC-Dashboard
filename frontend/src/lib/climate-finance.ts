@@ -1,5 +1,8 @@
 /**
- * Climate-finance economics engine (indicative).
+ * Retains deterministic finance-calculation helpers for tests and future reviewed workflows.
+ *
+ * The production Climate Finance page does not use these calculated economics as
+ * evidence; it displays only provider-sourced commitments and user-entered budgets.
  */
 import type { MitigationOption } from "@/data/uganda-ndc-data";
 

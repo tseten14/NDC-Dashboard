@@ -1,3 +1,8 @@
+/**
+ * Verifies Prediction Engine behavior so regressions cannot silently change a published value, evidence boundary, or user workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 import { clearPredictionCache, getSectorPredictions, jsForecastSector } from "./predictionEngine.js";
 import { NDC_TARGETS } from "../../config/ndcTargets.js";

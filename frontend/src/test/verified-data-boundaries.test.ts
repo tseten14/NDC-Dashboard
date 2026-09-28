@@ -1,3 +1,8 @@
+/**
+ * Verifies Verified Data Boundaries behavior so regressions cannot silently change a published value, evidence boundary, or user workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   getDataCompleteness,

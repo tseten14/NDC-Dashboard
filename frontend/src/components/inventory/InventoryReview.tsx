@@ -1,3 +1,8 @@
+/**
+ * Shows category assignments, recalculation choices, completeness, and focal-point fields for an inventory exercise.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Download, FileCheck2, History } from 'lucide-react';

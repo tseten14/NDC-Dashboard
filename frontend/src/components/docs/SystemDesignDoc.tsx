@@ -1,5 +1,8 @@
 /**
- * The system design document, rendered in the app.
+ * Presents the maintained system-design Markdown inside the live Documentation page.
+ *
+ * Keeping one Markdown source prevents the repository architecture guide and the
+ * published technical tab from drifting apart.
  */
 import systemDesignMarkdown from "../../../../docs/dev/system-design.md?raw";
 import { MarkdownDocument } from "./MarkdownDocument";

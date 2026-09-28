@@ -1,3 +1,8 @@
+/**
+ * Compares mapped district source totals with aggregate Climate TRACE results without treating the products as equivalent.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import NodeCache from "node-cache";
 import { CLIMATE_TRACE_API_VERSION, CLIMATE_TRACE_GAS, TRACE_RELEASE, fetchLocationEmissions, latestInventoryYear } from "../../../config/climateTrace.js";
 import { districts, geometryBounds, pointInGeometry, BOUNDARY_PROVENANCE } from "./geometry.js";

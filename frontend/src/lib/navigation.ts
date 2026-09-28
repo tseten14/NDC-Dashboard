@@ -1,3 +1,8 @@
+/**
+ * Defines the labels, order, descriptions, and groups shown by the top navigation and All tools menu.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { BookOpen, Briefcase, Coins, GitBranch, Home, Layers3, Map as MapIcon, MapPinned, Scale, Sparkles, Store, Target, Upload, Workflow } from "lucide-react";
 
 export const PRIMARY_NAV = [

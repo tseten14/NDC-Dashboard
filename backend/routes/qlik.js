@@ -1,4 +1,9 @@
-/** Public, read-only CSV feeds for Qlik Cloud. */
+/**
+ * Provides public, read-only CSV feeds for Qlik Cloud.
+ *
+ * Target rows come from the versioned export, while emissions rows use the live
+ * dashboard service and fail closed when the server is running in mock mode.
+ */
 import express from "express";
 import fs from "node:fs";
 import path from "node:path";

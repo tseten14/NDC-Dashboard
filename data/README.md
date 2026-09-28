@@ -1,66 +1,42 @@
-# `data/` — bundled datasets & seeds
+# `data/` directory
 
-Static data the Express API reads at runtime, plus the raw inputs and build
-outputs behind it. **Live emissions never live here** — those come from the
-Climate TRACE API. This folder is the *curated / indicative* layer.
+This directory contains reviewed snapshots, raw build inputs, development seeds, and analyst exports. **Live emissions are not stored here**; the production emissions services request them from Climate TRACE API v7.
 
-```
-data/
-├── policy/          Climate Policy Radar (CPR) export — the policy corpus
-│   ├── documents.json          ~207 docs: laws, plans, UN submissions, MCF projects
-│   ├── curated.json            Hand-picked document ids surfaced in the UI
-│   ├── passage-documents.json  Per-document passage metadata (counts, slug, CPR links)
-│   ├── passages.json           Passage-level text (the bulk of the corpus, ~19 MB)
-│   ├── topics-index.json       Topic → passage index for filtering
-│   └── mcf-projects.json       MCF searchable corpus (metadata + summary text)
-│
-├── policy-cases/    UNFCCC KCI case studies for the Policy Impact engine
-│   ├── index.json              Corpus index
-│   └── kci-*.json              One file per case (hand-authored)
-│
-├── seeds/           Node-safe seed modules (no Vite path aliases)
-│   ├── persistenceSeedSource.js  Climate sectors / KPIs / progress for db seed
-│   └── riskSeed.js               Illustrative climate-risk district layers
-│
-├── sources/         Raw inputs — CSV exports the build scripts read from
-│   ├── Uganda_key_docs_2026-06-11-1549.csv
-│   └── uganda-policy-documents-2026-06-09.csv
-│
-└── (runtime, git-ignored — created by the API, not committed)
-    ├── ingest-imports/          Per-job audit JSON written on ingest confirm
-    └── ingest-observations.json Local fallback store for mapped-ingest rows
-```
+## Inventory and status
 
-## Who reads what
+| Path | Purpose | Production status |
+| --- | --- | --- |
+| `exports/climate-trace-uganda-sources-2021-2025.csv` | Source-level extract prepared for Qlik evaluation | Analyst export; mapped records are not a complete national inventory |
+| `exports/uganda-ndc-targets-2022.csv` | Versioned Uganda NDC target extract for Qlik | Official target values transcribed from the 2022 NDC |
+| `policy/documents.json` | Climate Policy Radar document metadata snapshot | Shown in Policy Documents; not a live CPR API |
+| `policy/curated.json` | Reviewed document identifiers for prominent links | Shown where the UI needs a small source list |
+| `policy/passage-documents.json` | Document metadata for passage search | Build-time snapshot |
+| `policy/passages.json` | Searchable policy passages | Build-time snapshot; large generated file |
+| `policy/topics-index.json` | Topic-to-passage lookup | Generated with the passage corpus |
+| `policy/mcf-projects.json` | Multilateral climate-fund project metadata and summaries | Searchable source material, not a finance transaction ledger |
+| `policy-cases/*.json` | Earlier Policy Impact candidate cases | Retained for review; excluded from production forecasts until quantitative evidence is approved |
+| `seeds/persistenceSeedSource.js` | Development bootstrap records | Development and optional database bootstrap only |
+| `seeds/riskSeed.js` | Earlier risk prototype values | Retained for reference; production risk routes return unavailable |
+| `sources/*.csv` | Raw Climate Policy Radar exports used by build scripts | Build input; preserve filenames and retrieval context |
 
-| File / folder | Read by | Notes |
-| ------------- | ------- | ----- |
-| `policy/documents.json`, `policy/curated.json` | `services/policyDocuments.js` → `/api/v1/documents/*` | Document library + "Official sources" |
-| `policy/passage-documents.json`, `policy/passages.json`, `policy/topics-index.json` | `services/policyPassages.js` → `/api/v1/documents/passage-corpus/*` | Key-documents passage panel |
-| `policy/mcf-projects.json` | `services/mcfProjects.js` → `/api/v1/documents/mcf/*` | Climate fund projects tab + Climate Finance panel |
-| `policy-cases/*.json` | `services/policyCaseData.js` → `/api/v1/policy-cases` | Policy Impact wizard |
-| `seeds/persistenceSeedSource.js` | `db/seed.ts`, `services/persistence.js` | Postgres seed + file fallback |
-| `seeds/riskSeed.js` | `routes/risk.js` → `/api/v1/risk/*` | Illustrative risk choropleth |
-
-## Rebuilding the generated files
-
-The `policy/` JSON is generated from the CSVs in `sources/` — do not hand-edit:
+## Rebuild generated policy files
 
 ```sh
-npm run build:documents    # sources/*.csv  -> policy/documents.json + curated.json
-npm run build:passages     # sources/*.csv  -> policy/passage-documents.json, passages.json, topics-index.json
-npm run build:mcf          # policy/documents.json -> policy/mcf-projects.json (+ optional partner JSON)
-npm run build:policy-cases  # validate policy-cases/*.json against the Zod schema
+npm run build:documents
+npm run build:passages
+npm run build:mcf
+npm run build:policy-cases
 ```
 
-## Scaling note
+- `build:documents` reads the policy CSV snapshot and writes document metadata.
+- `build:passages` writes passage documents, passages, and the topic index.
+- `build:mcf` writes the climate-fund project search corpus.
+- `build:policy-cases` validates candidate case files; validation alone does not approve them for production.
 
-`policy/passages.json` is already ~19 MB. The Postgres schema in
-`db/schema.ts` (`policy_documents`, `policy_passage_documents`,
-`policy_passages`, with GIN full-text indexes) is the path to serving thousands
-of documents with SQL instead of loading JSON into memory.
+Do not hand-edit generated JSON. Update the reviewed input or build logic, regenerate, then inspect the diff and run the data integrity tests.
 
-## Honesty labels
+## Runtime files
 
-What is live vs indicative vs local-only is documented in
-[`docs/guide/data.md`](../docs/guide/data.md). Keep it in sync when adding data.
+The API may create git-ignored ingest audit files during local work. Persistent production imports and marketplace records require PostgreSQL. Browser-local activities and exercises do not live in this directory.
+
+See [the data source guide](../docs/guide/data.md) for trust labels and [the application data audit](../docs/dev/application-data-audit.md) for current production availability.

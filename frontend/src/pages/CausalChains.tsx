@@ -1,3 +1,8 @@
+/**
+ * Explains that no approved causal model is connected instead of showing prototype relationships as evidence.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { DataUnavailable } from "@/components/DataUnavailable";
 
 export default function CausalChains() {

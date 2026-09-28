@@ -1,3 +1,8 @@
+/**
+ * Fetches and normalises paginated Climate TRACE source records used by District Translator.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import NodeCache from "node-cache";
 import { climateTraceUrl, fetchUpstream, CLIMATE_TRACE_API_VERSION, CLIMATE_TRACE_GAS, CLIMATE_TRACE_DOCS_URL, TRACE_RELEASE } from "../../../config/climateTrace.js";
 import { climateTraceSourcesResponseSchema } from "../../../shared/schemas/climateTrace.schema.js";

@@ -121,7 +121,7 @@ A6a. MAIN SCREENS AND ROUTES (2026)
     /documents/view Policy document split-pane viewer + AI Policy Assistant
     /mwp-marketplace Database-backed user project records; unavailable without persistence
     /my-work      Browser-local activities and submissions
-    /docs          In-app user guide + system design (this documentation)
+    /docs          User guide + complete route directory + codebase guide + system design
 
   Additional direct routes:
     /library       Strategy Library
@@ -140,14 +140,14 @@ A6a. MAIN SCREENS AND ROUTES (2026)
     /causal-chains       Causal chain diagrams
     /interlinkages       Cross-sector interlinkages
     /kpis                KPIs & proxies
-    /cost-effectiveness  Intervention cost per tCO2e ranking [NEW — illustrative]
+    /cost-effectiveness  Unavailable until compatible audited cost and mitigation evidence is connected
 
   Q3 — Where are the bottlenecks?
     /delivery            Delivery & Accountability (shared with Q2)
     /finance             Finance & Investment — conditionality, instruments, investment notes
     /climate-finance     MAC-style screening + fund pathways + MCF document links
     /ownership           Ownership & focal points roster
-    /financial-flow      Committed → Disbursed → Spent waterfall by project [NEW — illustrative]
+    /financial-flow      Unavailable until verified transaction records are connected
 
   Q4 — Where do we invest next?
     /ai-2030             2030 sector trend forecast (indicative, with uncertainty)
@@ -385,7 +385,7 @@ A7. FEATURE GUIDE — PURPOSE, HOW IT WORKS, RESULT (non-technical)
 
   CLIMATE RISK (/risk) [Advanced]
     For: Illustrative hazard screening (adaptation).
-    How: data/seeds/riskSeed.js demo layers.
+    How: unavailable until verified hazard, exposure, and vulnerability data is connected.
     Result: Discussion prioritisation — not operational hazard models.
 
 A8. STATUS COLOURS AND BADGES (Dashboard)

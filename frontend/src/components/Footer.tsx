@@ -1,3 +1,8 @@
+/**
+ * Renders the application-wide provenance summary at the bottom of the fixed-height page shell.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 

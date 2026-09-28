@@ -1,3 +1,8 @@
+/**
+ * Defines Index behavior for the Frontend part of the application.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import ipcc2006 from "./ipcc-2006.tsv?raw";
 import ipcc2019 from "./ipcc-2019.tsv?raw";
 

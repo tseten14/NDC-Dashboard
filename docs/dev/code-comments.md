@@ -82,3 +82,13 @@ Do not narrate what the next line does.
 | Someone reading the code | The file headers described here |
 | Someone setting it up | `README.md` |
 | Someone changing the architecture | `docs/dev/` |
+
+## Automated check
+
+Run `npm run verify:docs` before committing. It scans maintained source, configuration,
+test, migration, and script files for a meaningful purpose header. It also compares
+`frontend/src/App.tsx` with the complete route directory shown on `/docs`.
+
+JSON, CSV, GeoJSON, lockfiles, generated exports, caches, and binary assets are documented
+by their owning directory or build guide because inserting comments would invalidate or
+corrupt those formats.

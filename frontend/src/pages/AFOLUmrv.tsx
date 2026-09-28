@@ -1,3 +1,8 @@
+/**
+ * Keeps the AFOLU monitoring route honest when verified agriculture, forestry, and land-use records have not been connected.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { DataUnavailable } from "@/components/DataUnavailable";
 
 export default function AFOLUmrv() {

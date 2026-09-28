@@ -1,3 +1,8 @@
+/**
+ * Imports candidate inventory series into a browser-local exercise and records source metadata supplied by the user.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useState } from 'react';
 import { Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';

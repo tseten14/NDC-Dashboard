@@ -1,3 +1,8 @@
+/**
+ * Contains the optional Supabase browser client used when site-wide sign-in is re-enabled.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { createClient } from "@supabase/supabase-js";
 import { LOGIN_AUTH_ENABLED } from "@/lib/auth-config";
 

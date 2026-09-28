@@ -1,3 +1,8 @@
+/**
+ * Defines District Translator response types, formatting, and export helpers shared by its page and tests.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import type { FeatureCollection } from "geojson";
 import type { MapSourcePoint, PolygonInsightsResponse } from "./api";
 

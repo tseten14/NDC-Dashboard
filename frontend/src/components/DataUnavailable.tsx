@@ -1,3 +1,8 @@
+/**
+ * Provides the shared, accessible empty state used when a screen lacks verified evidence and points users to a supported alternative.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { Link } from "react-router-dom";
 
 /** A missing source is not evidence of a zero value or a completed programme. */

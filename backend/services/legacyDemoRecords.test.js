@@ -1,3 +1,8 @@
+/**
+ * Verifies Legacy Demo Records behavior so regressions cannot silently change a published value, evidence boundary, or user workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { describe, expect, it } from "vitest";
 import { observationUuid, targetUuid } from "../../database/id.ts";
 import { isLegacyDemoObservation, isLegacyDemoTarget } from "./legacyDemoRecords.js";

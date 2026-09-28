@@ -1,3 +1,8 @@
+/**
+ * Redirects users away from unsupported fixed-rate legacy scenarios to forecasts based on live observed history.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { DataUnavailable } from "@/components/DataUnavailable";
 
 export default function Projections() {

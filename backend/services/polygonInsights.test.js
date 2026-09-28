@@ -1,3 +1,8 @@
+/**
+ * Verifies Polygon Insights behavior so regressions cannot silently change a published value, evidence boundary, or user workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { describe, expect, it, vi } from "vitest";
 import { geometryAreaKm2, pointInGeometry, validateTranslatorGeometry, getPolygonInsights, summarizeSources } from "./polygonInsights.js";
 import { districtById, intersectedDistricts } from "./translator/geometry.js";

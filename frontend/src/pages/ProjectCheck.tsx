@@ -1,3 +1,8 @@
+/**
+ * Keeps project assessment unavailable until a verified project record and review method are connected.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { DataUnavailable } from "@/components/DataUnavailable";
 
 export default function ProjectCheck() {

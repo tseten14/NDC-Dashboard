@@ -1,3 +1,8 @@
+/**
+ * Renders the expandable reporting-category tree and manages accessible category selection.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";

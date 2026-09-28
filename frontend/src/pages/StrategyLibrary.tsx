@@ -1,3 +1,8 @@
+/**
+ * Presents versioned national strategy commitments and links them to relevant NDC themes without implying measured delivery.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { indicatorRegistry, type Strategy } from "@/data/indicator-registry";

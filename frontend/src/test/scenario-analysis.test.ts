@@ -1,3 +1,8 @@
+/**
+ * Verifies Scenario Analysis behavior so regressions cannot silently change a published value, evidence boundary, or user workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { describe, expect, it } from 'vitest';
 import { areaKey, createSampleExercise, defaultRecalculation, districtsFor } from '@/lib/inventory-workspace';
 import { actionIssues, calculateScenario, createSampleScenario, createScenario, inventoryBasisChanged, pinInventoryBasis, policyIssues, reviseScenario, scenarioReadiness, uptakeAt, validateScenario } from '@/lib/scenario-analysis';

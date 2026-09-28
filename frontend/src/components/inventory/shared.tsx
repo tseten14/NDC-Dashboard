@@ -1,3 +1,8 @@
+/**
+ * Provides small presentation controls and types reused by the inventory workflow without duplicating behavior.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useEffect, useState } from 'react';
 import type { ReactNode, SelectHTMLAttributes } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';

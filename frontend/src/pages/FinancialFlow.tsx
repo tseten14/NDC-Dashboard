@@ -1,3 +1,8 @@
+/**
+ * Reports that verified commitments, payments, and expenditures are absent rather than inferring cash flow from project status.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function FinancialFlow() {

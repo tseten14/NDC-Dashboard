@@ -1,3 +1,8 @@
+/**
+ * Summarises the selected reporting categories before a classification exercise is saved or used.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useState } from "react";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";

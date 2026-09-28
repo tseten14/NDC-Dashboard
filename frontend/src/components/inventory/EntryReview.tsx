@@ -1,3 +1,8 @@
+/**
+ * Lets users review imported inventory rows and correct mappings before accepting them into an exercise.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { number, seriesColors } from '@/lib/inventory-presentation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';

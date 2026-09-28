@@ -1,3 +1,8 @@
+/**
+ * Runs production-build browser checks against the full workspace with the live local API.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { defineConfig, devices } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 

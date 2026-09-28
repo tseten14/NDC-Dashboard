@@ -1,3 +1,8 @@
+/**
+ * Configures the frontend build, development proxy, tests, aliases, and production bundle behavior.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";

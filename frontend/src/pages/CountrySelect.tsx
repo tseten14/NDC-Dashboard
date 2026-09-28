@@ -1,4 +1,9 @@
-/** Country choice is required before the workspace opens. */
+/**
+ * Lets visitors choose a national workspace before the application shell opens.
+ *
+ * Uganda is the only complete cockpit today; unavailable countries remain visible
+ * as roadmap context and cannot be selected as if they had verified data.
+ */
 import { useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { COUNTRY_OPTIONS, type CountryCode } from "@/data/countries";

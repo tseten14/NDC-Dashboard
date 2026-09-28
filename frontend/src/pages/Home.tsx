@@ -1,4 +1,9 @@
-/** Entry page for the country's NDC workspace. */
+/**
+ * Provides the selected country's starting page and links into supported tools.
+ *
+ * It also translates legacy target query links into the Dashboard route so old
+ * bookmarks keep their intent without maintaining a second analysis screen.
+ */
 import { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";

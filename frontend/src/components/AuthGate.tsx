@@ -1,3 +1,8 @@
+/**
+ * Controls entry to protected application content; while site-wide login is disabled it passes visitors through without granting operator permissions.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useCurrentRole } from "@/hooks/use-current-role";

@@ -1,3 +1,8 @@
+/**
+ * Keeps the Tenfold programme-delivery view unavailable until sourced readiness and implementation records are connected.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { DataUnavailable } from "@/components/DataUnavailable";
 
 export default function TenfoldLayer() {

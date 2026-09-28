@@ -1,3 +1,8 @@
+/**
+ * Applies the user-selected deterministic recalculation method and records the choice in the exercise audit trail.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { number, seriesColors } from '@/lib/inventory-presentation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';

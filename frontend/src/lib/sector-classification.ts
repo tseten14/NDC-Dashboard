@@ -1,3 +1,8 @@
+/**
+ * Maps supported reporting categories to the classification workspace and preserves saved exercises.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { type ClassificationFramework, type SectorNode, getFramework } from "@/data/classifications";
 
 export function flattenSectors(nodes: SectorNode[]): SectorNode[] {

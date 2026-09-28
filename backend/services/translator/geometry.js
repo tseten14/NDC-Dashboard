@@ -1,3 +1,8 @@
+/**
+ * Validates district geometry and performs the point-in-polygon checks used for mapped source selection.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

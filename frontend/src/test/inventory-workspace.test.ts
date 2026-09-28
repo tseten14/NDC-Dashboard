@@ -1,3 +1,8 @@
+/**
+ * Verifies Inventory Workspace behavior so regressions cannot silently change a published value, evidence boundary, or user workflow.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { describe, it, expect } from 'vitest';
 import { areaKey, bestSource, compositeSeries, createSampleExercise, defaultRecalculation, districtsFor, entryKey, entriesFor, parseSourceCsv, passes, recalculate, reviewCategory, reviseExercise, sourceSeries, statistics, validateExercise, type SeriesPoint } from '@/lib/inventory-workspace';
 const points = (values: (number | null)[]): SeriesPoint[] => values.map((value, i) => ({ year: 2020 + i, value }));

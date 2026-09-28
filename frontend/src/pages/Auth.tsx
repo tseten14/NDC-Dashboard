@@ -1,3 +1,8 @@
+/**
+ * Preserves the sign-in compatibility route while site-wide authentication is disabled and forwards users into country selection.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useEffect, useState, type FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";

@@ -1,3 +1,8 @@
+/**
+ * Records whether each scenario action is included, excluded, or conditional and why.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ExternalLink, Plus, Search, X } from 'lucide-react';

@@ -1,3 +1,8 @@
+/**
+ * Connects Drizzle migration tooling to the PostgreSQL schema and server-only database URL.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({

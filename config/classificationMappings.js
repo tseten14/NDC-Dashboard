@@ -1,4 +1,9 @@
-/** Curated examples, not complete IPCC category crosswalks. */
+/**
+ * Maps the supported reporting categories to exact Climate TRACE subsectors.
+ *
+ * This is a reviewed partial crosswalk. Categories outside it stay unavailable
+ * because a plausible label is not enough to claim a complete IPCC total.
+ */
 export const CLASSIFICATION_MAPPINGS = Object.freeze({
   "1.A.1": { label: "Energy Industries", subsector: "electricity-generation", scope: "Electricity generation only; other energy industries are excluded." },
   "1.A.3": { label: "Transport", subsector: "road-transportation", scope: "Road transportation only; other transport modes are excluded." },

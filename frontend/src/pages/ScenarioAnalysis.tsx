@@ -1,3 +1,8 @@
+/**
+ * Runs the browser-local deterministic scenario workflow from a pinned inventory exercise and explicit user assumptions.
+ *
+ * Read the owning guide before changing source, unit, authentication, or availability rules.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, FlaskConical, FolderOpen, GitBranch, Plus, Settings2 } from 'lucide-react';

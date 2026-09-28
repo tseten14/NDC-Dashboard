@@ -1,69 +1,52 @@
-# Policy Impact Engine
+# Policy Impact evidence contract
 
-Socio-Economic Impact Forecasting for the NDC Data Explorer — maps policy interventions to socio-economic outcomes via the Transition Element Framework (TEF), grounded in UNFCCC KCI case studies.
+The `/policy-impact` interface and API contract are retained, but production forecasts are **disabled**. Earlier demonstration cases named public reports without enough document-specific quantitative evidence to defend the numerical effects. Returning those numbers would make unsourced examples look like verified country evidence.
 
-## Architecture
+## Current behavior
 
+| Method | Path | Current result |
+| --- | --- | --- |
+| `GET` | `/api/v1/policy-cases` | No demonstration case series exposed as production evidence |
+| `GET` | `/api/v1/policy-cases/:id` | Only a reviewed case may be returned |
+| `POST` | `/api/v1/policy-impact/forecast` | Explicit unavailable response while no approved quantitative cases exist |
+| `GET` | `/api/v1/policy-impact/tef-elements?sector=` | Qualitative intervention labels only |
+
+The screen explains the missing evidence instead of substituting a score, analogy, or model estimate.
+
+## Evidence required before enabling forecasts
+
+Each case must contain:
+
+1. A stable public source URL and document title.
+2. Page, table, or section references for every extracted effect.
+3. Geography, reporting period, unit, population, and intervention definition.
+4. The method used by the source to measure or estimate the effect.
+5. A distinction between observed outcomes, modelled outcomes, and author assumptions.
+6. A reviewer decision and review date.
+7. A rule for whether and how the case can be compared with Uganda.
+
+Passing schema validation is not evidence approval. `npm run build:policy-cases` may prepare candidate files, but production remains unavailable until the review fields and source checks pass.
+
+## Retained architecture
+
+```text
+reviewed case JSON
+        |
+backend/services/policyCaseData.js
+        |
+backend/services/policyImpactEngine.js
+        |
+backend/routes/policyImpact.js
+        |
+frontend /policy-impact
 ```
-KCI case JSON (data/policy-cases/*.json)
-        │
-        ▼
-backend/services/policyCaseData.js ──► backend/routes/policyImpact.js (/api/v1/*)
-        │
-        ▼
-backend/services/policyImpactEngine.js (rule-based matching + aggregation)
-        │
-        ▼
-frontend /policy-impact (wizard + results dashboard)
-```
 
-## Data model
+`shared/schemas/policyImpact.schema.js` defines the transport shape. `frontend/src/lib/policy-impact-link.ts` preserves navigation context from qualitative mitigation options. Neither file makes a case verified.
 
-See `shared/schemas/policyImpact.schema.js` for Zod definitions:
+## Re-enablement checklist
 
-- **PolicyCase** — curated KCI extraction with TEF chain, outcomes, trade-offs
-- **ForecastRequest** — objective, intervention, parameters (scale, timeline, sector)
-- **ForecastResponse** — impacts, trade-offs, pathway diagram, matched cases, confidence
-
-## API
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/policy-cases` | List corpus index |
-| GET | `/api/v1/policy-cases/:id` | Full case detail |
-| POST | `/api/v1/policy-impact/forecast` | Run impact forecast |
-| GET | `/api/v1/policy-impact/tef-elements?sector=` | TEF intervention picker |
-
-## Matching algorithm
-
-Weights: sector 40%, intervention_type 35%, region affinity 15%, scale 10%.
-
-Top 3 cases aggregated; each outcome includes provenance string and case IDs.
-
-## Corpus (phase 1)
-
-| ID | Source |
-|----|--------|
-| `kci-brazil-ag-credit` | Brazil agricultural credit |
-| `kci-africa-energy-jobs` | Africa energy transition jobs |
-| `kci-india-carbon-pricing` | India destination-based carbon pricing |
-| `kci-maldives-response` | Maldives response measures |
-
-Build/validate: `npm run build:policy-cases` (`node scripts/build_policy_cases.mjs`)
-
-Colleague sign-off checklist: `node scripts/build_policy_cases.mjs --review`
-
-## Design principles
-
-1. **Evidence-first** — every output traceable to KCI case
-2. **Trade-off explicit** — positive/negative effects and affected groups
-3. **Scenario-based** — scale and timeline sliders
-4. **Transparent** — confidence scores and disclaimers
-5. **No black-box ML** in MVP — rule-based only
-
-## Integration points
-
-- `/climate-finance` — funding step link from results (sector + project query params)
-- `/documents` — intervention pathway (TEF diagram)
-- `/dashboard` — mitigation options deep link via `policy-impact-link.ts` (done)
-- `NdcGapSummary` — objective/gap context on Home and Dashboard briefing
+- At least one approved case passes source and unit checks.
+- Forecast responses cite the exact evidence used for each number.
+- Incomparable cases are excluded rather than down-weighted into a plausible-looking score.
+- Browser tests confirm the unavailable state disappears only when approved evidence exists.
+- The user guide, route directory, data guide, and application data audit are updated in the same change.
