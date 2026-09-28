@@ -12,7 +12,6 @@ import { readPreference, writePreference } from "@/lib/preferences";
 const role = vi.hoisted(() => ({ activeRole: "Admin" }));
 vi.mock("@/hooks/use-current-role", () => ({ useCurrentRole: () => ({ ...role, loading: false }) }));
 vi.mock("@/components/RoleSwitcher", () => ({ RoleSwitcher: () => <button>Choose role</button> }));
-vi.mock("@/components/ThemeToggle", () => ({ ThemeToggle: () => <button>Change theme</button> }));
 
 beforeEach(() => { role.activeRole = "Admin"; });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });

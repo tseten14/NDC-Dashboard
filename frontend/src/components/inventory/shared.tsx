@@ -7,7 +7,7 @@ import { flattenSectors } from '@/lib/sector-classification';
 import type { Exercise } from '@/lib/inventory-workspace';
 export type WorkspaceProps = { exercise: Exercise; update: (patch: Partial<Exercise>, action?: string) => void };
 export function Panel({ children, className = '' }: { children: ReactNode; className?: string }) { return <section className={`rounded-2xl border bg-card p-5  sm:p-6 ${className}`}>{children}</section>; }
-export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'good' | 'warn' }) { return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${tone === 'good' ? 'bg-primary/10 text-primary' : tone === 'warn' ? 'bg-muted text-at-risk dark:text-at-risk' : 'bg-muted text-muted-foreground'}`}>{children}</span>; }
+export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'good' | 'warn' }) { return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${tone === 'good' ? 'bg-primary/10 text-primary' : tone === 'warn' ? 'bg-muted text-at-risk' : 'bg-muted text-muted-foreground'}`}>{children}</span>; }
 export function Select({ label, children, ...props }: SelectHTMLAttributes<HTMLSelectElement> & { label: string }) { return <label className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-muted-foreground">{label}<select {...props} className={`h-10 min-w-0 max-w-full rounded-lg border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${props.className ?? ''}`}>{children}</select></label>; }
 export function CategoryPicker({ exercise, update }: WorkspaceProps) {
   const nodes = flattenSectors(getFramework(exercise.selection.frameworkId)!.hierarchy);

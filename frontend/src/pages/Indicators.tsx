@@ -43,8 +43,8 @@ export default function Indicators() {
   const outgoingLinks = interlinkages.filter(l => l.source_indicator_id === selected?.indicator_id);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] h-full divide-x divide-border">
-      <div className="flex flex-col min-h-0">
+    <div className="grid min-h-full grid-cols-1 divide-y divide-border lg:h-full lg:min-h-0 lg:grid-cols-[360px_minmax(0,1fr)] lg:divide-x lg:divide-y-0">
+      <div className="flex h-[min(24rem,60dvh)] min-h-0 flex-col lg:h-full">
         <div className="p-3 border-b border-border bg-muted/30 space-y-2">
           <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5"><Database className="h-3.5 w-3.5" /> Indicators</h2>
           <div className="flex gap-1.5">
@@ -89,7 +89,7 @@ export default function Indicators() {
       </div>
 
       {selected && (
-        <ScrollArea className="h-full">
+        <ScrollArea className="lg:h-full">
           <div className="p-4 space-y-3 max-w-3xl">
             <div>
               <div className="flex items-center gap-2 flex-wrap">

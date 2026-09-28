@@ -13,7 +13,6 @@ import { Suspense, useEffect, useRef, type ReactNode } from "react";
 import { lazyWithRetry as lazy } from "@/lib/lazy-with-retry";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { ThemeProvider } from "next-themes";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -150,9 +149,9 @@ function ProtectedShell() {
   return (
     <AppStateContext.Provider value={state}>
       <CockpitProvider>
-          <div className="h-dvh flex flex-col w-full relative bg-background">
+          <div data-app-shell className="h-dvh flex flex-col w-full relative bg-background">
             <TopNav />
-            <main ref={mainRef} id="main-content" tabIndex={-1} className="flex-1 min-h-0 overflow-auto relative z-10 outline-none">
+            <main ref={mainRef} id="main-content" tabIndex={-1} className="flex-1 min-h-0 min-w-0 overflow-auto relative z-10 outline-none">
                 <ErrorBoundary key={location.pathname} label="Page">
                 {/* Keyed wrapper remounts page content on route change.
                     No crossfade here: fading heavy pages (e.g. the GL map) on
@@ -222,7 +221,9 @@ function ProtectedShell() {
                 </div>
                 </ErrorBoundary>
               </main>
-            <ScrollToTopButton />
+            <div className="relative z-30 shrink-0">
+              <ScrollToTopButton />
+            </div>
             <Footer />
           </div>
       </CockpitProvider>
@@ -232,7 +233,6 @@ function ProtectedShell() {
 
 const App = () => (
   <ErrorBoundary>
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
@@ -271,7 +271,6 @@ const App = () => (
         </CountryProvider>
       </TooltipProvider>
     </QueryClientProvider>
-    </ThemeProvider>
   </ErrorBoundary>
 );
 

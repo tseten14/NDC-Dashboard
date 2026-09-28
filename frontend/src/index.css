@@ -58,55 +58,6 @@
     --chart-5: 0 0% 37%;
   }
 
-  .dark {
-    color-scheme: dark;
-    --background: 210 12% 10%;
-    --foreground: 210 9% 95%;
-    --card: 210 11% 14%;
-    --card-foreground: 210 9% 95%;
-    --popover: 210 11% 14%;
-    --popover-foreground: 210 9% 95%;
-    --primary: 205 67% 72%;
-    --primary-foreground: 210 25% 9%;
-    --secondary: 210 9% 20%;
-    --secondary-foreground: 210 9% 95%;
-    --muted: 210 9% 20%;
-    --muted-foreground: 210 7% 75%;
-    --accent: 205 67% 72%;
-    --accent-foreground: 210 25% 9%;
-    --destructive: 5 65% 70%;
-    --destructive-foreground: 210 25% 9%;
-    --border: 210 9% 35%;
-    --input: 210 9% 55%;
-    --ring: 205 67% 72%;
-    --on-track: 145 45% 70%;
-    --at-risk: 43 83% 75%;
-    --off-track: 5 65% 70%;
-    --neutral: 210 7% 75%;
-    --highlight: 205 67% 72%;
-    --highlight-foreground: 210 25% 9%;
-    --coral: 5 65% 70%;
-    --ocean: 205 67% 72%;
-    --sidebar-bg: 210 11% 14%;
-    --sidebar-fg: 210 9% 95%;
-    --sidebar-active: 205 67% 72%;
-    --sidebar-hover: 210 9% 20%;
-    --sidebar-background: 210 11% 14%;
-    --sidebar-foreground: 210 9% 95%;
-    --sidebar-primary: 205 67% 72%;
-    --sidebar-primary-foreground: 210 25% 9%;
-    --sidebar-accent: 210 9% 20%;
-    --sidebar-accent-foreground: 210 9% 95%;
-    --sidebar-border: 210 9% 35%;
-    --sidebar-ring: 205 67% 72%;
-    --chart-1: 205 67% 72%;
-    --chart-2: 27 59% 69%;
-    --chart-3: 157 42% 66%;
-    --chart-4: 274 41% 73%;
-    --chart-5: 0 0% 79%;
-  }
-
-
   * { @apply border-border; }
   html, body, #root { min-height: 100%; }
   html { font-size: 16px; scroll-behavior: auto; }
@@ -135,9 +86,6 @@
   .bg-on-track { background: hsl(var(--on-track)); }
   .bg-at-risk { background: hsl(var(--at-risk)); }
   .bg-off-track { background: hsl(var(--off-track)); }
-  .dark .bg-on-track { background: hsl(145 39% 28%); }
-  .dark .bg-at-risk { background: hsl(43 100% 25%); }
-  .dark .bg-off-track { background: hsl(5 51% 42%); }
   .bg-sidebar-dark { background: hsl(var(--sidebar-bg)); }
   .text-sidebar-light { color: hsl(var(--sidebar-fg)); }
   .touch-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -224,8 +172,10 @@ main :is(input, textarea, select):not([type="checkbox"]):not([type="radio"]) { m
 }
 
 @media print {
-  :root, .dark { color-scheme: light; --background: 0 0% 100%; --foreground: 210 13% 12%; --card: 0 0% 100%; --card-foreground: 210 13% 12%; --muted: 0 0% 96%; --muted-foreground: 210 10% 32%; --border: 210 11% 70%; }
+  :root { color-scheme: light; --background: 0 0% 100%; --foreground: 210 13% 12%; --card: 0 0% 100%; --card-foreground: 210 13% 12%; --muted: 0 0% 96%; --muted-foreground: 210 10% 32%; --border: 210 11% 70%; }
   html, body, #root, main { height: auto !important; min-height: 0 !important; overflow: visible !important; background: #fff !important; color: #1b1f23 !important; }
+  [data-app-shell] { display: block; height: auto !important; }
+  main [data-radix-scroll-area-viewport] { height: auto !important; overflow: visible !important; }
   header[data-top-nav] nav, .scroll-top-btn, button, [role="dialog"], [data-radix-popper-content-wrapper] { display: none !important; }
   header[data-top-nav], footer { position: static !important; }
   main > div, main section, main article { break-inside: avoid-page; }

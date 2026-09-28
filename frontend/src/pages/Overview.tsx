@@ -93,32 +93,34 @@ export default function Overview() {
         <Card>
           <CardContent className="p-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Latest Validations</h3>
-            <table className="w-full text-[10px]">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-1 px-1 font-semibold text-muted-foreground">KPI</th>
-                  <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Value</th>
-                  <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Status</th>
-                  <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Updated By</th>
-                  <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Period</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProgress.map(p => {
-                  const kpi = kpis.find(k => k.id === p.kpi_id);
-                  const actor = getActor(p.last_updated_by);
-                  return (
-                    <tr key={p.id} className="border-b border-border/30">
-                      <td className="py-1 px-1 font-medium text-foreground">{kpi?.kpi_name ?? p.kpi_id}</td>
-                      <td className="py-1 px-1">{p.value.toLocaleString()} {kpi?.unit}</td>
-                      <td className="py-1 px-1"><ValidationBadge status={p.validation_status} /></td>
-                      <td className="py-1 px-1 text-muted-foreground">{actor?.display_name ?? p.last_updated_by}</td>
-                      <td className="py-1 px-1 text-muted-foreground">{p.period_start} – {p.period_end}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto" role="region" aria-label="Latest validations" tabIndex={0}>
+              <table className="w-full text-[10px]">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground">KPI</th>
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Value</th>
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Status</th>
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Updated By</th>
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Period</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProgress.map(p => {
+                    const kpi = kpis.find(k => k.id === p.kpi_id);
+                    const actor = getActor(p.last_updated_by);
+                    return (
+                      <tr key={p.id} className="border-b border-border/30">
+                        <td className="py-1 px-1 font-medium text-foreground">{kpi?.kpi_name ?? p.kpi_id}</td>
+                        <td className="py-1 px-1">{p.value.toLocaleString()} {kpi?.unit}</td>
+                        <td className="py-1 px-1"><ValidationBadge status={p.validation_status} /></td>
+                        <td className="py-1 px-1 text-muted-foreground">{actor?.display_name ?? p.last_updated_by}</td>
+                        <td className="py-1 px-1 text-muted-foreground">{p.period_start} – {p.period_end}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
 

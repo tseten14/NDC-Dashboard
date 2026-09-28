@@ -39,9 +39,9 @@ export default function CausalChains() {
             <h2 className="text-base font-bold text-foreground flex items-center gap-1.5"><Workflow className="h-4 w-4" /> Causal Chains</h2>
             <p className="text-xs text-muted-foreground">5-step explainability: how a sector intervention propagates to NDC, NDP-IV and Tenfold outcomes.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2">
             <Select value={selectedId} onValueChange={setSelectedId}>
-              <SelectTrigger className="w-[360px] h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[360px] h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {causalChains.map(c => <SelectItem key={c.causal_chain_id} value={c.causal_chain_id}><span className="text-xs">{c.title}</span></SelectItem>)}
               </SelectContent>

@@ -490,7 +490,7 @@ function FeatureGuideCard({ guide }: { guide: FeatureGuide }) {
 
               <GuideBlock icon={Cog} label="How the app implements it" text={guide.howItWorks} />
               <GuideBlock icon={CheckCircle2} label="What result you should expect" text={guide.result} tone="text-on-track" />
-              <GuideBlock icon={AlertCircle} label="What it is not / limitations" text={guide.limitations} tone="text-at-risk dark:text-at-risk" />
+              <GuideBlock icon={AlertCircle} label="What it is not / limitations" text={guide.limitations} tone="text-at-risk" />
 
               <div>
                 <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground mb-1.5">

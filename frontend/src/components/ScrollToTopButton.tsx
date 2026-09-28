@@ -62,7 +62,7 @@ export function ScrollToTopButton() {
       aria-hidden={!visible}
       tabIndex={visible ? 0 : -1}
       className={cn(
-        "scroll-top-btn fixed bottom-16 right-4 z-30 flex h-10 w-10 items-center justify-center rounded-full",
+        "scroll-top-btn absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full",
         "bg-primary text-primary-foreground  ",
         "hover:scale-110    ",
         visible && "scroll-top-visible",

@@ -6,7 +6,7 @@ async function openUganda(page: Page) {
   await expect(page.getByRole("heading", { name: "Climate evidence and planning" })).toBeVisible();
 }
 
-test("home loads without dashboard requests; all tools and theme remain accessible", async ({ page }) => {
+test("home loads without dashboard requests; all tools remain accessible", async ({ page }) => {
   const requests: string[] = [];
   const crashes: string[] = [];
   page.on("request", (request) => { requests.push(request.url()); });
@@ -16,9 +16,7 @@ test("home loads without dashboard requests; all tools and theme remain accessib
   expect(requests.filter((url) => /\/emissions\/(dashboard|districts)|\/catalog\/|\/indicators\/panel/.test(url))).toEqual([]);
   await expect(page.getByRole("combobox", { name: "Switch active role" })).toContainText("Admin");
   await page.screenshot({ path: "test-results/ux-home-desktop-light.png" });
-  await page.getByRole("button", { name: "Switch to dark mode" }).click();
-  await expect(page.locator("html")).toHaveClass(/dark/);
-  await page.screenshot({ path: "test-results/ux-home-desktop-dark.png" });
+  await expect(page.getByRole("button", { name: /Switch to .* mode/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Open all tools" }).click();
   await expect(page.getByRole("navigation", { name: "All workspace tools" }).getByRole("link")).toHaveCount(14);
   await page.keyboard.press("Escape");

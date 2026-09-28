@@ -12,10 +12,10 @@ export const DEAL_STAGES = ["Concept", "Pitched", "Under review", "In delivery"]
 export type DealStage = (typeof DEAL_STAGES)[number];
 
 const STAGE_TONE: Record<DealStage, string> = {
-  Concept:        "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30",
-  Pitched:        "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30",
-  "Under review": "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",
-  "In delivery":  "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+  Concept:        "bg-slate-500/10 text-slate-600 border-slate-500/30",
+  Pitched:        "bg-blue-500/10 text-blue-600 border-blue-500/30",
+  "Under review": "bg-amber-500/10 text-amber-600 border-amber-500/30",
+  "In delivery":  "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
 };
 
 export function stageTone(stage: DealStage): string {

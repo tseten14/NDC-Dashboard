@@ -25,9 +25,7 @@ test('classification: exercise creation, keyboard selection, persistence and saf
   await page.setViewportSize({ width: 1440, height: 1000 });
   const crashes: string[] = []; page.on('pageerror', e => crashes.push(e.message));
   await openWorkspace(page); await page.screenshot({ path: 'test-results/inventory-exercises.png' });
-  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
-  await expect(page.locator('html')).toHaveClass(/dark/);
-  await page.screenshot({ path: 'test-results/inventory-exercises-dark.png' });
+  await page.screenshot({ path: 'test-results/inventory-exercises-light.png' });
   await create(page);
   await page.getByRole('button', { name: /^Expand 3 Agriculture/ }).click();
   const livestock = page.getByRole('checkbox', { name: '3.A Livestock' });

@@ -6,7 +6,6 @@ import typography from "@tailwindcss/typography";
 const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 export default {
-  darkMode: ["class"],
   content: [
     path.join(frontendRoot, "index.html"),
     path.join(frontendRoot, "pages/**/*.{ts,tsx}"),

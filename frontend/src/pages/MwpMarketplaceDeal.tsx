@@ -30,15 +30,15 @@ import {
 /* ── Score styling ───────────────────────────────────────────────────── */
 
 const SCORE_STYLE: Record<string, { icon: typeof CheckCircle2; color: string; label: string }> = {
-  strong:   { icon: CheckCircle2, color: "text-on-track dark:text-on-track", label: "Strong" },
-  adequate: { icon: Circle,       color: "text-at-risk dark:text-at-risk",   label: "Adequate" },
-  weak:     { icon: AlertCircle,  color: "text-off-track dark:text-off-track",     label: "Weak" },
+  strong:   { icon: CheckCircle2, color: "text-on-track", label: "Strong" },
+  adequate: { icon: Circle,       color: "text-at-risk",   label: "Adequate" },
+  weak:     { icon: AlertCircle,  color: "text-off-track",     label: "Weak" },
 };
 
 const DECISION_STYLE: Record<string, { bg: string; label: string }> = {
-  interest:  { bg: "bg-muted text-on-track dark:text-on-track border-border", label: "Funder interest expressed" },
-  questions: { bg: "bg-muted text-at-risk dark:text-at-risk border-border",       label: "Questions pending" },
-  pass:      { bg: "bg-muted text-off-track dark:text-off-track border-border",           label: "Not ready — needs more work" },
+  interest:  { bg: "bg-muted text-on-track border-border", label: "Funder interest expressed" },
+  questions: { bg: "bg-muted text-at-risk border-border",       label: "Questions pending" },
+  pass:      { bg: "bg-muted text-off-track border-border",           label: "Not ready — needs more work" },
 };
 
 /* ── Sub-components ──────────────────────────────────────────────────── */

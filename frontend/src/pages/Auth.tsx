@@ -64,7 +64,7 @@ export default function Auth() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-4">
+    <main className="flex min-h-dvh items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-3 text-left">
           <CardTitle>NDC Data Explorer</CardTitle>

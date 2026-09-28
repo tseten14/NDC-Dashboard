@@ -35,7 +35,7 @@ export default function NDPIVLayer() {
               <Card key={prog.id} className={cn("transition-all", isExpanded && "ring-1 ring-accent")}>
                 <CardContent className="p-3">
                   <button className="w-full text-left" onClick={() => setExpandedProg(isExpanded ? null : prog.id)}>
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-wrap items-start justify-between gap-y-2 gap-2">
                       <div>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-[9px] h-4 font-mono">{prog.program_code}</Badge>

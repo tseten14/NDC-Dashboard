@@ -68,7 +68,7 @@ export default function InvestmentTemplates() {
                   if (!kpi) return null;
                   const progress = computeKPIProgress(kpi);
                   return (
-                    <div key={kpiId} className="flex items-center justify-between py-1 border-b border-border/30 last:border-0">
+                    <div key={kpiId} className="flex flex-wrap items-center justify-between gap-2 py-1 border-b border-border/30 last:border-0">
                       <div>
                         <span className="text-[10px] font-medium text-foreground">{kpi.kpi_name}</span>
                         {kpi.is_proxy && <span className="text-[8px] text-at-risk ml-1">(proxy)</span>}
@@ -85,7 +85,7 @@ export default function InvestmentTemplates() {
               </div>
 
               {/* Budget & readiness */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Budget Code</h4>
                   <p className="text-[10px] font-mono text-foreground">{activity.budget_code_alignment}</p>
@@ -107,7 +107,7 @@ export default function InvestmentTemplates() {
                   ].map(({ role, actorId }) => {
                     const actor = getActor(actorId);
                     return (
-                      <div key={role} className="flex items-center justify-between text-[10px]">
+                      <div key={role} className="flex flex-wrap items-center justify-between gap-2 text-[10px]">
                         <span className="text-muted-foreground">{role}</span>
                         <span className="font-medium text-foreground">{actor?.display_name ?? actorId} ({actor?.org_unit})</span>
                       </div>
@@ -120,11 +120,11 @@ export default function InvestmentTemplates() {
               <div className="flex gap-3">
                 <div>
                   <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Ministries</h4>
-                  <div className="flex gap-1">{activity.ministry_badges.map(m => <Badge key={m} variant="outline" className="text-[9px] h-4">{m}</Badge>)}</div>
+                  <div className="flex flex-wrap gap-1">{activity.ministry_badges.map(m => <Badge key={m} variant="outline" className="text-[9px] h-4">{m}</Badge>)}</div>
                 </div>
                 <div>
                   <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Districts</h4>
-                  <div className="flex gap-1">{activity.district_tags.map(d => <Badge key={d} variant="outline" className="text-[9px] h-4">{d}</Badge>)}</div>
+                  <div className="flex flex-wrap gap-1">{activity.district_tags.map(d => <Badge key={d} variant="outline" className="text-[9px] h-4">{d}</Badge>)}</div>
                 </div>
               </div>
 

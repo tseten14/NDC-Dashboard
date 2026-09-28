@@ -228,7 +228,7 @@ export function MarkdownDocument({
   return (
     <article
       className={cn(
-        "prose prose-sm sm:prose-base prose-neutral dark:prose-invert max-w-none",
+        "prose prose-sm sm:prose-base prose-neutral max-w-none",
         "prose-headings:font-brand prose-headings:text-foreground",
         "prose-p:text-muted-foreground prose-p:leading-relaxed",
         "prose-li:text-muted-foreground",

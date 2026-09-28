@@ -50,7 +50,7 @@ function PctBar({ pct }: { pct: number }) {
       <div className="w-20 h-2 rounded-full bg-muted overflow-hidden">
         <div className={cn("h-full rounded-full", color)} style={{ width: `${Math.min(100, pct * 100).toFixed(0)}%` }} />
       </div>
-      <span className={cn("text-[10px] font-semibold", pct >= 0.7 ? "text-on-track dark:text-on-track" : pct >= 0.4 ? "text-at-risk dark:text-at-risk" : "text-off-track dark:text-off-track")}>
+      <span className={cn("text-[10px] font-semibold", pct >= 0.7 ? "text-on-track" : pct >= 0.4 ? "text-at-risk" : "text-off-track")}>
         {(pct * 100).toFixed(0)}%
       </span>
     </div>
@@ -69,7 +69,7 @@ export default function FinancialFlow() {
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4 max-w-7xl">
           {/* Header */}
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
                 <Coins className="h-4 w-4" /> Financial Flows
@@ -96,7 +96,7 @@ export default function FinancialFlow() {
             <Card>
               <CardContent className="p-3">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Avg Disbursement Rate</p>
-                <p className={cn("text-xl font-bold mt-0.5", avgDisbRate >= 0.7 ? "text-on-track dark:text-on-track" : avgDisbRate >= 0.4 ? "text-at-risk dark:text-at-risk" : "text-off-track dark:text-off-track")}>
+                <p className={cn("text-xl font-bold mt-0.5", avgDisbRate >= 0.7 ? "text-on-track" : avgDisbRate >= 0.4 ? "text-at-risk" : "text-off-track")}>
                   {(avgDisbRate * 100).toFixed(1)}%
                 </p>
               </CardContent>
@@ -106,37 +106,39 @@ export default function FinancialFlow() {
           {/* Table */}
           <Card>
             <CardContent className="p-0">
-              <table className="w-full text-[10px]">
-                <thead className="bg-muted/30">
-                  <tr className="border-b border-border text-muted-foreground">
-                    <th className="text-left py-1.5 px-2 font-semibold">Project</th>
-                    <th className="text-left py-1.5 px-2 font-semibold">District</th>
-                    <th className="text-left py-1.5 px-2 font-semibold">Status</th>
-                    <th className="text-right py-1.5 px-2 font-semibold">Committed (USD)</th>
-                    <th className="text-right py-1.5 px-2 font-semibold">Disbursed</th>
-                    <th className="text-right py-1.5 px-2 font-semibold">Spent</th>
-                    <th className="py-1.5 px-2 font-semibold">Disbursement %</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map(({ activity, committed, disbursed, spent, disbRate }) => (
-                    <tr key={activity.id} className="border-b border-border/30 ">
-                      <td className="py-1.5 px-2 font-medium text-foreground max-w-[200px]">
-                        <p className="truncate">{activity.name}</p>
-                        <p className="text-[9px] text-muted-foreground truncate">{activity.implementing_entity}</p>
-                      </td>
-                      <td className="py-1.5 px-2 text-muted-foreground">{activity.district}</td>
-                      <td className="py-1.5 px-2">
-                        <Badge variant="outline" className="text-[9px] h-4">{activity.status}</Badge>
-                      </td>
-                      <td className="py-1.5 px-2 text-right font-medium text-foreground">{fmt(committed)}</td>
-                      <td className="py-1.5 px-2 text-right text-muted-foreground">{fmt(disbursed)}</td>
-                      <td className="py-1.5 px-2 text-right text-muted-foreground">{fmt(spent)}</td>
-                      <td className="py-1.5 px-2"><PctBar pct={disbRate} /></td>
+              <div className="overflow-x-auto" role="region" aria-label="Project financial flows" tabIndex={0}>
+                <table className="w-full text-[10px]">
+                  <thead className="bg-muted/30">
+                    <tr className="border-b border-border text-muted-foreground">
+                      <th className="text-left py-1.5 px-2 font-semibold">Project</th>
+                      <th className="text-left py-1.5 px-2 font-semibold">District</th>
+                      <th className="text-left py-1.5 px-2 font-semibold">Status</th>
+                      <th className="text-right py-1.5 px-2 font-semibold">Committed (USD)</th>
+                      <th className="text-right py-1.5 px-2 font-semibold">Disbursed</th>
+                      <th className="text-right py-1.5 px-2 font-semibold">Spent</th>
+                      <th className="py-1.5 px-2 font-semibold">Disbursement %</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {rows.map(({ activity, committed, disbursed, spent, disbRate }) => (
+                      <tr key={activity.id} className="border-b border-border/30 ">
+                        <td className="py-1.5 px-2 font-medium text-foreground max-w-[200px]">
+                          <p className="truncate">{activity.name}</p>
+                          <p className="text-[9px] text-muted-foreground truncate">{activity.implementing_entity}</p>
+                        </td>
+                        <td className="py-1.5 px-2 text-muted-foreground">{activity.district}</td>
+                        <td className="py-1.5 px-2">
+                          <Badge variant="outline" className="text-[9px] h-4">{activity.status}</Badge>
+                        </td>
+                        <td className="py-1.5 px-2 text-right font-medium text-foreground">{fmt(committed)}</td>
+                        <td className="py-1.5 px-2 text-right text-muted-foreground">{fmt(disbursed)}</td>
+                        <td className="py-1.5 px-2 text-right text-muted-foreground">{fmt(spent)}</td>
+                        <td className="py-1.5 px-2"><PctBar pct={disbRate} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
 

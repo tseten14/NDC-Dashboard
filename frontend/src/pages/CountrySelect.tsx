@@ -5,6 +5,7 @@ import { COUNTRY_OPTIONS, type CountryCode } from "@/data/countries";
 import { useCountry } from "@/context/CountryContext";
 import { useCurrentRole } from "@/hooks/use-current-role";
 import { LOGIN_AUTH_ENABLED } from "@/lib/auth-config";
+import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,18 +52,18 @@ export default function CountrySelect() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+    <div className="flex min-h-dvh flex-col bg-background text-foreground">
+      <header className="shrink-0 border-b border-border">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <span className="text-lg font-bold">NDC Data Explorer</span>
           {LOGIN_AUTH_ENABLED && user?.email && <Button variant="outline" onClick={() => { void handleSignOut(); }} disabled={signingOut}>
             {signingOut ? "Signing out…" : `Sign out (${user.email})`}
           </Button>}
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+      <main id="main-content" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
         <nav aria-label="Breadcrumb" className="mb-8 text-sm text-muted-foreground">NDC Data Explorer / Select country</nav>
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,28rem)]">
+        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,28rem)]">
           <section aria-labelledby="country-heading">
             <h1 id="country-heading" className="text-3xl font-bold leading-tight sm:text-4xl">Select a country</h1>
             <p className="mt-4 max-w-prose text-base text-muted-foreground">
@@ -92,7 +93,7 @@ export default function CountrySelect() {
           </section>
         </div>
       </main>
-      <footer className="border-t border-border px-4 py-4 text-sm text-muted-foreground sm:px-6">Data: Climate TRACE (CC BY 4.0) · NDC alignment: Uganda Updated NDC (2022)</footer>
+      <Footer contentClassName="max-w-6xl py-4 lg:px-6">Data: Climate TRACE (CC BY 4.0) · NDC alignment: Uganda Updated NDC (2022)</Footer>
     </div>
   );
 }

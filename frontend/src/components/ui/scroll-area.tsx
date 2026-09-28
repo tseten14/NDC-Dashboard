@@ -11,8 +11,11 @@ const ScrollArea = React.forwardRef<
   // and thus the viewport's `overflow: scroll` — only mounts on pointer hover, so
   // touch devices (no hover) get `overflow: hidden` and the content can't scroll.
   // "auto" enables overflow whenever content overflows, on any input device.
-  <ScrollAreaPrimitive.Root ref={ref} type={type} className={cn("relative overflow-hidden", className)} {...props}>
-    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">{children}</ScrollAreaPrimitive.Viewport>
+  <ScrollAreaPrimitive.Root ref={ref} type={type} className={cn("relative min-h-0 min-w-0 overflow-hidden", className)} {...props}>
+    {/* Radix's intrinsic table wrapper can widen the entire page to the width
+        of a table or diagram. Constrain vertical scrollers so each page's
+        explicit horizontal scroll regions work at narrow widths. */}
+    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit] [&>div]:!block">{children}</ScrollAreaPrimitive.Viewport>
     <ScrollBar />
     <ScrollAreaPrimitive.Corner />
   </ScrollAreaPrimitive.Root>

@@ -32,7 +32,7 @@ export default function FinanceInvestment() {
       <CockpitBar />
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4 max-w-7xl">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h1 className="text-lg font-bold text-foreground flex items-center gap-2"><Wallet className="h-4 w-4" /> Finance & Investment</h1>
               <p className="text-xs text-muted-foreground">Each target's conditionality, finance gap and bankability — generate Investment Note + Minister one-pager.</p>
@@ -45,45 +45,47 @@ export default function FinanceInvestment() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
             <Card>
               <CardContent className="p-0">
-                <table className="w-full text-[10px]">
-                  <thead className="bg-muted/30">
-                    <tr className="border-b border-border text-muted-foreground">
-                      <th className="text-left py-1.5 px-2 font-semibold">Target / Indicator</th>
-                      <th className="text-left py-1.5 px-2 font-semibold">Strategy</th>
-                      <th className="text-left py-1.5 px-2 font-semibold">Conditionality</th>
-                      <th className="text-left py-1.5 px-2 font-semibold">Instruments</th>
-                      <th className="text-right py-1.5 px-2 font-semibold">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {investable.map(i => (
-                      <tr key={i.id} className={cn("border-b border-border/30  cursor-pointer", picked?.id === i.id && "bg-primary/5")}
-                        onClick={() => setPicked(i)}>
-                        <td className="py-1 px-2 font-medium text-foreground">{i.indicator_name}</td>
-                        <td className="py-1 px-2">{i.strategy}</td>
-                        <td className="py-1 px-2">
-                          {i.conditionality ? <Badge variant="outline" className="text-[9px] h-4">{i.conditionality}</Badge> : <span className="text-muted-foreground">—</span>}
-                        </td>
-                        <td className="py-1 px-2">
-                          <div className="flex flex-wrap gap-0.5">
-                            {(i.potential_instruments ?? []).map(p => <Badge key={p} variant="outline" className="text-[9px] h-3.5">{p}</Badge>)}
-                          </div>
-                        </td>
-                        <td className="py-1 px-2 text-right">
-                          <div className="inline-flex items-center gap-1">
-                            <Button size="sm" variant="ghost" className="h-5 text-[10px] px-1.5"
-                              onClick={async (e) => { e.stopPropagation(); await (await import("@/lib/finance-exports")).exportInvestmentNoteFromIndicator(i); toast.success("Investment Note exported"); }}>
-                              <FileText className="h-2.5 w-2.5 mr-0.5" /> Note
-                            </Button>
-                            <Button asChild size="sm" variant="ghost" className="h-5 text-[10px] px-1.5" onClick={(e) => e.stopPropagation()}>
-                              <Link to="/evidence">→ Evidence</Link>
-                            </Button>
-                          </div>
-                        </td>
+                <div className="overflow-x-auto" role="region" aria-label="Finance opportunities" tabIndex={0}>
+                  <table className="w-full text-[10px]">
+                    <thead className="bg-muted/30">
+                      <tr className="border-b border-border text-muted-foreground">
+                        <th className="text-left py-1.5 px-2 font-semibold">Target / Indicator</th>
+                        <th className="text-left py-1.5 px-2 font-semibold">Strategy</th>
+                        <th className="text-left py-1.5 px-2 font-semibold">Conditionality</th>
+                        <th className="text-left py-1.5 px-2 font-semibold">Instruments</th>
+                        <th className="text-right py-1.5 px-2 font-semibold">Action</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {investable.map(i => (
+                        <tr key={i.id} className={cn("border-b border-border/30  cursor-pointer", picked?.id === i.id && "bg-primary/5")}
+                          onClick={() => setPicked(i)}>
+                          <td className="py-1 px-2 font-medium text-foreground">{i.indicator_name}</td>
+                          <td className="py-1 px-2">{i.strategy}</td>
+                          <td className="py-1 px-2">
+                            {i.conditionality ? <Badge variant="outline" className="text-[9px] h-4">{i.conditionality}</Badge> : <span className="text-muted-foreground">—</span>}
+                          </td>
+                          <td className="py-1 px-2">
+                            <div className="flex flex-wrap gap-0.5">
+                              {(i.potential_instruments ?? []).map(p => <Badge key={p} variant="outline" className="text-[9px] h-3.5">{p}</Badge>)}
+                            </div>
+                          </td>
+                          <td className="py-1 px-2 text-right">
+                            <div className="inline-flex items-center gap-1">
+                              <Button size="sm" variant="ghost" className="h-5 text-[10px] px-1.5"
+                                onClick={async (e) => { e.stopPropagation(); await (await import("@/lib/finance-exports")).exportInvestmentNoteFromIndicator(i); toast.success("Investment Note exported"); }}>
+                                <FileText className="h-2.5 w-2.5 mr-0.5" /> Note
+                              </Button>
+                              <Button asChild size="sm" variant="ghost" className="h-5 text-[10px] px-1.5" onClick={(e) => e.stopPropagation()}>
+                                <Link to="/evidence">→ Evidence</Link>
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </CardContent>
             </Card>
 

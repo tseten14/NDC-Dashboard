@@ -42,7 +42,7 @@ export default function Projections() {
               <CardContent className="p-3">
                 <h3 className="text-xs font-bold text-foreground mb-1">{projection.name}</h3>
                 <p className="text-[10px] text-muted-foreground">{projection.assumptions_note}</p>
-                <div className="flex gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-2">
                   <Badge variant="outline" className="text-[9px] h-4">{projection.start_year}–{projection.end_year}</Badge>
                   {projection.linked_strategies.map(sid => {
                     const s = strategies.find(st => st.id === sid);
@@ -59,7 +59,7 @@ export default function Projections() {
                 {projection.drivers.map(d => {
                   const kpi = kpis.find(k => k.id === d.kpi_id);
                   return (
-                    <div key={d.kpi_id} className="py-1.5 border-b border-border/30 last:border-0 flex items-center justify-between">
+                    <div key={d.kpi_id} className="py-1.5 border-b border-border/30 last:border-0 flex flex-wrap items-center justify-between gap-2">
                       <span className="text-[10px] font-medium text-foreground">{kpi?.kpi_name ?? d.kpi_id}</span>
                       <Badge variant="outline" className="text-[9px] h-4 font-mono">{d.assumption_delta_or_path}</Badge>
                     </div>

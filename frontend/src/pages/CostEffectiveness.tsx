@@ -90,7 +90,7 @@ export default function CostEffectiveness() {
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4 max-w-7xl">
           {/* Header */}
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" /> Cost Effectiveness
@@ -105,7 +105,7 @@ export default function CostEffectiveness() {
             <Card>
               <CardContent className="p-3">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Best Cost / tCO2e</p>
-                <p className="text-xl font-bold text-on-track dark:text-on-track mt-0.5">${bestCost.toLocaleString()}</p>
+                <p className="text-xl font-bold text-on-track mt-0.5">${bestCost.toLocaleString()}</p>
               </CardContent>
             </Card>
             <Card>
@@ -125,63 +125,65 @@ export default function CostEffectiveness() {
           {/* Table */}
           <Card>
             <CardContent className="p-0">
-              <table className="w-full text-[10px]">
-                <thead className="bg-muted/30">
-                  <tr className="border-b border-border text-muted-foreground">
-                    <th className="text-left py-1.5 px-2 font-semibold w-8">Rank</th>
-                    <th className="text-left py-1.5 px-2 font-semibold">Intervention</th>
-                    <th className="text-left py-1.5 px-2 font-semibold">Sector</th>
-                    <th className="text-right py-1.5 px-2 font-semibold">Budget</th>
-                    <th className="text-right py-1.5 px-2 font-semibold">tCO2e Avoided</th>
-                    <th className="py-1.5 px-2 font-semibold">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-5 text-[10px] px-1 -ml-1 gap-0.5 font-semibold text-muted-foreground "
-                        onClick={() => setSortAsc(p => !p)}
-                      >
-                        <ArrowUpDown className="h-2.5 w-2.5" /> Cost / tCO2e
-                      </Button>
-                    </th>
-                    <th className="text-left py-1.5 px-2 font-semibold">Co-benefits</th>
-                    <th className="text-left py-1.5 px-2 font-semibold">NDC Link</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, i) => {
-                    const isBest = bestIds.has(row.id);
-                    return (
-                      <tr key={row.id} className={cn("border-b border-border/30 ", isBest && "bg-muted")}>
-                        <td className="py-1.5 px-2 text-muted-foreground font-mono">{i + 1}</td>
-                        <td className="py-1.5 px-2">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-medium text-foreground">{row.name}</span>
-                            {isBest && (
-                              <Badge className="text-[9px] h-4 bg-muted text-on-track dark:text-on-track border-border border">
-                                ⭐ Best value
-                              </Badge>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-1.5 px-2">
-                          <Badge variant="outline" className="text-[9px] h-4">{row.sector}</Badge>
-                        </td>
-                        <td className="py-1.5 px-2 text-right text-muted-foreground">{fmt(row.budget)}</td>
-                        <td className="py-1.5 px-2 text-right text-muted-foreground">{row.tco2e.toLocaleString()}</td>
-                        <td className="py-1.5 px-2 text-right font-bold text-foreground">${row.costPerTco2e.toLocaleString()}</td>
-                        <td className="py-1.5 px-2">
-                          <div className="flex flex-wrap gap-0.5">
-                            {row.coBenefits.map(b => (
-                              <Badge key={b} variant="outline" className="text-[9px] h-3.5">{b}</Badge>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="py-1.5 px-2 text-muted-foreground">{row.ndcLink}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto" role="region" aria-label="Intervention costs" tabIndex={0}>
+                <table className="w-full text-[10px]">
+                  <thead className="bg-muted/30">
+                    <tr className="border-b border-border text-muted-foreground">
+                      <th className="text-left py-1.5 px-2 font-semibold w-8">Rank</th>
+                      <th className="text-left py-1.5 px-2 font-semibold">Intervention</th>
+                      <th className="text-left py-1.5 px-2 font-semibold">Sector</th>
+                      <th className="text-right py-1.5 px-2 font-semibold">Budget</th>
+                      <th className="text-right py-1.5 px-2 font-semibold">tCO2e Avoided</th>
+                      <th className="py-1.5 px-2 font-semibold">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 text-[10px] px-1 -ml-1 gap-0.5 font-semibold text-muted-foreground "
+                          onClick={() => setSortAsc(p => !p)}
+                        >
+                          <ArrowUpDown className="h-2.5 w-2.5" /> Cost / tCO2e
+                        </Button>
+                      </th>
+                      <th className="text-left py-1.5 px-2 font-semibold">Co-benefits</th>
+                      <th className="text-left py-1.5 px-2 font-semibold">NDC Link</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, i) => {
+                      const isBest = bestIds.has(row.id);
+                      return (
+                        <tr key={row.id} className={cn("border-b border-border/30 ", isBest && "bg-muted")}>
+                          <td className="py-1.5 px-2 text-muted-foreground font-mono">{i + 1}</td>
+                          <td className="py-1.5 px-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-medium text-foreground">{row.name}</span>
+                              {isBest && (
+                                <Badge className="text-[9px] h-4 bg-muted text-on-track border-border border">
+                                  ⭐ Best value
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-1.5 px-2">
+                            <Badge variant="outline" className="text-[9px] h-4">{row.sector}</Badge>
+                          </td>
+                          <td className="py-1.5 px-2 text-right text-muted-foreground">{fmt(row.budget)}</td>
+                          <td className="py-1.5 px-2 text-right text-muted-foreground">{row.tco2e.toLocaleString()}</td>
+                          <td className="py-1.5 px-2 text-right font-bold text-foreground">${row.costPerTco2e.toLocaleString()}</td>
+                          <td className="py-1.5 px-2">
+                            <div className="flex flex-wrap gap-0.5">
+                              {row.coBenefits.map(b => (
+                                <Badge key={b} variant="outline" className="text-[9px] h-3.5">{b}</Badge>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-1.5 px-2 text-muted-foreground">{row.ndcLink}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
 

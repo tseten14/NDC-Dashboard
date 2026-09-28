@@ -150,26 +150,28 @@ export default function DeliveryAccountability() {
                     {selected.decision_log.length === 0 ? (
                       <p className="text-[10px] text-muted-foreground italic">No decisions logged.</p>
                     ) : (
-                      <table className="w-full text-[10px]">
-                        <thead><tr className="border-b border-border text-muted-foreground">
-                          <th className="text-left py-1 font-semibold">Date</th>
-                          <th className="text-left py-1 font-semibold">Who</th>
-                          <th className="text-left py-1 font-semibold">Evidence</th>
-                          <th className="text-left py-1 font-semibold">Change</th>
-                          <th className="text-left py-1 font-semibold">Next action</th>
-                        </tr></thead>
-                        <tbody>
-                          {selected.decision_log.map(d => (
-                            <tr key={d.id} className="border-b border-border/30">
-                              <td className="py-1">{d.date}</td>
-                              <td className="py-1">{d.who}</td>
-                              <td className="py-1 text-muted-foreground">{d.evidence}</td>
-                              <td className="py-1">{d.what_changed}</td>
-                              <td className="py-1 text-foreground">{d.next_action}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <div className="overflow-x-auto" role="region" aria-label="Delivery history" tabIndex={0}>
+                        <table className="w-full text-[10px]">
+                          <thead><tr className="border-b border-border text-muted-foreground">
+                            <th className="text-left py-1 font-semibold">Date</th>
+                            <th className="text-left py-1 font-semibold">Who</th>
+                            <th className="text-left py-1 font-semibold">Evidence</th>
+                            <th className="text-left py-1 font-semibold">Change</th>
+                            <th className="text-left py-1 font-semibold">Next action</th>
+                          </tr></thead>
+                          <tbody>
+                            {selected.decision_log.map(d => (
+                              <tr key={d.id} className="border-b border-border/30">
+                                <td className="py-1">{d.date}</td>
+                                <td className="py-1">{d.who}</td>
+                                <td className="py-1 text-muted-foreground">{d.evidence}</td>
+                                <td className="py-1">{d.what_changed}</td>
+                                <td className="py-1 text-foreground">{d.next_action}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
                   </CardContent>
                 </Card>

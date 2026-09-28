@@ -7,7 +7,6 @@ import { LOGIN_AUTH_ENABLED } from "@/lib/auth-config";
 import { lockOperatorSession } from "@/lib/operator-session";
 import { isPrimaryNavVisible } from "@/lib/role-capabilities";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -71,7 +70,6 @@ export function TopNav() {
           {!loading && <RoleSwitcher />}
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <ThemeToggle />
           {LOGIN_AUTH_ENABLED && <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-10 w-10" aria-label="Account menu"><UserRound className="h-4 w-4" /></Button>
