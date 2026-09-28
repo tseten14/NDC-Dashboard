@@ -14,7 +14,7 @@ import { Globe2, LogOut, Menu, UserRound } from "lucide-react";
 import { PRIMARY_NAV } from "@/lib/navigation";
 import { toast } from "sonner";
 
-const ALL_TOOLS_ONLY_PATHS = new Set(["/sector-classification", "/scenario-analysis"]);
+const ALL_TOOLS_ONLY_PATHS = new Set(["/scenario-analysis"]);
 
 
 export function TopNav() {

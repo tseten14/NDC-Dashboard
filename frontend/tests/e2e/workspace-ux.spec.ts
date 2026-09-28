@@ -50,10 +50,15 @@ test.describe("phone workspace", () => {
     await page.getByRole("link", { name: "Explore a district", exact: true }).click();
     await expect(page.getByRole("combobox", { name: "Select district" })).toBeEnabled({ timeout: 30_000 });
     await page.getByRole("combobox", { name: "Select district" }).selectOption({ label: "Kampala" });
+    await expect(page.getByRole("checkbox", { name: "Climate TRACE sources" })).not.toBeChecked();
     const exportButton = page.getByRole("button", { name: "CSV", exact: true });
     await expect(exportButton).toBeAttached({ timeout: 90_000 });
     await page.getByRole("link", { name: "Insights", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Kampala", exact: true })).toBeInViewport();
+    await expect(page.getByRole("region", { name: "National comparison" })).toContainText("Mapped records across 135 districts");
+    await expect(page.getByRole("region", { name: "Data source" })).toContainText("published release 5.11.0");
+    await page.getByText("Data and method", { exact: true }).click();
+    await expect(page.getByText(/A mapped record is one Climate TRACE source/)).toBeVisible();
     await exportButton.scrollIntoViewIfNeeded();
     await expect(exportButton).toBeInViewport();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

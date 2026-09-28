@@ -341,6 +341,33 @@ export interface TranslatorBoundary { source: string; year: number; version: str
 export interface TranslatorMetadata { years: number[]; default_year: number; providers: TranslatorProvider[]; boundary: TranslatorBoundary }
 export interface TranslatorSources { year: number; points: MapSourcePoint[]; coverage: TranslatorCoverage; retrieved_at: string; period: TranslatorPeriod }
 
+export interface ClimateTracePublishedRelease { version: string; published_at: string; data_through: string; verified_at: string; url: string }
+export interface ClassificationCategory { code: string; label: string; subsector: string; scope: string; coverage: "partial" }
+export interface ClassificationCatalog {
+  geography: "UGA"; unit: "MtCO2e"; gas: string; year_min: number;
+  latest_complete_year: number; latest_available_year: number;
+  categories: ClassificationCategory[];
+  provenance: { source: string; api_version: string; api_url: string; published_release: ClimateTracePublishedRelease; api_dataset_release: null };
+}
+export interface ClassificationSeries {
+  category: ClassificationCategory; geography: "UGA"; unit: "MtCO2e"; gas: string;
+  since: number; to: number;
+  series: Array<{ year: number; value_mtco2e: number | null; status: "available" | "no_data" | "upstream_error"; complete_year: boolean; source_url: string | null }>;
+  retrieved_at: string;
+  provenance: ClassificationCatalog["provenance"];
+}
+export interface TranslatorReconciliation {
+  year: number; gas: string; unit: "MtCO2e"; boundary_count: number;
+  national_aggregate_mtco2e: number; mapped_district_rollup_mtco2e: number;
+  difference_mtco2e: number | null; assigned_source_count: number;
+  unmatched_source_count: number; multiple_boundary_source_count: number;
+  missing_emissions_count: number; excluded_missing_coordinates: number;
+  districts: Array<{ id: string; name: string; source_count: number; missing_emissions_count: number; known_mtco2e: number }>;
+  retrieved_at: string; boundary_provenance: TranslatorBoundary;
+  provenance: { source: string; api_version: string; published_release: ClimateTracePublishedRelease; api_dataset_release: null };
+  note: string;
+}
+
 export interface PolygonInsightsResponse {
   schema_version: string;
   selection_name: string;
@@ -590,6 +617,12 @@ export const emissionsApi = {
   translatorMetadata: (signal?: AbortSignal) => getJSON<TranslatorMetadata>("/api/v1/emissions/translator/metadata", { signal }),
   translatorDistricts: (signal?: AbortSignal) => getJSON<GeoJSON.FeatureCollection<TranslatorGeometry>>("/api/v1/emissions/translator/districts", { signal }),
   translatorSources: (year: number, signal?: AbortSignal) => getJSON<TranslatorSources>(`/api/v1/emissions/translator/sources?year=${year}`, { signal }),
+  translatorReconciliation: (year: number, signal?: AbortSignal) => getJSON<TranslatorReconciliation>(`/api/v1/emissions/translator/reconciliation?year=${year}`, { signal }),
+  classificationCatalog: (signal?: AbortSignal) => getJSON<ClassificationCatalog>("/api/v1/emissions/classification/catalog", { signal }),
+  classificationSeries: (code: string, since: number, to: number, signal?: AbortSignal) => {
+    const q = new URLSearchParams({ code, since: String(since), to: String(to) });
+    return getJSON<ClassificationSeries>(`/api/v1/emissions/classification/series?${q}`, { signal });
+  },
   polygonInsights: (body: { geometry?: TranslatorGeometry; year: number; sectors?: string[]; selection_kind?: "custom" | "district"; district_id?: string }, signal?: AbortSignal) =>
     postJSON<PolygonInsightsResponse>("/api/v1/emissions/polygon-insights", body, {}, { signal }),
   summary: () => getJSON<EmissionsSummary>("/api/v1/emissions/summary"),

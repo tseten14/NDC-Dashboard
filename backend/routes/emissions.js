@@ -15,7 +15,7 @@ import {
   progressFromTimeseries,
   getProvenancePayload,
 } from "../services/emissionsData.js";
-import { defaultInventoryRange, latestInventoryYear } from "../../config/climateTrace.js";
+import { defaultInventoryRange, latestInventoryYear, TRACE_RELEASE } from "../../config/climateTrace.js";
 import {
   parseInventoryRange,
   parseOptionalInventoryYear,
@@ -24,6 +24,9 @@ import {
 import { SUBNATIONAL_INVENTORY_YEAR_MIN } from "../../config/ugandaDistrictGadm.js";
 import { checkApiHealth, getSources, getSpatialConfidence, getEmissionSourcesForMap } from "../services/climatetrace.js";
 import { getPolygonInsights } from "../services/polygonInsights.js";
+import { classificationCatalog, getCachedClassificationSeries } from "../services/classificationSeries.js";
+import { getCachedTranslatorReconciliation } from "../services/translator/reconciliation.js";
+import { classificationMapping } from "../../config/classificationMappings.js";
 import { getTranslatorSources, TRACE_PROVIDER, TRANSLATOR_YEARS, DEFAULT_TRANSLATOR_YEAR } from "../services/translator/climateTrace.js";
 import { BOUNDARY_PROVENANCE } from "../services/translator/geometry.js";
 import { getSectorPredictions } from "../services/predictionEngine.js";
@@ -222,6 +225,33 @@ router.get("/emissions/translator/sources", async (req, res) => {
   if (!TRANSLATOR_YEARS.includes(year)) return res.status(400).json({ error: "unsupported_year" });
   try { return res.json(await getTranslatorSources(year)); }
   catch (err) { return sendServerError(req, res, err, "translator_sources_failed"); }
+});
+
+router.get("/emissions/translator/reconciliation", async (req, res) => {
+  const year = req.query.year;
+  if (typeof year !== "string" || !/^\d{4}$/.test(year) || Number(year) < 2021 || Number(year) > latestInventoryYear()) {
+    return res.status(400).json({ error: "unsupported_complete_year" });
+  }
+  try { return res.json(await getCachedTranslatorReconciliation(Number(year))); }
+  catch (err) { return sendServerError(req, res, err, "translator_reconciliation_failed", { status: 502, code: "climate_trace_unavailable" }); }
+});
+
+router.get("/emissions/classification/catalog", (_req, res) => res.json(classificationCatalog()));
+
+router.get("/emissions/classification/series", async (req, res) => {
+  const code = req.query.code;
+  if (!classificationMapping(code)) return res.status(400).json({ error: "unknown_category" });
+  const sinceRaw = req.query.since ?? "2021";
+  const toRaw = req.query.to ?? String(latestInventoryYear());
+  const maxYear = Number(TRACE_RELEASE.data_through.slice(0, 4));
+  if (typeof sinceRaw !== "string" || typeof toRaw !== "string" || !/^\d{4}$/.test(sinceRaw) || !/^\d{4}$/.test(toRaw)) {
+    return res.status(400).json({ error: "invalid_year_range" });
+  }
+  const since = Number(sinceRaw);
+  const to = Number(toRaw);
+  if (since < 2015 || to > maxYear || since > to || to - since > 11) return res.status(400).json({ error: "invalid_year_range" });
+  try { return res.json(await getCachedClassificationSeries(code, since, to)); }
+  catch (err) { return sendServerError(req, res, err, "classification_series_failed", { status: 502, code: "climate_trace_unavailable" }); }
 });
 
 router.post("/emissions/polygon-insights", async (req, res) => {

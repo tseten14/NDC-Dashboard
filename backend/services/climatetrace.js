@@ -15,6 +15,7 @@
 import NodeCache from "node-cache";
 import {
   CLIMATE_TRACE_BASE_URL,
+  CLIMATE_TRACE_API_VERSION,
   CLIMATE_TRACE_DOCS_URL,
   CLIMATE_TRACE_GADM_UGANDA,
   CLIMATE_TRACE_GAS,
@@ -30,7 +31,7 @@ import { recordCacheAccess, setRegisteredCacheSize } from "./cacheMetrics.js";
 import { logCacheAccess, logger } from "../server/logger.js";
 
 const cache = new NodeCache({ stdTTL: 86400 }); // 24h
-const LIVE_CACHE_KEY = "ct:live:UGA:v7";
+const LIVE_CACHE_KEY = `ct:live:UGA:${CLIMATE_TRACE_API_VERSION}`;
 const LIVE_CACHE_TTL_SEC = 86400;
 
 function liveCacheAgeSeconds() {
@@ -75,7 +76,7 @@ export async function fetchLiveUgandaSnapshot() {
     }
 
     const result = {
-      api_version: "v7",
+      api_version: CLIMATE_TRACE_API_VERSION,
       inventory_year: year,
       co2e_mtco2e: toMtco2e(ranking.emissionsQuantity),
       rank: ranking.rank ?? null,
@@ -96,7 +97,7 @@ export async function fetchLiveUgandaSnapshot() {
     const safeError = "Climate TRACE data is temporarily unavailable.";
     if (stale) return { ...stale, stale: true, error: safeError };
     return {
-      api_version: "v7",
+      api_version: CLIMATE_TRACE_API_VERSION,
       co2e_mtco2e: null,
       rank: null,
       previous_rank: null,
@@ -322,7 +323,7 @@ export async function checkApiHealth() {
     }
     return {
       status: res.ok ? "ok" : "degraded",
-      api_version: "v7",
+      api_version: CLIMATE_TRACE_API_VERSION,
       docs_url: CLIMATE_TRACE_DOCS_URL,
       latency_ms: Date.now() - start,
       http_status: res.status,
@@ -331,7 +332,7 @@ export async function checkApiHealth() {
   } catch (err) {
     return {
       status: "down",
-      api_version: "v7",
+      api_version: CLIMATE_TRACE_API_VERSION,
       docs_url: CLIMATE_TRACE_DOCS_URL,
       latency_ms: Date.now() - start,
       // Deliberately no error text: this response is public, and the upstream

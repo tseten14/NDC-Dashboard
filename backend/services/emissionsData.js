@@ -22,6 +22,7 @@ import {
   UNMAPPED_SECTOR_SLUGS,
 } from "../../config/ndcTargets.js";
 import {
+  CLIMATE_TRACE_API_VERSION,
   CLIMATE_TRACE_DOCS_URL,
   defaultInventoryRange,
   fetchUgandaCountryRanking,
@@ -402,13 +403,13 @@ export async function getProvenancePayload() {
   return {
     source_type: "Observed (Earth Observation + Remote Sensing)",
     data_source_name: "Climate TRACE",
-    api_version: "v7",
+    api_version: CLIMATE_TRACE_API_VERSION,
     source_url: "https://climatetrace.org",
     api_docs_url: CLIMATE_TRACE_DOCS_URL,
     data_license: "Creative Commons 4.0",
     methodology: "Satellite + remote sensing, peer-reviewed models",
     ndc_comparison_methodology: "ndc_baseline_vs_trace_observed",
-    coverage_years: `${range.since}–${range.to} (national via /v7/sources/emissions; district via /v7/sources + GADM2)`,
+    coverage_years: `${range.since}–${range.to} (national via /${CLIMATE_TRACE_API_VERSION}/sources/emissions; district via /${CLIMATE_TRACE_API_VERSION}/sources + GADM2)`,
     mrv_owner: "Ministry of Water and Environment",
     qa_qc_status,
     validated,

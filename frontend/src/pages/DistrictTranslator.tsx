@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";
-import { AlertTriangle, Download, Loader2, MapPinned, MousePointer2, Pentagon, RotateCcw, Undo2, X } from "lucide-react";
+import { Download, Loader2, MapPinned, MousePointer2, Pentagon, RotateCcw, Undo2, X } from "lucide-react";
 import DistrictTranslatorMap from "@/components/map/DistrictTranslatorMap";
 import { Button } from "@/components/ui/button";
 import { emissionsApi, type TranslatorGeometry } from "@/lib/api";
@@ -23,7 +23,7 @@ export default function DistrictTranslator() {
   const [toolError, setToolError] = useState<string | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
   const [showDistricts, setShowDistricts] = useState(true);
-  const [showSources, setShowSources] = useState(true);
+  const [showSources, setShowSources] = useState(false);
   const metadata = useQuery({ queryKey: ["translator-metadata"], queryFn: ({ signal }) => emissionsApi.translatorMetadata(signal), staleTime: 3600_000 });
   const boundaries = useQuery({ queryKey: ["translator-boundaries", metadata.data?.boundary.version], queryFn: ({ signal }) => emissionsApi.translatorDistricts(signal), staleTime: Infinity, enabled: !!metadata.data });
   const selectedYear = year ?? metadata.data?.default_year;
@@ -32,6 +32,12 @@ export default function DistrictTranslator() {
     queryKey: ["translator-insights", selection?.districtId ?? selection?.geometry, selectedYear, selectedSectors],
     queryFn: ({ signal }) => emissionsApi.polygonInsights({ geometry: selection?.districtId ? undefined : selection!.geometry, district_id: selection?.districtId, selection_kind: selection?.districtId ? "district" : "custom", year: selectedYear!, sectors: selectedSectors ?? undefined }, signal),
     enabled: !!selection && !!selectedYear, staleTime: 3600_000, retry: false,
+  });
+  const reconciliation = useQuery({
+    queryKey: ["translator-reconciliation", selectedYear],
+    queryFn: ({ signal }) => emissionsApi.translatorReconciliation(selectedYear!, signal),
+    enabled: !!selection && !!selectedYear && selectedYear <= (metadata.data?.default_year ?? 2025) && selectedSectors === null,
+    staleTime: 3600_000, retry: 1,
   });
   const result = selection ? analysis.data : undefined;
   const geometry = result?.geometry ?? selection?.geometry ?? null;
@@ -79,10 +85,6 @@ export default function DistrictTranslator() {
     setSelection({ geometry: nextGeometry, name, districtId });
     setToolError(null);
   };
-  const previous = result?.trend.find((entry) => entry.year === result.year - 1);
-  const yoy = result?.period.complete_year && result.missing_emissions_count === 0 && previous?.complete_year && previous.status === "available" && previous.mapped_total_mtco2e > 0 && result.mapped_total_mtco2e != null ? (result.mapped_total_mtco2e - previous.mapped_total_mtco2e) / previous.mapped_total_mtco2e * 100 : null;
-  const annualTrend = result?.trend.filter((entry) => entry.complete_year || entry.status === "unavailable") ?? [];
-  const trendMax = Math.max(...annualTrend.map((entry) => Math.abs(entry.mapped_total_mtco2e ?? 0)), 1e-9);
   const provider = metadata.data?.providers[0];
 
   return <div className="h-full min-h-0 overflow-y-auto overscroll-contain bg-background p-3 md:p-4 xl:overflow-hidden">
@@ -119,7 +121,7 @@ export default function DistrictTranslator() {
         <DistrictTranslatorMap mode={mode} draft={draft} geometry={geometry} selectedDistrictId={selection?.districtId} districts={boundaries.data} points={visiblePoints} insideKeys={insideKeys} showDistricts={showDistricts} showSources={showSources} onAddPoint={addPoint} onFinish={finish} onClear={clear} onSelectDistrict={selectDistrict} onError={setMapError} />
         <div className="pointer-events-none absolute left-3 top-3 max-w-[75%] space-y-2 text-xs" role="status">
           {(metadata.isLoading || boundaries.isLoading || mapQuery.isLoading) && <p className="rounded-lg border bg-card p-2"><Loader2 className="mr-1 inline h-3 w-3 " />Loading boundaries and Climate TRACE sources…</p>}
-          {mapQuery.data && <p className="rounded-lg border bg-card p-2">{mapQuery.data.points.length.toLocaleString()} geolocated records · {mapQuery.data.period.label}</p>}
+          {mapQuery.data && <p className="rounded-lg border bg-card p-2">Climate TRACE mapped sources · {mapQuery.data.period.label}</p>}
           {mapError && <p className="rounded-lg border bg-card p-2">{mapError}</p>}
           {(metadata.isError || boundaries.isError || mapQuery.isError) && <div className="pointer-events-auto rounded-lg border bg-card p-2">Data could not be loaded. <button className="underline" onClick={() => { void metadata.refetch(); void boundaries.refetch(); void mapQuery.refetch(); }}>Retry data</button></div>}
         </div>
@@ -130,19 +132,34 @@ export default function DistrictTranslator() {
         {!selection && <p className="mt-6 text-sm text-muted-foreground">{DRAW_ENABLED ? "Draw a polygon or choose a district" : "Choose a district"} to calculate mapped emissions.</p>}
         {selection && analysis.isFetching && <p className="mt-4 text-sm"><Loader2 className="mr-2 inline h-4 w-4 " />Analyzing source records and available years…</p>}
         {(toolError || (selection && analysis.error)) && <div role="alert" className="mt-4 rounded-lg border border-destructive/30 p-3 text-sm text-destructive">{toolError ?? translatorError(analysis.error)}{selection && <Button variant="outline" size="sm" className="mt-2 block" onClick={() => void analysis.refetch()}>Retry analysis</Button>}</div>}
-        {result && !analysis.isFetching && !analysis.isError && <div className="mt-4 space-y-4">
-          {!result.period.complete_year && <p className="rounded-lg bg-muted p-3 text-xs">{result.period.label}: incomplete annual coverage. A year-over-year percentage is not calculated.</p>}
-          <div className="grid grid-cols-2 gap-2"><Metric label="Mapped net emissions" value={formatEmissions(result.mapped_total_mtco2e)} /><Metric label="Area" value={`${result.area_km2.toLocaleString(undefined, { maximumFractionDigits: 2 })} km²`} /><Metric label="Mapped records" value={String(result.source_count)} /><Metric label="Facilities / admin areas" value={`${result.asset_count} / ${result.administrative_source_count}`} /></div>
-          <p className="text-[11px] text-muted-foreground">Emissions in CO₂e, 100-year GWP. One record represents a source and subsector.</p>
-          <div className="rounded-lg border p-3 text-xs"><p>Facilities: <strong>{formatEmissions(result.asset_total_mtco2e)}</strong></p><p className="mt-1">Administrative centroids: <strong>{formatEmissions(result.administrative_total_mtco2e)}</strong></p>{result.administrative_source_count > 0 && <p className="mt-2 text-muted-foreground">Administrative values cover larger areas around their centroids. They are not precise emissions measurements within this selection.</p>}{result.unknown_source_count > 0 && <p>Unclassified: {result.unknown_source_count} records · {formatEmissions(result.unknown_total_mtco2e)}</p>}</div>
-          {result.source_count === 0 && <p className="rounded-lg bg-muted p-3 text-xs">{selectedSectors?.length === 0 ? "No sectors selected. Choose All sectors to include data." : "No mapped source centroids fall inside this area for the selected filters. This does not mean the area has no emissions."}</p>}
-          {result.missing_emissions_count > 0 && <p className="rounded-lg bg-muted p-3 text-xs">{result.missing_emissions_count} records have unavailable emissions. Totals include only reported values.</p>}
-          <section><h3 className="text-sm font-bold">Complete-year trend</h3>{yoy != null && <p className="text-xs">{yoy >= 0 ? "+" : ""}{yoy.toFixed(1)}% vs {result.year - 1} · source coverage may change</p>}<div className="mt-2 space-y-2">{annualTrend.map((entry) => <div key={entry.year} className="text-xs"><div className="flex justify-between"><span>{entry.year}</span><span>{formatEmissions(entry.mapped_total_mtco2e)}{entry.status === "missing_emissions" ? " (incomplete estimates)" : ""}</span></div><div className="mt-1 h-1.5 rounded bg-muted"><div className={cn("h-full rounded", (entry.mapped_total_mtco2e ?? 0) < 0 ? "bg-primary" : "bg-on-track")} style={{ width: `${Math.abs(entry.mapped_total_mtco2e ?? 0) / trendMax * 100}%` }} /></div></div>)}</div>{result.trend.some((entry) => entry.status === "unavailable") && <p className="mt-2 text-xs text-muted-foreground">Some years could not be retrieved. Retry analysis to reload them.</p>}</section>
-          <section><h3 className="mb-2 text-sm font-bold">Sector breakdown</h3>{result.sectors.map((sector) => <div key={sector.sector} className="mb-2 flex justify-between gap-2 text-xs"><span>{titleize(sector.sector)}</span><span className="text-right tabular-nums">{formatEmissions(sector.mtco2e)}{sector.share_pct != null ? ` · ${sector.share_pct.toFixed(1)}%` : ""}</span></div>)}</section>
-          <section><h3 className="mb-2 text-sm font-bold">Intersected districts</h3><p className="mb-2 text-[11px] text-muted-foreground">Share of selected polygon area, using full boundary intersections.</p>{result.intersected_districts.map((district) => <p key={district.boundary_id} className="mb-1 text-xs">{district.name} · {district.overlap_pct.toFixed(2)}% · {district.overlap_km2.toFixed(2)} km²</p>)}</section>
-          <section><h3 className="mb-2 text-sm font-bold">Top mapped records</h3><div className="divide-y rounded-lg border">{result.top_sources.map((source) => <div key={sourceKey(source)} className="p-2 text-xs"><div className="flex justify-between gap-2"><a className="truncate underline" href={source.source_url} target="_blank" rel="noreferrer">{source.name ?? "Unnamed source"}</a><span className="shrink-0">{formatEmissions(source.mtco2e)}</span></div><p className="mt-1 text-[11px] text-muted-foreground">{titleize(source.subsector ?? source.sector)} · {source.source_kind === "administrative" ? "Administrative centroid" : source.source_kind === "asset" ? "Facility" : "Unclassified"}</p></div>)}</div></section>
-          <div className="rounded-lg border border-border bg-muted p-3 text-xs leading-relaxed"><AlertTriangle className="mr-1 inline h-4 w-4" />{result.spatial_confidence.explanation}</div>
-          <div className="text-[11px] leading-relaxed text-muted-foreground"><p>Climate TRACE · {result.provenance.license}</p><p>Retrieved {new Date(result.provenance.retrieved_at).toLocaleString()}</p><p>All source pages retrieved. {result.coverage.missing_coordinates} national records lack usable coordinates.</p><p>Boundary: {result.boundary_provenance.year} · <a className="underline" href={result.boundary_provenance.url} target="_blank" rel="noreferrer">UBOS / WHO / UN OCHA</a> · {result.boundary_provenance.license}</p></div>
+        {result && !analysis.isFetching && !analysis.isError && <div className="mt-4 space-y-5">
+          {!result.period.complete_year && <p className="border-l-4 border-primary pl-3 text-sm">{result.period.label} is incomplete. Compare complete years for annual trends.</p>}
+          <div className="grid grid-cols-2 gap-2"><Metric label="Mapped emissions" value={formatEmissions(result.mapped_total_mtco2e)} /><Metric label="District area" value={result.area_km2.toLocaleString(undefined, { maximumFractionDigits: 0 }) + " km²"} /></div>
+          <p className="text-sm text-muted-foreground">Climate TRACE estimates for mapped source locations in this district, in CO₂e (100-year GWP). This is not a complete district inventory.</p>
+          {result.source_count === 0 && <p className="border p-3 text-sm">{selectedSectors?.length === 0 ? "No sectors selected. Choose All sectors to view data." : "No mapped source centers fall inside this boundary. The district may still have emissions."}</p>}
+          {result.missing_emissions_count > 0 && <p className="border p-3 text-sm">{result.missing_emissions_count} mapped records have no emissions estimate. The displayed sum includes only reported values.</p>}
+          <section><h3 className="text-base font-bold">By sector</h3>{result.sectors.length ? <div className="mt-2 divide-y border-y">{result.sectors.map((sector) => <div key={sector.sector} className="flex justify-between gap-3 py-2 text-sm"><span>{titleize(sector.sector)}</span><span className="text-right tabular-nums">{formatEmissions(sector.mtco2e)}</span></div>)}</div> : <p className="mt-2 text-sm text-muted-foreground">No mapped sectors for this selection.</p>}</section>
+          {selectedSectors === null && result.period.complete_year && <section className="border-t pt-4" aria-label="National comparison">
+            <h3 className="text-base font-bold">National context</h3>
+            {reconciliation.isFetching && <p role="status" className="mt-2 text-sm">Loading national comparison…</p>}
+            {reconciliation.isError && <p role="alert" className="mt-2 text-sm">The national comparison is unavailable. <button className="text-primary underline" onClick={() => void reconciliation.refetch()}>Retry</button></p>}
+            {reconciliation.data && <><dl className="mt-2 space-y-2 text-sm"><div className="flex justify-between gap-2"><dt>Climate TRACE Uganda aggregate</dt><dd className="text-right font-semibold">{formatEmissions(reconciliation.data.national_aggregate_mtco2e)}</dd></div><div className="flex justify-between gap-2"><dt>Mapped records across {reconciliation.data.boundary_count} districts</dt><dd className="text-right font-semibold">{formatEmissions(reconciliation.data.mapped_district_rollup_mtco2e)}</dd></div><div className="flex justify-between gap-2 border-t pt-2"><dt>Difference between these estimates</dt><dd className="text-right font-semibold">{formatEmissions(reconciliation.data.difference_mtco2e)}</dd></div></dl><p className="mt-3 text-sm text-muted-foreground">The national estimate includes emissions without a precise location. The district rollup assigns each mapped source center once, including administrative estimates that may cover a larger area. These figures measure different coverage and are not expected to match.</p>{reconciliation.data.missing_emissions_count > 0 && <p className="mt-2 text-sm text-muted-foreground">A difference is unavailable because {reconciliation.data.missing_emissions_count} mapped records have no emissions estimate.</p>}{reconciliation.data.unmatched_source_count > 0 && <p className="mt-2 text-sm text-muted-foreground">{reconciliation.data.unmatched_source_count} mapped source centers could not be assigned to a 2020 district boundary.</p>}</>}
+          </section>}
+          {selectedSectors !== null && <p className="border-t pt-3 text-sm text-muted-foreground">National context is shown when All sectors is selected, so the values use the same sector scope.</p>}
+          <section className="border-t pt-4 text-sm" aria-label="Data source"><h3 className="font-bold">Where this data comes from</h3><p className="mt-2">Climate TRACE public API {result.provenance.api_version}. <a className="text-primary underline" href={result.provenance.api_url} target="_blank" rel="noreferrer">API reference</a> · <a className="text-primary underline" href={result.provenance.published_release.url} target="_blank" rel="noreferrer">published release {result.provenance.published_release.version}</a>.</p><p className="mt-2 text-muted-foreground">Source data retrieved {new Date(result.provenance.retrieved_at).toLocaleString()}. Boundary: {result.boundary_provenance.year} · <a className="text-primary underline" href={result.boundary_provenance.url} target="_blank" rel="noreferrer">UBOS / WHO / UN OCHA</a>. The API does not report its dataset release number.</p></section>
+          <details className="border-t pt-4 text-sm"><summary className="cursor-pointer font-bold text-primary">Data and method</summary>
+            <div className="mt-3 space-y-4">
+              <p>A mapped record is one Climate TRACE source and subsector estimate; it does not always represent a unique facility. {result.source_count.toLocaleString()} records are inside this area. {result.asset_count} are facilities and {result.administrative_source_count} are administrative-area estimates.</p>
+              <p>Facilities: {formatEmissions(result.asset_total_mtco2e)}. Administrative estimates: {formatEmissions(result.administrative_total_mtco2e)}. Administrative values cover larger areas; this view includes their full estimate when the center falls inside the boundary.</p>
+              {result.unknown_source_count > 0 && <p>Unclassified records: {result.unknown_source_count}, with {formatEmissions(result.unknown_total_mtco2e)} in reported values.</p>}
+              <p>{result.spatial_confidence.explanation}</p>
+              <p>{result.coverage.missing_coordinates} Uganda source records lacked usable coordinates and could not be placed on the map.</p>
+              <div><h4 className="font-semibold">Annual mapped values</h4><p className="text-muted-foreground">Source coverage can change between years. Partial years and failed requests are excluded from annual comparisons.</p><ul className="mt-2 divide-y border-y">{result.trend.map((entry) => <li key={entry.year} className="flex justify-between gap-2 py-2"><span>{entry.year}{!entry.complete_year ? " · partial or unavailable" : ""}{entry.status === "missing_emissions" ? " · missing estimates" : ""}</span><span>{formatEmissions(entry.mapped_total_mtco2e)}</span></li>)}</ul></div>
+              <div><h4 className="font-semibold">Intersected districts</h4><p className="text-muted-foreground">Share of the selected area, calculated from full boundary intersections.</p><ul className="mt-2 space-y-1">{result.intersected_districts.map((district) => <li key={district.boundary_id}>{district.name} · {district.overlap_pct.toFixed(2)}% · {district.overlap_km2.toFixed(2)} km²</li>)}</ul></div>
+              <div><h4 className="font-semibold">Largest mapped records</h4><ul className="mt-2 divide-y border-y">{result.top_sources.map((source) => <li key={sourceKey(source)} className="py-2"><a className="text-primary underline" href={source.source_url} target="_blank" rel="noreferrer">{source.name ?? "Unnamed source"}</a><span className="ml-2">{formatEmissions(source.mtco2e)}</span><span className="block text-muted-foreground">{titleize(source.subsector ?? source.sector)} · {source.source_kind === "administrative" ? "Administrative estimate" : source.source_kind === "asset" ? "Facility" : "Unclassified"}</span></li>)}</ul></div>
+              <p>{result.boundary_provenance.note}</p>
+            </div>
+          </details>
           <div className="grid grid-cols-2 gap-2"><Button size="sm" variant="outline" onClick={() => downloadAnalysis(result, selection!.name, "geojson")}><Download className="mr-1 h-4 w-4" />GeoJSON</Button><Button size="sm" onClick={() => downloadAnalysis(result, selection!.name, "csv")}><Download className="mr-1 h-4 w-4" />CSV</Button></div>
         </div>}
       </aside>
@@ -151,5 +168,5 @@ export default function DistrictTranslator() {
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-lg border bg-muted/30 p-3"><p className="text-[10px] font-bold text-muted-foreground">{label}</p><p className="mt-1 text-lg font-bold tabular-nums">{value}</p></div>;
+  return <div className="rounded-sm border bg-muted/30 p-3"><p className="text-sm font-semibold text-muted-foreground">{label}</p><p className="mt-1 text-lg font-bold tabular-nums">{value}</p></div>;
 }

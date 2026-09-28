@@ -4,7 +4,7 @@ export const PRIMARY_NAV = [
   { title: "Home", url: "/", icon: Home, description: "Your climate workspace", group: "Explore" },
   { title: "Emissions Map", url: "/map", icon: MapIcon, description: "See mapped emissions sources", group: "Explore" },
   { title: "District Translator", url: "/district-translator", icon: MapPinned, description: "Turn an area into local insights", group: "Explore" },
-  { title: "Sector Classification", url: "/sector-classification", icon: Layers3, description: "Choose reporting sectors and codes", group: "Explore" },
+  { title: "Sector Classification", url: "/sector-classification", icon: Layers3, description: "Explore Climate TRACE data by reporting category", group: "Explore" },
   { title: "Scenario Analysis", url: "/scenario-analysis", icon: GitBranch, description: "Compare actions, timing and policy evidence", group: "Explore" },
   { title: "Dashboard", url: "/dashboard", icon: Target, description: "Track national NDC progress", group: "Explore" },
   { title: "AI 2030 Projection", url: "/ai-2030", icon: Sparkles, description: "Explore future emissions scenarios", group: "Plan & deliver" },

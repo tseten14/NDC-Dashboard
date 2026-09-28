@@ -25,7 +25,7 @@ describe("workspace navigation", () => {
     mountNavigation();
     expect(screen.queryByRole("button", { name: "Account menu" })).not.toBeInTheDocument();
     const links = within(screen.getByRole("navigation", { name: "Primary navigation" })).getAllByRole("link");
-    expect(links.map((link) => link.textContent)).toEqual(["Home", "Emissions Map", "District Translator", "Dashboard", "Marketplace", "Database"]);
+    expect(links.map((link) => link.textContent)).toEqual(["Home", "Emissions Map", "District Translator", "Sector Classification", "Dashboard", "Marketplace", "Database"]);
     expect(links[2]).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveAttribute("href", "#main-content");
     expect(document.title).toContain("District Translator");
@@ -39,10 +39,15 @@ describe("workspace navigation", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(document.title).toContain("Documentation");
   });
-  it.each([
-    ["Sector Classification", "/sector-classification"],
-    ["Scenario Analysis", "/scenario-analysis"],
-  ])("keeps %s in All tools without showing it as a header tab", (title, path) => {
+  it("keeps Sector Classification beside District Translator in the header", () => {
+    mountNavigation("/sector-classification");
+    const primary = screen.getByRole("navigation", { name: "Primary navigation" });
+    const links = within(primary).getAllByRole("link").map((link) => link.textContent);
+    expect(links.indexOf("Sector Classification")).toBe(links.indexOf("District Translator") + 1);
+  });
+  it("keeps Scenario Analysis in All tools without a header tab", () => {
+    const title = "Scenario Analysis";
+    const path = "/scenario-analysis";
     mountNavigation(path);
     const primary = screen.getByRole("navigation", { name: "Primary navigation" });
     expect(within(primary).queryByText(title)).not.toBeInTheDocument();

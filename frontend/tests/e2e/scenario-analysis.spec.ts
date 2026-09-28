@@ -92,20 +92,28 @@ test('scenario: policy API errors, linked evidence and subnational references', 
   await expect(page.getByRole('combobox', { name: 'Stance: District evidence fixture', exact: true })).toBeVisible();
 });
 
-test('scenario: creates from a reviewed inventory and keeps the snapshot after inventory edits', async ({ page }) => {
+test('scenario: creates from a reviewed archived inventory and keeps its snapshot', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: /^Uganda Full cockpit available/ }).click();
-  await page.getByRole('link', { name: 'Sector Classification', exact: true }).click();
-  await page.getByRole('button', { name: 'Explore a sample exercise', exact: true }).click();
-  await page.getByRole('button', { name: 'Use collected for all' }).click();
-  await page.getByRole('button', { name: 'Continue to recalculation', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Justification for the inventory report' }).fill('Reference inventory reviewed.');
-  await page.getByRole('button', { name: 'Apply recalculation', exact: true }).click();
-  await page.getByRole('button', { name: 'Review inventory basis', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Focal point for 3.A.1' }).fill('Compiler');
-  await page.getByRole('link', { name: 'Build a scenario from this inventory' }).click();
+  await page.evaluate(() => {
+    const now = new Date().toISOString();
+    localStorage.setItem('ndc-inventory-exercises-v1:UG', JSON.stringify([{
+      schemaVersion: 1, id: 'reviewed-inventory', countryCode: 'UG', name: 'Reviewed livestock inventory', sample: false,
+      updatedAt: now, step: 4, status: 'ready',
+      selection: { schemaVersion: 1, countryCode: 'UG', frameworkId: 'ipcc-2006', hierarchyVersion: '2006-table8.2-level3-v1', selectedCodes: ['3.A.1'], savedAt: now },
+      sources: [{ id: 'collected', name: 'Reviewed source', version: '2024', unit: 't CO2e', basis: '100-year GWP', importedAt: now, rows: [{ category: '3.A.1', district: 'Arua', entryId: 'holding-1', entryName: 'Arua holding', year: 2024, value: 100 }] }],
+      activeCategory: '3.A.1', start: 2024, end: 2024,
+      thresholds: { r2: 0.95, mape: 5, bias: 2, coverage: 90 },
+      assignments: { [JSON.stringify(['3.A.1', 'Arua'])]: 'collected' }, decisions: {}, notes: {},
+      recalculations: { '3.A.1': { method: 'none', start: 2024, change: 2024, overlapStart: 2024, overlapEnd: 2023, includeBase: true, justification: 'Reviewed basis', applied: true } },
+      focalPoints: { '3.A.1': 'Compiler' }, reviewer: 'Reviewer', acknowledged: true, audit: [{ at: now, action: 'Reviewed' }],
+    }]));
+  });
+  await page.getByRole('button', { name: 'Open all tools' }).click();
+  await page.getByRole('navigation', { name: 'All workspace tools' }).getByRole('link', { name: /Scenario Analysis/ }).click();
+  await page.getByRole('button', { name: 'New scenario' }).click();
   await page.getByRole('textbox', { name: 'Scenario name' }).fill('District plan');
-  await page.getByRole('combobox', { name: 'Reporting area', exact: true }).selectOption('Arua');
+  await expect(page.getByRole('combobox', { name: 'Reporting area', exact: true })).toHaveValue('Arua');
   await page.getByRole('button', { name: 'Create scenario', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Which actions go in this scenario?', exact: true })).toBeVisible();
   await page.getByRole('checkbox', { name: 'Feed quality and additives', exact: true }).check();

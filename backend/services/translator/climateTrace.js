@@ -1,14 +1,8 @@
 import NodeCache from "node-cache";
-import { climateTraceUrl, fetchUpstream, CLIMATE_TRACE_API_VERSION, CLIMATE_TRACE_GAS, CLIMATE_TRACE_DOCS_URL } from "../../../config/climateTrace.js";
+import { climateTraceUrl, fetchUpstream, CLIMATE_TRACE_API_VERSION, CLIMATE_TRACE_GAS, CLIMATE_TRACE_DOCS_URL, TRACE_RELEASE } from "../../../config/climateTrace.js";
 import { climateTraceSourcesResponseSchema } from "../../../shared/schemas/climateTrace.schema.js";
 
-export const TRACE_RELEASE = {
-  version: "5.11.0",
-  published_at: "2026-09-24",
-  data_through: "2026-07",
-  verified_at: "2026-09-25",
-  url: "https://climatetrace.org/data",
-};
+export { TRACE_RELEASE };
 export const TRANSLATOR_YEARS = Array.from({ length: Number(TRACE_RELEASE.data_through.slice(0, 4)) - 2020 }, (_, index) => 2021 + index);
 export const DEFAULT_TRANSLATOR_YEAR = 2025;
 export const TRACE_PROVIDER = {

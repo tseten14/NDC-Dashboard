@@ -14,7 +14,7 @@ it('starts separately from inventory and explains the missing reviewed basis', (
   show(); expect(screen.getByRole('heading', { name: 'Scenario Analysis' })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'New scenario' }));
   expect(screen.getByRole('button', { name: 'Create scenario' })).toBeDisabled();
-  expect(screen.getByText(/No inventory exercises are available/)).toBeInTheDocument();
+  expect(screen.getByText(/No reviewed inventory exercises are saved/)).toBeInTheDocument();
 });
 it('does not overwrite unreadable scenario data', () => {
   localStorage.setItem(scenarioKey('UG'), '{broken'); show();

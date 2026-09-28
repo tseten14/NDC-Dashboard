@@ -56,6 +56,7 @@ const PolicyDocumentView = lazy(() => import("./pages/PolicyDocumentView.tsx"));
 const MapExplorer = lazy(() => import("./pages/MapExplorer.tsx"));
 const DistrictTranslator = lazy(() => import("./pages/DistrictTranslator.tsx"));
 const SectorClassification = lazy(() => import("./pages/SectorClassification.tsx"));
+const ClassificationArchive = lazy(() => import("./pages/ClassificationArchive.tsx"));
 const ScenarioAnalysis = lazy(() => import("./pages/ScenarioAnalysis.tsx"));
 const DataIngestion = lazy(() => import("./pages/DataIngestion.tsx"));
 const MyWork = lazy(() => import("./pages/MyWork.tsx"));
@@ -184,6 +185,7 @@ function ProtectedShell() {
                   <Route path="/map" element={<LazyPage><MapExplorer /></LazyPage>} />
                   <Route path="/district-translator" element={<LazyPage><DistrictTranslator /></LazyPage>} />
                   <Route path="/sector-classification" element={<LazyPage><SectorClassification /></LazyPage>} />
+                  <Route path="/sector-classification/archive" element={<LazyPage><ClassificationArchive /></LazyPage>} />
                   <Route path="/scenario-analysis" element={<LazyPage><ScenarioAnalysis /></LazyPage>} />
                   <Route path="/docs" element={<LazyPage><Documentation /></LazyPage>} />
 

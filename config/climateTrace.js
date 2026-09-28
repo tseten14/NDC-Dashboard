@@ -16,7 +16,16 @@ export const CLIMATE_TRACE_BASE_URL = `https://api.climatetrace.org/${CLIMATE_TR
 export const CLIMATE_TRACE_DOCS_URL = `${CLIMATE_TRACE_BASE_URL}/docs/index.html`;
 export const CLIMATE_TRACE_GADM_UGANDA = "UGA";
 export const CLIMATE_TRACE_GAS = "co2e_100yr";
-export const CLIMATE_TRACE_SOURCE_TAG = "climatetrace_api_v7";
+export const CLIMATE_TRACE_SOURCE_TAG = `climatetrace_api_${CLIMATE_TRACE_API_VERSION}`;
+/** Published release checked against https://climatetrace.org/data on 2026-09-28.
+ * The API response does not attest to this release number. */
+export const TRACE_RELEASE = {
+  version: "5.11.0",
+  published_at: "2026-09-24",
+  data_through: "2026-07",
+  verified_at: "2026-09-28",
+  url: "https://climatetrace.org/data",
+};
 
 /** Country-level annual totals in v7 sources/emissions (GADM0). */
 export const INVENTORY_YEAR_MIN = 2015;
@@ -110,6 +119,24 @@ export async function fetchSectorEmissionsForYear(year, sectorSlug, gadmId = CLI
   const tonnes = summary?.emissionsQuantity;
   if (tonnes == null) return null;
   return { year, tonnes, mtco2e: toMtco2e(tonnes), location: parsed.data?.location ?? null };
+}
+
+/** A leaf classification mapping must use `subsectors`, not `sectors`.
+ * The latter can return an unfiltered country total for a subsector slug. */
+export async function fetchSubsectorEmissionsForYear(year, subsectorSlug, gadmId = CLIMATE_TRACE_GADM_UGANDA) {
+  const url = climateTraceUrl("/sources/emissions", {
+    year, gas: CLIMATE_TRACE_GAS, gadmId, subsectors: subsectorSlug,
+  });
+  const data = await fetchUpstream(url, "subsector emissions");
+  const parsed = climateTraceEmissionsResponseSchema.safeParse(data);
+  if (!parsed.success) throw new Error("Climate TRACE subsector response failed schema validation");
+  const summaries = parsed.data.totals?.summaries ?? [];
+  const summary = summaries.find((item) => item.gas === CLIMATE_TRACE_GAS);
+  if (summaries.length && !summary) throw new Error("Climate TRACE subsector response has an unexpected gas");
+  const tonnes = summary?.emissionsQuantity;
+  if (tonnes == null) return null;
+  if (!Number.isFinite(tonnes)) throw new Error("Climate TRACE subsector response has invalid emissions");
+  return { year, tonnes, mtco2e: tonnes / 1_000_000, source_url: url };
 }
 
 /**
