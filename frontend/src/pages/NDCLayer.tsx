@@ -23,7 +23,6 @@ import { DASHBOARD_MODE_LABELS, getDashboardPresets } from "@/lib/role-capabilit
 import { AlertCircle, MapPin, Download, FileSpreadsheet, FileText, Sparkles, LayoutList } from "lucide-react";
 import { NdcGapSummary } from "@/components/NdcGapSummary";
 import { DataCoveragePanel } from "@/components/DataCoveragePanel";
-import { LiveEmissionsBanner } from "@/components/LiveEmissionsBanner";
 import { FrameworkDivergenceCallout } from "@/components/FrameworkDivergenceCallout";
 import { AccuracyAuditDrawer } from "@/components/AccuracyAuditDrawer";
 import { NDCTargetsColumn } from "@/components/columns/NDCTargets";
@@ -182,11 +181,6 @@ export default function NDCLayer() {
         </div>
       )}
 
-      <LiveEmissionsBanner
-        compact={state.geographyLevel === "district"}
-        onOpenAccuracyDetails={() => setAccuracyOpen(true)}
-      />
-
       {state.geographyLevel === "district" && (
         <div className="px-3 py-1.5 border-b border-border bg-muted/30 flex items-center gap-1.5 text-[10px] text-muted-foreground">
           <MapPin className="h-3 w-3 shrink-0 text-primary" />
@@ -202,11 +196,6 @@ export default function NDCLayer() {
       {dashboardMode === "mrv" && (
         <div className="px-3 py-1.5 border-b border-primary/20 bg-primary/5 text-[10px] text-muted-foreground">
           <span className="font-semibold text-foreground">MRV view:</span> AFOLU sector selected; spatial certainty and trackability tools highlighted below. Use Export for CRT/BTR CSV.
-        </div>
-      )}
-      {dashboardMode === "briefing" && (
-        <div className="px-3 py-1.5 border-b border-border bg-muted/40 text-[10px] text-muted-foreground">
-          <span className="font-semibold text-foreground">Briefing view:</span> national geography locked; PDF export only; mitigation edits disabled.
         </div>
       )}
       {dashboardMode === "field" && (

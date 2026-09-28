@@ -31,7 +31,7 @@ test("an unavailable dashboard cannot display fabricated economy-wide history or
   await page.goto("/");
   await page.getByRole("button", { name: /^Uganda Full cockpit available/ }).click();
   await page.goto("/dashboard?sector=economy-wide&target=t0");
-  await expect(page.getByText("Live Climate TRACE unavailable", { exact: false })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText("Climate TRACE API unavailable", { exact: false })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText("No data reported for this period", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Latest measured", { exact: false })).toHaveCount(0);
   await expect(page.getByText("Uganda GHG National Inventory", { exact: true })).toHaveCount(0);

@@ -27,13 +27,12 @@ test.describe("NDC Data Explorer smoke", () => {
     await page.goto("/dashboard");
     await waitForApi(page);
 
-    // The accuracy strip along the top carries the headline per-sector figures.
     await expect(page.getByText(/AFOLU/i).first()).toBeVisible();
     await expect(page.getByText(/NDC TARGETS/i).first()).toBeVisible();
 
     // This fixture API has no dashboard payload. The page must say so clearly
     // rather than leave an unexplained empty figure.
-    await expect(page.getByText(/Live emissions API unreachable|\bMt\b/).first()).toBeVisible();
+    await expect(page.getByText(/Climate TRACE API unavailable|Live emissions API unreachable|\bMt\b/).first()).toBeVisible();
   });
 
   test("selecting a target fills the observed-data and progress columns", async ({ page }) => {

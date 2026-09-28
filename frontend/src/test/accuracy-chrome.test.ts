@@ -7,7 +7,7 @@ import { describe, it, expect } from "vitest";
 import { emissionsDashboardSchema } from "../../../shared/schemas/emissionsDashboard.schema.js";
 
 /**
- * Contract: Accuracy Audit drawer + LiveEmissionsBanner read reconciliation
+ * Contract: Accuracy Audit drawer reads reconciliation
  * from the dashboard payload. Keep the shape stable.
  */
 describe("emissions dashboard accuracy contract", () => {
@@ -63,12 +63,7 @@ describe("emissions dashboard accuracy contract", () => {
   });
 });
 
-describe("LiveEmissionsBanner accuracy affordances", () => {
-  it("exports a mountable banner component", async () => {
-    const mod = await import("@/components/LiveEmissionsBanner");
-    expect(typeof mod.LiveEmissionsBanner).toBe("function");
-  });
-
+describe("accuracy affordances", () => {
   it("exports AccuracyAuditDrawer", async () => {
     const mod = await import("@/components/AccuracyAuditDrawer");
     expect(typeof mod.AccuracyAuditDrawer).toBe("function");

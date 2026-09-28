@@ -75,18 +75,17 @@ export const BASIC_FEATURES: FeatureGuide[] = [
       "Optional: open NDC AI (sparkle button) for Perplexity-style cited analysis of the current target.",
       "Optional: Historical vs Projection for time view.",
       "Use Export for Excel, PDF, or CRT/BTR-style CSV.",
-      "Optional: open Accuracy details (banner) or Data & insights → Accuracy audit for slug-level TRACE reconciliation.",
+      "Optional: open Data & insights → Accuracy audit for slug-level TRACE reconciliation.",
       "Optional: expand How to read these numbers for TRACE vs NDC inventory framing.",
       "Open buttons under the right column for activities, top emitters, spatial certainty, mitigation options, and official policy sources.",
     ],
     howItWorks:
-      "Targets and activity catalogues are stored in the app from Uganda’s NDC. Observed emissions are fetched live from Climate TRACE (satellite and model-based inventory), converted to million tonnes (MtCO₂e), and compared to each target’s baseline and 2030 goal. Progress colours use rules: how close the latest year is to the ceiling, whether catalogue activities exist, and data quality flags. An accuracy strip shows live TRACE health and country-vs-slug reconciliation Δ.",
+      "Targets and activity catalogues are stored in the app from Uganda’s NDC. Observed emissions are fetched live from Climate TRACE (satellite and model-based inventory), converted to million tonnes (MtCO₂e), and compared to each target’s baseline and 2030 goal. Progress colours use rules: how close the latest year is to the ceiling, whether catalogue activities exist, and data quality flags.",
     result:
       "For the selected target you see: a time-series chart, a progress judgement (on track / at risk / off track), summary counts for all targets in that sector, and optional drill-downs. District view shows observed emissions for one district but does not score districts against national NDC targets.",
     limitations:
       "Not official UNFCCC submission software. Climate TRACE and national inventory methods can differ — warnings appear when they diverge. District mode is contextual only.",
     youWillSee: [
-      "Live Climate TRACE accuracy strip (health, slug-sum Δ, Accuracy details)",
       "How to read these numbers callout + framework-gap note when TRACE ≪ NDC baseline",
       "District pill: Observed context only — NDC targets are national",
       "NDC target cards with badges (Unconditional, Conditional, etc.)",
