@@ -94,6 +94,23 @@ describe("write authorisation", () => {
   });
 });
 
+describe("Qlik public exports", () => {
+  it("serves the app's NDC targets as CSV", async () => {
+    const response = await fetch(`${baseUrl}/api/v1/qlik/targets.csv`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/csv");
+    const csv = await response.text();
+    expect(csv).toMatch(/^ndc_country,target_id,/);
+    expect(csv.trim().split("\r\n")).toHaveLength(12);
+  });
+
+  it("does not export illustrative mock emissions", async () => {
+    const response = await fetch(`${baseUrl}/api/v1/qlik/emissions.csv`);
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: "qlik_export_unavailable_in_mock_mode" });
+  });
+});
+
 describe("operator session", () => {
   it("rejects a wrong passphrase without revealing anything about the real one", async () => {
     const res = await fetch(`${baseUrl}/api/v1/auth/session`, {

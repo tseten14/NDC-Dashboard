@@ -2,7 +2,7 @@
 
 Web application for exploring Uganda’s Nationally Determined Contribution (NDC) data: decision-support cockpit, emissions map, climate finance screening, strategy library, climate risk views, and role-based delivery tools.
 
-**Documentation:** [Complete application and engineering guide (PDF)](docs/NDC-Data-Explorer-Complete-Guide.pdf). The in-app guide remains at `/docs`. A [Climate TRACE CSV extract](data/exports/climate-trace-uganda-sources-2021-2025.csv) is available for Qlik evaluation.
+**Documentation:** [Complete application and engineering guide (PDF)](docs/NDC-Data-Explorer-Complete-Guide.pdf). The in-app guide remains at `/docs`. Use the [Qlik Cloud setup guide](docs/qlik-cloud.md) to import live Climate TRACE emissions and the app's Uganda NDC target extract. A separate [Climate TRACE source-record CSV](data/exports/climate-trace-uganda-sources-2021-2025.csv) is available for source-level evaluation.
 
 ## What you can do (in plain terms)
 

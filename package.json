@@ -8,7 +8,7 @@
     "dev:frontend": "vite --config frontend/vite.config.ts",
     "dev:servers": "concurrently -k -n web,api -c cyan,magenta \"npm run dev:frontend\" \"npm run start:api\"",
     "verify:all": "npm run verify:climatetrace && npm run verify:predictions",
-    "build": "vite build --config frontend/vite.config.ts",
+    "build": "npm run build:qlik-targets && vite build --config frontend/vite.config.ts",
     "build:dev": "vite build --config frontend/vite.config.ts --mode development",
     "lint": "eslint frontend backend scripts config/ndcTargets.js --config config/eslint.config.js",
     "test:e2e": "playwright test --config config/playwright.config.ts",
@@ -29,6 +29,7 @@
     "build:passages": "node scripts/build_policy_passages.mjs",
     "build:mcf": "node scripts/build_mcf_fulltext.mjs",
     "build:policy-cases": "node scripts/build_policy_cases.mjs",
+    "build:qlik-targets": "node scripts/build_qlik_targets.mjs",
     "verify:climatetrace": "node scripts/verify_climatetrace_v7.mjs",
     "verify:predictions": "node --import tsx scripts/verify_predictions.mjs",
     "vercel:deploy": "vercel --prod"
