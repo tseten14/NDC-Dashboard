@@ -11,7 +11,7 @@ const tailwindConfigPath = path.resolve(__dirname, "config/tailwind.config.ts");
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, path.resolve(__dirname, ".."), "");
-  const apiPort = env.API_PORT || "8787";
+  const apiPort = process.env.API_PORT || env.API_PORT || "8787";
 
   return {
   root: __dirname,

@@ -63,8 +63,8 @@ export function ScrollToTopButton() {
       tabIndex={visible ? 0 : -1}
       className={cn(
         "scroll-top-btn fixed bottom-16 right-4 z-30 flex h-10 w-10 items-center justify-center rounded-full",
-        "bg-primary text-primary-foreground shadow-lg shadow-primary/25",
-        "hover:scale-110 hover:shadow-xl hover:shadow-primary/35 active:scale-95 transition-transform",
+        "bg-primary text-primary-foreground  ",
+        "hover:scale-110    ",
         visible && "scroll-top-visible",
       )}
     >

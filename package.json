@@ -116,7 +116,6 @@
     "shpjs": "^6.2.0",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7",
     "three": "^0.184.0",
     "tsx": "^4.22.3",
     "uuid": "^14.0.0",
@@ -125,6 +124,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.32.0",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/typography": "^0.5.16",

@@ -2,1015 +2,236 @@
 @tailwind components;
 @tailwind utilities;
 
+/* One restrained visual system for every route. Values are HSL channels so the
+   existing Tailwind semantic classes keep working. */
 @layer base {
   :root {
-    /* ── Core UI (harmonized with #1e2a24 — hsl 150 17% 14%) ── */
-    --background: 150 8% 98%;
-    --foreground: 150 22% 14%;
-
+    color-scheme: light;
+    --background: 0 0% 100%;
+    --foreground: 210 13% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 150 22% 14%;
-
+    --card-foreground: 210 13% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 150 22% 14%;
-
-    --primary: 160 58% 26%;
-    --primary-foreground: 150 8% 98%;
-
-    --secondary: 150 7% 94%;
-    --secondary-foreground: 150 22% 14%;
-
-    --muted: 150 6% 93%;
-    --muted-foreground: 150 10% 42%;
-
-    --accent: 152 30% 32%;
+    --popover-foreground: 210 13% 12%;
+    --primary: 205 56% 32%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 8% 96%;
+    --secondary-foreground: 210 13% 12%;
+    --muted: 210 8% 96%;
+    --muted-foreground: 210 10% 32%;
+    --accent: 205 56% 32%;
     --accent-foreground: 0 0% 100%;
-
-    --destructive: 4 72% 56%;
+    --destructive: 5 51% 42%;
     --destructive-foreground: 0 0% 100%;
+    --border: 210 11% 82%;
+    --input: 210 11% 65%;
+    --ring: 205 56% 32%;
+    --radius: 0.25rem;
 
-    --border: 150 9% 88%;
-    --input: 150 9% 88%;
-    --ring: 152 30% 34%;
+    --on-track: 145 39% 28%;
+    --at-risk: 43 100% 25%;
+    --off-track: 5 51% 42%;
+    --neutral: 210 10% 32%;
+    --highlight: 205 56% 32%;
+    --highlight-foreground: 0 0% 100%;
+    --coral: 5 51% 42%;
+    --ocean: 205 56% 32%;
 
-    --radius: 0.75rem;
+    --sidebar-bg: 0 0% 100%;
+    --sidebar-fg: 210 13% 12%;
+    --sidebar-active: 205 56% 32%;
+    --sidebar-hover: 210 8% 96%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 13% 12%;
+    --sidebar-primary: 205 56% 32%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 8% 96%;
+    --sidebar-accent-foreground: 210 13% 12%;
+    --sidebar-border: 210 11% 82%;
+    --sidebar-ring: 205 56% 32%;
 
-    scroll-behavior: smooth;
-
-    /* Custom tokens */
-    --on-track: 152 32% 28%;
-    --at-risk: 38 92% 50%;
-    --off-track: 4 72% 56%;
-    --neutral: 150 10% 44%;
-
-    /* Climate-tech accents: warm amber for highlights/CTAs, coral for alerts, ocean blue */
-    --highlight: 38 95% 52%;
-    --highlight-foreground: 35 60% 14%;
-    --coral: 12 82% 60%;
-    --ocean: 202 72% 44%;
-
-    /* Sidebar: base = #1e2a24 */
-    --sidebar-bg: 150 17% 14%;
-    --sidebar-fg: 150 6% 90%;
-    --sidebar-active: 152 34% 44%;
-    --sidebar-hover: 150 12% 21%;
-
-    --chart-1: 152 32% 28%;
-    --chart-2: 38 92% 50%;
-    --chart-3: 4 72% 56%;
-    --chart-4: 164 26% 36%;
-    --chart-5: 150 10% 68%;
-
-    --sidebar-background: 150 17% 14%;
-    --sidebar-foreground: 150 6% 90%;
-    --sidebar-primary: 152 34% 44%;
-    --sidebar-primary-foreground: 150 14% 10%;
-    --sidebar-accent: 150 12% 21%;
-    --sidebar-accent-foreground: 150 6% 92%;
-    --sidebar-border: 150 12% 24%;
-    --sidebar-ring: 152 32% 38%;
+    /* Categorical data colors. Shapes, labels and tables also identify series. */
+    --chart-1: 205 56% 32%;
+    --chart-2: 27 47% 39%;
+    --chart-3: 157 34% 31%;
+    --chart-4: 274 27% 42%;
+    --chart-5: 0 0% 37%;
   }
 
   .dark {
-    --background: 160 18% 8%;
-    --foreground: 150 6% 92%;
-    --card: 158 15% 12%;
-    --card-foreground: 150 6% 92%;
-    --popover: 158 15% 12%;
-    --popover-foreground: 150 6% 92%;
-    --primary: 158 48% 62%;
-    --primary-foreground: 160 30% 10%;
-    --secondary: 150 11% 22%;
-    --secondary-foreground: 150 6% 92%;
-    --muted: 150 11% 22%;
-    --muted-foreground: 150 8% 68%;
-    --accent: 152 30% 34%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 4 72% 56%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 155 12% 23%;
-    --input: 155 12% 30%;
-    --ring: 158 48% 62%;
+    color-scheme: dark;
+    --background: 210 12% 10%;
+    --foreground: 210 9% 95%;
+    --card: 210 11% 14%;
+    --card-foreground: 210 9% 95%;
+    --popover: 210 11% 14%;
+    --popover-foreground: 210 9% 95%;
+    --primary: 205 67% 72%;
+    --primary-foreground: 210 25% 9%;
+    --secondary: 210 9% 20%;
+    --secondary-foreground: 210 9% 95%;
+    --muted: 210 9% 20%;
+    --muted-foreground: 210 7% 75%;
+    --accent: 205 67% 72%;
+    --accent-foreground: 210 25% 9%;
+    --destructive: 5 65% 70%;
+    --destructive-foreground: 210 25% 9%;
+    --border: 210 9% 35%;
+    --input: 210 9% 55%;
+    --ring: 205 67% 72%;
+    --on-track: 145 45% 70%;
+    --at-risk: 43 83% 75%;
+    --off-track: 5 65% 70%;
+    --neutral: 210 7% 75%;
+    --highlight: 205 67% 72%;
+    --highlight-foreground: 210 25% 9%;
+    --coral: 5 65% 70%;
+    --ocean: 205 67% 72%;
+    --sidebar-bg: 210 11% 14%;
+    --sidebar-fg: 210 9% 95%;
+    --sidebar-active: 205 67% 72%;
+    --sidebar-hover: 210 9% 20%;
+    --sidebar-background: 210 11% 14%;
+    --sidebar-foreground: 210 9% 95%;
+    --sidebar-primary: 205 67% 72%;
+    --sidebar-primary-foreground: 210 25% 9%;
+    --sidebar-accent: 210 9% 20%;
+    --sidebar-accent-foreground: 210 9% 95%;
+    --sidebar-border: 210 9% 35%;
+    --sidebar-ring: 205 67% 72%;
+    --chart-1: 205 67% 72%;
+    --chart-2: 27 59% 69%;
+    --chart-3: 157 42% 66%;
+    --chart-4: 274 41% 73%;
+    --chart-5: 0 0% 79%;
+  }
 
-    --highlight: 38 92% 56%;
-    --highlight-foreground: 35 60% 12%;
-    --coral: 12 80% 64%;
-    --ocean: 202 70% 56%;
 
-    --on-track: 152 40% 52%;
-    --neutral: 150 8% 60%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  :focus-visible {
-    outline: 2px solid hsl(var(--primary));
-    outline-offset: 2px;
-  }
-  html, body, #root {
-    height: 100%;
-  }
-  html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+  * { @apply border-border; }
+  html, body, #root { min-height: 100%; }
+  html { font-size: 16px; scroll-behavior: auto; }
   body {
     @apply bg-background text-foreground font-sans;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
   }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
+  p, li, dd { overflow-wrap: break-word; }
+  a:not([class]) { color: hsl(var(--primary)); text-decoration: underline; text-underline-offset: 2px; }
+  :focus-visible {
+    outline: 3px solid hsl(var(--ring)) !important;
+    outline-offset: 2px !important;
   }
+  input, select, textarea, button { font: inherit; }
+  input:disabled, select:disabled, textarea:disabled, button:disabled { cursor: not-allowed; opacity: .6; }
+  table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th { font-weight: 600; text-align: left; }
+  caption { text-align: left; }
 }
 
 @layer utilities {
-  .status-on-track {
-    @apply text-[hsl(var(--on-track))];
-  }
-  .status-at-risk {
-    @apply text-[hsl(var(--at-risk))];
-  }
-  .status-off-track {
-    @apply text-[hsl(var(--off-track))];
-  }
-  .bg-on-track {
-    @apply bg-[hsl(var(--on-track))];
-  }
-  .bg-at-risk {
-    @apply bg-[hsl(var(--at-risk))];
-  }
-  .bg-off-track {
-    @apply bg-[hsl(var(--off-track))];
-  }
-  .bg-sidebar-dark {
-    @apply bg-[hsl(var(--sidebar-bg))];
-  }
-  .text-sidebar-light {
-    @apply text-[hsl(var(--sidebar-fg))];
-  }
+  .status-on-track { color: hsl(var(--on-track)); }
+  .status-at-risk { color: hsl(var(--at-risk)); }
+  .status-off-track { color: hsl(var(--off-track)); }
+  .bg-on-track { background: hsl(var(--on-track)); }
+  .bg-at-risk { background: hsl(var(--at-risk)); }
+  .bg-off-track { background: hsl(var(--off-track)); }
+  .dark .bg-on-track { background: hsl(145 39% 28%); }
+  .dark .bg-at-risk { background: hsl(43 100% 25%); }
+  .dark .bg-off-track { background: hsl(5 51% 42%); }
+  .bg-sidebar-dark { background: hsl(var(--sidebar-bg)); }
+  .text-sidebar-light { color: hsl(var(--sidebar-fg)); }
+  .touch-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .skeleton-shimmer { background: hsl(var(--muted)); }
 
-  .skeleton-shimmer {
-    background: linear-gradient(
-      90deg,
-      hsl(var(--muted)) 0%,
-      hsl(var(--muted-foreground) / 0.12) 50%,
-      hsl(var(--muted)) 100%
-    );
-    background-size: 200% 100%;
-    animation: skeleton-shimmer 1.4s ease-in-out infinite;
-  }
-
-  .touch-scroll-x {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .scrollbar-none {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
-  }
+  /* Retain class names used by existing pages while removing their decoration. */
+  .landing-gradient-bg, .dash-animated-bg, .map-stage-bg,
+  .map-summary-card, .dash-section-header, .map-summary-accent,
+  .map-globe-summary { background: hsl(var(--card)); }
+  .map-globe-stage { background: hsl(210 12% 10%); }
+  .landing-grid-pattern, .dash-grid-pattern, .ambient-contours { background: none; }
+  .map-bubble-g.is-dimmed { opacity: .25; }
+  .map-legend-item.is-active { border-color: hsl(var(--primary)); background: hsl(var(--muted)); }
+  .map-district-path.is-hovered { stroke-width: 2px; }
+  .gradient-border-card { border: 1px solid hsl(var(--border)); }
 }
 
-@keyframes skeleton-shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-/* Country select landing — subtle motion (respects prefers-reduced-motion below) */
-@keyframes landing-gradient-shift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-@keyframes landing-float {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  33% {
-    transform: translate3d(12px, -18px, 0);
-  }
-  66% {
-    transform: translate3d(-8px, 10px, 0);
-  }
-}
-
-@keyframes landing-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes landing-pulse-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 hsl(var(--sidebar-primary) / 0.35);
-  }
-  50% {
-    box-shadow: 0 0 0 8px hsl(var(--sidebar-primary) / 0);
-  }
-}
-
-@keyframes landing-shimmer-line {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(200%);
-  }
-}
-
-@layer utilities {
-  .landing-gradient-bg {
-    background: linear-gradient(
-      125deg,
-      hsl(150 25% 96%) 0%,
-      hsl(152 35% 92%) 25%,
-      hsl(150 12% 97%) 50%,
-      hsl(152 28% 94%) 75%,
-      hsl(150 20% 96%) 100%
-    );
-    background-size: 200% 200%;
-    /* Static gradient — animating background-position repaints the whole
-       viewport every frame and was a major source of scroll jank. */
-  }
-
-  .landing-orb {
-    will-change: transform;
-    animation: landing-float 14s ease-in-out infinite;
-  }
-
-  .landing-orb-delay-1 {
-    animation-delay: -4s;
-  }
-
-  .landing-orb-delay-2 {
-    animation-delay: -9s;
-  }
-
-  .landing-fade-up {
-    animation: landing-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  }
-
-  .landing-stagger-1 {
-    animation-delay: 0.02s;
-  }
-  .landing-stagger-2 {
-    animation-delay: 0.06s;
-  }
-  .landing-stagger-3 {
-    animation-delay: 0.1s;
-  }
-  .landing-stagger-4 {
-    animation-delay: 0.14s;
-  }
-  .landing-stagger-5 {
-    animation-delay: 0.18s;
-  }
-
-  .landing-card-glow {
-    animation: landing-pulse-glow 3s ease-in-out infinite;
-  }
-
-  .landing-grid-pattern {
-    background-image: radial-gradient(hsl(var(--foreground) / 0.06) 1px, transparent 1px);
-    background-size: 28px 28px;
-  }
-
-  .landing-shimmer-bar {
-    animation: landing-shimmer-line 2.8s ease-in-out infinite;
-  }
-}
-
-/* ── Dashboard motion & climate theme ── */
-@keyframes dash-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes dash-crossfade {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes dash-bg-shift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-@layer utilities {
-  .dash-fade-up {
-    animation: dash-fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-    animation-delay: var(--dash-fade-delay, 0s);
-  }
-
-  /* Hold child card animations until the scroll-reveal parent is visible. */
-  .reveal:not(.reveal-visible) .dash-fade-up {
-    opacity: 0;
-    transform: translateY(10px);
-    animation: none;
-  }
-  .reveal.reveal-visible .dash-fade-up {
-    animation: dash-fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-    animation-delay: var(--dash-fade-delay, 0s);
-  }
-
-  /* Re-mounted content (target/district/filter switches) fades in instead of popping. */
-  .dash-crossfade {
-    animation: dash-crossfade 0.4s ease-out;
-  }
-
-  /* Subtle lift + teal shadow glow for cards and chart containers. */
-  .dash-card-hover {
-    transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease,
-      border-color 0.2s ease;
-  }
-  .dash-card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      0 8px 24px -8px hsl(168 45% 28% / 0.28),
-      0 0 0 1px hsl(var(--ring) / 0.18);
-  }
-
-  /* Slow-drifting climate gradient (deep teal → green → blue) behind main content. */
-  .dash-animated-bg {
-    background: linear-gradient(
-      130deg,
-      hsl(168 38% 96%) 0%,
-      hsl(152 32% 95%) 28%,
-      hsl(202 38% 96%) 58%,
-      hsl(160 28% 96%) 100%
-    );
-    background-size: 300% 300%;
-    /* Static gradient — see note above; the position drift was imperceptible
-       at 26s but forced a continuous full-viewport repaint. */
-  }
-
-  /* Faint dot-grid texture layered over the gradient. */
-  .dash-grid-pattern {
-    background-image: radial-gradient(hsl(168 35% 28% / 0.05) 1px, transparent 1px);
-    background-size: 24px 24px;
-  }
-
-  /* Section / column headers: soft teal-to-blue gradient wash. */
-  .dash-section-header {
-    background: linear-gradient(
-      90deg,
-      hsl(168 32% 92% / 0.9) 0%,
-      hsl(200 32% 94% / 0.55) 55%,
-      hsl(var(--muted) / 0.4) 100%
-    );
-  }
-
-  /* Emissions map — bubble entrance, hover scale, legend focus */
-  .map-bubble-g {
-    transform-box: fill-box;
-    transform-origin: center;
-    transition:
-      transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-      opacity 0.35s ease;
-  }
-  .map-bubble-g.is-hovered {
-    transform: scale(1.32);
-  }
-  .map-bubble-g.is-focused {
-    transform: scale(1.06);
-  }
-  .map-bubble-g.is-dimmed {
-    opacity: 0.16;
-  }
-  .map-bubble-circle {
-    transition:
-      r 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-      opacity 0.35s ease,
-      stroke-width 0.2s ease;
-  }
-  .map-district-path {
-    transition:
-      fill 0.2s ease,
-      stroke 0.2s ease,
-      stroke-width 0.2s ease,
-      filter 0.2s ease;
-  }
-  .map-district-path.is-hovered {
-    filter: brightness(1.06);
-  }
-  .map-legend-item {
-    transition:
-      background-color 0.2s ease,
-      border-color 0.2s ease,
-      box-shadow 0.2s ease,
-      opacity 0.3s ease,
-      transform 0.2s ease;
-  }
-  .map-legend-item:hover {
-    transform: translateX(2px);
-  }
-  .map-legend-item.is-active {
-    background: hsl(168 38% 94% / 0.85);
-    border-color: hsl(168 42% 42% / 0.45);
-    box-shadow: 0 0 0 1px hsl(168 42% 42% / 0.2);
-  }
-  .dark .map-legend-item.is-active {
-    background: hsl(168 22% 18% / 0.7);
-    border-color: hsl(168 35% 48% / 0.5);
-  }
-  .map-summary-accent {
-    background: linear-gradient(
-      135deg,
-      hsl(152 42% 42%) 0%,
-      hsl(168 38% 38%) 50%,
-      hsl(202 45% 48%) 100%
-    );
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .skeleton-shimmer {
-    animation: none;
-    background: hsl(var(--muted));
-  }
-  .dash-animated-bg {
-    animation: none;
-  }
-  .dash-fade-up,
-  .dash-crossfade {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-  .dash-card-hover,
-  .dash-card-hover:hover {
-    transform: none;
-  }
-  .map-bubble-g,
-  .map-bubble-g.is-hovered,
-  .map-bubble-g.is-focused,
-  .map-bubble-circle,
-  .map-district-path,
-  .map-legend-item,
-  .map-legend-item:hover {
-    transition: none;
-    transform: none;
-  }
-}
-
-/* ── Emissions map — bubble entrance & hover ── */
-@keyframes map-bubble-in {
-  from {
-    opacity: 0;
-    transform: scale(0);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes map-glow-pulse {
-  0%,
-  100% {
-    opacity: 0.5;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.75;
-    transform: scale(1.06);
-  }
-}
-
-@layer utilities {
-  .map-stage-bg {
-    background: linear-gradient(
-      155deg,
-      hsl(210 36% 97%) 0%,
-      hsl(44 32% 98%) 42%,
-      hsl(48 26% 97%) 68%,
-      hsl(200 30% 96.5%) 100%
-    );
-  }
-
-  .map-bubble-group {
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: map-bubble-in 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
-    animation-delay: var(--map-bubble-delay, 0ms);
-  }
-
-  .map-bubble-circle {
-    transition:
-      r 0.22s cubic-bezier(0.34, 1.2, 0.64, 1),
-      opacity 0.28s ease,
-      stroke-width 0.2s ease,
-      stroke-opacity 0.2s ease;
-  }
-
-  .map-bubble-halo {
-    animation: map-glow-pulse 2s ease-in-out infinite;
-  }
-
-  .map-district-path {
-    transition:
-      fill 0.2s ease,
-      stroke 0.2s ease,
-      stroke-width 0.2s ease,
-      filter 0.2s ease;
-  }
-
-  .map-district-path.is-hovered {
-    filter: drop-shadow(0 0 6px hsl(152 34% 38% / 0.35));
-  }
-
-  .map-legend-item {
-    transition:
-      background-color 0.2s ease,
-      box-shadow 0.2s ease,
-      transform 0.2s ease,
-      opacity 0.25s ease;
-  }
-
-  .map-legend-item.is-active {
-    background: hsl(var(--card));
-    box-shadow:
-      0 0 0 1px hsl(var(--ring) / 0.35),
-      0 4px 12px -4px hsl(168 45% 28% / 0.22);
-  }
-
-  .map-summary-card {
-    background: linear-gradient(
-      160deg,
-      hsl(44 36% 97% / 0.95) 0%,
-      hsl(var(--card)) 45%,
-      hsl(210 32% 97% / 0.88) 100%
-    );
-  }
-
-  .map-globe-stage {
-    background: radial-gradient(ellipse 120% 80% at 50% 0%, hsl(215 28% 14%) 0%, #0a0e16 55%, #06080d 100%);
-  }
-
-  .map-globe-summary {
-    background: linear-gradient(
-      160deg,
-      rgba(15, 23, 42, 0.85) 0%,
-      rgba(10, 14, 22, 0.75) 100%
-    );
-  }
-
-  .dark .map-globe-stage {
-    background: radial-gradient(ellipse 120% 80% at 50% 0%, hsl(215 28% 12%) 0%, #0a0e16 55%, #06080d 100%);
-  }
-
-  /* MapLibre chrome themed for the dark satellite stage */
-  .emissions-map .maplibregl-ctrl-attrib {
-    background: rgba(8, 12, 20, 0.72);
-    color: rgba(226, 232, 240, 0.8);
-    font-size: 9px;
-    border-radius: 6px 0 0 0;
-  }
-  .emissions-map .maplibregl-ctrl-attrib a {
-    color: rgba(226, 232, 240, 0.9);
-  }
-  .emissions-map .maplibregl-ctrl-group {
-    background: rgba(8, 12, 20, 0.78);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(4px);
-  }
-  .emissions-map .maplibregl-ctrl-group button + button {
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
-  }
-  .emissions-map .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
-    filter: invert(1) hue-rotate(180deg) brightness(1.1);
-  }
-}
-
-.dark .map-stage-bg {
-  background: linear-gradient(
-    155deg,
-    hsl(215 28% 11%) 0%,
-    hsl(210 22% 12%) 40%,
-    hsl(200 20% 11%) 70%,
-    hsl(220 24% 10%) 100%
-  );
-}
-
-.dark .map-summary-card {
-  background: linear-gradient(
-    160deg,
-    hsl(168 24% 16% / 0.95) 0%,
-    hsl(var(--card)) 45%,
-    hsl(202 22% 15% / 0.85) 100%
-  );
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .map-bubble-group {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-  .map-bubble-circle,
-  .map-district-path,
-  .map-legend-item {
-    transition: none;
-  }
-  .map-bubble-halo {
-    animation: none;
-    opacity: 0.4;
-  }
-}
-
-/* ── Dark-mode variants for decorative gradient layers ── */
-.dark .landing-gradient-bg {
-  background: linear-gradient(
-    125deg,
-    hsl(160 18% 9%) 0%,
-    hsl(168 22% 12%) 25%,
-    hsl(200 20% 10%) 50%,
-    hsl(152 20% 11%) 75%,
-    hsl(160 18% 10%) 100%
-  );
-  background-size: 200% 200%;
-}
-
-.dark .dash-animated-bg {
-  background: linear-gradient(
-    130deg,
-    hsl(168 22% 10%) 0%,
-    hsl(152 20% 11%) 28%,
-    hsl(202 24% 11%) 58%,
-    hsl(160 18% 10%) 100%
-  );
-  background-size: 300% 300%;
-}
-
-.dark .dash-grid-pattern {
-  background-image: radial-gradient(hsl(168 40% 70% / 0.05) 1px, transparent 1px);
-}
-
-.dark .dash-section-header {
-  background: linear-gradient(
-    90deg,
-    hsl(168 24% 18% / 0.9) 0%,
-    hsl(200 22% 17% / 0.55) 55%,
-    hsl(var(--muted) / 0.4) 100%
-  );
-}
-
-.dark .landing-grid-pattern {
-  background-image: radial-gradient(hsl(150 30% 80% / 0.06) 1px, transparent 1px);
-}
-
-/* ── Smooth dark/light theme switch via the View Transitions API ──
-   The whole page cross-fades as a single composited snapshot, which is far
-   cheaper than transitioning colors on every element. */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 0.35s;
-  animation-timing-function: ease;
-}
-
-/* ── Site-wide ambient background (behind all app pages) ── */
-/* Translate-only drift: scaling a 64px-blurred orb re-rasterizes the blur
-   every frame, so we move (compositor-only) instead of scale, and promote
-   each orb to its own GPU layer with will-change. */
-@keyframes ambient-drift-a {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(40px, -30px, 0); }
-}
-@keyframes ambient-drift-b {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(-35px, 25px, 0); }
-}
-
-@layer utilities {
-  .ambient-orb-a {
-    will-change: transform;
-    animation: ambient-drift-a 22s ease-in-out infinite;
-  }
-  .ambient-orb-b {
-    will-change: transform;
-    animation: ambient-drift-b 28s ease-in-out infinite;
-  }
-  /* Faint topographic contour lines evoking terrain maps. */
-  .ambient-contours {
-    background-image: repeating-radial-gradient(
-      circle at 30% 40%,
-      hsl(var(--foreground) / 0.025) 0px,
-      hsl(var(--foreground) / 0.025) 1px,
-      transparent 1px,
-      transparent 56px
-    ),
-    repeating-radial-gradient(
-      circle at 75% 70%,
-      hsl(var(--foreground) / 0.02) 0px,
-      hsl(var(--foreground) / 0.02) 1px,
-      transparent 1px,
-      transparent 72px
-    );
-  }
-}
-
-/* ── Hero headline (single fast fade — avoids per-word delay on load) ── */
-@keyframes hero-headline-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.35em);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.hero-headline {
-  animation: hero-headline-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-/* ── Hero text reveal (word-by-word; optional, used outside main headlines) ── */
-@keyframes hero-word-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.4em);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.hero-word {
-  display: inline-block;
-  animation: hero-word-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-}
-
-/* Gradient clipped text must live on the same element as the glyphs (Safari/iOS). */
-.hero-gradient-text {
-  -webkit-text-fill-color: transparent;
-  color: hsl(160 84% 39%);
-}
-.dark .hero-gradient-text {
-  color: hsl(158 64% 52%);
-}
-@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
-  .hero-gradient-text {
-    -webkit-text-fill-color: currentColor;
-    background-image: none !important;
-  }
-}
-
-/* ── Scroll-triggered reveal (paired with use-scroll-reveal hook) ── */
-.reveal {
-  opacity: 0;
-  transform: translateY(14px);
-  transition:
-    opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.reveal.reveal-visible {
-  opacity: 1;
-  transform: none;
-}
-
-/* ── Animated progress fill (width eases in on load) ── */
-.progress-fill-animate {
-  transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* ── Scroll-to-top button fade ── */
-.scroll-top-btn {
-  opacity: 0;
-  transform: translateY(8px);
-  pointer-events: none;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.scroll-top-btn.scroll-top-visible {
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
-}
-
-/* ── Gradient border accent for premium cards ── */
-@layer utilities {
-  .gradient-border-card {
-    position: relative;
-    background-clip: padding-box;
-  }
-  .gradient-border-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(
-      135deg,
-      hsl(168 50% 45% / 0.35),
-      hsl(202 60% 50% / 0.12) 40%,
-      transparent 60%,
-      hsl(38 90% 55% / 0.18)
-    );
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ambient-orb-a,
-  .ambient-orb-b,
-  .hero-headline,
-  .hero-word {
-    animation: none;
-  }
-  .hero-headline,
-  .hero-word {
-    opacity: 1;
-    transform: none;
-  }
-  .reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-  .progress-fill-animate,
-  .scroll-top-btn {
-    transition: none;
-  }
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing-gradient-bg,
-  .landing-orb,
-  .landing-card-glow,
-  .landing-shimmer-bar {
-    animation: none;
-  }
-  .landing-fade-up {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/*
- * Dark theme for the MapLibre attribution control on the emissions map.
- * Kept UNLAYERED (outside @layer) so these win over maplibre-gl.css, whose
- * default rules are also unlayered and otherwise beat layered overrides.
- * Scoped to .emissions-map so nothing else is affected.
- */
+/* Existing pages use many old utility sizes and effects. Normalize them at the
+   presentation boundary so every route receives the same system immediately. */
+.font-display, .font-brand { font-family: inherit !important; }
+.text-\[8px\], .text-\[9px\], .text-\[10px\], .text-\[11px\],
+.text-\[12px\], .text-xs { font-size: .875rem !important; }
+.text-\[13px\], .text-sm { font-size: 1rem !important; }
+.rounded-3xl, .rounded-2xl, .rounded-xl, .rounded-lg,
+.rounded-md, .rounded-sm { border-radius: .25rem !important; }
+button.rounded-full, a.rounded-full { border-radius: .25rem !important; }
+[class*="shadow-"] { box-shadow: none !important; }
+[class*="backdrop-blur"] { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+[class*="bg-gradient"], [class*="gradient-bg"], [class*="grid-pattern"] { background-image: none !important; }
+.hero-gradient-text { color: hsl(var(--primary)) !important; -webkit-text-fill-color: currentColor !important; }
+.reveal { opacity: 1 !important; transform: none !important; }
+.progress-fill-animate { transition: none !important; }
+.scroll-top-btn { display: none; }
+.scroll-top-btn.scroll-top-visible { display: inline-flex; }
+*, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+
+/* Consistent data tables, including tables authored directly inside pages. */
+main table { width: 100%; }
+main table th, main table td { border-bottom: 1px solid hsl(var(--border)); }
+main table thead { background: hsl(var(--muted)); }
+main table th { position: sticky; top: 0; z-index: 1; background: hsl(var(--muted)); }
+main table td, main table th { padding: .625rem .75rem; vertical-align: top; }
+main table tr:last-child td { border-bottom: 0; }
+main table :is(td,th):first-child { padding-left: .75rem; }
+main table :is(td,th):last-child { padding-right: .75rem; }
+main :is(input, textarea, select, [role="combobox"]) { border-radius: .25rem; }
+main :is(input, textarea, select):not([type="checkbox"]):not([type="radio"]) { min-height: 2.75rem; }
+
+/* Map controls remain visible against the functional satellite imagery. */
 .emissions-map .maplibregl-ctrl-attrib,
-.emissions-map .maplibregl-ctrl-attrib.maplibregl-compact {
-  background: rgba(10, 15, 26, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(226, 232, 240, 0.85);
-  border-radius: 8px;
-  backdrop-filter: blur(4px);
+.emissions-map .maplibregl-ctrl-attrib.maplibregl-compact,
+.emissions-map .maplibregl-ctrl-group {
+  background: #fff;
+  color: #1b1f23;
+  border: 1px solid #aab4bd;
+  border-radius: .25rem;
+  backdrop-filter: none;
+  font-size: .75rem;
 }
-.emissions-map .maplibregl-ctrl-attrib-inner {
-  color: rgba(226, 232, 240, 0.85);
-}
-.emissions-map .maplibregl-ctrl-attrib a {
-  color: #7dd3fc;
-}
-.emissions-map .maplibregl-ctrl-attrib a:hover {
-  color: #bae6fd;
-}
-/* Compact collapsed pill: keep rounded + dark on all corners. */
-.emissions-map .maplibregl-ctrl-attrib.maplibregl-compact {
-  min-height: 24px;
-  border-radius: 12px;
-}
-/*
- * Info (i) toggle button. The glyph ships as a dark SVG background-image, so we
- * keep the button background transparent (the dark pill shows through) and
- * invert the element so only the icon reads light against the dark background.
- */
-.emissions-map .maplibregl-ctrl-attrib-button {
-  background-color: transparent;
-  border-radius: 50%;
-  filter: invert(1) brightness(1.2);
-}
-.emissions-map .maplibregl-ctrl-attrib-button:hover {
-  background-color: rgba(255, 255, 255, 0.12);
-}
-
-/* Emissions map click popup — compact frosted card over satellite basemap. */
+.emissions-map .maplibregl-ctrl-attrib-inner { color: #1b1f23; }
+.emissions-map .maplibregl-ctrl-attrib a { color: #245a81; text-decoration: underline; }
+.emissions-map .maplibregl-ctrl-attrib-button { filter: none; }
+.emissions-map .maplibregl-ctrl-group button + button { border-top: 1px solid #aab4bd; }
 .emap-popup .maplibregl-popup-content {
-  background: rgba(24, 32, 42, 0.72);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: #e8edf2;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.45);
-  padding: 7px 9px;
+  background: #fff;
+  color: #1b1f23;
+  border: 1px solid #aab4bd;
+  border-radius: .25rem;
+  box-shadow: none;
+  padding: .75rem;
 }
-.emap-popup .maplibregl-popup-tip {
-  border-top-color: rgba(24, 32, 42, 0.72) !important;
-  border-bottom-color: rgba(24, 32, 42, 0.72) !important;
-}
-.emap-popup .maplibregl-popup-close-button {
-  color: #94a3b8;
-  font-size: 14px;
-  line-height: 1;
-  padding: 2px 4px;
-  right: 2px;
-  top: 2px;
-}
-.emap-popup .maplibregl-popup-close-button:hover {
-  background: transparent;
-  color: #e2e8f0;
-}
-.emap-pop-name {
-  font-weight: 600;
-  font-size: 12px;
-  line-height: 1.2;
-  padding-right: 10px;
-}
-.emap-pop-sector {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 2px;
-  font-size: 10px;
-  color: #a8b4c0;
-  line-height: 1.2;
-}
-.emap-pop-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 9999px;
-  flex-shrink: 0;
-}
-.emap-pop-value {
-  margin-top: 4px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #4ade80;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-}
-.emap-pop-unit {
-  font-size: 10px;
-  font-weight: 500;
-  color: #94a3b8;
+.emap-popup .maplibregl-popup-tip { border-top-color: #fff !important; border-bottom-color: #fff !important; }
+.emap-popup .maplibregl-popup-close-button { color: #245a81; font-size: 1.25rem; padding: .25rem; }
+.emap-pop-name { font-weight: 600; font-size: 1rem; padding-right: 1.25rem; }
+.emap-pop-sector, .emap-pop-unit { color: #4a525a; font-size: .875rem; }
+.emap-pop-sector { display: flex; align-items: center; gap: .375rem; margin-top: .25rem; }
+.emap-pop-dot { width: .625rem; height: .625rem; border-radius: 50%; flex-shrink: 0; }
+.emap-pop-value { margin-top: .375rem; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px) {
+  main table th, main table td { padding: .5rem; }
 }
 
-/* Desktop readability: nudge the smallest text up a step (the dashboard relies
- * on a lot of 9–12px labels). A targeted bump rather than a full rescale so
- * layout/spacing stay put. Unlayered rules win over Tailwind's utility layer. */
-@media (min-width: 1024px) {
-  .text-\[8px\] { font-size: 9px; }
-  .text-\[9px\] { font-size: 10px; }
-  .text-\[10px\] { font-size: 11px; }
-  .text-\[11px\] { font-size: 12px; }
-  .text-xs { font-size: 0.8125rem; } /* 12px -> 13px */
+@media print {
+  :root, .dark { color-scheme: light; --background: 0 0% 100%; --foreground: 210 13% 12%; --card: 0 0% 100%; --card-foreground: 210 13% 12%; --muted: 0 0% 96%; --muted-foreground: 210 10% 32%; --border: 210 11% 70%; }
+  html, body, #root, main { height: auto !important; min-height: 0 !important; overflow: visible !important; background: #fff !important; color: #1b1f23 !important; }
+  header[data-top-nav] nav, .scroll-top-btn, button, [role="dialog"], [data-radix-popper-content-wrapper] { display: none !important; }
+  header[data-top-nav], footer { position: static !important; }
+  main > div, main section, main article { break-inside: avoid-page; }
+  main table { width: 100%; min-width: 0 !important; font-size: 10pt; }
+  main table thead { display: table-header-group; }
+  main table tr { break-inside: avoid; }
+  a[href]::after { content: none; }
+  @page { margin: 16mm; }
 }

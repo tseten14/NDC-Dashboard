@@ -19,11 +19,8 @@ window.addEventListener("vite:preloadError", (event) => {
 
 createRoot(document.getElementById("root")!).render(<App />);
 
-// Fade out the initial-load splash once React has mounted.
+// Remove the static loading message after the first render frame.
 const splash = document.getElementById("splash");
 if (splash) {
-  requestAnimationFrame(() => {
-    splash.classList.add("splash-done");
-    window.setTimeout(() => splash.remove(), 280);
-  });
+  requestAnimationFrame(() => splash.remove());
 }

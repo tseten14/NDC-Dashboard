@@ -3,7 +3,9 @@
  * Routes: /api/v1/* and /api/health
  */
 import { config as loadDotEnv } from "dotenv";
-loadDotEnv({ override: true });
+// Explicit environment variables (including browser-test fixtures and hosted
+// configuration) take precedence over local .env defaults.
+loadDotEnv();
 import express from "express";
 import { createApp } from "./server/createApp.js";
 import { bootstrapDatabase, getPersistenceMode } from "../database/bootstrap.ts";

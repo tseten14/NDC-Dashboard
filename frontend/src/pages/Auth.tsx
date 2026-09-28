@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Loader2, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -67,8 +66,7 @@ export default function Auth() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-3 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground"><Leaf className="h-6 w-6" /></div>
+        <CardHeader className="space-y-3 text-left">
           <CardTitle>NDC Data Explorer</CardTitle>
           <CardDescription>Sign in to your climate data workspace, or create an account to get started.</CardDescription>
         </CardHeader>
@@ -84,7 +82,7 @@ export default function Auth() {
                 <div className="space-y-1.5"><Label htmlFor="auth-email">Email</Label><Input id="auth-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></div>
                 <div className="space-y-1.5"><Label htmlFor="auth-password">Password</Label><Input id="auth-password" type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} required minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} /></div>
                 <Button type="submit" className="w-full" disabled={busy || !supabaseAuth}>
-                  {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{mode === "signup" ? "Create account" : "Sign in"}
+                  {busy ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
                 </Button>
               </form>
             </TabsContent>

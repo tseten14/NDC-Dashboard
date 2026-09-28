@@ -119,14 +119,8 @@ const queryClient = new QueryClient({
 
 function RouteFallback() {
   return (
-    <div role="status" aria-live="polite" className="mx-auto flex h-full min-h-[12rem] max-w-6xl flex-col justify-center gap-5 p-6 sm:p-10">
-      <span className="text-sm font-medium text-muted-foreground">Opening your workspace…</span>
-      <div aria-hidden="true" className="space-y-5 motion-safe:animate-pulse">
-        <div className="h-8 w-2/3 rounded-lg bg-muted" />
-        <div className="h-4 w-1/2 rounded bg-muted" />
-        <div className="grid grid-cols-3 gap-4">{[1, 2, 3].map((item) => <div key={item} className="h-28 rounded-2xl border bg-card" />)}</div>
-        <div className="h-40 rounded-2xl border bg-card" />
-      </div>
+    <div role="status" aria-live="polite" className="mx-auto flex min-h-[12rem] max-w-6xl items-center p-6 sm:p-10">
+      <p className="border-l-4 border-primary pl-4 text-base text-foreground">Loading page…</p>
     </div>
   );
 }
@@ -238,7 +232,7 @@ function ProtectedShell() {
 
 const App = () => (
   <ErrorBoundary>
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
