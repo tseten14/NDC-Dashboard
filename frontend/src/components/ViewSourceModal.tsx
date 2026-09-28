@@ -1,9 +1,7 @@
 /**
  * Dialog: see the raw source data.
  *
- * Shows the untouched response behind a figure on screen. The strongest form of
- * the app's data-honesty promise — anyone can look at exactly what came back
- * from Climate TRACE.
+ * Shows the current request metadata and the app's transformation method.
  */
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -118,8 +116,6 @@ export function ViewSourceModal({ open, onOpenChange, sector, liveSnapshot }: Pr
 
               <Section title="Data references (methodology notes)" icon={Database}>
                 <MonoRow label="API endpoint" value={lineage.apiEndpoint} />
-                <MonoRow label="Raw table" value={lineage.rawTable} />
-                <MonoRow label="Harmonised view" value={lineage.harmonisedView} />
                 <MonoRow label="Data version" value={lineage.dataVersion} />
                 <MonoRow label="Refresh cadence" value={lineage.refreshCadence} />
               </Section>

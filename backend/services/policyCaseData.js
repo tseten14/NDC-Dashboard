@@ -48,7 +48,7 @@ export function listPolicyCases() {
   const index = loadIndex();
   return {
     ...index,
-    data_source: "bundled KCI corpus",
+    data_source: loadIndex().cases.length ? "reviewed policy case catalogue" : "no verified policy impact evidence",
   };
 }
 

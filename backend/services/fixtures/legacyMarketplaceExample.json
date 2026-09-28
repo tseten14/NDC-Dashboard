@@ -1,0 +1,122 @@
+{
+  "id": "uga-afolu",
+  "title": "Cattle Corridor Agroforestry and Land Restoration",
+  "ministry": "Ministry of Water and Environment",
+  "sector": "AFOLU",
+  "sectorId": "afolu",
+  "geography": "12 districts across the cattle corridor (Karamoja, Teso, Lango, Ankole)",
+  "stage": "Under review",
+  "problem": "Deforestation and land degradation across the cattle corridor are driving emissions and collapsing smallholder productivity. Forest cover has fallen to 12.5% of land area against a 2030 target of 21%.",
+  "intervention": "Landscape-scale agroforestry combining farmer-managed natural regeneration, commercial woodlots, and shea-tree restoration across 180,000 hectares — integrated with soil carbon monitoring and community land-use plans.",
+  "askM": 43,
+  "coFinanceM": 15,
+  "instrument": "GCF grant + concessional debt",
+  "ndcTarget": "Reduce AFOLU emissions by 24.9% below BAU to 91.8 MtCO₂e by 2030; increase forest cover to 21%",
+  "annualMtCO2e": 0.85,
+  "readiness": [
+    {
+      "label": "Costed investment plan",
+      "met": true
+    },
+    {
+      "label": "NDC alignment confirmed",
+      "met": true
+    },
+    {
+      "label": "MRV methodology agreed",
+      "met": true
+    },
+    {
+      "label": "Accredited Entity identified",
+      "met": true
+    },
+    {
+      "label": "E&S safeguards complete",
+      "met": false
+    },
+    {
+      "label": "NDA no-objection letter",
+      "met": false
+    }
+  ],
+  "evidence": {
+    "dashboardHref": "/dashboard?sector=afolu",
+    "policyImpactHref": "/policy-impact?sector=AFOLU&intervention=reforestation&objective=Cattle+corridor+agroforestry",
+    "climateFinanceHref": "/climate-finance?sector=afolu&from=policy-impact&intervention=Agroforestry+and+landscape+restoration&scale=1"
+  },
+  "evaluation": {
+    "funder": "Green Climate Fund",
+    "window": "GCF Full project (Mitigation / cross-cutting)",
+    "decision": "interest",
+    "criteria": [
+      {
+        "criterion": "NDC alignment",
+        "score": "strong",
+        "rationale": "Directly targets the AFOLU 24.9% BAU reduction and forest-cover pledge."
+      },
+      {
+        "criterion": "Climate impact",
+        "score": "strong",
+        "rationale": "0.85 MtCO₂e/yr with established FMNR methodology; strong co-benefits for soil carbon."
+      },
+      {
+        "criterion": "Financial viability",
+        "score": "adequate",
+        "rationale": "Grant-dependent; carbon revenue could cover 30% of operating costs but PPA not yet signed."
+      },
+      {
+        "criterion": "Institutional capacity",
+        "score": "adequate",
+        "rationale": "MoWE has GCF track record; district coordination capacity is the bottleneck."
+      },
+      {
+        "criterion": "Safeguards & FPIC",
+        "score": "weak",
+        "rationale": "E&S screening started but FPIC process with pastoralist communities not complete."
+      },
+      {
+        "criterion": "MRV readiness",
+        "score": "strong",
+        "rationale": "Satellite + ground-truth sampling design agreed with Climate TRACE team."
+      }
+    ],
+    "summary": "Strong alignment and climate impact. GCF is prepared to move to concept note stage once safeguards and NDA no-objection are in place."
+  },
+  "milestones": [
+    {
+      "label": "NDA no-objection letter",
+      "status": "current",
+      "date": "Q3 2026"
+    },
+    {
+      "label": "Concept note submitted",
+      "status": "upcoming",
+      "date": "Q4 2026"
+    },
+    {
+      "label": "GCF Secretariat review",
+      "status": "upcoming",
+      "date": "Q1 2027"
+    },
+    {
+      "label": "Full proposal + safeguards",
+      "status": "upcoming",
+      "date": "Q3 2027"
+    },
+    {
+      "label": "Board approval",
+      "status": "upcoming",
+      "date": "Q4 2027"
+    },
+    {
+      "label": "First disbursement",
+      "status": "upcoming",
+      "date": "Q1 2028"
+    },
+    {
+      "label": "MRV baseline report",
+      "status": "upcoming",
+      "date": "Q2 2028"
+    }
+  ]
+}

@@ -76,15 +76,12 @@ export async function exportInvestmentNoteFromIndicator(ind: Indicator) {
   y = body(doc, y, `Source: ${ind.data_source ?? "TBD"}. Owner: ${ind.data_owner ?? "TBD"}. Update frequency: ${ind.update_frequency ?? "TBD"}. Validation status: ${ind.validation_status}. Confidence score: ${confidenceScore(ind)}/100.`, margin, contentWidth);
 
   y = heading(doc, y, "5. Article 6 Readiness & Finance Hooks", margin, contentWidth);
-  const cond = ind.conditionality ?? "Mixed";
-  const instr = (ind.potential_instruments ?? ["grants","concessional"]).join(", ");
+  const cond = ind.conditionality ?? "Not recorded";
+  const instr = ind.potential_instruments?.length ? ind.potential_instruments.join(", ") : "Not assessed";
   y = body(doc, y, `Conditionality: ${cond}. Potential instruments: ${instr}. ${ind.strategy === "NDC" ? "Article 6 emerges as supplementary upside; the intervention is justified on national development value alone." : "Where mitigation co-benefits exist, Article 6.2 cooperative approaches may apply."}`, margin, contentWidth);
 
-  y = heading(doc, y, "6. Why This Is Investable", margin, contentWidth);
-  y = body(doc, y, "• Anchored in published national strategy with explicit baseline and target.", margin, contentWidth);
-  y = body(doc, y, "• Owner and data source identified, enabling MRV and disbursement-linked finance.", margin, contentWidth);
-  y = body(doc, y, "• Alignment with multiple strategies reduces political risk and broadens investor appeal.", margin, contentWidth);
-  y = body(doc, y, "• Suitable for blending public budget, concessional finance and (where applicable) carbon-related revenues.", margin, contentWidth);
+  y = heading(doc, y, "6. Evidence Needed Before Investment", margin, contentWidth);
+  y = body(doc, y, "This note does not establish bankability, funding approval or eligibility for carbon credits. Verify the cited baseline and target, costed delivery plan, project owner, monitoring method and funder requirements before making an investment decision.", margin, contentWidth);
 
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {

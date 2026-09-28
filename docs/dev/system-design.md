@@ -250,17 +250,17 @@ flowchart TB
   Results -.-> CF
 ```
 
-Rule-based **analogies** from curated KCI cases — indicative, not official government projections.
+No policy cases with document-specific quantitative evidence are approved for production. The route remains available, but the API returns an explicit unavailable response instead of producing an analogy from demonstration cases.
 
 ---
 
-### 5.4 Climate Finance screening
+### 5.4 Climate Finance register
 
 **Entry:** `/climate-finance` (optional bridge from Policy Impact).
 
-- Client-side economics: `frontend/src/lib/climate-finance*.ts`
-- Uses mitigation options from catalog + user assumptions
-- **Indicative** abatement cost / fund pathway — not tendered project finance
+- Contains only exact commitments checked against the provider pages for GCF FP034 and World Bank EASP P166685
+- Labels the register as partial and distinguishes commitments from payments or expenditure
+- Does not calculate unsupported finance gaps, abatement costs, or national totals
 
 ---
 
@@ -366,7 +366,7 @@ Passage search is hidden until query/topic active; results group by document. Do
 **Entry:** `/my-work`, activity forms
 
 - **Persistence:** `localStorage` only (per browser)
-- Catalog activities from API are read-only seeds; user captures delivery notes locally
+- Catalog activities from API are read-only policy references; user captures delivery notes locally
 
 ---
 
@@ -402,12 +402,12 @@ The translator paginates `/v7/sources` for `gadmId=UGA`, validates and deduplica
 | Cockpit | `/api/v1/indicators/panel`, `/api/v1/catalog/*` | Indicator targets, activities, mitigation |
 | Documents | `/api/v1/documents/*` | Policy corpus, CPR passages, MCF projects |
 | Policy AI | `POST /api/v1/policy-ai/*` | PDF document analysis (OpenAI) |
-| Policy Impact | `/api/v1/policy-impact/*` | Forecast + case library |
+| Policy Impact | `/api/v1/policy-impact/*` | Unavailable until quantitatively verified cases are approved |
 | Ingest | `/api/v1/ingest/*` | Scan, confirm, jobs (writes need operator session or server key) |
 | Operator session | `/api/v1/auth/session` | Inspect, unlock and lock protected browser actions |
 | Persistence | `/api/v1/targets/:id/observations` | Postgres-backed observations |
-| Risk | `/api/v1/risk/*` | Illustrative seed choropleth |
-| Mock | `/api/v1/mock/*` | Fixture mode when `USE_MOCK_DATA=true` |
+| Risk | `/api/v1/risk/*` | Explicit unavailable response until a verified hazard dataset is connected |
+| Mock | `/api/v1/mock/*` | Development/test fixtures only; never mounted in production |
 
 Full route list: [architecture.md](./architecture.md) and `PROJECT_DOCUMENTATION.txt` Part B.
 
@@ -531,7 +531,7 @@ ndc-data-explorer/
 ├── backend/services/       Business logic (CT, predictions, policy, persistence)
 ├── shared/                progress.js, Zod schemas
 ├── config/                NDC targets, districts, catalog
-├── data/                  Policy cases, documents JSON, risk seed
+├── data/                  Policy and document records; production demo datasets are empty or filtered
 ├── database/              Drizzle schema, bootstrap, seed and migrations
 ├── api/index.js           Vercel entry
 └── docs/                  This folder

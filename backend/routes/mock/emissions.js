@@ -15,8 +15,7 @@ import express from "express";
 import { NDC_TARGETS } from "../../../config/ndcTargets.js";
 
 /**
- * Mock emissions API (stable fixtures). Always mounted at /api/v1/mock.
- * When USE_MOCK_DATA=true, the same router is also mounted at /api/v1.
+ * Test-only emissions API. Mounted only with explicit non-production mock mode.
  */
 const router = express.Router();
 
@@ -34,7 +33,7 @@ function mockTimeseries(sector, since, to) {
 router.get("/emissions/timeseries", (req, res) => {
   const { sector, since = "2015", to = "2023", geography = "national" } = req.query;
   if (!sector) return res.status(400).json({ error: "sector is required" });
-  if (!NDC_TARGETS[sector]) return res.status(400).json({ error: `Unknown sector: ${sector}` });
+  if (!Object.hasOwn(NDC_TARGETS, sector)) return res.status(400).json({ error: `Unknown sector: ${sector}` });
 
   const body = {
     sector,
@@ -51,7 +50,7 @@ router.get("/emissions/timeseries", (req, res) => {
 router.get("/emissions/progress", (req, res) => {
   const { sector } = req.query;
   if (!sector) return res.status(400).json({ error: "sector is required" });
-  if (!NDC_TARGETS[sector]) return res.status(400).json({ error: `Unknown sector: ${sector}` });
+  if (!Object.hasOwn(NDC_TARGETS, sector)) return res.status(400).json({ error: `Unknown sector: ${sector}` });
   const t = NDC_TARGETS[sector];
   res.json({
     sector,

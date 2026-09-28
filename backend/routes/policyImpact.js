@@ -62,7 +62,11 @@ router.post("/policy-impact/forecast", (req, res) => {
         details: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
       });
     }
-    const result = runPolicyImpactForecast(getAllPolicyCases(), parsed.data);
+    const cases = getAllPolicyCases();
+    if (!cases.length) {
+      return sendClientError(res, 503, "verified_evidence_unavailable", "No policy cases with verified quantitative evidence are available. A forecast cannot be produced.");
+    }
+    const result = runPolicyImpactForecast(cases, parsed.data);
     safeParseOrLog(forecastResponseSchema, result, "policyImpact.forecast");
     return res.json(result);
   } catch (err) {

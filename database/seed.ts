@@ -43,6 +43,9 @@ async function seedMarketplaceDeals(db: ReturnType<typeof getDb>) {
 }
 
 export async function runSeed(): Promise<{ targets: number; observations: number; deals?: number }> {
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+    throw new Error("Bundled development seeds cannot be loaded into production; import source-backed records instead");
+  }
   if (!isDatabaseConfigured()) {
     throw new Error("DATABASE_URL is required to seed");
   }

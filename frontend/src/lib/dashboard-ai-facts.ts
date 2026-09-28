@@ -39,10 +39,10 @@ const CT_API_V7 = "https://api.climatetrace.org/v7";
 const CT_SECTOR_SLUG: Record<ClimatetraceApiSector, string> = {
   afolu: "forestry-and-land-use",
   agriculture: "agriculture",
-  energy: "energy",
+  energy: "",
   transport: "transportation",
   waste: "waste",
-  ippu: "manufacturing",
+  ippu: "",
 };
 
 export interface DashboardDataFact {
@@ -66,8 +66,10 @@ function ctEmissionsApiUrl(year: number, sectorSlug: string, gadmId = "UGA"): st
     year: String(year),
     gas: "co2e_100yr",
     gadmId,
-    sectors: sectorSlug,
   });
+  // Combined UI groups require the full sector response; filtering one slug
+  // would cite a different figure (IPPU also includes fluorinated gases).
+  if (sectorSlug) params.set("sectors", sectorSlug);
   return `${CT_API_V7}/sources/emissions?${params}`;
 }
 
@@ -127,11 +129,11 @@ export function buildDashboardFactLedger(
     if (pr?.latest_value != null) {
       pushFact(facts, {
         id: `fact_trace_${sector}_latest_${year}`,
-        claim: `Climate TRACE ${lineage.sectorLabel} emissions, Uganda ${year}`,
+        claim: `Climate TRACE ${lineage.sectorLabel} emissions, ${gadmId} ${year}`,
         value: pr.latest_value,
         unit: "MtCO₂e",
         year,
-        source_label: `Climate TRACE v7 API — ${lineage.sectorLabel}, ${gadmId}, ${year}`,
+        source_label: `Climate TRACE v7 API — ${lineage.sectorLabel}, ${gadmId}, ${year}${slug ? "" : " (sum of mapped categories)"}`,
         source_url: ctEmissionsApiUrl(year, slug, gadmId),
         viewer_url: ctPublicInventoryUrl(slug),
         domain: "climatetrace",
@@ -155,7 +157,7 @@ export function buildDashboardFactLedger(
     if (pr?.target_value != null) {
       pushFact(facts, {
         id: `fact_ndc_sector_${sector}_target_2030`,
-        claim: `NDC 2030 emissions ceiling for ${lineage.sectorLabel}`,
+        claim: `National NDC 2030 emissions ceiling for ${sector === "afolu" ? "AFOLU (includes agriculture; scope differs from the mapped forestry series)" : lineage.sectorLabel}`,
         value: pr.target_value,
         unit: "MtCO₂e",
         year: 2030,
@@ -202,16 +204,16 @@ export function buildDashboardFactLedger(
   if (rec?.country_total_mt != null && rec.reference_year != null) {
     pushFact(facts, {
       id: `fact_trace_country_total_${rec.reference_year}`,
-      claim: `Climate TRACE economy-wide emissions, Uganda ${rec.reference_year}`,
+      claim: `Climate TRACE all-sector emissions, ${gadmId} ${rec.reference_year}`,
       value: rec.country_total_mt,
       unit: "MtCO₂e",
       year: rec.reference_year,
-      source_label: `Climate TRACE v7 API — country total, UGA, ${rec.reference_year}`,
-      source_url: ctCountryEmissionsApiUrl(rec.reference_year),
+      source_label: `Climate TRACE v7 API — all-sector total, ${gadmId}, ${rec.reference_year}`,
+      source_url: ctCountryEmissionsApiUrl(rec.reference_year, gadmId),
       viewer_url: CLIMATE_TRACE_PUBLIC_UGANDA,
       domain: "climatetrace",
     });
-    pushFact(facts, {
+    if (gadmId === "UGA" && emissions.dashboard?.global_rank != null) pushFact(facts, {
       id: `fact_trace_ranking_${rec.reference_year}`,
       claim: `Uganda global emissions rank, ${rec.reference_year}`,
       value: emissions.dashboard?.global_rank ?? null,

@@ -179,9 +179,9 @@ router.get("/emissions/spatial-confidence", async (req, res) => {
       data_source: "Climate TRACE",
       data_license: "Creative Commons 4.0",
       methodology:
-        "Located = emissions attributed to known sources (assets + mapped forestry, buildings, agriculture, roads). " +
-        "Distributed = the country's spatially-uncertain emissions (SUEs) allocated to this area using statistical proxies " +
-        "(population, nightlights, land use). Higher located share = higher spatial certainty.",
+        "Compares the Climate TRACE aggregate with the sum of source records that have map coordinates. " +
+        "Administrative records cover larger areas. The difference reflects different coverage and is not a measured " +
+        "share of spatial certainty or proxy allocation. Negative values represent net removals.",
       methodology_url:
         "https://github.com/climatetracecoalition/methodology-documents",
     });

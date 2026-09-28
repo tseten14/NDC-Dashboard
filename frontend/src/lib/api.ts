@@ -252,6 +252,7 @@ export interface SpatialConfidenceSector {
   located_mtco2e: number | null;
   distributed_mtco2e: number | null;
   certain_pct: number | null;
+  difference_mtco2e?: number | null;
 }
 
 export interface SpatialConfidenceResponse {
@@ -265,6 +266,9 @@ export interface SpatialConfidenceResponse {
   located_source_count: number;
   located_aggregation_count: number;
   truncated: boolean;
+  difference_mtco2e?: number | null;
+  missing_coordinates?: number;
+  missing_emissions?: number;
   sectors: SpatialConfidenceSector[];
   geography: "national" | "district";
   district_name: string | null;
@@ -301,8 +305,10 @@ export interface EmissionsMapResponse {
   year: number;
   point_count: number;
   asset_count: number;
-  total_mtco2e: number;
+  total_mtco2e: number | null;
   truncated: boolean;
+  missing_coordinates?: number;
+  missing_emissions?: number;
   sectors: MapSectorTotal[];
   points: MapSourcePoint[];
   geography: "national" | "district";
@@ -412,9 +418,9 @@ export interface ProgressResponse {
   label: string;
   condition: string;
   baseline_year: number;
-  baseline_value: number;
+  baseline_value: number | null;
   target_year: number;
-  target_value: number;
+  target_value: number | null;
   latest_year: number | null;
   latest_value: number | null;
   progress_pct: number | null;
@@ -536,6 +542,8 @@ export interface SectorPrediction {
   r2: number | null;
   n_points: number;
   note: string | null;
+  comparison_available?: boolean;
+  comparison_note?: string | null;
 }
 
 export interface PredictionsResponse {

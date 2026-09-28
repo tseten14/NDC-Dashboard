@@ -37,15 +37,12 @@ export async function bootstrapDatabase(): Promise<{ mode: PersistenceMode; reas
       throw new Error(health.error ?? "Database connectivity check failed");
     }
 
-    // Seeding writes reference rows. It is idempotent, but running it on every
-    // cold start in production means a leftover SEED_DB=true from initial setup
-    // quietly re-asserts seed data against the live database forever. Require
-    // the intent to be stated explicitly for a production deployment.
+    // Development fixtures must never be inserted into a production database.
     if (process.env.SEED_DB === "true") {
       const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
-      if (isProduction && process.env.ALLOW_PRODUCTION_SEED !== "true") {
+      if (isProduction) {
         console.warn(
-          "[db:seed] SEED_DB=true ignored in production. Set ALLOW_PRODUCTION_SEED=true for a one-off seed, then remove both.",
+          "[db:seed] Development seed data is disabled in production. Import source-backed records instead.",
         );
       } else {
         const counts = await runSeed();

@@ -77,15 +77,18 @@ function normalizeConfidence(c: string): DataConfidence {
 }
 
 const DEFAULT_ABATEMENT_SOURCE =
-  "Uganda Updated NDC (Sept 2022) mitigation analysis — indicative sector-level estimate";
+  "User-supplied planning input; source not recorded";
 const DEFAULT_COST_SOURCE =
-  "Indicative cost benchmark compiled for Climate Finance screening — not tendered or audited";
+  "User-supplied planning input; source not recorded";
 
 export function parseAbatementMtPerYr(option: MitigationOption): {
   mtPerYr: number;
   isAnnual: boolean;
   unit: string;
 } {
+  if (option.emissionsReductionPotential == null || !Number.isFinite(option.emissionsReductionPotential)) {
+    throw new Error("Project emissions reduction is unavailable");
+  }
   const raw = Math.max(0, Number(option.emissionsReductionPotential) || 0);
   const unit = String(option.emissionsReductionUnit || "MtCO₂e/yr").trim();
   const normalized = unit.replace(/\s+/g, "").toLowerCase();
@@ -111,6 +114,9 @@ export function parseCostUSD(option: MitigationOption): {
   amountUSD: number;
   isAnnual: boolean;
 } {
+  if (option.costEstimate == null || !Number.isFinite(option.costEstimate)) {
+    throw new Error("Project cost is unavailable");
+  }
   const estimate = Math.max(0, Number(option.costEstimate) || 0);
   const magnitude = String(option.costMagnitude || "million").toLowerCase();
 
@@ -183,11 +189,17 @@ export interface MaccEntry extends ProjectEconomics {
   cumulativeAbatementMt: number;
 }
 
+function hasProjectEconomicsInputs(option: MitigationOption): boolean {
+  return option.emissionsReductionPotential != null && Number.isFinite(option.emissionsReductionPotential)
+    && option.costEstimate != null && Number.isFinite(option.costEstimate);
+}
+
 export function buildMaccCurve(
   options: MitigationOption[],
   a: FinanceAssumptions,
 ): MaccEntry[] {
   const econ = options
+    .filter(hasProjectEconomicsInputs)
     .map((o) => computeProjectEconomics(o, a))
     .filter((e) => e.abatementMtPerYr > 0 && e.costToAbateUSDPerT != null)
     .sort((x, y) => {
@@ -219,6 +231,7 @@ export function investmentToCloseGap(
   a: FinanceAssumptions,
 ): GapClosure {
   const sorted = sectorOptions
+    .filter(hasProjectEconomicsInputs)
     .map((o) => computeProjectEconomics(o, a))
     .filter((e) => e.abatementMtPerYr > 0 && e.costToAbateUSDPerT != null)
     .sort((x, y) => {

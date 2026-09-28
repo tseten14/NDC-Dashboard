@@ -1,95 +1,21 @@
 import { test, expect, type Page } from '@playwright/test';
-import { readFile } from 'node:fs/promises';
 
-async function open(page: Page) {
+async function openScenarioAnalysis(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: /^Uganda Full cockpit available/ }).click();
   await page.getByRole('button', { name: 'Open all tools' }).click();
-  await page.getByRole('navigation', { name: 'All workspace tools' }).getByRole('link', { name: /Scenario Analysis/ }).click();
+  await page
+    .getByRole('navigation', { name: 'All workspace tools' })
+    .getByRole('link', { name: /Scenario Analysis/ })
+    .click();
   await expect(page.getByRole('heading', { name: 'Scenario Analysis', exact: true })).toBeVisible();
 }
-async function sample(page: Page) { await open(page); await page.getByRole('button', { name: 'Explore a sample scenario' }).click(); }
-async function go(page: Page, step: string) { await page.getByRole('navigation', { name: 'Scenario progress' }).getByRole('button', { name: new RegExp(step) }).click(); }
-const titles = ['Feed quality and additives', 'Herd productivity improvement', 'Grazing management'];
 
-test('scenario: actions, site timing, policy decisions, results and restored exports', async ({ page }) => {
-  await page.setViewportSize({ width: 1600, height: 1100 });
-  const crashes: string[] = []; page.on('pageerror', e => crashes.push(e.message));
-  await sample(page);
-  await expect(page.getByRole('checkbox', { name: 'Anaerobic digestion of manure', exact: true })).toBeDisabled();
-  await page.screenshot({ path: 'test-results/scenario-actions.png' });
-  await page.getByRole('button', { name: 'Edit Feed quality and additives', exact: true }).click();
-  await page.getByRole('spinbutton', { name: 'Reduction at full uptake (%)', exact: true }).fill('25');
-  await page.getByRole('button', { name: 'Save action details', exact: true }).click();
-  await page.getByRole('button', { name: 'Set the timing', exact: true }).click();
-  await page.getByRole('combobox', { name: 'Set all to: Feed quality and additives', exact: true }).selectOption('2027');
-  await page.getByRole('button', { name: 'Stagger by one year', exact: true }).click();
-  await expect(page.getByRole('combobox', { name: 'Start Sample holding 1: Feed quality and additives', exact: true })).toHaveValue('2027');
-  await expect(page.getByRole('combobox', { name: 'Start Sample holding 2: Feed quality and additives', exact: true })).toHaveValue('2028');
-  await page.locator('#main-content').evaluate(el => el.scrollTo({ top: 0 }));
-  await page.screenshot({ path: 'test-results/scenario-timing.png' });
-  await page.getByRole('button', { name: 'Check the policies', exact: true }).click();
-  await page.getByRole('checkbox', { name: 'Confirm relevance and stance: Sample feed improvement programme' }).check();
-  await page.getByRole('combobox', { name: `Scenario decision: ${titles[0]}`, exact: true }).selectOption('include');
-  await page.getByRole('button', { name: `Confirm assessment: ${titles[0]}`, exact: true }).click();
-  await page.getByRole('checkbox', { name: 'Confirm relevance and stance: Sample livestock movement condition' }).check();
-  await page.getByRole('combobox', { name: `Scenario decision: ${titles[1]}`, exact: true }).selectOption('include');
-  await expect(page.getByRole('button', { name: `Confirm assessment: ${titles[1]}`, exact: true })).toBeDisabled();
-  await page.getByRole('combobox', { name: `Scenario decision: ${titles[1]}`, exact: true }).selectOption('conditional');
-  await page.getByRole('textbox', { name: `Assessment note: ${titles[1]}`, exact: true }).fill('Assumes movement conditions can be met before rollout.');
-  await page.getByRole('button', { name: `Confirm assessment: ${titles[1]}`, exact: true }).click();
-  await page.getByRole('combobox', { name: `Scenario decision: ${titles[2]}`, exact: true }).selectOption('include');
-  await page.getByRole('textbox', { name: `Assessment note: ${titles[2]}`, exact: true }).fill('No evidence in this training scenario. Manual policy review required.');
-  await page.getByRole('button', { name: `Confirm assessment: ${titles[2]}`, exact: true }).click();
-  await page.locator('#main-content').evaluate(el => el.scrollTo({ top: 0 }));
-  await page.screenshot({ path: 'test-results/scenario-policy.png' });
-  await page.getByRole('button', { name: 'See the result', exact: true }).click();
-  await page.getByRole('button', { name: 'Save scenario', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Scenario saved', exact: true })).toBeDisabled();
-  await page.locator('#main-content').evaluate(el => el.scrollTo({ top: 0 }));
-  await page.screenshot({ path: 'test-results/scenario-result.png' });
-  const downloaded = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export full scenario', exact: true }).click();
-  const download = await downloaded;
-  const path = await download.path();
-  const result = JSON.parse(await readFile(path!, 'utf8'));
-  expect(result.results.latest.withActions).toBeLessThan(result.results.latest.bau);
-  expect(result.results.cumulative).toBeGreaterThan(0);
-  expect(result.openItems).toEqual([]);
-  await page.reload();
-  await page.getByRole('button', { name: /Livestock transition · sample/ }).click();
-  await expect(page.getByRole('button', { name: 'Scenario saved', exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: 'Assumptions', exact: true }).click();
-  await page.getByRole('spinbutton', { name: 'Annual BAU growth (%)', exact: true }).fill('3');
-  await page.getByRole('button', { name: 'Apply projection assumptions', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Save scenario', exact: true })).toBeEnabled();
-  await page.getByRole('button', { name: 'All scenarios', exact: true }).click();
-  await page.getByLabel('Restore scenario backup', { exact: true }).setInputFiles(path!);
-  await expect(page.getByRole('button', { name: /Livestock transition · sample · restored/ })).toBeVisible();
-  expect(crashes).toEqual([]);
-});
-
-test('scenario: policy API errors, linked evidence and subnational references', async ({ page }) => {
-  await sample(page); await go(page, 'Policy check');
-  await page.route('**/api/v1/documents/passages/search*', route => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Unavailable' }) }));
-  await page.getByRole('button', { name: 'Search policy evidence', exact: true }).first().click();
-  await expect(page.getByRole('alert')).toContainText('could not be loaded');
-  await page.unroute('**/api/v1/documents/passages/search*');
-  await page.route('**/api/v1/documents/passages/search*', route => route.fulfill({ json: { passages: [{ id: 'test-passage', documentTitle: 'Policy evidence test fixture', text: 'A test passage about livestock programmes.', cprUrl: 'https://climate-laws.org/documents/test-evidence' }], total: 1, attribution: 'Test fixture for the existing passage API contract' } }));
-  await page.getByRole('button', { name: 'Retry search', exact: true }).click();
-  await page.getByRole('button', { name: 'Link passage', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Link passage', exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: 'Close', exact: true }).click();
-  await expect(page.getByRole('combobox', { name: 'Stance: Policy evidence test fixture', exact: true })).toHaveValue('mentions');
-  await expect(page.getByRole('checkbox', { name: 'Confirm relevance and stance: Policy evidence test fixture', exact: true })).not.toBeChecked();
-  await page.getByRole('button', { name: 'Subnational', exact: true }).click();
-  await expect(page.getByRole('combobox', { name: 'Stance: Policy evidence test fixture', exact: true })).not.toBeVisible();
-  await page.getByRole('button', { name: 'Add policy reference', exact: true }).first().click();
-  await page.getByRole('textbox', { name: 'Policy title', exact: true }).fill('District evidence fixture');
-  await page.getByRole('textbox', { name: 'Source URL', exact: true }).fill('https://example.org/district-reference');
-  await page.getByRole('textbox', { name: 'Relevant passage', exact: true }).fill('A user-supplied reference for the district review.');
-  await page.getByRole('button', { name: 'Add reference', exact: true }).click();
-  await expect(page.getByRole('combobox', { name: 'Stance: District evidence fixture', exact: true })).toBeVisible();
+test('scenario: production does not offer bundled sample data', async ({ page, baseURL }) => {
+  test.skip(baseURL?.includes('18080') ?? false, 'The development-only fixture suite deliberately enables sample workflows.');
+  await openScenarioAnalysis(page);
+  await expect(page.getByRole('button', { name: 'Explore a sample scenario' })).toHaveCount(0);
+  await expect(page.getByText(/sample workflow/i)).toHaveCount(0);
 });
 
 test('scenario: creates from a reviewed archived inventory and keeps its snapshot', async ({ page }) => {
@@ -123,27 +49,13 @@ test('scenario: creates from a reviewed archived inventory and keeps its snapsho
   await page.getByRole('textbox', { name: 'Evidence or assumption', exact: true }).fill('Analyst-defined hypothetical reduction for the planning exercise.');
   await page.getByRole('button', { name: 'Save action details', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Set the timing', exact: true })).toBeEnabled();
-  await page.evaluate(() => { const key = 'ndc-inventory-exercises-v1:UG'; const exercises = JSON.parse(localStorage.getItem(key)!); exercises[0].sources[0].rows.find((row: { district: string; year: number }) => row.district === 'Arua' && row.year === 2024).value += 1; localStorage.setItem(key, JSON.stringify(exercises)); });
-  await page.reload(); await page.getByRole('button', { name: /District plan/ }).click();
+  await page.evaluate(() => {
+    const key = 'ndc-inventory-exercises-v1:UG';
+    const exercises = JSON.parse(localStorage.getItem(key)!);
+    exercises[0].sources[0].rows.find((row: { district: string; year: number }) => row.district === 'Arua' && row.year === 2024).value += 1;
+    localStorage.setItem(key, JSON.stringify(exercises));
+  });
+  await page.reload();
+  await page.getByRole('button', { name: /District plan/ }).click();
   await expect(page.getByRole('status')).toContainText('keeps its original snapshot');
-});
-
-test('scenario: mobile and tablet layouts, facility picker and incomplete result', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await sample(page);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByRole('button', { name: 'Choose entries', exact: true }).first().click();
-  await page.getByRole('checkbox', { name: /Sample holding 2/ }).uncheck();
-  await page.getByRole('button', { name: 'Use 1 entries', exact: true }).click();
-  await page.getByRole('button', { name: 'Set the timing', exact: true }).click();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: 'test-results/scenario-mobile-timing.png' });
-  await go(page, 'Policy check');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await go(page, 'Result');
-  await expect(page.getByRole('button', { name: 'Save scenario', exact: true })).toBeDisabled();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.setViewportSize({ width: 768, height: 1024 });
-  await page.screenshot({ path: 'test-results/scenario-tablet-result.png' });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

@@ -48,7 +48,7 @@ export function DataProvenancePanel({ year, value, unit, sector, sectorLabel, on
             {year} · {value} {unit}
           </p>
           <p className="text-muted-foreground">
-            {sectorLabel} emissions — Climate TRACE satellite model
+            {sectorLabel} emissions — Climate TRACE estimates
           </p>
         </div>
       </div>

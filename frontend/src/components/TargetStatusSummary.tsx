@@ -5,7 +5,7 @@
  */
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ndcTargets, ndcActivities, getObservedDataForTarget, type NDCTarget } from "@/data/uganda-ndc-data";
+import { ndcTargets, type NDCTarget } from "@/data/uganda-ndc-data";
 import { useEmissionsData } from "@/context/EmissionsDataContext";
 import { getClimateTraceSectorForTarget } from "@/lib/emissions-integration";
 import { Badge } from "@/components/ui/badge";
@@ -20,11 +20,10 @@ interface TargetStatusSummaryProps {
   onSelectTarget: (targetId: string, sectorId: string) => void;
 }
 
-type GapKind = "implementation" | "mrv" | "delivery" | "ok";
+type GapKind = "mrv" | "delivery" | "ok";
 
 interface TargetSnapshot {
   target: NDCTarget;
-  activitiesCount: number;
   hasData: boolean;
   status: "on-track" | "at-risk" | "off-track" | "unknown";
   gap: GapKind;
@@ -37,8 +36,6 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
 
   const snapshots = useMemo((): TargetSnapshot[] => {
     return ndcTargets.map(t => {
-      const acts = ndcActivities.filter(a => a.targetId === t.id);
-      const obs = getObservedDataForTarget(t.id);
       const { status } = emissions.getProgressForTarget(t);
 
       const apiSector = getClimateTraceSectorForTarget(t);
@@ -47,24 +44,23 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
         !emissions.sectorError[apiSector] &&
         (emissions.timeseriesBySector[apiSector]?.timeseries.some((p) => p.value != null) ?? false);
 
-      const hasData =
-        hasApiData ||
-        (!!obs && obs.historicalData.length > 0 && obs.provenance.qaqcStatus !== "missing");
+      const hasData = hasApiData
+        || (t.sectorId === "economy-wide" && emissions.economyWideTimeseries.some((p) => p.value != null))
+        || (emissions.indicatorTargets?.[t.id]?.timeseries.some((p) => p.value != null) ?? false);
 
       let gap: GapKind = "ok";
-      if (acts.length === 0) gap = "implementation";
-      else if (!hasData) gap = "mrv";
+      if (!hasData) gap = "mrv";
       else if (status === "off-track" || status === "at-risk") gap = "delivery";
-      return { target: t, activitiesCount: acts.length, hasData, status, gap };
+      return { target: t, hasData, status, gap };
     });
   }, [emissions]);
 
   const onTrack = snapshots.filter(s => s.status === "on-track").length;
   const offTrack = snapshots.filter(s => s.status === "off-track" || s.status === "at-risk").length;
-  const implGaps = snapshots.filter(s => s.gap === "implementation").length;
+  const unassessed = snapshots.filter(s => s.status === "unknown").length;
   const mrvGaps = snapshots.filter(s => s.gap === "mrv").length;
 
-  const priority: Record<GapKind, number> = { implementation: 3, delivery: 2, mrv: 1, ok: 0 };
+  const priority: Record<GapKind, number> = { delivery: 2, mrv: 1, ok: 0 };
   const topGaps = [...snapshots]
     .filter(s => s.gap !== "ok")
     .sort((a, b) => priority[b.gap] - priority[a.gap])
@@ -112,14 +108,14 @@ export function TargetStatusSummary({ onSelectTarget }: TargetStatusSummaryProps
         <div className="flex items-center gap-2">
           <Stat icon={<CheckCircle2 className="h-3 w-3 text-on-track" />} label="On-track" value={onTrack} index={0} />
           <Stat icon={<AlertTriangle className="h-3 w-3 text-off-track" />} label="Off-track" value={offTrack} index={1} />
-          <Stat icon={<Database className="h-3 w-3 text-muted-foreground" />} label="Activity gaps" value={implGaps} hint="Targets with no linked activities" index={2} />
-          <Stat icon={<Database className="h-3 w-3 text-muted-foreground" />} label="Data gaps" value={mrvGaps} hint="Targets missing observed data" index={3} />
+          <Stat icon={<Database className="h-3 w-3 text-muted-foreground" />} label="Not assessed" value={unassessed} hint="Targets without a comparable observation and target. This does not measure implementation." index={2} />
+          <Stat icon={<Database className="h-3 w-3 text-muted-foreground" />} label="Awaiting data" value={mrvGaps} hint="Targets with no observations in connected feeds. Review uploaded records in the target's data view." index={3} />
         </div>
 
         <div className="flex items-center gap-1.5 flex-1 min-w-0 touch-scroll-x">
           <span className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0">Top gaps</span>
           {topGaps.length === 0 && (
-            <span className="text-[10px] text-muted-foreground">No gaps detected</span>
+            <span className="text-[10px] text-muted-foreground">No issues in connected data</span>
           )}
           {topGaps.map((s, i) => {
             const plain = getTargetPlainLanguage(s.target);
@@ -169,10 +165,9 @@ function Stat({ icon, label, value, hint, index = 0 }: { icon: React.ReactNode; 
 function GapBadge({ kind }: { kind: GapKind }) {
   const cls = cn(
     "text-[8px] uppercase tracking-wide px-1 py-0 h-3.5 leading-none",
-    kind === "implementation" && "bg-muted text-muted-foreground border-border",
     kind === "delivery" && "bg-off-track/15 text-off-track border-off-track/30",
     kind === "mrv" && "bg-muted text-muted-foreground border-border",
   );
-  const label = kind === "implementation" ? "Impl" : kind === "delivery" ? "Off" : "MRV";
+  const label = kind === "delivery" ? "Off track" : "Data needed";
   return <Badge variant="outline" className={cls}>{label}</Badge>;
 }

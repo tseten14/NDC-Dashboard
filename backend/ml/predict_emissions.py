@@ -123,8 +123,9 @@ def _round(v: float | None, nd: int = 2) -> float | None:
 def predict_sector(points: list[dict], meta: dict, target_year: int) -> dict:
     clean = [(int(p["year"]), float(p["value"])) for p in points if p.get("value") is not None]
     clean.sort()
-    history = [{"year": y, "value": _round(v)} for y, v in clean]
+    history = sorted([{"year": int(p["year"]), "value": p.get("value")} for p in points], key=lambda p: p["year"])
     target_value = meta.get("target")
+    constrain = (lambda value: value) if meta.get("allow_negative") else (lambda value: max(0.0, value))
 
     if len(clean) < 3:
         return {
@@ -155,20 +156,20 @@ def predict_sector(points: list[dict], meta: dict, target_year: int) -> dict:
     # Prefer a model whose target-year forecast stays physically positive
     # (a linear fit on a noisy decline can extrapolate below zero, which then
     # clamps to a misleading 0). Among the valid ones, pick the best in-sample fit.
-    positive = [c for c in candidates if c["points"] and c["points"][-1]["yhat"] > 0]
+    positive = candidates if meta.get("allow_negative") else [c for c in candidates if c["points"] and c["points"][-1]["yhat"] > 0]
     best = max(positive or candidates, key=lambda c: c["r2"])
 
     forecast = [
         {
             "year": p["year"],
-            "yhat": _round(max(0.0, p["yhat"])),
-            "lower": _round(max(0.0, p["lower"])),
-            "upper": _round(max(0.0, p["upper"])),
+            "yhat": _round(constrain(p["yhat"])),
+            "lower": _round(constrain(p["lower"])),
+            "upper": _round(constrain(p["upper"])),
         }
         for p in best["points"]
     ]
     target_point = next((p for p in best["points"] if p["year"] == target_year), best["points"][-1])
-    predicted = max(0.0, target_point["yhat"])
+    predicted = constrain(target_point["yhat"])
     gap = predicted - target_value if target_value is not None else None
     gap_pct = (gap / target_value * 100.0) if (target_value not in (None, 0)) else None
 
@@ -178,8 +179,8 @@ def predict_sector(points: list[dict], meta: dict, target_year: int) -> dict:
         "history": history,
         "forecast": forecast,
         "predicted_value": _round(predicted),
-        "predicted_lower": _round(max(0.0, target_point["lower"])),
-        "predicted_upper": _round(max(0.0, target_point["upper"])),
+        "predicted_lower": _round(constrain(target_point["lower"])),
+        "predicted_upper": _round(constrain(target_point["upper"])),
         "target_value": target_value,
         "baseline_value": meta.get("baseline"),
         "gap": _round(gap),
@@ -254,7 +255,10 @@ def run_torch(series: dict, ndc_targets: dict, target_year: int):
         data[sector] = clean
 
     # A sector is trainable only if it can yield at least one (window -> next) pair.
-    train_sectors = [s for s, c in data.items() if len(c) >= WINDOW + 1]
+    # A missing year cannot be treated as the next annual step of a GRU window.
+    # Regression uses actual calendar years and can handle those gaps.
+    train_sectors = [s for s, c in data.items() if len(c) >= WINDOW + 1
+                     and all(c[i][0] == c[i - 1][0] + 1 for i in range(1, len(c)))]
     if not train_sectors:
         preds = {
             s: predict_sector(series.get(s) or [], ndc_targets.get(s, {}), target_year)
@@ -316,6 +320,7 @@ def run_torch(series: dict, ndc_targets: dict, target_year: int):
     predictions: dict[str, Any] = {}
     for sector, clean in data.items():
         meta = ndc_targets.get(sector, {})
+        constrain = (lambda value: value) if meta.get("allow_negative") else (lambda value: max(0.0, value))
         if sector not in sector_index:
             predictions[sector] = predict_sector(series.get(sector) or [], meta, target_year)
             continue
@@ -341,18 +346,18 @@ def run_torch(series: dict, ndc_targets: dict, target_year: int):
         lower = np.percentile(samples, 2.5, axis=0)
         upper = np.percentile(samples, 97.5, axis=0)
 
-        history = [{"year": yr, "value": _round(v)} for yr, v in clean]
+        history = sorted([{"year": int(p["year"]), "value": p.get("value")} for p in series.get(sector, [])], key=lambda p: p["year"])
         forecast = [
             {
                 "year": int(future_years[j]),
-                "yhat": _round(max(0.0, float(yhat[j]))),
-                "lower": _round(max(0.0, float(lower[j]))),
-                "upper": _round(max(0.0, float(upper[j]))),
+                "yhat": _round(constrain(float(yhat[j]))),
+                "lower": _round(constrain(float(lower[j]))),
+                "upper": _round(constrain(float(upper[j]))),
             }
             for j in range(len(future_years))
         ]
         ti = future_years.index(target_year) if target_year in future_years else len(future_years) - 1
-        predicted = max(0.0, float(yhat[ti]))
+        predicted = constrain(float(yhat[ti]))
         target_value = meta.get("target")
         gap = predicted - target_value if target_value is not None else None
         gap_pct = (gap / target_value * 100.0) if (target_value not in (None, 0)) else None
@@ -363,8 +368,8 @@ def run_torch(series: dict, ndc_targets: dict, target_year: int):
             "history": history,
             "forecast": forecast,
             "predicted_value": _round(predicted),
-            "predicted_lower": _round(max(0.0, float(lower[ti]))),
-            "predicted_upper": _round(max(0.0, float(upper[ti]))),
+            "predicted_lower": _round(constrain(float(lower[ti]))),
+            "predicted_upper": _round(constrain(float(upper[ti]))),
             "target_value": target_value,
             "baseline_value": meta.get("baseline"),
             "gap": _round(gap),

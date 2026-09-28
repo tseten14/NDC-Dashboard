@@ -307,6 +307,12 @@ export default function PolicyImpact() {
           </div>
         </div>
 
+        {!casesQuery.isLoading && !casesQuery.isError && !casesQuery.data?.cases.length && (
+          <div role="status" className="rounded border border-border bg-muted/30 p-4 text-sm">
+            <strong>Policy impact estimates are unavailable.</strong> The example case studies did not include verifiable evidence for their numerical effects and have been removed. Forecasts will be available when documented case data is approved.
+          </div>
+        )}
+
         {/* Step indicator */}
         <div className="flex items-center gap-1 flex-wrap">
           {STEPS.map((s, i) => (
@@ -469,7 +475,7 @@ export default function PolicyImpact() {
                 <Button
                   size="sm"
                   className="text-xs"
-                  disabled={forecastMut.isPending}
+                  disabled={forecastMut.isPending || !casesQuery.data?.cases.length}
                   onClick={() => forecastMut.mutate()}
                 >
                   <Sparkles className="h-3 w-3 mr-1" />
@@ -477,7 +483,7 @@ export default function PolicyImpact() {
                 </Button>
               </div>
               {forecastMut.isError && (
-                <p className="text-xs text-destructive">Forecast failed — check API connection.</p>
+                <p className="text-xs text-destructive">{forecastMut.error instanceof Error ? forecastMut.error.message : "Forecast unavailable. Check the source evidence and try again."}</p>
               )}
             </CardContent>
           </Card>

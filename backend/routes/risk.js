@@ -4,8 +4,8 @@
  * Serves the data behind the risk screens: which hazards threaten which parts of
  * the country (drought, flood, landslide and so on), scored per district and per
  * map grid cell, together with the adaptation measures that can be chosen in
- * response. All of it is bundled reference data shipped with the app rather than
- * a live feed.
+ * response. No verified provider is connected yet; empty collections explicitly
+ * report unavailable data rather than returning demonstration values.
  *
  * Endpoints:
  *   GET /hazard-layers       — the hazard types that can be mapped
@@ -22,21 +22,26 @@ import {
 } from "../../data/seeds/riskSeed.js";
 
 const router = express.Router();
+const provenance = {
+  data_source: null,
+  data_status: "unavailable",
+  message: "No verified climate risk dataset is connected. Risk scores and adaptation costs are unavailable.",
+};
 
 router.get("/hazard-layers", (_req, res) => {
-  res.json({ layers: HAZARD_LAYERS, data_source: "bundled (illustrative)" });
+  res.json({ layers: HAZARD_LAYERS, ...provenance });
 });
 
 router.get("/districts", (_req, res) => {
-  res.json({ districts: RISK_DISTRICTS, data_source: "bundled (illustrative)" });
+  res.json({ districts: RISK_DISTRICTS, ...provenance });
 });
 
 router.get("/cells", (_req, res) => {
-  res.json({ cells: RISK_CELLS, data_source: "bundled (illustrative)" });
+  res.json({ cells: RISK_CELLS, ...provenance });
 });
 
 router.get("/adaptation-options", (_req, res) => {
-  res.json({ options: ADAPTATION_OPTIONS, data_source: "bundled (illustrative)" });
+  res.json({ options: ADAPTATION_OPTIONS, ...provenance });
 });
 
 export default router;

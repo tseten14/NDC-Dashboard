@@ -1,6 +1,7 @@
-"""Populate the development database with realistic climate data."""
+"""Populate an explicitly opted-in local development database with synthetic fixtures."""
 
 import asyncio
+import os
 import random
 from datetime import date
 
@@ -53,6 +54,10 @@ GHGS = [
 
 
 async def seed() -> None:
+    if os.environ.get("NODE_ENV") == "production" or os.environ.get("ENVIRONMENT") == "production" or os.environ.get("VERCEL"):
+        raise RuntimeError("Synthetic development seeds are prohibited in production")
+    if os.environ.get("SEED_DB") != "true":
+        raise RuntimeError("Set SEED_DB=true only for a disposable local development database")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
@@ -131,7 +136,7 @@ async def seed() -> None:
                         ghg_id=ghg.id,
                         year=year,
                         mtco2e=round(random.uniform(0.5, 120.0), 4),
-                        data_source="Climate TRACE v7",
+                        data_source="SYNTHETIC DEVELOPMENT FIXTURE — not Climate TRACE",
                     )
                     session.add(he)
                     he_count += 1

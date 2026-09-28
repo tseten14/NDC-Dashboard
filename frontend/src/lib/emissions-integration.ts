@@ -220,11 +220,12 @@ export function getLiveLatestForTarget(
 function referencePathsForYear(
   year: number,
   baselineYear: number,
-  baselineValue: number,
+  baselineValue: number | null,
   targetYear: number,
-  targetValue: number,
+  targetValue: number | null,
   bau2030: number | null | undefined,
-): { target: number; bauPath?: number } {
+): { target?: number; bauPath?: number } {
+  if (baselineValue == null || targetValue == null) return {};
   const isCap = bau2030 != null && targetValue > baselineValue && bau2030 > targetValue;
   if (isCap) {
     return {
@@ -241,9 +242,9 @@ export function buildLiveObservedDataSet(
   target: NDCTarget,
   timeseries: { year: number; value: number | null }[],
   baselineYear: number,
-  baselineValue: number,
+  baselineValue: number | null,
   targetYear: number,
-  targetValue: number,
+  targetValue: number | null,
   qualityHints: LiveObservedQualityHints = {},
   bau2030?: number | null,
 ): ObservedDataSet {
@@ -258,7 +259,7 @@ export function buildLiveObservedDataSet(
   });
 
   const terminal2030 = bau2030 ?? targetValue;
-  const projectionPoints = buildProjectionPoints(timeseries, targetYear, terminal2030);
+  const projectionPoints = terminal2030 == null ? [] : buildProjectionPoints(timeseries, targetYear, terminal2030);
   const projectionBaseline: ObservedDataPoint[] = projectionPoints.map(({ year, value }) => {
     const paths = referencePathsForYear(year, baselineYear, baselineValue, targetYear, targetValue, bau2030);
     return {
@@ -368,7 +369,7 @@ export function buildIndicatorPanelObservedDataSet(target: NDCTarget, entry: Ind
     mrvOwnerMinistry: m.mrvOwnerMinistry || "—",
     qaqcStatus: reviewed.qaqcStatus,
     lastUpdated: m.lastUpdated,
-    isValidated: reviewed.isValidated,
+    isValidated: m.isValidated && reviewed.isValidated,
   };
 
   return {
@@ -442,7 +443,9 @@ export function buildIngestedObservedDataSet(
     ...dataset.provenance,
     sourceType: "reported",
     qaqcStatus: reviewed.qaqcStatus,
-    isValidated: reviewed.isValidated,
+    isValidated: reviewed.isValidated
+      && ingested.every((row) => row.is_validated)
+      && (!baseEntry?.timeseries.length || baseEntry.meta.isValidated),
     lastUpdated: ingested[ingested.length - 1]?.as_of ?? dataset.provenance.lastUpdated,
   };
   if (!dataset.dataProviders.includes("File ingest")) {

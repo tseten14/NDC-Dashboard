@@ -31,7 +31,7 @@ const STATUS: Record<PredictionStatus, { label: string; blurb: string; cls: stri
   on_track:          { label: "On track",       blurb: "Likely to meet the 2030 climate target",         cls: "bg-on-track/10 text-on-track border-on-track/30",         icon: CheckCircle2 },
   at_risk:           { label: "At risk",         blurb: "May miss the 2030 target if trend continues",   cls: "bg-muted text-at-risk border-border",       icon: AlertTriangle },
   off_track:         { label: "Off track",       blurb: "Likely to overshoot the 2030 target",           cls: "bg-off-track/10 text-off-track border-off-track/30",       icon: XCircle },
-  unknown:           { label: "No target set",   blurb: "No NDC commitment found for this sector",       cls: "bg-muted text-muted-foreground border-border",             icon: HelpCircle },
+  unknown:           { label: "No comparison",   blurb: "No compatible target is available for this series",       cls: "bg-muted text-muted-foreground border-border",             icon: HelpCircle },
   insufficient_data: { label: "Not enough data", blurb: "Not enough historical data to make a forecast", cls: "bg-muted text-muted-foreground border-border",             icon: HelpCircle },
 };
 
@@ -99,8 +99,8 @@ export default function Ai2030Prediction() {
               2030 Emissions Forecast
             </h2>
             <p className="text-xs text-muted-foreground max-w-2xl">
-              Based on real historical emissions data, this shows where each sector is heading by 2030 —
-              and whether Uganda is on course to meet its national climate pledges (NDC 2022).
+              Planning projections fitted to Climate TRACE emissions estimates. Comparisons with Uganda's
+              national climate pledges are shown only where the geography and sector coverage align.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -150,15 +150,7 @@ export default function Ai2030Prediction() {
                 <Summary label="On track" sub="Likely to meet 2030 goal" value={data.summary.on_track} cls="text-on-track" />
                 <Summary label="At risk" sub="Could miss if trend continues" value={data.summary.at_risk} cls="text-at-risk" />
                 <Summary label="Off track" sub="Likely to miss 2030 goal" value={data.summary.off_track} cls="text-off-track" />
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Overall 2030 shortfall</p>
-                  <p className={cn("text-lg font-bold", (data.summary.total_gap ?? 0) > 0 ? "text-off-track" : "text-on-track")}>
-                    {(data.summary.total_gap ?? 0) > 0 ? "+" : ""}{fmt(data.summary.total_gap)} <span className="text-xs font-normal">Mt</span>
-                  </p>
-                  <p className="text-[9px] text-muted-foreground">
-                    Forecast: {fmt(data.summary.total_predicted)} Mt · NDC target: {fmt(data.summary.total_target)} Mt
-                  </p>
-                </div>
+                <Summary label="No comparison" sub="No compatible target or insufficient history" value={data.summary.unknown + data.summary.insufficient_data} cls="text-muted-foreground" />
               </CardContent>
             </Card>
 
@@ -194,10 +186,10 @@ export default function Ai2030Prediction() {
                           <span className="text-[10px] text-muted-foreground mb-0.5">million tonnes</span>
                         </div>
                         <p className="text-[9px] text-muted-foreground">
-                          Likely range: {fmt(p.predicted_lower)}–{fmt(p.predicted_upper)} Mt
+                          Model range: {fmt(p.predicted_lower)}–{fmt(p.predicted_upper)} Mt
                           {p.target_value != null && <> · NDC target: {fmt(p.target_value)} Mt</>}
                         </p>
-                        <div className="mt-2 flex items-center gap-1">
+                        {p.gap != null && <div className="mt-2 flex items-center gap-1">
                           {overshoot ? <TrendingUp className="h-3 w-3 text-off-track shrink-0" /> : <TrendingDown className="h-3 w-3 text-on-track shrink-0" />}
                           <span className={cn("text-[11px] font-semibold", overshoot ? "text-off-track" : "text-on-track")}>
                             {fmt(Math.abs(p.gap ?? 0))} Mt {overshoot ? "above" : "below"} target
@@ -205,8 +197,8 @@ export default function Ai2030Prediction() {
                           {p.gap_pct != null && (
                             <span className="text-[10px] text-muted-foreground">({overshoot ? "+" : ""}{fmt(p.gap_pct)}%)</span>
                           )}
-                        </div>
-                        <p className="text-[9px] text-muted-foreground mt-0.5">{STATUS[p.status].blurb}</p>
+                        </div>}
+                        <p className="text-[9px] text-muted-foreground mt-0.5">{p.comparison_note ?? STATUS[p.status].blurb}</p>
                       </>
                     )}
                   </button>
@@ -223,7 +215,7 @@ export default function Ai2030Prediction() {
                       <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                         Where is this sector heading?
                       </h3>
-                      <p className="text-[9px] text-muted-foreground">Solid line = measured · Dashed = forecast · Shaded = 95% likely range</p>
+                      <p className="text-[9px] text-muted-foreground">Solid line = Climate TRACE estimates · Dashed = projection · Shaded = model uncertainty</p>
                     </div>
                     <Select value={focusKey ?? undefined} onValueChange={setFocus}>
                       <SelectTrigger className="w-[180px] h-7 text-xs"><SelectValue /></SelectTrigger>
@@ -246,8 +238,8 @@ export default function Ai2030Prediction() {
                       <RTooltip
                         contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "6px", fontSize: 11 }}
                         formatter={(value: unknown, name: string) => {
-                          if (Array.isArray(value)) return [`${fmt(value[0])}–${fmt(value[1])} Mt`, "Likely range"];
-                          if (name === "observed") return [`${fmt(value as number, 2)} Mt`, "Measured emissions"];
+                          if (Array.isArray(value)) return [`${fmt(value[0])}–${fmt(value[1])} Mt`, "Model range"];
+                          if (name === "observed") return [`${fmt(value as number, 2)} Mt`, "Climate TRACE estimates"];
                           if (name === "forecast") return [`${fmt(value as number, 2)} Mt`, "Forecast"];
                           return [fmt(value as number, 2), name];
                         }}
@@ -264,8 +256,8 @@ export default function Ai2030Prediction() {
                     </ComposedChart>
                   </ResponsiveContainer>
                   <p className="text-[10px] text-muted-foreground mt-2">
-                    Measured emissions from {focusPred.history[0]?.year ?? "—"} to {focusPred.history[focusPred.history.length - 1]?.year ?? "—"} (Climate TRACE satellite data).
-                    The dashed line shows where emissions are heading if recent trends continue; the shaded area shows the range of likely outcomes.
+                    Climate TRACE estimates from {focusPred.history[0]?.year ?? "—"} to {focusPred.history[focusPred.history.length - 1]?.year ?? "—"}.
+                    The dashed line extends historical trends. The shaded model range is not a verified probability of future outcomes.
                     {focusPred.bau_2030 != null && ` Without new policies, emissions in this sector are expected to reach about ${fmt(focusPred.bau_2030)} Mt by 2030 — Uganda's NDC target sits ${focusPred.reduction_below_bau_pct ?? "—"}% below that level.`}
                   </p>
                 </CardContent>
@@ -273,7 +265,9 @@ export default function Ai2030Prediction() {
             )}
 
             <p className="text-[10px] text-muted-foreground">
-              Forecasts are based on historical trends in Climate TRACE satellite data ({data.observed_from}–{data.observed_to}) and do not account for new policies not yet reflected in emissions. This is a planning tool, not an official government projection.
+              Mt means million tonnes of greenhouse gases, expressed as carbon dioxide equivalent (CO₂e).
+              Negative values represent net removals. {data.methodology} These sectors do not form a complete national forecast.
+              {" "}<a className="text-primary underline" href="https://api.climatetrace.org/v7/docs/index.html" target="_blank" rel="noreferrer">Climate TRACE API source</a>
             </p>
           </>
         )}

@@ -132,20 +132,42 @@ export async function getSources({ gadmId = CLIMATE_TRACE_GADM_UGANDA, year, sub
   return { ...result, from_cache: false };
 }
 
-/** Page cap when summing located sources (protects against very large national sets). */
-const SPATIAL_MAX_ROWS = 2000;
+/** Fetch a complete source list or fail; a capped, descending list omits removals. */
+export async function collectLocationSources(gadmId, year, load = fetchSources) {
+  const seen = new Map();
+  for (let offset = 0; offset < 50_000; offset += SOURCES_MAX_LIMIT) {
+    const { sources } = await load({ gadmId, year, limit: SOURCES_MAX_LIMIT, offset });
+    let added = 0;
+    for (const source of sources) {
+      const key = `${source.id}:${source.subsector ?? ""}`;
+      const signature = JSON.stringify(source);
+      if (seen.has(key)) {
+        if (seen.get(key).signature !== signature) throw new Error("Climate TRACE changed during pagination; retry");
+      } else {
+        seen.set(key, { source, signature });
+        added++;
+      }
+    }
+    if (sources.length < SOURCES_MAX_LIMIT) return [...seen.values()].map(({ source }) => source);
+    if (!added) throw new Error("Climate TRACE pagination made no progress");
+  }
+  throw new Error("Climate TRACE source safety limit reached; no incomplete total was calculated");
+}
+
+function hasCoordinates(source) {
+  return Number.isFinite(source.centroid?.lat) && Math.abs(source.centroid.lat) <= 90
+    && Number.isFinite(source.centroid?.lng) && Math.abs(source.centroid.lng) <= 180;
+}
+
+function completeSum(sources) {
+  if (sources.some((source) => source.emissions_tco2e == null)) return null;
+  return sources.reduce((sum, source) => sum + source.emissions_tco2e, 0);
+}
 
 /**
- * Spatial-certainty breakdown for a location/year.
- *
- * Compares the COMPLETE aggregate emissions (which include the country's
- * spatially-uncertain emissions distributed here via proxies) against the sum
- * of LOCATED sources (assets + mapped forestry/buildings/agriculture/roads).
- * The difference is the proxy-distributed remainder (SUEs) — emissions assigned
- * to this area statistically rather than observed at a known source. Surfacing
- * this lets users judge how spatially reliable a district figure is.
- *
- * Cheap for a district (few source rows); national sets are capped + flagged.
+ * Source coverage comparison for a location/year. The aggregate-minus-source
+ * difference cannot establish spatial certainty. Preserve signed net emissions
+ * and unavailable values, and fetch the full list before calculating a total.
  */
 export async function getSpatialConfidence({ gadmId = CLIMATE_TRACE_GADM_UGANDA, year } = {}) {
   const effectiveYear = year ?? latestInventoryYear();
@@ -161,73 +183,49 @@ export async function getSpatialConfidence({ gadmId = CLIMATE_TRACE_GADM_UGANDA,
   logCacheAccess({ key, hit: false, age_seconds: null });
 
   const agg = await fetchLocationEmissions(effectiveYear, gadmId);
-  const aggregateTonnes = agg.total_tonnes ?? 0;
-
-  const PAGE = SOURCES_MAX_LIMIT;
-  let offset = 0;
-  let locatedTonnes = 0;
-  let assetCount = 0;
-  let aggregationCount = 0;
-  let truncated = false;
-  const locatedBySector = {};
-  for (;;) {
-    const { sources } = await fetchSources({ gadmId, year: effectiveYear, limit: PAGE, offset });
-    for (const s of sources) {
-      const t = s.emissions_tco2e ?? 0;
-      locatedTonnes += t;
-      const sec = s.sector ?? "unknown";
-      locatedBySector[sec] = (locatedBySector[sec] ?? 0) + t;
-      if (s.is_asset) assetCount += 1;
-      else aggregationCount += 1;
-    }
-    offset += PAGE;
-    if (sources.length < PAGE) break;
-    if (offset >= SPATIAL_MAX_ROWS) {
-      truncated = true;
-      break;
-    }
-  }
-
-  const certainTonnes = aggregateTonnes > 0 ? Math.min(locatedTonnes, aggregateTonnes) : locatedTonnes;
-  const uncertainTonnes = Math.max(0, aggregateTonnes - certainTonnes);
-  const certainPct = aggregateTonnes > 0 ? +((certainTonnes / aggregateTonnes) * 100).toFixed(1) : null;
+  const aggregateTonnes = agg.total_tonnes;
+  const sources = await collectLocationSources(gadmId, effectiveYear);
+  const located = sources.filter(hasCoordinates);
+  const locatedTonnes = completeSum(located);
+  const locatedBySector = Object.groupBy(located, (source) => source.sector ?? "unknown");
 
   const sectorKeys = new Set([...Object.keys(agg.by_sector), ...Object.keys(locatedBySector)]);
   const sectors = [...sectorKeys]
     .map((sec) => {
-      const total = agg.by_sector[sec] ?? 0;
-      const located = Math.min(locatedBySector[sec] ?? 0, total > 0 ? total : Infinity);
+      const total = agg.by_sector[sec] ?? null;
+      const subtotal = completeSum(locatedBySector[sec] ?? []);
       return {
         sector: sec,
         total_mtco2e: toMtco2e(total),
-        located_mtco2e: toMtco2e(located),
-        distributed_mtco2e: toMtco2e(Math.max(0, total - located)),
-        certain_pct: total > 0 ? +((located / total) * 100).toFixed(1) : null,
+        located_mtco2e: toMtco2e(subtotal),
+        difference_mtco2e: total == null || subtotal == null ? null : toMtco2e(total - subtotal),
+        distributed_mtco2e: null,
+        certain_pct: null,
       };
     })
-    .filter((s) => (s.total_mtco2e ?? 0) > 0)
     .sort((a, b) => (b.total_mtco2e ?? 0) - (a.total_mtco2e ?? 0));
 
   const result = {
     gadm_id: gadmId,
     year: effectiveYear,
     aggregate_mtco2e: toMtco2e(aggregateTonnes),
-    located_mtco2e: toMtco2e(certainTonnes),
-    distributed_mtco2e: toMtco2e(uncertainTonnes),
-    certain_pct: certainPct,
-    uncertain_pct: certainPct != null ? +(100 - certainPct).toFixed(1) : null,
-    located_source_count: assetCount,
-    located_aggregation_count: aggregationCount,
-    truncated,
+    located_mtco2e: toMtco2e(locatedTonnes),
+    difference_mtco2e: aggregateTonnes == null || locatedTonnes == null ? null : toMtco2e(aggregateTonnes - locatedTonnes),
+    // The difference is not an API measurement of spatial certainty or proxy allocation.
+    distributed_mtco2e: null,
+    certain_pct: null,
+    uncertain_pct: null,
+    located_source_count: located.filter((source) => source.is_asset).length,
+    located_aggregation_count: located.filter((source) => source.source_type === "gadm-aggregation").length,
+    missing_coordinates: sources.length - located.length,
+    missing_emissions: located.filter((source) => source.emissions_tco2e == null).length,
+    truncated: false,
     sectors,
   };
   cache.set(key, result, 3600);
   refreshLiveCacheSize();
   return { ...result, from_cache: false };
 }
-
-/** Page cap when collecting geolocated sources for the map. */
-const MAP_MAX_ROWS = 3000;
 
 /**
  * Collect geolocated emission sources for the GIS map. Paginates the /sources
@@ -248,20 +246,18 @@ export async function getEmissionSourcesForMap({ gadmId = CLIMATE_TRACE_GADM_UGA
   recordCacheAccess({ hit: false });
   logCacheAccess({ key, hit: false, age_seconds: null });
 
-  const PAGE = SOURCES_MAX_LIMIT;
-  let offset = 0;
-  let truncated = false;
+  const sources = await collectLocationSources(gadmId, effectiveYear);
+  const located = sources.filter(hasCoordinates);
   const points = [];
   const bySector = {};
-  for (;;) {
-    const { sources } = await fetchSources({ gadmId, year: effectiveYear, limit: PAGE, offset });
-    for (const s of sources) {
+    for (const s of located) {
       const lat = s.centroid?.lat;
       const lng = s.centroid?.lng;
       if (lat == null || lng == null) continue;
-      const t = s.emissions_tco2e ?? 0;
+      const t = s.emissions_tco2e;
       const sec = s.sector ?? "unknown";
-      bySector[sec] = (bySector[sec] ?? 0) + t;
+      if (t == null || bySector[sec] === null) bySector[sec] = null;
+      else bySector[sec] = (bySector[sec] ?? 0) + t;
       points.push({
         id: s.id,
         name: s.name,
@@ -270,29 +266,23 @@ export async function getEmissionSourcesForMap({ gadmId = CLIMATE_TRACE_GADM_UGA
         is_asset: Boolean(s.is_asset),
         lat,
         lng,
-        mtco2e: toMtco2e(t),
+        mtco2e: t == null ? null : t / 1_000_000,
       });
     }
-    offset += PAGE;
-    if (sources.length < PAGE) break;
-    if (offset >= MAP_MAX_ROWS) {
-      truncated = true;
-      break;
-    }
-  }
 
   const sectors = Object.entries(bySector)
     .map(([sector, t]) => ({ sector, mtco2e: toMtco2e(t) }))
     .sort((a, b) => (b.mtco2e ?? 0) - (a.mtco2e ?? 0));
-  const totalMtco2e = sectors.reduce((sum, s) => sum + (s.mtco2e ?? 0), 0);
 
   const result = {
     gadm_id: gadmId,
     year: effectiveYear,
     point_count: points.length,
     asset_count: points.filter((p) => p.is_asset).length,
-    total_mtco2e: +totalMtco2e.toFixed(4),
-    truncated,
+    total_mtco2e: toMtco2e(completeSum(located)),
+    missing_coordinates: sources.length - located.length,
+    missing_emissions: located.filter((source) => source.emissions_tco2e == null).length,
+    truncated: false,
     sectors,
     points,
   };

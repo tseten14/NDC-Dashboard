@@ -6,6 +6,23 @@ import {
 } from "../../../shared/progress.js";
 import { NDC_TARGETS } from "../../../config/ndcTargets.js";
 
+describe("progress requires supported values and movement toward the target", () => {
+  it.each([null, undefined, Infinity, NaN])("does not calculate progress from an invalid observation: %s", (latestValue) => {
+    expect(calculateProgressPercent({ baselineValue: 10, targetValue: 20, metricType: "capacity" }, { latestValue })).toBeNull();
+  });
+  it("does not turn missing targets into a zero-valued target", () => {
+    expect(calculateProgressPercent({ baselineValue: null, targetValue: null, metricType: "emissions-reduction" }, { latestValue: 10 })).toBeNull();
+  });
+  it("does not count worsening coverage as progress", () => {
+    expect(calculateProgressPercent({ baselineValue: 40, targetValue: 80, metricType: "coverage" }, { latestValue: 20 })).toBe(0);
+    expect(calculateProgressPercent({ baselineValue: 40, targetValue: 80, metricType: "coverage" }, { latestValue: 60 })).toBe(50);
+  });
+  it("respects a decreasing non-emissions target", () => {
+    expect(calculateProgressPercent({ baselineValue: 40, targetValue: 20, metricType: "intensity" }, { latestValue: 50 })).toBe(0);
+    expect(calculateProgressPercent({ baselineValue: 40, targetValue: 20, metricType: "intensity" }, { latestValue: 30 })).toBe(50);
+  });
+});
+
 describe("calculateProgressPercent — emissions cap targets (target > baseline)", () => {
   it("AFOLU: falling TRACE emissions below the 2030 cap scores as on-track progress", () => {
     const pct = calculateProgressPercent(

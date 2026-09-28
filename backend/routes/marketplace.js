@@ -12,7 +12,7 @@ const router = express.Router();
 
 function sendServerError(req, res, err, code) {
   req.log?.error({ err, event: code }, err.message);
-  const status = err.message?.includes("not configured") ? 503 : 500;
+  const status = err.status === 400 ? 400 : err.message?.includes("not configured") ? 503 : 500;
   res.status(status).json({ error: code, message: err.message });
 }
 

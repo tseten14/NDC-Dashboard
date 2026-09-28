@@ -191,6 +191,7 @@ export default function MwpMarketplaceDeal() {
           </div>
         </div>
 
+        <p className="text-sm text-muted-foreground">Project information is supplied by contributors. Funding, review outcomes and expected emissions reductions require independent verification.</p>
         {/* Tab switcher */}
         <Tabs value={tab} onValueChange={(v) => setTab(v as DealTab)}>
           <TabsList className="h-9">
@@ -235,9 +236,9 @@ export default function MwpMarketplaceDeal() {
               <Card>
                 <CardContent className="p-3">
                   <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mb-1">
-                    <Leaf className="h-3 w-3" /> Climate impact
+                    <Leaf className="h-3 w-3" /> Expected annual reduction
                   </div>
-                  <p className="text-base font-bold text-foreground">{deal.annualMtCO2e} MtCO₂e/yr</p>
+                  <p className="text-base font-bold text-foreground" title="Million tonnes of greenhouse gases expressed as carbon dioxide equivalent, per year">{deal.annualMtCO2e} million tonnes CO₂e/year</p>
                   <p className="text-[10px] text-muted-foreground">{deal.instrument}</p>
                 </CardContent>
               </Card>

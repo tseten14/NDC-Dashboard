@@ -203,6 +203,12 @@ export async function fetchSources({
   if (!parsed.ok) {
     throw new Error("Climate TRACE sources response failed schema validation");
   }
+  for (const row of parsed.data) {
+    if (Number(row.year) !== Number(year) || row.gas !== CLIMATE_TRACE_GAS || row.country !== gadmId.split(".")[0]) {
+      throw new Error("Climate TRACE sources returned a different year, gas, or country");
+    }
+    if (row.id == null) throw new Error("Climate TRACE source identifier is missing");
+  }
   const sources = parsed.data.map((s) => ({
     id: s.id ?? null,
     name: s.name ?? null,
@@ -215,7 +221,8 @@ export async function fetchSources({
       ? { lat: s.centroid.latitude ?? null, lng: s.centroid.longitude ?? null }
       : null,
     emissions_tco2e: s.emissionsQuantity ?? null,
-    emissions_mtco2e: toMtco2e(s.emissionsQuantity),
+    // Preserve source precision; rounding thousands of rows changes their sum.
+    emissions_mtco2e: s.emissionsQuantity == null ? null : s.emissionsQuantity / 1_000_000,
     year: s.year ?? year,
   }));
   return { year, gadm_id: gadmId, limit: safeLimit, offset: safeOffset, count: sources.length, sources };

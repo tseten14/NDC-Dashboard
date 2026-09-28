@@ -70,7 +70,8 @@ export function scoreCaseMatch(policyCase, request) {
     policyCase.region,
     policyCase.country,
   );
-  const scaleScore = 0.8; // placeholder until case-specific scale params added
+  // A case receives no scale-match credit unless case-specific scale evidence is added.
+  const scaleScore = 0;
 
   const total =
     sectorScore * 0.4 +
@@ -91,14 +92,14 @@ export function scoreCaseMatch(policyCase, request) {
 }
 
 function averageOutcomeConfidence(policyCase) {
-  if (!policyCase.outcomes.length) return 0.6;
+  if (!policyCase.outcomes.length) return 0;
   const sum = policyCase.outcomes.reduce((s, o) => s + o.confidence, 0);
   return sum / policyCase.outcomes.length;
 }
 
 /** Weighted confidence from top matches — primary match dominates, weak analogues don't drag score down. */
 function computeOverallConfidence(topMatches) {
-  if (topMatches.length === 0) return 0.25;
+  if (topMatches.length === 0) return 0;
 
   const weightSum = topMatches.reduce((s, t) => s + t.match_score, 0);
   const topMatchScore = topMatches[0].match_score;

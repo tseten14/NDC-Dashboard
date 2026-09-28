@@ -19,9 +19,9 @@ A2. DATA SOURCES
   • Policy documents: Climate Policy Radar CSV export → data/policy/documents.json
     (~207 Uganda rows: laws, executive plans, UN submissions, multilateral fund projects).
     Metadata and CPR/PDF links only — no live CPR API yet. Rebuild with npm run build:documents.
-  • Climate risk (illustrative): district hazard layers in the repo — not operational models
+  • Climate risk: unavailable until a verified hazard, exposure, and vulnerability dataset is connected
   • Delivery activities: saved in the user’s browser (localStorage)
-  • Mitigation economics (Climate Finance): indicative costs/abatement from NDC catalogue — not audited
+  • Climate finance: partial register of two provider-sourced commitments; not a national total or disbursement ledger
   • CPR passage corpus: Climate Policy Radar passage export for key national documents
     (NDC, NDPIV, NBSAP, etc.) — built with npm run build:passages; searchable topics/passages
   • MCF project corpus: multilateral climate fund projects — built with npm run build:mcf
@@ -115,22 +115,22 @@ A6a. MAIN SCREENS AND ROUTES (2026)
     /dashboard     NDC cockpit — targets vs observed emissions (core workspace)
     /ingest        Data ingestion — operator-unlocked Quick Scan + Data Pipeline
     /ai-2030       2030 sector trend forecast (indicative, with uncertainty)
-    /policy-impact Policy Impact wizard (KCI analogies)
-    /climate-finance Climate Finance screening + MCF document links
+    /policy-impact Policy Impact — unavailable until verified quantitative cases are connected
+    /climate-finance Partial sourced climate-finance commitment register
     /documents     Policy corpus + CPR passages + MCF projects + pathway diagram
     /documents/view Policy document split-pane viewer + AI Policy Assistant
-    /mwp-marketplace Pre-authored mitigation deal room
+    /mwp-marketplace Database-backed user project records; unavailable without persistence
     /my-work      Browser-local activities and submissions
     /docs          In-app user guide + system design (this documentation)
 
   Additional direct routes:
     /library       Strategy Library
-    /risk          Climate Risk (illustrative hazard screening)
+    /risk          Climate Risk — unavailable until a verified hazard dataset is connected
     /executive     Executive overview briefing
     …              Other legacy cockpit slices (delivery, finance, indicators, etc.)
 
   Q1 — Are we on track?
-    /indicators    Indicator registry + KPI tracking
+    /indicators    Indicator catalogue — unavailable until a confirmed registry is connected
     /evidence      Evidence & MRV — provenance, QA flags, confidence, export
     /projections   Scenario projections and growth path sliders
 
@@ -160,14 +160,14 @@ A6a. MAIN SCREENS AND ROUTES (2026)
     /ndp-iv              NDP IV strategy alignment
     /vision-2040         Vision 2040 layer
     /interlinkages       Cross-sector interlinkages (shared with Q2)
-    /institutional-map   Visual institutional map — who owns what across government [NEW — illustrative]
+    /institutional-map   Unavailable until a confirmed responsibility roster is connected
 
   Admin section (role-gated):
     /admin               System configuration
     /exports             Exports & API
     /afolu-mrv           AFOLU MRV detail
     /library             Strategy Library
-    /risk                Climate Risk (illustrative hazard screening)
+    /risk                Climate Risk — unavailable until verified hazard data is connected
 
 A6b. INTENDED VS MEASURED OUTCOMES (important for briefings)
 
@@ -175,8 +175,8 @@ A6b. INTENDED VS MEASURED OUTCOMES (important for briefings)
 
     INTENDED OUTCOMES     — NDC targets, health/air-quality goals, policy aims (left column;
                             pathway diagram on /documents; indicator panel for non-CO2 metrics)
-    DELIVERY / PROGRAMMES — Activities and mitigation options in the NDC catalogue (dialogs on
-                            Dashboard; indicative costs in Climate Finance)
+    DELIVERY / PROGRAMMES — Activities and qualitative mitigation concepts in the NDC catalogue;
+                            unsupported costs and reductions remain unavailable
     MEASURED OUTCOMES     — Climate TRACE observed emissions (centre column, Map, AI 2030 history)
 
   The urban transport "intervention pathway" on Policy documents is an ILLUSTRATIVE theory of
@@ -308,26 +308,17 @@ A7. FEATURE GUIDE — PURPOSE, HOW IT WORKS, RESULT (non-technical)
     Not: A full territorial inventory. Custom Draw mode is temporarily hidden;
          its code remains for a later release.
 
-  FINANCIAL FLOWS (/financial-flow) [NEW — Jun 2026, illustrative data]
-    For: Q3 "Where are the bottlenecks?" — see committed vs disbursed vs spent per project.
-    Steps: Read table; sort by disbursement %; colour coding shows projects at risk.
-    How: Synthesised from seed-activities data; illustrative numbers, not live financial system.
-    Result: Bottleneck identification by project and district.
-    Not: Connected to live treasury/IFMS data (requires integration).
+  FINANCIAL FLOWS (/financial-flow)
+    Status: Unavailable until dated, sourced commitment, payment, and expenditure records are connected.
+    Safeguard: Project status is not converted into a payment or disbursement estimate.
 
-  COST EFFECTIVENESS (/cost-effectiveness) [NEW — Jun 2026, illustrative data]
-    For: Q2 "Which interventions work?" — rank by cost per tCO2e avoided.
-    Steps: Sort table by cost/tCO2e; identify top-3 "best value" interventions; review co-benefits.
-    How: Illustrative cost and impact estimates synthesised from seed-activities and indicator data.
-    Result: Prioritisation input for investment decisions.
-    Not: Audited cost data; replace illustrative numbers with real project accounts when available.
+  COST EFFECTIVENESS (/cost-effectiveness)
+    Status: Unavailable until audited costs and compatible emissions-effect evidence are connected.
+    Safeguard: No project ranking or cost per tonne is calculated from demonstration values.
 
-  INSTITUTIONAL MAP (/institutional-map) [NEW — Jun 2026, illustrative data]
-    For: Q5 "Are we aligned?" — see who owns what across government and partners.
-    Steps: Read institution cards grouped by type; check mandate overlap alerts at top.
-    How: Built from actors roster in uganda-strategy-data.ts; overlap detection across activity ownership.
-    Result: Visual alignment check across MWE, STI, Finance, sector ministries, donors, UN agencies.
-    Not: Live org chart; update actors data to reflect current institutional arrangements.
+  INSTITUTIONAL MAP (/institutional-map)
+    Status: Unavailable until a confirmed institutional responsibility and focal-point roster is connected.
+    Safeguard: Ownership and mandate overlap are not inferred from prototype assignments.
 
   DASHBOARD (/dashboard)
     For: Compare NDC 2022 pledges to observed emissions; executive and MRV briefings.
@@ -358,12 +349,11 @@ A7. FEATURE GUIDE — PURPOSE, HOW IT WORKS, RESULT (non-technical)
     Not: Government forecast or climate model with new policies.
 
   CLIMATE FINANCE (/climate-finance)
-    For: Screen mitigation options — cost per tonne, carbon revenue, fund windows.
-    Steps: Adjust sliders; select project cards; read pathway text; review MCF documents list.
-    How: Client-side economics from catalogue indicative fields; fund rules from
-         climate-finance-pathways.ts (NAPX-style); MCF rows from policy corpus + sector keywords.
-    Result: Ranked options and fund-fit hints for workshops.
-    Not: Investment advice or audited project accounts.
+    For: Review the small set of provider-sourced commitments currently checked.
+    Steps: Read the partial-coverage notice; open provider links; export the sourced register.
+    How: Exact commitments for GCF FP034 and World Bank EASP P166685.
+    Result: A traceable partial register.
+    Not: A complete national total, a disbursement ledger, or investment advice.
 
   POLICY DOCUMENTS (/documents)
     For: Evidence library + intervention logic model.

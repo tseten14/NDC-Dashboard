@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { useCountry } from "@/context/CountryContext";
 import { downloadFile, exportPackage, readExercises, type Exercise } from "@/lib/inventory-workspace";
 
+const SAMPLE_DATA_ENABLED = import.meta.env.DEV;
+
 export default function ClassificationArchive() {
   const { country } = useCountry();
   const [loaded] = useState(() => {
-    try { return { exercises: country ? readExercises(country.code) : [] as Exercise[], error: "" }; }
+    try { return { exercises: country ? readExercises(country.code).filter(exercise => SAMPLE_DATA_ENABLED || !exercise.sample) : [] as Exercise[], error: "" }; }
     catch { return { exercises: [] as Exercise[], error: "Saved exercises could not be read. Your browser data has not been changed." }; }
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);

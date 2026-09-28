@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { calculateProgress as calculateProgressUnified } from "@/lib/progress";
 import { NDC_TARGETS } from "../../../config/ndcTargets.js";
+import { MITIGATION_CONCEPTS } from "../../../shared/mitigationConcepts.js";
 
 /* ── Enums & types ── */
 
@@ -102,10 +103,10 @@ export interface MitigationOption {
   title: string;
   description: string;
   /** Indicative abatement estimate from NDC mitigation analysis (sector-level, not measured). */
-  emissionsReductionPotential: number;
+  emissionsReductionPotential: number | null;
   emissionsReductionUnit: string;
   /** Indicative cost inputs — used only by the Climate Finance screening tool, not shown as data. */
-  costEstimate: number;
+  costEstimate: number | null;
   costCurrency: string;
   costMagnitude: string;
   confidence: ConfidenceLevel;
@@ -395,177 +396,13 @@ export const ndcActivities: NDCActivity[] = [
   },
 ];
 
-/* ── Mock Observed Data ── */
+/** Observations are supplied by live APIs or documented user imports.
+ * Policy baselines are not annual measurements; never interpolate them into history.
+ */
+export const observedDataSets: ObservedDataSet[] = [];
 
-// targetYear/targetValue define the NDC reference line; flatTarget=true for emission
-// cap targets (ceiling stays constant); linear interpolation for coverage/access targets.
-function makeHistorical(
-  baseline: number,
-  start: number,
-  end: number,
-  annualChange: number,
-  targetYear = 2030,
-  targetValue = baseline,
-  flatTarget = true,
-): ObservedDataPoint[] {
-  const data: ObservedDataPoint[] = [];
-  const span = targetYear - start;
-  for (let y = start; y <= end; y++) {
-    const elapsed = y - start;
-    const tgt = flatTarget
-      ? targetValue
-      : Math.round((baseline + (targetValue - baseline) * (elapsed / span)) * 100) / 100;
-    data.push({
-      year: y,
-      value: Math.round((baseline + annualChange * elapsed) * 100) / 100,
-      target: tgt,
-    });
-  }
-  return data;
-}
-
-// Extend from the latest observation toward the 2030 no-policy (BAU) level.
-function makeProjection(
-  lastValue: number,
-  terminalValue: number,
-  startYear: number,
-  endYear: number,
-  ndcTarget?: number,
-): ObservedDataPoint[] {
-  const data: ObservedDataPoint[] = [];
-  const totalYears = Math.max(1, endYear - startYear);
-  for (let y = startYear; y <= endYear; y++) {
-    const elapsed = y - startYear;
-    data.push({
-      year: y,
-      value: Math.round((lastValue + (terminalValue - lastValue) * (elapsed / totalYears)) * 100) / 100,
-      ...(ndcTarget != null ? { target: Math.round(ndcTarget * 100) / 100 } : {}),
-    });
-  }
-  return data;
-}
-
-export const observedDataSets: ObservedDataSet[] = [
-  // t0: Economy-wide (90.1 MtCO2e in 2015, growing toward 112.1 NDC target)
-  {
-    targetId: "t0",
-    dataProviders: ["Uganda GHG National Inventory", "Climate TRACE"],
-    historicalData: makeHistorical(90.1, 2015, 2024, 2.2, 2030, 112.1, true),
-    projectionBaseline: makeProjection(109.9, 148.8, 2025, 2030, 112.1),
-    provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2024-11-01T00:00:00Z", isValidated: true },
-  },
-  // t1: AFOLU emissions (NDC 2022 scale: 77.6 MtCO2e 2015, growing toward 91.8 NDC target)
-  {
-    targetId: "t1",
-    dataProviders: ["Earth Observation (Global Forest Watch)", "National Forestry Authority MRV"],
-    historicalData: makeHistorical(77.6, 2015, 2024, 1.2, 2030, 91.8, true),
-    projectionBaseline: makeProjection(89.2, 122.2, 2025, 2030, 91.8),
-    provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2024-11-15T08:30:00Z", isValidated: true },
-  },
-  // t2: Forest cover (12.5% in 2020, target 21% by 2030)
-  {
-    targetId: "t2",
-    dataProviders: ["Earth Observation (Copernicus)", "National Forestry Authority"],
-    historicalData: makeHistorical(12.5, 2020, 2024, 0.6, 2030, 21, false),
-    projectionBaseline: makeProjection(14.9, 21, 2025, 2030, 21),
-    provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2024-10-20T14:00:00Z", isValidated: true },
-  },
-  // t9: Wetlands coverage (8.9% in 2020, target 12% by 2030)
-  {
-    targetId: "t9",
-    dataProviders: ["National Wetlands Atlas", "Ministry of Water and Environment"],
-    historicalData: makeHistorical(8.9, 2020, 2024, 0.12, 2030, 12, false),
-    projectionBaseline: makeProjection(9.38, 12, 2025, 2030, 12),
-    provenance: { sourceType: "observed-eo", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2026-06-01T00:00:00Z", isValidated: true },
-  },
-  // t4: Energy stationary (5.66 MtCO2e 2015, growing toward 10.10 NDC target)
-  {
-    targetId: "t4",
-    dataProviders: ["Emissions Tracing (Climate TRACE)", "Ministry MRV"],
-    historicalData: makeHistorical(5.66, 2015, 2024, 0.42, 2030, 10.10, true),
-    projectionBaseline: makeProjection(9.44, 12.44, 2025, 2030, 10.10),
-    provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "ok", lastUpdated: "2024-08-15T12:00:00Z", isValidated: true },
-  },
-  // t3: Electricity generation capacity (1,276 MW in 2020, target 4,200 MW)
-  {
-    targetId: "t3",
-    dataProviders: ["Uganda Electricity Regulatory Authority", "Ministry MRV"],
-    historicalData: makeHistorical(1276.2, 2020, 2024, 180, 2030, 4200, false),
-    projectionBaseline: makeProjection(1996.2, 4200, 2025, 2030, 4200),
-    provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "ok", lastUpdated: "2024-09-01T10:00:00Z", isValidated: true },
-  },
-  // t5: Transport emissions (4.2 MtCO2e 2015, growing toward 6.8 NDC target)
-  {
-    targetId: "t5",
-    dataProviders: ["Emissions Tracing (Climate TRACE)", "Ministry of Works and Transport MRV"],
-    historicalData: makeHistorical(4.2, 2015, 2024, 0.35, 2030, 6.8, true),
-    projectionBaseline: makeProjection(7.35, 9.6, 2025, 2030, 6.8),
-    provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Works and Transport", qaqcStatus: "ok", lastUpdated: "2024-08-01T09:00:00Z", isValidated: true },
-  },
-  // t6: Waste emissions (2.08 MtCO2e 2015, target 2.09 MtCO2e — constrain at BAU)
-  {
-    targetId: "t6",
-    dataProviders: ["Emissions Tracing", "NEMA"],
-    historicalData: makeHistorical(2.08, 2015, 2024, 0.07, 2030, 2.09, true),
-    projectionBaseline: makeProjection(2.71, 3.19, 2025, 2030, 2.09),
-    provenance: { sourceType: "observed-emissions-tracing", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2024-07-01T11:00:00Z", isValidated: true },
-  },
-  // t7: IPPU (0.57 MtCO2e 2015, target 0.86 MtCO2e — constrain at BAU)
-  {
-    targetId: "t7",
-    dataProviders: ["Ministry MRV", "Uganda Bureau of Statistics"],
-    historicalData: makeHistorical(0.57, 2015, 2024, 0.024, 2030, 0.86, true),
-    projectionBaseline: makeProjection(0.786, 1.0, 2025, 2030, 0.86),
-    provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Water and Environment", qaqcStatus: "ok", lastUpdated: "2024-03-15T10:00:00Z", isValidated: true },
-  },
-  // t8: CSA adoption (31.7% 2020 → 70.7% 2030 estimate)
-  {
-    targetId: "t8",
-    dataProviders: ["Ministry MRV", "FAO"],
-    historicalData: makeHistorical(31.7, 2020, 2024, 2.0, 2030, 70.7, false),
-    projectionBaseline: makeProjection(39.7, 70.7, 2025, 2030, 70.7),
-    provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Agriculture, Animal Industry and Fisheries", qaqcStatus: "ok", lastUpdated: "2024-06-01T08:00:00Z", isValidated: true },
-  },
-  // t10: Electricity access (24% 2020, target 75% by 2030)
-  {
-    targetId: "t10",
-    dataProviders: ["Uganda Bureau of Statistics", "ERA"],
-    historicalData: makeHistorical(24, 2020, 2024, 4.0, 2030, 75, false),
-    projectionBaseline: makeProjection(40, 75, 2025, 2030, 75),
-    provenance: { sourceType: "reported", mrvOwnerMinistry: "Ministry of Energy and Mineral Development", qaqcStatus: "ok", lastUpdated: "2024-09-01T10:00:00Z", isValidated: true },
-  },
-];
-
-/* ── NDC Mitigation Options (fallback for the bundled catalog API) ──
- * Source: Uganda Updated NDC (Sept 2022) mitigation analysis. Title/description and
- * target/sector linkage are NDC-traceable; emissionsReductionPotential is an
- * indicative sector-level estimate. cost/confidence are indicative inputs used only
- * by the Climate Finance screening tool (not shown as data in the tab). Foreign
- * "best practice" case studies were removed in the June 2026 data audit. */
-
-const NDC_ABATEMENT = "Uganda Updated NDC (Sept 2022) mitigation tables — indicative MtCO₂e/yr at full deployment";
-const NDC_COST = "NDC cost annex / programme benchmarks — indicative USD millions, not tendered";
-
-export const mitigationOptions: MitigationOption[] = [
-  // PES: indicative REDD+ planning figure; NDC does not quote a standalone PES abatement number
-  { id: "m1", targetId: "t1", sectorId: "afolu", title: "Payment for Ecosystem Services (PES)", description: "Establish PES schemes to incentivize forest conservation by local communities; target 500,000 ha under REDD+ and landscape restoration", emissionsReductionPotential: 1.2, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 15, costCurrency: "USD", costMagnitude: "million/yr", confidence: "low", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; AFOLU REDD+ / 40M-tree campaign indicative sub-measure (NDC cites no standalone PES figure; 1.2 MtCO₂e is derived from NDC tree-planting campaign estimate)`, costSource: `${NDC_COST}; recurring programme cost (million USD/yr)` } },
-  // Commercial plantation: NDC quotes bioenergy woodlots at 2.9 MtCO₂e; large-scale timber ~5 MtCO₂e; using woodlot figure as primary
-  { id: "m2", targetId: "t1", sectorId: "afolu", title: "Commercial Bioenergy Woodlot Plantations", description: "Scale up bioenergy woodlot plantations on degraded lands to reduce pressure on natural forests; NDC Table 2.1 — 2.9 MtCO₂e/yr", emissionsReductionPotential: 2.9, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 45, costCurrency: "USD", costMagnitude: "million", confidence: "medium", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; NDC Section 2.1 — bioenergy woodlot plantations: 2.9 MtCO₂e by 2030`, costSource: `${NDC_COST}; upfront capex (million USD)` } },
-  // Charcoal kilns: CONFIRMED — direct NDC quote 3.37 MtCO₂e
-  { id: "m8", targetId: "t1", sectorId: "afolu", title: "Improved Charcoal Kilns (AFOLU Energy Efficiency)", description: "Scale up efficient charcoal production from 12% to 75% kiln efficiency by 2030 — NDC Section 2.3: 3.37 MtCO₂e/yr confirmed", emissionsReductionPotential: 3.37, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 20, costCurrency: "USD", costMagnitude: "million", confidence: "medium", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; NDC Section 2.3 — direct quote: "approximately 3.37 MtCO₂e by 2030"`, costSource: `${NDC_COST}; upfront capex (million USD)` } },
-  // Mini-grid solar: 0.8 MtCO₂e not in NDC mitigation tables; NDC grid-renewables figure is near-zero; using IEA/IRENA-informed estimate, marked low confidence
-  { id: "m3", targetId: "t4", sectorId: "energy", title: "Mini-Grid Solar Deployment", description: "Deploy 200 solar mini-grids in off-grid rural areas; part of 4,200 MW generation target; abatement vs displaced kerosene/diesel generation", emissionsReductionPotential: 0.4, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 120, costCurrency: "USD", costMagnitude: "million", confidence: "low", financeProvenance: { abatementSource: `IEA Uganda Energy Transition Plan / IRENA-informed estimate; NDC mitigation tables do not quote a standalone mini-grid abatement figure — revised down from prior 0.8 to reflect grid-vs-kerosene displacement only`, costSource: `${NDC_COST}; ~USD 600K per mini-grid × 200 sites` } },
-  // Improved cookstoves: CONFIRMED — direct NDC quote 1.09 MtCO₂e
-  { id: "m4", targetId: "t4", sectorId: "energy", title: "Improved Cookstove Distribution", description: "Distribute 65,000 improved cookstoves/year and promote cooking fuel switch; NDC Table 3-11: 1.09 MtCO₂e/yr confirmed", emissionsReductionPotential: 1.09, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 25, costCurrency: "USD", costMagnitude: "million", confidence: "medium", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; NDC Table 3-11 — direct quote: "approximately 1.09 MtCO₂e by 2030" (clean cooking / fuel switch)`, costSource: `${NDC_COST}; programme capex (million USD)` } },
-  // E-buses + BRT: NDC has two separate measures — e-bus/fuel-switch (0.54) + BRT/NMT (0.66); combined = 1.20 MtCO₂e; cost flagged low confidence (BRT alone requires $500M+)
-  { id: "m5", targetId: "t5", sectorId: "transport", title: "E-Buses & BRT for Greater Kampala", description: "200+ e-buses in GKMA (NDC Table 3-13: 0.54 MtCO₂e) + 101 km BRT / NMT corridors (NDC: 0.66 MtCO₂e) — combined 1.20 MtCO₂e/yr; cost is order-of-magnitude only (BRT infrastructure alone ~$500M–$2B)", emissionsReductionPotential: 1.2, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 800, costCurrency: "USD", costMagnitude: "million", confidence: "low", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; NDC Table 3-13 — alternative fuel switch (e-buses): 0.54 MtCO₂e + BRT/NMT corridors: 0.66 MtCO₂e = 1.20 MtCO₂e combined`, costSource: `World Bank GKMA transport estimates; BRT at $5–20M/km for 101 km + fleet: order-of-magnitude USD 800M; prior $200M was a significant underestimate` } },
-  // Road fuel efficiency: CONFIRMED — direct NDC quote 1.86 MtCO₂e
-  { id: "m9", targetId: "t5", sectorId: "transport", title: "Road Fuel Efficiency Standards", description: "GFEI 50by50 framework — 20% fuel economy improvement by 2030; regulate imported vehicle fleet; NDC Table 3-13: 1.86 MtCO₂e/yr confirmed", emissionsReductionPotential: 1.86, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 10, costCurrency: "USD", costMagnitude: "million", confidence: "medium", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; NDC Table 3-13 — direct quote: "approximately 1.86 MtCO₂e by 2030" (vehicle fuel-economy standards)`, costSource: `${NDC_COST}; policy implementation cost` } },
-  // Waste management: CONFIRMED — NDC waste sector reduction = BAU 3.19 − target 2.09 = 1.10 MtCO₂e
-  { id: "m6", targetId: "t6", sectorId: "waste", title: "Green Cities Waste Management", description: "Solid waste + wastewater management in 5 cities and 15 municipalities; NDC waste sector reduction: 3.19 → 2.09 MtCO₂e = 1.10 MtCO₂e confirmed", emissionsReductionPotential: 1.1, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 80, costCurrency: "USD", costMagnitude: "million", confidence: "medium", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; NDC waste sector: BAU 2030 = 3.19 MtCO₂e, NDC target = 2.09 MtCO₂e → reduction = 1.10 MtCO₂e confirmed`, costSource: `${NDC_COST}; multi-city municipal infrastructure benchmark` } },
-  // Agroforestry: NDC targets 1.3M ha by 2030 but does not assign a standalone abatement; 1.2 MtCO₂e aligns with tree-campaign estimate in NDC narrative
-  { id: "m7", targetId: "t8", sectorId: "agriculture", title: "Agroforestry Integration Programme", description: "Agroforestry on 1.3 million ha by 2030 (Aichi Target 15); part of climate-smart agriculture (CSA) adoption — NDC narrative cites ~1.2 MtCO₂e for tree-planting campaign", emissionsReductionPotential: 1.2, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 35, costCurrency: "USD", costMagnitude: "million", confidence: "medium", financeProvenance: { abatementSource: `${NDC_ABATEMENT}; NDC 40M-tree campaign / agroforestry on 1.3M ha — ~1.2 MtCO₂e from NDC narrative (no single-line abatement table entry; prior 1.5 was unsourced)`, costSource: `${NDC_COST}; programme capex (million USD)` } },
-];
+/** Policy concepts only. Project costs and reductions require project evidence. */
+export const mitigationOptions: MitigationOption[] = MITIGATION_CONCEPTS as MitigationOption[];
 
 /* ── Utility functions ── */
 
@@ -650,13 +487,15 @@ export function calculateProgress(target: NDCTarget, observedData?: ObservedData
 
 export function getDataCompleteness(): number {
   const total = observedDataSets.length;
+  if (total === 0) return 0;
   const validated = observedDataSets.filter(d =>
     d.provenance.isValidated && d.provenance.qaqcStatus === "ok"
   ).length;
   return Math.round((validated / total) * 100);
 }
 
-export function getLastRefreshTimestamp(): string {
+export function getLastRefreshTimestamp(): string | null {
   const dates = observedDataSets.map(d => new Date(d.provenance.lastUpdated).getTime());
+  if (dates.length === 0) return null;
   return new Date(Math.max(...dates)).toISOString();
 }

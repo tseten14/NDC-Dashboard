@@ -74,12 +74,12 @@ describe("computeProjectEconomics", () => {
   });
 
   it("uses annual cost directly for recurring programmes", () => {
-    const pes = mitigationOptions.find((o) => o.id === "m1")!;
+    const pes = option({ id: "recurring-test", emissionsReductionPotential: 1.2, costEstimate: 15, costMagnitude: "million/yr" });
     const econ = computeProjectEconomics(pes, DEFAULT_ASSUMPTIONS);
     expect(econ.costType).toBe("annual");
-    // m1: USD 15M/yr ÷ 1.2 MtCO₂e/yr ≈ USD 12.5/t (NDC-derived abatement estimate)
+    // Explicit scenario inputs: USD 15M/yr ÷ 1.2 Mt/yr = USD 12.5/t.
     expect(econ.costToAbateUSDPerT).toBeCloseTo(12.5, 0);
-    expect(econ.abatementSource).toContain("NDC");
+    expect(econ.abatementSource).toContain("User-supplied");
   });
 
   it("applies wider confidence bands for low-confidence data", () => {
@@ -105,7 +105,7 @@ describe("maccSortKey", () => {
 
 describe("buildMaccCurve", () => {
   it("orders cheaper projects first and accumulates abatement", () => {
-    const curve = buildMaccCurve(mitigationOptions, DEFAULT_ASSUMPTIONS);
+    const curve = buildMaccCurve([option({ id: "cheap", costEstimate: 5 }), option({ id: "costly", costEstimate: 20 })], DEFAULT_ASSUMPTIONS);
     expect(curve.length).toBeGreaterThan(1);
     for (let i = 1; i < curve.length; i++) {
       expect(maccSortKey(curve[i])).toBeGreaterThanOrEqual(maccSortKey(curve[i - 1]));
@@ -136,8 +136,16 @@ describe("investmentToCloseGap", () => {
   });
 
   it("does not exceed the gap when stacking projects", () => {
-    const closure = investmentToCloseGap(1, mitigationOptions.slice(0, 3), DEFAULT_ASSUMPTIONS);
+    const closure = investmentToCloseGap(1, [option({ id: "a", emissionsReductionPotential: 2 })], DEFAULT_ASSUMPTIONS);
     expect(closure.abatementSecuredMt).toBeCloseTo(1, 5);
     expect(closure.shortfallMt).toBe(0);
+  });
+
+  it("does not turn missing project evidence into free abatement", () => {
+    expect(buildMaccCurve(mitigationOptions, DEFAULT_ASSUMPTIONS)).toEqual([]);
+    const closure = investmentToCloseGap(1, mitigationOptions, DEFAULT_ASSUMPTIONS);
+    expect(closure.abatementSecuredMt).toBe(0);
+    expect(closure.shortfallMt).toBe(1);
+    expect(() => computeProjectEconomics(mitigationOptions[0], DEFAULT_ASSUMPTIONS)).toThrow("unavailable");
   });
 });

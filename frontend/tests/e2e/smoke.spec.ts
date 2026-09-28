@@ -50,15 +50,16 @@ test.describe("NDC Data Explorer smoke", () => {
     await expect(page.getByText(/Climate TRACE/i).first()).toBeVisible();
   });
 
-  test("emissions map renders its totals and sector legend", async ({ page }) => {
+  test("emissions map labels unavailable fixture data instead of inventing totals", async ({ page }) => {
     await seedUgandaSession(page);
     await page.goto("/map");
     await waitForApi(page);
 
-    await expect(page.getByText(/TOTAL EMISSIONS/i).first()).toBeVisible();
-    await expect(page.getByText(/TRACKED SOURCES/i).first()).toBeVisible();
-    // The legend only appears once the map has data to colour by sector.
-    await expect(page.getByText(/SECTORS/i).first()).toBeVisible();
+    await expect(page.getByText("Net emissions in mapped records", { exact: true })).toBeVisible();
+    await expect(page.getByText("Tracked sources", { exact: true })).toBeVisible();
+    await expect(page.getByText("Unavailable", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Could not load map data", { exact: true })).toBeVisible();
+    await expect(page.getByText("Sectors", { exact: true }).first()).toBeVisible();
   });
 
   test("no uncaught page errors while navigating the main screens", async ({ page }) => {

@@ -15,8 +15,8 @@ Express (backend/server.js, port 8787; backend/server/createApp.js)
   ├── backend/routes/ndcCockpit.js     Catalog (activities, mitigation)
   ├── backend/routes/ingest.js         File upload / scan / confirm (operator-protected writes)
   ├── backend/routes/authSession.js    Operator unlock session
-  ├── backend/routes/policyImpact.js   KCI case matching + TEF forecast
-  └── backend/routes/risk.js           Illustrative risk seed data
+  ├── backend/routes/policyImpact.js   Unavailable until verified quantitative cases exist
+  └── backend/routes/risk.js           Unavailable until a verified hazard dataset exists
 ```
 
 Production copies `frontend/dist` to `public/` and runs `api/index.js` on Vercel. The browser calls same-origin `/api/v1/...` without `VITE_API_BASE_URL`.
@@ -34,13 +34,13 @@ Site login is temporarily disabled by `frontend/src/lib/auth-config.ts`: `/auth`
 | `/sector-classification`, `/scenario-analysis` | Explore tools | Reporting sectors and policy scenarios |
 | `/dashboard` | NDC cockpit | Three-column workspace + NDC AI dialog |
 | `/ingest` | Data ingestion | Mapped import → Postgres; quick scan profiling |
-| `/policy-impact` | Policy Impact wizard | KCI analogies + TEF intervention forecast |
+| `/policy-impact` | Policy Impact | Explicit unavailable state until verified cases are connected |
 | `/ai-2030` | 2030 forecast | Sector predictions vs targets |
-| `/climate-finance` | Finance screening | Indicative MAC / fund matching; MCF links |
+| `/climate-finance` | Climate finance | Partial sourced commitment register |
 | `/documents` | Policy documents | Library + CPR passages + MCF + pathway |
 | `/documents/view` | Document AI | Split-pane PDF analysis |
 | `/docs` | Documentation | User guide + system design (bundled markdown) |
-| `/mwp-marketplace` | Marketplace | Pre-authored mitigation deals |
+| `/mwp-marketplace` | Marketplace | Database-backed user project records; unavailable without persistence |
 | `/library`, `/my-work`, `/risk/*` | Advanced | Strategy, workbench, risk module |
 | `/executive`, `/delivery`, … | Legacy advanced | Older cockpit slices |
 

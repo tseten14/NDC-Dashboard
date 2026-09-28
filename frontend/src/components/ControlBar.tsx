@@ -35,9 +35,9 @@ export function ControlBar({
 }: ControlBarProps) {
   const completeness = getDataCompleteness();
   const lastRefresh = getLastRefreshTimestamp();
-  const formattedTime = new Date(lastRefresh).toLocaleDateString("en-UG", {
+  const formattedTime = lastRefresh ? new Date(lastRefresh).toLocaleDateString("en-UG", {
     day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
-  });
+  }) : "No observations loaded";
 
   return (
     <header className="sticky top-0 z-20 bg-card/95 backdrop-blur border-b border-border">

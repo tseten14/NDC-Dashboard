@@ -35,9 +35,10 @@ export function capTargetPosition(latest, cap, bau) {
  */
 export function calculateProgressPercent(target, observations) {
   const latestValue = observations.latestValue;
-  if (latestValue == null || Number.isNaN(latestValue)) return null;
+  if (!Number.isFinite(latestValue)) return null;
 
   const { baselineValue, targetValue, metricType } = target;
+  if (!Number.isFinite(baselineValue) || !Number.isFinite(targetValue)) return null;
   const bau2030 = target.bau2030 ?? target.bau_2030 ?? null;
 
   if (DECREASE_METRICS.has(metricType)) {
@@ -67,7 +68,8 @@ export function calculateProgressPercent(target, observations) {
 
   const totalChange = Math.abs(targetValue - baselineValue);
   if (totalChange === 0) return latestValue === baselineValue ? 100 : 0;
-  const currentChange = Math.abs(latestValue - baselineValue);
+  // Movement away from the target is regression, not positive progress.
+  const currentChange = (latestValue - baselineValue) * Math.sign(targetValue - baselineValue);
   return Math.min(100, Math.max(0, Math.round((currentChange / totalChange) * 100)));
 }
 

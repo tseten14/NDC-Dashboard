@@ -66,7 +66,7 @@ function PipelineCard({ pitch }: { pitch: DealPitch }) {
               <Banknote className="h-3 w-3" /> {fmtUSD(pitch.askM)} ask
             </span>
             <span className="flex items-center gap-1">
-              <Leaf className="h-3 w-3" /> {pitch.annualMtCO2e} MtCO₂e/yr
+              <Leaf className="h-3 w-3" /> <span title="Expected annual reduction, in million tonnes of carbon dioxide equivalent">{pitch.annualMtCO2e} million tonnes CO₂e/year (estimate)</span>
             </span>
           </div>
 
@@ -113,7 +113,7 @@ export default function MwpMarketplace() {
   const highlighted = useMemo(() => {
     if (!fromClimateFinance || !sectorParam || deals.length === 0) return null;
     const s = sectorParam.toLowerCase();
-    return deals.find((d) => d.sectorId.toLowerCase() === s) ?? deals[0];
+    return deals.find((d) => d.sectorId.toLowerCase() === s) ?? null;
   }, [fromClimateFinance, sectorParam, deals]);
 
   return (
@@ -127,9 +127,10 @@ export default function MwpMarketplace() {
               Marketplace
             </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              Uganda's NDC implementation pipeline. Package projects as investment pitches,
+              Submitted project pipeline. Package projects as investment pitches,
               track funder evaluation, and follow delivery milestones — from NDC gap to
-              first disbursement.
+              first disbursement. Funding requests, expected emissions savings and review outcomes
+              are supplied by contributors and require independent verification.
             </p>
           </div>
           {authenticated && (
@@ -173,7 +174,7 @@ export default function MwpMarketplace() {
             </Card>
           )}
 
-          {!dealsQuery.isLoading && deals.length === 0 && (
+          {!dealsQuery.isLoading && !dealsQuery.isError && deals.length === 0 && (
             <Card>
               <CardContent className="p-6 text-center space-y-2">
                 <p className="text-sm text-muted-foreground">No deals in the pipeline yet.</p>

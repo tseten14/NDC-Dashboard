@@ -1,5 +1,5 @@
 /**
- * Dashboard QA/QC review — validates indicator timeseries before marking verified.
+ * Dashboard numeric plausibility review. This does not verify source authenticity.
  * Used by the indicators API and Observed Data provenance on the dashboard.
  */
 
@@ -10,10 +10,13 @@
  */
 export function reviewDashboardQaqc(timeseries, unit = "") {
   const points = (timeseries ?? []).filter(
-    (p) => p.value != null && !Number.isNaN(Number(p.value)),
+    (p) => p.value != null && Number.isFinite(Number(p.value)),
   );
   if (!points.length) {
     return { qaqcStatus: "missing", isValidated: false };
+  }
+  if (points.length !== (timeseries ?? []).filter((p) => p.value != null).length) {
+    return { qaqcStatus: "warning", isValidated: false };
   }
 
   const isPct = String(unit).includes("%");

@@ -187,11 +187,11 @@ export function statusColor(
 // ---------- SHARED DEFAULTS ----------
 
 const NDPIV_DEFAULTS = {
-  data_source: "UBOS / NPA Programme M&E",
+  data_source: "NDP IV policy reference — annual observations are not connected",
   data_owner: "National Planning Authority (NPA)",
   update_frequency: "Annual",
-  last_update_date: "2025-06-30",
-  validation_status: "Verified" as ValidationStatus,
+  last_update_date: null,
+  validation_status: "Provisional" as ValidationStatus,
   target_year_primary: "FY2029/30",
   baseline_year: "FY2023/24",
 };
@@ -200,7 +200,7 @@ const TENFOLD_DEFAULTS = {
   data_source: "Tenfold Growth Strategy (June 2025)",
   data_owner: "Ministry of Finance, Planning & Economic Development",
   update_frequency: "Annual",
-  last_update_date: "2025-06-30",
+  last_update_date: null,
   validation_status: "Provisional" as ValidationStatus,
   target_year_primary: "2040",
   baseline_year: "2023",
@@ -210,8 +210,8 @@ const NDC_DEFAULTS = {
   data_source: "Uganda Updated NDC (September 2022)",
   data_owner: "Ministry of Water and Environment — Climate Change Department",
   update_frequency: "Biennial (BTR)",
-  last_update_date: "2024-12-31",
-  validation_status: "Verified" as ValidationStatus,
+  last_update_date: null,
+  validation_status: "Provisional" as ValidationStatus,
   target_year_primary: "2030",
   baseline_year: "2015",
 };

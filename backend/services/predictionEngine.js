@@ -37,7 +37,7 @@ function round(v, nd = 2) {
 }
 
 function statusFor(predicted, target) {
-  if (target == null || target <= 0) return "unknown";
+  if (predicted == null || target == null || target <= 0) return "unknown";
   const ratio = predicted / target;
   if (ratio <= ON_TRACK_RATIO) return "on_track";
   if (ratio <= AT_RISK_RATIO) return "at_risk";
@@ -47,10 +47,10 @@ function statusFor(predicted, target) {
 /** In-process OLS linear forecast used when Python is unavailable. */
 function jsForecastSector(points, meta, targetYear) {
   const clean = (points || [])
-    .filter((p) => p && p.value != null)
+    .filter((p) => p && Number.isFinite(p.value) && Number.isFinite(p.year))
     .map((p) => [Number(p.year), Number(p.value)])
     .sort((a, b) => a[0] - b[0]);
-  const history = clean.map(([year, value]) => ({ year, value: round(value) }));
+  const history = (points ?? []).map((p) => ({ year: p.year, value: Number.isFinite(p.value) ? p.value : null })).sort((a, b) => a.year - b.year);
   const target = meta.target ?? null;
 
   if (clean.length < 3) {
@@ -148,19 +148,20 @@ function jsForecastSector(points, meta, targetYear) {
     };
   }
 
-  const positive = candidates.filter((c) => c.points.length && c.points[c.points.length - 1].yhat > 0);
+  const constrain = (value) => meta.allow_negative ? value : Math.max(0, value);
+  const positive = meta.allow_negative ? candidates : candidates.filter((c) => c.points.length && c.points[c.points.length - 1].yhat > 0);
   const best = (positive.length ? positive : candidates).reduce((a, c) => (c.r2 > a.r2 ? c : a));
   const r2 = best.r2;
 
   const forecast = best.points.map((p) => ({
     year: p.year,
-    yhat: round(Math.max(0, p.yhat)),
-    lower: round(Math.max(0, p.lower)),
-    upper: round(Math.max(0, p.upper)),
+    yhat: round(constrain(p.yhat)),
+    lower: round(constrain(p.lower)),
+    upper: round(constrain(p.upper)),
   }));
   const targetRaw = best.points.find((p) => p.year === targetYear) ?? best.points[best.points.length - 1];
   const targetPoint = targetRaw
-    ? { yhat: Math.max(0, targetRaw.yhat), lower: Math.max(0, targetRaw.lower), upper: Math.max(0, targetRaw.upper) }
+    ? { yhat: constrain(targetRaw.yhat), lower: constrain(targetRaw.lower), upper: constrain(targetRaw.upper) }
     : null;
 
   const predicted = targetPoint ? targetPoint.yhat : null;
@@ -271,13 +272,16 @@ export async function getSectorPredictions(options = {}) {
 
   const series = {};
   const ndcTargets = {};
+  const isDistrict = gadmId !== UGANDA_NATIONAL_GADM;
   for (const [sector, target] of Object.entries(NDC_TARGETS)) {
     series[sector] = dashboard.timeseries?.[sector] ?? [];
+    const comparable = !isDistrict && target.progress_comparable !== false && target.target != null;
     ndcTargets[sector] = {
       label: target.label,
       unit: target.unit,
-      baseline: target.baseline,
-      target: target.target,
+      baseline: comparable ? target.baseline : null,
+      target: comparable ? target.target : null,
+      allow_negative: sector === "afolu",
       target_year: target.target_year,
       condition: target.condition,
     };
@@ -290,13 +294,32 @@ export async function getSectorPredictions(options = {}) {
   for (const [sector, pred] of Object.entries(result.predictions ?? {})) {
     const t = NDC_TARGETS[sector];
     if (t) {
-      pred.bau_2030 = t.bau_2030 ?? null;
+      const comparable = ndcTargets[sector].target != null;
+      // Retain missing years as gaps and the exact API precision in the observed line.
+      pred.history = series[sector];
+      pred.comparison_available = comparable;
+      pred.comparison_note = comparable ? null : isDistrict
+        ? "District projections are not comparable with national NDC targets."
+        : t.comparability_reason ?? "No compatible official target is available for this series.";
+      if (!comparable) {
+        pred.target_value = null;
+        pred.baseline_value = null;
+        pred.gap = null;
+        pred.gap_pct = null;
+        if (pred.status !== "insufficient_data") pred.status = "unknown";
+      }
+      pred.bau_2030 = comparable ? t.bau_2030 ?? null : null;
       pred.condition = t.condition ?? null;
-      pred.reduction_below_bau_pct = t.reduction_below_bau_pct ?? null;
+      pred.reduction_below_bau_pct = comparable ? t.reduction_below_bau_pct ?? null : null;
     }
   }
 
-  const isDistrict = gadmId !== UGANDA_NATIONAL_GADM;
+  // These mapped sectors are not a complete, mutually comparable national NDC inventory.
+  // Summing their target ceilings double-counts scope and previously invented a national gap.
+  result.summary = { on_track: 0, at_risk: 0, off_track: 0, unknown: 0, insufficient_data: 0,
+    total_predicted: null, total_target: null, total_gap: null };
+  for (const pred of Object.values(result.predictions ?? {})) result.summary[pred.status]++;
+  const deepModel = result.engine?.includes("pytorch-gru");
   const enriched = {
     ...result,
     geography: isDistrict ? "district" : "national",
@@ -306,8 +329,8 @@ export async function getSectorPredictions(options = {}) {
     observed_to: dashboard.inventory_year ?? to,
     data_source: "Climate TRACE",
     methodology:
-      "Deep-learning forecast: a global GRU (PyTorch) trained jointly across sectors on Climate TRACE observed emissions, with a 95% prediction interval from Monte-Carlo dropout (numpy OLS fallback if torch is unavailable). Compared to Uganda NDC 2030 targets. Indicative planning projection, not official MRV.",
-    target_scope: "national",
+      `${deepModel ? "GRU model with Monte-Carlo dropout" : "Linear or log-linear regression fitted to available annual estimates"}. Model uncertainty is not independently calibrated. Missing years are not observed data. Targets are compared only where geography and sector scope align. Planning estimates, not official forecasts.`,
+    target_scope: isDistrict ? "none" : "comparable_national_sectors",
     from_cache: false,
   };
 

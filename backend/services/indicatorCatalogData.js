@@ -49,7 +49,8 @@ export async function getIndicatorPanel(since = 2015, to = 2024) {
         sourceType: m.source_type,
         mrvOwnerMinistry: m.mrv_owner_ministry,
         qaqcStatus: reviewed.qaqcStatus,
-        isValidated: reviewed.isValidated,
+        // A plausibility check does not verify a figure against its source.
+        isValidated: m.is_validated === true && reviewed.isValidated,
         lastUpdated: m.last_updated,
       },
       timeseries,

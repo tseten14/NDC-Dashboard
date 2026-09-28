@@ -37,7 +37,7 @@ export default function FinanceInvestment() {
               <h1 className="text-lg font-bold text-foreground flex items-center gap-2"><Wallet className="h-4 w-4" /> Finance & Investment</h1>
               <p className="text-xs text-muted-foreground">Each target's conditionality, finance gap and bankability — generate Investment Note + Minister one-pager.</p>
             </div>
-            <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={async () => { await (await import("@/lib/finance-exports")).exportMinisterBrief(all); toast.success("Minister one-pager exported"); }}>
+            <Button disabled={all.length === 0} size="sm" variant="outline" className="h-7 text-[10px]" onClick={async () => { await (await import("@/lib/finance-exports")).exportMinisterBrief(all); toast.success("Minister one-pager exported"); }}>
               <Briefcase className="h-3 w-3 mr-1" /> Minister one-pager
             </Button>
           </div>
@@ -57,6 +57,7 @@ export default function FinanceInvestment() {
                       </tr>
                     </thead>
                     <tbody>
+                      {investable.length === 0 && <tr><td colSpan={5} className="p-4 text-muted-foreground">No finance-ready records have been verified in this view. Funding needs, instruments and investment readiness require supporting project evidence.</td></tr>}
                       {investable.map(i => (
                         <tr key={i.id} className={cn("border-b border-border/30  cursor-pointer", picked?.id === i.id && "bg-primary/5")}
                           onClick={() => setPicked(i)}>

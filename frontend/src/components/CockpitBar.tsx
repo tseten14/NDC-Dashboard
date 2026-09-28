@@ -8,8 +8,9 @@ import { useCockpit } from "@/hooks/use-cockpit";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ugandaDistricts } from "@/data/uganda-districts";
 
-export function CockpitBar() {
+export function CockpitBar({ allowDistrict = false }: { allowDistrict?: boolean }) {
   const c = useCockpit();
+  if (!allowDistrict) return <div className="border-b bg-card px-3 py-2 text-sm text-muted-foreground">National policy reference. District observations are available in District Translator.</div>;
   return (
     <div className="border-b border-border bg-card px-3 py-2 flex flex-wrap items-center gap-3">
       <div className="flex items-center gap-1.5 ml-auto">

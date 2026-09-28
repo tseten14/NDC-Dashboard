@@ -114,7 +114,8 @@ export function createApp() {
 
   app.use("/v1", authSessionRouter);
   app.use("/v1", healthRouter);
-  app.use("/v1/mock", mockEmissionsRouter);
+  // Test fixtures must never be reachable on a production deployment.
+  if (isMockMode()) app.use("/v1/mock", mockEmissionsRouter);
   app.use("/v1", ndcCockpitRouter);
   app.use("/v1", documentsRouter);
   app.use("/v1", ingestRouter);

@@ -1,13 +1,14 @@
 /**
  * Marketplace deals persistence.
  *
- * CRUD for the pitch-evaluate-deliver pipeline. Uses Postgres when available,
- * falls back to the static seed array when the database is not configured.
+ * CRUD for the pitch-evaluate-deliver pipeline. Only persisted submissions are
+ * served. A missing database is unavailable, never a sample project portfolio.
  */
 import { eq, asc } from "drizzle-orm";
 import { getDb } from "../../database/index.ts";
 import { marketplaceDeals } from "../../database/schema.ts";
 import { getPersistenceMode } from "../../database/bootstrap.ts";
+import { isLegacyExampleDeal } from "./marketplaceProvenance.js";
 
 function formatRow(row) {
   return {
@@ -34,23 +35,14 @@ function formatRow(row) {
   };
 }
 
-let fallbackDeals = null;
-async function getFallbackDeals() {
-  if (!fallbackDeals) {
-    const mod = await import("../../frontend/src/data/mwp-marketplace-data.js");
-    fallbackDeals = mod.DEALS;
-  }
-  return fallbackDeals;
-}
-
 export async function listDeals() {
   const { mode } = getPersistenceMode();
   if (mode === "postgres") {
     const db = getDb();
     const rows = await db.select().from(marketplaceDeals).orderBy(asc(marketplaceDeals.createdAt));
-    return rows.map(formatRow);
+    return rows.map(formatRow).filter((deal) => !isLegacyExampleDeal(deal));
   }
-  return (await getFallbackDeals()).map(formatRow);
+  throw new Error("Database not configured — marketplace submissions are unavailable");
 }
 
 export async function getDeal(id) {
@@ -58,14 +50,14 @@ export async function getDeal(id) {
   if (mode === "postgres") {
     const db = getDb();
     const rows = await db.select().from(marketplaceDeals).where(eq(marketplaceDeals.id, id));
-    return rows.length ? formatRow(rows[0]) : null;
+    const deal = rows.length ? formatRow(rows[0]) : null;
+    return deal && !isLegacyExampleDeal(deal) ? deal : null;
   }
-  const deals = await getFallbackDeals();
-  const d = deals.find((d) => d.id === id);
-  return d ? formatRow(d) : null;
+  throw new Error("Database not configured — marketplace submissions are unavailable");
 }
 
 export async function createDeal(data) {
+  validateDealNumbers(data);
   const { mode } = getPersistenceMode();
   if (mode !== "postgres") {
     throw new Error("Database not configured — cannot create deals");
@@ -100,6 +92,7 @@ export async function createDeal(data) {
 }
 
 export async function updateDeal(id, data) {
+  validateDealNumbers(data, true);
   const { mode } = getPersistenceMode();
   if (mode !== "postgres") {
     throw new Error("Database not configured — cannot update deals");
@@ -130,4 +123,16 @@ export async function deleteDeal(id) {
   const db = getDb();
   const result = await db.delete(marketplaceDeals).where(eq(marketplaceDeals.id, id)).returning({ id: marketplaceDeals.id });
   return result.length > 0;
+}
+
+export function validateDealNumbers(data, partial = false) {
+  for (const field of ["askM", "coFinanceM", "annualMtCO2e"]) {
+    if (partial && data?.[field] === undefined) continue;
+    const value = data?.[field];
+    if ((typeof value !== "number" && typeof value !== "string") || String(value).trim() === "" || !Number.isFinite(Number(value)) || Number(value) < 0) {
+      const error = new Error(`${field} must be an explicit, finite, non-negative number`);
+      error.status = 400;
+      throw error;
+    }
+  }
 }

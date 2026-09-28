@@ -40,8 +40,8 @@ function titleize(slug: string): string {
 
 function fmtMt(v: number | null | undefined, digits = 2): string {
   if (v == null) return "—";
-  if (v >= 1) return `${v.toFixed(digits)} Mt`;
-  if (v >= 0.001) return `${(v * 1000).toFixed(1)} kt`;
+  if (Math.abs(v) >= 1) return `${v.toFixed(digits)} Mt`;
+  if (Math.abs(v) >= 0.001) return `${(v * 1000).toFixed(1)} kt`;
   return `${(v * 1e6).toFixed(0)} t`;
 }
 
@@ -112,13 +112,13 @@ export default function MapExplorer() {
   const prevYearData = trendQueries.find((q) => q.data?.year === year - 1)?.data;
   const sectorChanges = useMemo(() => {
     if (!data || !prevYearData) return { up: [], down: [] };
-    const prev = Object.fromEntries((prevYearData.sectors ?? []).map((s) => [s.sector, s.mtco2e ?? 0]));
+    const prev = Object.fromEntries((prevYearData.sectors ?? []).map((s) => [s.sector, s.mtco2e]));
     const changes = (data.sectors ?? [])
       .map((s) => {
-        const cur = s.mtco2e ?? 0;
-        const old = prev[s.sector] ?? 0;
-        const pct = old > 0 ? ((cur - old) / old) * 100 : null;
-        return { sector: s.sector, label: titleize(s.sector), pct, delta: cur - old };
+        const cur = s.mtco2e;
+        const old = prev[s.sector];
+        const pct = cur != null && old != null && old > 0 ? ((cur - old) / old) * 100 : null;
+        return { sector: s.sector, label: titleize(s.sector), pct };
       })
       .filter((c) => c.pct != null && Math.abs(c.pct!) > 0.5)
       .sort((a, b) => Math.abs(b.pct!) - Math.abs(a.pct!));
@@ -134,8 +134,10 @@ export default function MapExplorer() {
   );
 
   const topSector = data?.sectors?.[0];
+  const showShares = !!data && data.total_mtco2e != null && data.total_mtco2e > 0
+    && data.sectors.every((sector) => sector.mtco2e != null && sector.mtco2e >= 0);
   const topSectorPct =
-    data && topSector && data.total_mtco2e
+    showShares && data && topSector && data.total_mtco2e
       ? ((topSector.mtco2e ?? 0) / data.total_mtco2e) * 100
       : null;
 
@@ -204,10 +206,10 @@ export default function MapExplorer() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Card className="border border-border bg-card">
             <CardContent className="p-4 relative">
-              <p className="text-sm font-semibold text-muted-foreground">Total emissions</p>
+              <p className="text-sm font-semibold text-muted-foreground">Net emissions in mapped records</p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
                 {query.isLoading || data?.total_mtco2e == null ? (
-                  "…"
+                  query.isLoading ? "…" : "Unavailable"
                 ) : (
                   <>
                     <CountUpNumber value={data.total_mtco2e} format={(v) => fmtMt(v, 1)} durationMs={1000} />
@@ -221,10 +223,10 @@ export default function MapExplorer() {
             <CardContent className="p-4 relative">
               <p className="text-sm font-semibold text-muted-foreground">Tracked sources</p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
-                {query.isLoading ? "…" : (data?.point_count ?? 0).toLocaleString()}
+                {query.isLoading ? "…" : data ? data.point_count.toLocaleString() : "Unavailable"}
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                {data?.asset_count ?? 0} individual assets
+                {data ? `${data.asset_count} individual assets` : ""}
               </p>
             </CardContent>
           </Card>
@@ -252,7 +254,7 @@ export default function MapExplorer() {
                     <p className="mb-2 text-sm font-semibold text-foreground">Sectors</p>
                     <ul className="space-y-0.5">
                       {(data?.sectors ?? []).map((s) => {
-                        const pct = data?.total_mtco2e
+                        const pct = showShares && data?.total_mtco2e
                           ? (((s.mtco2e ?? 0) / data.total_mtco2e) * 100).toFixed(1)
                           : null;
                         const isActive = highlightedSector === s.sector;
@@ -352,20 +354,20 @@ export default function MapExplorer() {
                     const sectorRow = highlightedSector
                       ? data.sectors?.find((s) => s.sector === highlightedSector)
                       : null;
-                    const shownValue = sectorRow ? sectorRow.mtco2e ?? 0 : data.total_mtco2e ?? 0;
+                    const shownValue = sectorRow ? sectorRow.mtco2e : data.total_mtco2e;
                     const sectorPct =
-                      sectorRow && data.total_mtco2e
+                      showShares && sectorRow && data.total_mtco2e
                         ? ((sectorRow.mtco2e ?? 0) / data.total_mtco2e) * 100
                         : null;
                     return (
                     <div className="rounded-sm border border-border bg-card px-3 py-2.5 text-left lg:text-right">
                       <p className="text-sm font-semibold text-muted-foreground">{year}</p>
                       <p className="text-2xl font-bold tabular-nums text-foreground leading-tight">
-                        <CountUpNumber
+                        {shownValue == null ? "Unavailable" : <CountUpNumber
                           value={shownValue}
                           format={(v) => (v >= 1 ? v.toFixed(1) : v.toFixed(2))}
                           durationMs={1100}
-                        />
+                        />}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {sectorRow ? "Mt CO₂e — this sector" : "Mt CO₂e mapped"}
@@ -456,7 +458,7 @@ export default function MapExplorer() {
             <div className="flex flex-wrap gap-2">
               {(data?.sectors ?? []).map((s) => {
                 const off = hidden.has(s.sector);
-                const pct = data?.total_mtco2e ? ((s.mtco2e ?? 0) / data.total_mtco2e) * 100 : 0;
+                const pct = showShares && data?.total_mtco2e ? ((s.mtco2e ?? 0) / data.total_mtco2e) * 100 : null;
                 return (
                   <button
                     key={s.sector}
@@ -470,7 +472,7 @@ export default function MapExplorer() {
                   >
                     <span className="h-2 w-2 rounded-full" style={{ background: sectorColor(s.sector) }} />
                     {titleize(s.sector)}
-                    <span className="text-muted-foreground tabular-nums">{pct.toFixed(0)}%</span>
+                    <span className="text-muted-foreground tabular-nums">{pct == null ? fmtMt(s.mtco2e) : `${pct.toFixed(0)}%`}</span>
                   </button>
                 );
               })}
@@ -480,6 +482,12 @@ export default function MapExplorer() {
                 Showing capped sample — full inventory has more sources
               </Badge>
             )}
+            <p className="mt-2 text-[10px] text-muted-foreground">
+              Mapped records include facilities and estimates for larger areas. This is not a complete national inventory.
+              Negative values represent net removals. Mt means million tonnes; kt means thousand tonnes of CO₂-equivalent gases.
+              {!!data?.missing_emissions && ` ${data.missing_emissions} records have missing estimates; their totals are unavailable.`}
+              {!!data?.missing_coordinates && ` ${data.missing_coordinates} records without coordinates are excluded.`}
+            </p>
             <p className="mt-2 text-[10px] text-muted-foreground">
               Satellite: Esri World Imagery · Terrain: Nextzen/AWS · Boundaries: geoBoundaries (CC BY 4.0) · Data: Climate TRACE (CC BY 4.0)
             </p>

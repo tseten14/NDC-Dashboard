@@ -77,7 +77,7 @@ export interface DashboardAnalyzeContext {
         latest_value_mt: number | null;
         progress_pct: number | null;
         status: string;
-        target_value_mt: number;
+        target_value_mt: number | null;
         bau_2030_mt: number | null;
         scope_note: string | null;
         recent_timeseries: { year: number; value: number | null }[];
@@ -145,7 +145,7 @@ export function buildDashboardAnalyzeContext(
       latest_value_mt: pr?.latest_value ?? null,
       progress_pct: pr?.progress_pct ?? null,
       status: pr?.status ?? "unknown",
-      target_value_mt: pr?.target_value ?? 0,
+      target_value_mt: pr?.target_value ?? null,
       bau_2030_mt: pr?.bau_2030 ?? null,
       scope_note: pr?.scope_note ?? null,
       recent_timeseries: recentTimeseries(ts?.timeseries),

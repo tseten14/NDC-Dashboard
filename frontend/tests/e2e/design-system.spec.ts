@@ -167,18 +167,18 @@ test("short phone layouts keep content reachable and scrolling controls above th
   await expect(page.getByRole("heading", { name: "Climate evidence and planning" })).toBeInViewport();
 
   await page.goto("/financial-flow");
-  const table = page.getByRole("region", { name: "Project financial flows" });
-  await table.scrollIntoViewIfNeeded();
-  await table.focus();
-  await page.keyboard.press("ArrowRight");
-  await expect.poll(() => table.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  const unavailable = page.getByRole("heading", { name: "Financial records unavailable" });
+  await unavailable.scrollIntoViewIfNeeded();
+  await expect(unavailable).toBeInViewport();
+  await expect(page.getByText(/No verified project payment or expenditure records/)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
   await page.goto("/indicators");
-  const details = page.getByRole("heading", { name: /Driven by/ });
-  await details.scrollIntoViewIfNeeded();
-  await expect(details).toBeInViewport();
-  const detailsBox = await details.boundingBox();
-  expect(detailsBox!.y + detailsBox!.height).toBeLessThanOrEqual(footer!.y);
+  const indicatorUnavailable = page.getByRole("heading", { name: "Indicator Catalogue" });
+  await indicatorUnavailable.scrollIntoViewIfNeeded();
+  await expect(indicatorUnavailable).toBeInViewport();
+  await expect(page.getByText(/earlier inferred catalogue has been removed/)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
   await page.goto("/page-that-does-not-exist");
   await expect(page.getByRole("link", { name: "Return to Home" })).toBeInViewport();

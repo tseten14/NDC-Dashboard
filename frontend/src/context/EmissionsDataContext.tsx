@@ -45,7 +45,7 @@ import {
   type IndicatorPanelEntry,
 } from "@/lib/emissions-integration";
 import { reconciliationDeltaPercent } from "@/lib/progress";
-import { ndcTargets, getObservedDataForTarget, calculateProgress, type NDCTarget, type NDCActivity, type MitigationOption } from "@/data/uganda-ndc-data";
+import { ndcTargets, calculateProgress, type NDCTarget, type NDCActivity, type MitigationOption } from "@/data/uganda-ndc-data";
 import type { ProgressStatus } from "@/data/uganda-ndc-data";
 import { validateDashboardTimeseries, reportIssues } from "@/lib/data-validation";
 
@@ -71,7 +71,7 @@ export interface EmissionsDataContextValue {
   isDistrictView: boolean;
   availableDistricts: DistrictListEntry[];
   dashboardCompleteness: number;
-  dashboardLastRefreshIso: string;
+  dashboardLastRefreshIso: string | null;
   economyWideTimeseries: { year: number; value: number | null }[];
   getProgressForTarget: (target: NDCTarget) => { percent: number | null; status: ProgressStatus; source: "api" | "catalog" | "mock" };
   getObservedMode: (target: NDCTarget) => "live" | "mock";
@@ -303,11 +303,7 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
     if (isApiReachable && dashboardQuery.dataUpdatedAt) {
       return new Date(dashboardQuery.dataUpdatedAt).toISOString();
     }
-    const dates = ndcTargets
-      .map((t) => getObservedDataForTarget(t.id)?.provenance.lastUpdated)
-      .filter(Boolean) as string[];
-    if (dates.length === 0) return new Date().toISOString();
-    return new Date(Math.max(...dates.map((d) => new Date(d).getTime()))).toISOString();
+    return null;
   }, [isApiReachable, dashboardQuery.dataUpdatedAt]);
 
   const getProgressForTarget = useCallback(

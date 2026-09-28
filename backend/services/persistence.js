@@ -20,13 +20,14 @@ import { resolveTargetId } from "../../database/id.ts";
 import { getPersistenceMode } from "../../database/bootstrap.ts";
 import { mapClimateSectors, mapStrategyKpis } from "../../database/seedMappings.ts";
 import { climateSectorsForSeed, strategyKpis, strategyProgressRecords } from "../../data/seeds/persistenceSeedSource.js";
+import { isLegacyDemoObservation, isLegacyDemoTarget } from "./legacyDemoRecords.js";
 
 export async function getTargets() {
   const { mode } = getPersistenceMode();
   if (mode === "postgres") {
     const db = getDb();
     const rows = await db.select().from(targets).orderBy(asc(targets.sector), asc(targets.baselineYear));
-    return rows.map(formatTargetRow);
+    return rows.map(formatTargetRow).filter((row) => !isLegacyDemoTarget(row));
   }
   if (mode === "fallback") {
     return (await getFallbackTargets()).map(formatTargetRow);
@@ -50,7 +51,8 @@ export async function getObservationsForTarget(targetId) {
   }
   const { getFileStoreObservations } = await import("./ingestObservationStore.js");
   const fileRows = await getFileStoreObservations(resolvedId);
-  const merged = [...rows.map(formatObservationRow), ...fileRows.map(formatObservationRow)];
+  const merged = [...rows.map(formatObservationRow), ...fileRows.map(formatObservationRow)]
+    .filter((row) => !isLegacyDemoObservation(row));
   merged.sort((a, b) => a.year - b.year);
   return merged;
 }

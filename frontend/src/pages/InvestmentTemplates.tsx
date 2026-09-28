@@ -27,7 +27,9 @@ export default function InvestmentTemplates() {
         <h2 className="text-lg font-bold text-foreground">Investment Templates</h2>
         <p className="text-xs text-muted-foreground">Generate a minimum viable investment memo for a selected activity.</p>
 
-        <div className="flex items-center gap-2">
+        {activities.length === 0 ? (
+          <Card><CardContent className="p-4">No documented delivery activities are connected. An investment memo needs a recorded activity, its owner and supporting evidence.</CardContent></Card>
+        ) : <div className="flex items-center gap-2">
           <span className="text-[10px] font-semibold text-muted-foreground">Activity:</span>
           <Select value={selectedActivity} onValueChange={setSelectedActivity}>
             <SelectTrigger className="w-[300px] h-7 text-xs"><SelectValue /></SelectTrigger>
@@ -35,7 +37,7 @@ export default function InvestmentTemplates() {
               {activities.map(a => <SelectItem key={a.id} value={a.id}><span className="text-xs">{a.title}</span></SelectItem>)}
             </SelectContent>
           </Select>
-        </div>
+        </div>}
 
         {activity && (
           <Card className="ring-1 ring-accent">

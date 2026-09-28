@@ -88,9 +88,9 @@ export const NDC_TARGETS = {
     label: "AGRICULTURE",
     variable_id: "agriculture_emissions",
     baseline_year: 2015,
-    baseline: 28.4,   // estimated 2015 agriculture (part of AFOLU total)
+    baseline: null,   // No verified standalone agriculture baseline in this target catalogue.
     target_year: 2030,
-    target: 22.7,     // component of AFOLU NDC target; no standalone NDC 2022 figure
+    target: null,     // Agriculture is included in AFOLU; no standalone NDC 2022 ceiling.
     unit: "MtCO2e",
     condition: "Mixed",
     category: "Emissions Reduction",

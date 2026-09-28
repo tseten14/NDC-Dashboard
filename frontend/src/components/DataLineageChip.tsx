@@ -39,8 +39,8 @@ export const DataLineageChip = memo(function DataLineageChip({ lineage, classNam
         </Badge>
       )}
       {lineage.isValidated ? (
-        <Badge variant="outline" className="text-[8px] h-4 px-1 font-normal text-on-track border-on-track/30">
-          validated
+        <Badge variant="outline" className="text-[8px] h-4 px-1 font-normal text-on-track border-on-track/30" title="Automated data checks passed. This is not official verification of the source measurement.">
+          checks passed
         </Badge>
       ) : (
         <Badge variant="outline" className="text-[8px] h-4 px-1 font-normal text-muted-foreground border-border">

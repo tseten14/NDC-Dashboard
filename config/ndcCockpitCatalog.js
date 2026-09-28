@@ -1,13 +1,5 @@
 /** Static NDC indicator + catalog data (no database). Served via Express /api/v1/*. */
-
-function histRows(targetId, baseline, start, end, deltaPerYear) {
-  const rows = [];
-  for (let y = start; y <= end; y++) {
-    const v = Math.round((baseline + deltaPerYear * (y - start)) * 100) / 100;
-    rows.push({ target_id: targetId, year: y, value: v });
-  }
-  return rows;
-}
+import { MITIGATION_CONCEPTS } from "../shared/mitigationConcepts.js";
 
 // Indicator panel meta — for non-CT-tracked targets (forest cover, electricity capacity,
 // CSA adoption, wetlands, electricity access). Transport is now CT-tracked and excluded here.
@@ -20,12 +12,12 @@ export const INDICATOR_META = [
     target_year: 2030,
     target_value: 21,
     unit: "% land area",
-    data_providers: ["Earth Observation (Copernicus)", "National Forestry Authority"],
+    data_providers: [], // No observation feed is connected.
     source_type: "observed-eo",
     mrv_owner_ministry: "Ministry of Water and Environment",
-    qaqc_status: "ok",
-    is_validated: true,
-    last_updated: "2024-10-20T14:00:00Z",
+    qaqc_status: "missing",
+    is_validated: false,
+    last_updated: "",
   },
   {
     // t3: Electricity generation capacity 1,276.2 MW (2020) → 4,200 MW (2030) per NDC 2022
@@ -35,12 +27,12 @@ export const INDICATOR_META = [
     target_year: 2030,
     target_value: 4200,
     unit: "MW",
-    data_providers: ["Uganda Electricity Regulatory Authority", "Ministry MRV"],
+    data_providers: [], // No observation feed is connected.
     source_type: "reported",
     mrv_owner_ministry: "Ministry of Energy and Mineral Development",
-    qaqc_status: "ok",
-    is_validated: true,
-    last_updated: "2024-09-01T10:00:00Z",
+    qaqc_status: "missing",
+    is_validated: false,
+    last_updated: "",
   },
   {
     // t8: CSA adoption 31.7% (2020) → 70.7% est. (2030) per NDC 2022
@@ -50,12 +42,12 @@ export const INDICATOR_META = [
     target_year: 2030,
     target_value: 70.7,
     unit: "% CSA adoption",
-    data_providers: ["Ministry MRV", "FAO"],
+    data_providers: [], // No observation feed is connected.
     source_type: "reported",
     mrv_owner_ministry: "Ministry of Agriculture, Animal Industry and Fisheries",
-    qaqc_status: "ok",
-    is_validated: true,
-    last_updated: "2026-06-01T00:00:00Z",
+    qaqc_status: "missing",
+    is_validated: false,
+    last_updated: "",
   },
   {
     // t9: Wetlands coverage 8.9% (2020) → 12% (2030) per NDC 2022
@@ -65,12 +57,12 @@ export const INDICATOR_META = [
     target_year: 2030,
     target_value: 12,
     unit: "% land area",
-    data_providers: ["National Wetlands Atlas", "Ministry of Water and Environment"],
+    data_providers: [], // No observation feed is connected.
     source_type: "observed-eo",
     mrv_owner_ministry: "Ministry of Water and Environment",
-    qaqc_status: "ok",
-    is_validated: true,
-    last_updated: "2026-06-01T00:00:00Z",
+    qaqc_status: "missing",
+    is_validated: false,
+    last_updated: "",
   },
   {
     // t10: Electricity access 24% (2020) → 75% (2030) per NDC 2022 adaptation target
@@ -80,22 +72,18 @@ export const INDICATOR_META = [
     target_year: 2030,
     target_value: 75,
     unit: "% electricity access",
-    data_providers: ["Uganda Bureau of Statistics", "Uganda Electricity Regulatory Authority"],
+    data_providers: [], // No observation feed is connected.
     source_type: "reported",
     mrv_owner_ministry: "Ministry of Energy and Mineral Development",
-    qaqc_status: "ok",
-    is_validated: true,
-    last_updated: "2024-09-01T10:00:00Z",
+    qaqc_status: "missing",
+    is_validated: false,
+    last_updated: "",
   },
 ];
 
-export const INDICATOR_YEARLY = [
-  ...histRows("t2",  12.5, 2020, 2024, 0.6),
-  ...histRows("t3",  1276.2, 2020, 2024, 180),
-  ...histRows("t8",  31.7, 2020, 2024, 2.0),
-  ...histRows("t9",  8.9, 2020, 2024, 0.12),
-  ...histRows("t10", 24, 2020, 2024, 4.0),
-];
+// The NDC contains policy baselines and goals, not annual observations.
+// Add annual records only when a source dataset and retrieval date are available.
+export const INDICATOR_YEARLY = [];
 
 // NDC measures (Uganda Updated NDC, Sept 2022). Each row's `body` carries only
 // fields traceable to the NDC: measure name, description, lead ministry/department,
@@ -120,24 +108,6 @@ export const CATALOG_ACTIVITIES = [
   { id: "a10", target_id: "t8",  sort_order: 0, body: { id: "a10", targetId: "t8",  name: "Climate-Smart Agriculture Rollout", description: "CSA from 31.7%→70.7% of farmers by 2030; irrigation 19,776→152,622 ha; agroforestry; livestock management", responsibleMinistry: "Ministry of Agriculture, Animal Industry and Fisheries", responsibleDepartment: "Crop Production Department", implementationLevel: "national" } },
 ];
 
-// NDC mitigation measures (Uganda Updated NDC, Sept 2022). `title`, `description`,
-// and target/sector linkage are taken from the NDC. `emissionsReductionPotential`
-// is an INDICATIVE abatement estimate compiled from the NDC mitigation analysis
-// (sector-level; not a measured figure). `costEstimate`/`confidence` are retained
-// ONLY as indicative inputs to the Climate Finance screening tool and are NOT
-// presented as data in the Mitigation Options tab. Foreign "best practice" case
-// studies were removed in the June 2026 data audit (unsourced / unverifiable).
-const FP_ABATEMENT = "Uganda Updated NDC (Sept 2022) mitigation tables — indicative MtCO₂e/yr at full deployment";
-const FP_COST = "NDC cost annex / programme benchmarks — indicative USD millions, not tendered";
-
-export const CATALOG_MITIGATION = [
-  { id: "m1", target_id: "t1", sector_id: "afolu",       sort_order: 0, body: { id: "m1", targetId: "t1", sectorId: "afolu",       title: "Payment for Ecosystem Services (PES)",           description: "PES schemes to incentivize forest conservation; target 500,000 ha", emissionsReductionPotential: 2.5,  emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 15,  costCurrency: "USD", costMagnitude: "million/yr", confidence: "medium", financeProvenance: { abatementSource: `${FP_ABATEMENT}; AFOLU REDD+ / forest conservation`, costSource: `${FP_COST}; recurring programme cost (million USD/yr)` } } },
-  { id: "m2", target_id: "t1", sector_id: "afolu",       sort_order: 1, body: { id: "m2", targetId: "t1", sectorId: "afolu",       title: "Commercial Plantation Expansion",                description: "Timber/pole/bioenergy woodlot plantations on degraded lands; 3.8 MtCO₂e/yr at full scale", emissionsReductionPotential: 3.8,  emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 45,  costCurrency: "USD", costMagnitude: "million",    confidence: "high", financeProvenance: { abatementSource: `${FP_ABATEMENT}; commercial plantation programme`, costSource: `${FP_COST}; upfront capex (million USD)` } } },
-  { id: "m8", target_id: "t1", sector_id: "afolu",       sort_order: 2, body: { id: "m8", targetId: "t1", sectorId: "afolu",       title: "Improved Charcoal Kilns",                        description: "Scale charcoal kiln efficiency 12%→75% by 2030; 3.37 MtCO₂e/yr at full scale", emissionsReductionPotential: 3.37, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 20,  costCurrency: "USD", costMagnitude: "million",    confidence: "medium", financeProvenance: { abatementSource: `${FP_ABATEMENT}; charcoal kiln efficiency`, costSource: `${FP_COST}; upfront capex (million USD)` } } },
-  { id: "m3", target_id: "t4", sector_id: "energy",      sort_order: 0, body: { id: "m3", targetId: "t4", sectorId: "energy",      title: "Mini-Grid Solar Deployment",                     description: "Deploy 200 solar mini-grids in off-grid rural areas",                    emissionsReductionPotential: 0.8,  emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 120, costCurrency: "USD", costMagnitude: "million",    confidence: "high", financeProvenance: { abatementSource: `${FP_ABATEMENT}; distributed renewable energy`, costSource: `${FP_COST}; mini-grid capex benchmark` } } },
-  { id: "m4", target_id: "t4", sector_id: "energy",      sort_order: 1, body: { id: "m4", targetId: "t4", sectorId: "energy",      title: "Improved Cookstove Distribution",                description: "Distribute 65,000 improved cookstoves/yr + cooking fuel switch to electricity", emissionsReductionPotential: 1.09, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 25,  costCurrency: "USD", costMagnitude: "million",    confidence: "medium", financeProvenance: { abatementSource: `${FP_ABATEMENT}; clean cooking / fuel switch`, costSource: `${FP_COST}; programme capex (million USD)` } } },
-  { id: "m5", target_id: "t5", sector_id: "transport",   sort_order: 0, body: { id: "m5", targetId: "t5", sectorId: "transport",   title: "E-Buses & BRT (GKMA)",                           description: "200+ e-buses + 101 km BRT in Greater Kampala Metropolitan Area",           emissionsReductionPotential: 0.54, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 200, costCurrency: "USD", costMagnitude: "million",    confidence: "low", financeProvenance: { abatementSource: `${FP_ABATEMENT}; GKMA BRT / e-mobility — wide uncertainty`, costSource: `${FP_COST}; infrastructure order-of-magnitude` } } },
-  { id: "m9", target_id: "t5", sector_id: "transport",   sort_order: 1, body: { id: "m9", targetId: "t5", sectorId: "transport",   title: "Road Fuel Efficiency Standards",                 description: "GFEI 50by50: 20% fuel economy improvement by 2030; 1.86 MtCO₂e/yr at full scale", emissionsReductionPotential: 1.86, emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 10,  costCurrency: "USD", costMagnitude: "million",    confidence: "medium", financeProvenance: { abatementSource: `${FP_ABATEMENT}; vehicle fuel-economy standards`, costSource: `${FP_COST}; policy implementation cost` } } },
-  { id: "m6", target_id: "t6", sector_id: "waste",       sort_order: 0, body: { id: "m6", targetId: "t6", sectorId: "waste",       title: "Green Cities Waste Management",                  description: "Solid waste + wastewater management for 5 cities and 15 municipalities; 1.1 MtCO₂e/yr at full scale",  emissionsReductionPotential: 1.1,  emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 80,  costCurrency: "USD", costMagnitude: "million",    confidence: "medium", financeProvenance: { abatementSource: `${FP_ABATEMENT}; municipal waste & wastewater`, costSource: `${FP_COST}; municipal infrastructure benchmark` } } },
-  { id: "m7", target_id: "t8", sector_id: "agriculture", sort_order: 0, body: { id: "m7", targetId: "t8", sectorId: "agriculture", title: "Agroforestry Integration Programme",              description: "Promote agroforestry across 1.3M ha of farmland by 2030 (Aichi Target 15)", emissionsReductionPotential: 1.5,  emissionsReductionUnit: "MtCO₂e/yr", costEstimate: 35,  costCurrency: "USD", costMagnitude: "million",    confidence: "high", financeProvenance: { abatementSource: `${FP_ABATEMENT}; agroforestry on 1.3M ha`, costSource: `${FP_COST}; programme capex (million USD)` } } },
-];
+export const CATALOG_MITIGATION = MITIGATION_CONCEPTS.map((body, sort_order) => ({
+  id: body.id, target_id: body.targetId, sector_id: body.sectorId, sort_order, body,
+}));

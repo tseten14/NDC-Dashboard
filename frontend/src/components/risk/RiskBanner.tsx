@@ -3,7 +3,7 @@
  *
  * States the status of the risk data being shown.
  */
-// Persistent banner reminding users that prototype risk data is illustrative only.
+// A missing hazard feed must not look like a low-risk assessment.
 import { AlertTriangle } from "lucide-react";
 
 export function RiskBanner() {
@@ -11,8 +11,8 @@ export function RiskBanner() {
     <div className="flex items-center gap-2 rounded-md border border-border bg-muted/60 px-3 py-1.5 text-[11px] text-foreground">
       <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
       <span>
-        <strong>Illustrative prototype</strong> — not official risk results. All values, geometries and
-        provenance fields shown here are placeholders for UI testing only.
+        <strong>Risk data unavailable.</strong> No verified hazard, exposure or vulnerability dataset
+        is connected. This application cannot yet assess district risk or recommend adaptation spending.
       </span>
     </div>
   );

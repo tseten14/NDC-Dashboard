@@ -99,6 +99,10 @@ export function DealFormDialog({ open, onOpenChange, deal, onSaved }: Props) {
       toast.error("Title and problem are required");
       return;
     }
+    if ([askM, coFinanceM, annualMt].some((value) => !value.trim() || !Number.isFinite(Number(value)) || Number(value) < 0)) {
+      toast.error("Enter each financial and emissions estimate explicitly. Leave no blanks; use 0 only when your estimate is zero.");
+      return;
+    }
     setSaving(true);
     try {
       const data = {
@@ -110,9 +114,9 @@ export function DealFormDialog({ open, onOpenChange, deal, onSaved }: Props) {
         stage,
         problem: problem.trim(),
         intervention: intervention.trim(),
-        askM: Number(askM) || 0,
-        coFinanceM: Number(coFinanceM) || 0,
-        annualMtCO2e: Number(annualMt) || 0,
+        askM: Number(askM),
+        coFinanceM: Number(coFinanceM),
+        annualMtCO2e: Number(annualMt),
         instrument: instrument.trim(),
         ndcTarget: ndcTarget.trim(),
         readiness: deal?.readiness ?? [],
@@ -212,20 +216,21 @@ export function DealFormDialog({ open, onOpenChange, deal, onSaved }: Props) {
             {/* Financials */}
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Funding ask (USD M)</Label>
-                <Input type="number" value={askM} onChange={(e) => setAskM(e.target.value)} placeholder="43" className="text-sm" />
+                <Label htmlFor="deal-ask" className="text-xs">Funding ask (million US dollars)</Label>
+                <Input id="deal-ask" type="number" min="0" step="any" value={askM} onChange={(e) => setAskM(e.target.value)} className="text-sm" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Co-finance (USD M)</Label>
-                <Input type="number" value={coFinanceM} onChange={(e) => setCoFinanceM(e.target.value)} placeholder="15" className="text-sm" />
+                <Label htmlFor="deal-cofinance" className="text-xs">Co-finance (million US dollars)</Label>
+                <Input id="deal-cofinance" type="number" min="0" step="any" value={coFinanceM} onChange={(e) => setCoFinanceM(e.target.value)} className="text-sm" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">MtCO₂e/year</Label>
-                <Input type="number" step="0.01" value={annualMt} onChange={(e) => setAnnualMt(e.target.value)} placeholder="0.85" className="text-sm" />
+                <Label htmlFor="deal-emissions" className="text-xs">Expected annual reduction (million tonnes CO₂e)</Label>
+                <Input id="deal-emissions" type="number" min="0" step="any" value={annualMt} onChange={(e) => setAnnualMt(e.target.value)} className="text-sm" />
               </div>
             </div>
 
             {/* Instrument + NDC target */}
+            <p className="text-sm text-muted-foreground">CO₂e expresses different greenhouse gases as an equivalent amount of carbon dioxide. These are your planning estimates, not verified results.</p>
             <div className="space-y-1.5">
               <Label className="text-xs">Instrument</Label>
               <Input value={instrument} onChange={(e) => setInstrument(e.target.value)} placeholder="e.g. GCF grant + concessional debt" className="text-sm" />

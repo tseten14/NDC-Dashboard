@@ -104,8 +104,8 @@ export function MitigationOptionsColumn({
       </ScrollArea>
       <div className="px-3 py-1.5 border-t border-border bg-muted/30">
         <p className="text-[9px] text-muted-foreground leading-tight">
-          Source: Uganda Updated NDC (Sept 2022) mitigation analysis, via catalog API. Abatement
-          potentials are indicative sector-level estimates, not measured values.
+          Planning concepts associated with the selected sector. No verified project costs or
+          emissions reductions are connected. These options are not approved or funded projects.
         </p>
       </div>
     </div>
@@ -149,7 +149,8 @@ function OptionCard({ option, timeMode, isSelected, onToggle, onAddToLog }: {
             variant={isSelected ? "default" : "outline"}
             size="sm"
             className="h-6 text-[9px] gap-0.5 flex-1"
-            disabled={timeMode !== "projection"}
+            disabled={timeMode !== "projection" || !hasAbatement}
+            title={!hasAbatement ? "Verified reduction evidence is needed before this option can change a scenario." : undefined}
             onClick={onToggle}
           >
             <FlaskConical className="h-2.5 w-2.5" />

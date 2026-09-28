@@ -4,11 +4,12 @@
  * Holds the navigation between the risk overview, map, screening and drilldown
  * views, so they share one consistent shell.
  */
-// Layout shell for /risk with sub-tab navigation and persistent illustrative banner.
+// Keep every risk route available while stating the missing evidence once.
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ShieldAlert } from "lucide-react";
 import { RiskBanner } from "@/components/risk/RiskBanner";
+import { useHazardLayers } from "@/hooks/use-risk-data";
 
 const tabs = [
   { to: "/risk", label: "Overview", end: true },
@@ -19,6 +20,7 @@ const tabs = [
 
 export default function RiskLayout() {
   const loc = useLocation();
+  const { data: hazards, loading, error } = useHazardLayers();
   return (
     <div className="flex flex-col h-full">
       <div className="border-b border-border bg-card px-3 py-2 space-y-2">
@@ -50,8 +52,9 @@ export default function RiskLayout() {
       </div>
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-3 max-w-7xl">
-          <RiskBanner />
-          <Outlet key={loc.pathname} />
+          {loading ? <p>Checking risk data…</p> : error ? (
+            <p role="alert">Risk data could not be loaded. Please try again later.</p>
+          ) : hazards.length === 0 ? <RiskBanner /> : <Outlet key={loc.pathname} />}
         </div>
       </ScrollArea>
     </div>

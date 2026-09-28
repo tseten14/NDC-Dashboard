@@ -60,7 +60,7 @@ const SECTIONS: Section[] = [
     title: "2 · Alignment with Uganda's NDC",
     guidance: "Funders require a clear line from the project to national climate goals — without double-counting.",
     fields: [
-      { key: "ndcTarget", label: "Which NDC target does it support?", type: "text", help: "Name the 2030 target or sector pledge.", prefill: (c) => `${c.sectorLabel} sector mitigation target (NDC 2022)` },
+      { key: "ndcTarget", label: "Which NDC target does it support?", type: "text", help: "Name the published target and cite the document and page. Sector selection does not establish alignment." },
       { key: "theoryOfChange", label: "How it reduces emissions", type: "textarea", help: "The pathway from activity to avoided emissions.", placeholder: "Activity → output → outcome → avoided emissions" },
     ],
   },
@@ -70,7 +70,7 @@ const SECTIONS: Section[] = [
     guidance: "State the total, what you ask the funder for, and the matching finance you bring.",
     fields: [
       { key: "totalCost", label: "Total project cost (USD)", type: "number", help: "All-in capital + running costs.", prefill: (c) => c.estimatedNeedUSD ? String(c.estimatedNeedUSD) : "" },
-      { key: "fundingAsk", label: "Amount requested from funder (USD)", type: "number", help: "The grant / concessional portion you are asking for.", prefill: (c) => c.estimatedNeedUSD ? String(Math.round(c.estimatedNeedUSD * 0.7)) : "" },
+      { key: "fundingAsk", label: "Amount requested from funder (USD)", type: "number", help: "Enter the amount you plan to request. No funding share is assumed." },
       { key: "coFinance", label: "Co-finance committed (USD)", type: "number", help: "National budget, private, or other partners.", placeholder: "e.g. 0" },
       { key: "instrument", label: "Instrument", type: "text", help: "Grant, concessional loan, or blended.", placeholder: "e.g. Grant + concessional loan" },
       { key: "targetWindow", label: "Target fund window", type: "text", help: "The funder/window you are designing for.", prefill: (c) => c.targetFunder ?? "" },
@@ -81,7 +81,7 @@ const SECTIONS: Section[] = [
     title: "4 · Key financial data points",
     guidance: "The numbers funders screen on. Estimates are fine at concept stage — show your basis.",
     fields: [
-      { key: "abatement", label: "Expected emissions cut (MtCO₂e/yr)", type: "text", help: "Annual avoided emissions, with basis.", placeholder: "e.g. 0.8 Mt/yr" },
+      { key: "abatement", label: "Expected annual emissions reduction", type: "text", help: "State the quantity, unit and evidence. One MtCO₂e means one million tonnes of greenhouse gases expressed as carbon dioxide equivalent; one kt means one thousand tonnes." },
       { key: "costPerT", label: "Cost per tonne abated (USD/tCO₂e)", type: "text", help: "Total cost ÷ lifetime emissions cut.", placeholder: "e.g. 35" },
       { key: "beneficiaries", label: "People benefiting", type: "text", help: "Direct + indirect beneficiaries.", placeholder: "e.g. 250,000" },
       { key: "lifetime", label: "Project lifetime (years)", type: "number", help: "Operating life used for the economics.", placeholder: "e.g. 20" },

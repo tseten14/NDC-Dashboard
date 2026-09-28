@@ -245,7 +245,7 @@ export async function getEmissionsDashboard(since, to, options = {}) {
         scope_note: SECTOR_SCOPE_NOTES[sector] ?? null,
         trace_yoy_pct,
         baseline_vs_trace_delta_mt:
-          !isDistrict && latest?.value != null ? +(latest.value - t.baseline).toFixed(2) : null,
+          !isDistrict && latest?.value != null && t.baseline != null ? +(latest.value - t.baseline).toFixed(2) : null,
         missing_slugs: missingSlugs,
       };
       sectors[sector] = {
