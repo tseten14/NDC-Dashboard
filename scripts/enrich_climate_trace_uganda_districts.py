@@ -6,7 +6,8 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = ROOT / 'data/synthetic/uganda-government-2021/climate-trace-uganda-sources-2021-with-district.csv'
+# Keep raw enrichment separate from the synthetic 2021–2025 series.
+DEFAULT_OUTPUT = ROOT / 'data/exports/climate-trace-uganda-sources-2021-with-district.csv'
 DISTRICTS = ROOT / 'backend/services/translator/uganda-districts.geojson'
 
 
