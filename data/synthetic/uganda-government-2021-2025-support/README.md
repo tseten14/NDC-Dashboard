@@ -1,5 +1,9 @@
 # Uganda 2021–2025 synthetic time-series comparison
 
+**SYNTHETIC DEMONSTRATION DATA – not official government figures.**
+
+> **Superseded description.** This README documents the earlier inputs and the proportional district-allocation step. The final government CSV now also applies per-source variation factors (0.72–1.35), rescales every subsector, year and component back to the same national total, and keeps the coverage gap explicit: the 11 `Synthetic …` facilities are included and Kisoro Airport and Savannah Airstrip are left out. See `FINAL_METHOD.md`. The four `uganda_modeled_district_*` and `uganda_synthetic_national_*_allocation_*` tables below are audit outputs of the proportional step *before* variation was added; their district figures repeat the national ratio and do not match the final government file at district level.
+
 **Status: demonstration data, 5 October 2026.** This folder contains two source-level input CSVs, four modeled allocation output CSVs, and this explanation. The Uganda file is synthetic; it is not an official government inventory, an NDC allocation, or evidence that a district has an emissions gap.
 
 ## The two CSVs
