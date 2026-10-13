@@ -1,8 +1,3 @@
-/**
- * Provides the shared Card interface primitive used across the application. It centralises accessible behavior and restrained styling so screens do not create inconsistent controls.
- *
- * Read the owning guide before changing source, unit, authentication, or availability rules.
- */
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -11,7 +6,7 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
   <div
     ref={ref}
     className={cn(
-      "rounded-sm border bg-card text-card-foreground",
+      "rounded-lg border bg-card text-card-foreground shadow-sm transition-shadow duration-300",
       className,
     )}
     {...props}

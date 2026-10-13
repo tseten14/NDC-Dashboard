@@ -1,209 +1,283 @@
 /**
- * Screen: MWP Marketplace — Uganda deal room workspace.
+ * Screen: MWP Implementation Marketplace.
  *
- * Shows Uganda's implementation pipeline: projects that have been packaged as
- * pitches for funders, with their current stage and readiness status. Each card
- * links into the deal room for that project.
+ * A clean, native view of the demonstration project pipeline — country-led
+ * climate projects moving from concept to implementation. All figures are
+ * fictional prototype data, not official UNFCCC assessments.
  */
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { marketplaceApi } from "@/lib/api";
-import { stageTone, fmtUSD, type DealPitch } from "@/data/mwp-marketplace-data";
-import { useOperatorSession } from "@/hooks/use-operator-session";
-import { DealFormDialog } from "@/components/marketplace/DealFormDialog";
+import { Input } from "@/components/ui/input";
+import { DataHonestyBadge } from "@/components/DataHonestyBadge";
 import {
-  Store, ArrowRight, CheckCircle2, Circle, MapPin, Banknote, Leaf, Plus,
+  PROJECTS, SECTORS, PROJECT_STAGES, computeStats, fmtUSD, stageTone,
+  type MwpProject, type Sector, type ProjectStage,
+} from "@/data/mwp-marketplace-catalog";
+import {
+  Store, Search, Globe2, Leaf, TrendingUp, Banknote, Target,
+  ArrowRight, Building2, MapPin, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-function ReadinessBar({ pitch }: { pitch: DealPitch }) {
-  const met = pitch.readiness.filter((r) => r.met).length;
-  const total = pitch.readiness.length;
-  const pct = total > 0 ? Math.round((met / total) * 100) : 0;
+/* ── Stat tile ───────────────────────────────────────────────────────── */
+
+function StatTile({ icon: Icon, label, value, sub }: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  sub?: string;
+}) {
   return (
-    <div className="flex items-center gap-2 text-[11px]">
-      <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+    <Card>
+      <CardContent className="p-3">
+        <div className="flex items-start gap-2">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10">
+            <Icon className="h-3.5 w-3.5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-lg font-bold tabular-nums text-foreground leading-none">{value}</p>
+            <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{label}</p>
+            {sub && <p className="text-[9px] text-muted-foreground/70 mt-0.5">{sub}</p>}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ── Project row ─────────────────────────────────────────────────────── */
+
+function ProjectRow({ project }: { project: MwpProject }) {
+  const [expanded, setExpanded] = useState(false);
+  const stageIdx = PROJECT_STAGES.indexOf(project.stage);
+  const progress = ((stageIdx + 1) / PROJECT_STAGES.length) * 100;
+
+  return (
+    <div
+      className="border-b border-border last:border-b-0 px-3 py-3 hover:bg-muted/20 transition-colors cursor-pointer"
+      onClick={() => setExpanded((e) => !e)}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-xs font-semibold text-foreground leading-snug">{project.name}</p>
+            {project.flagship && (
+              <Badge variant="secondary" className="text-[8px] h-3.5 px-1 gap-0.5">
+                <Sparkles className="h-2.5 w-2.5" />
+                Flagship
+              </Badge>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-1 mt-1.5">
+            <Badge variant="outline" className={cn("text-[9px] h-4 px-1", stageTone(project.stage))}>
+              {project.stage}
+            </Badge>
+            <Badge variant="secondary" className="text-[9px] h-4 px-1">{project.sector}</Badge>
+            <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
+              <MapPin className="h-2.5 w-2.5" />
+              {project.country}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 shrink-0 text-right">
+          <div>
+            <p className="text-xs font-bold tabular-nums text-foreground">{fmtUSD(project.totalInvestmentM)}</p>
+            <p className="text-[9px] text-muted-foreground">total</p>
+          </div>
+          {project.gapM > 0 && (
+            <div>
+              <p className="text-xs font-bold tabular-nums text-amber-600 dark:text-amber-400">{fmtUSD(project.gapM)}</p>
+              <p className="text-[9px] text-muted-foreground">gap</p>
+            </div>
+          )}
+          <div>
+            <p className="text-xs font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+              {project.annualMtCO2e.toFixed(2)}
+            </p>
+            <p className="text-[9px] text-muted-foreground">MtCO₂e/yr</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stage progress bar */}
+      <div className="mt-2 h-1 w-full rounded-full bg-muted overflow-hidden">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 "
-          style={{ width: `${pct}%` }}
+          className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
+          style={{ width: `${progress}%` }}
         />
       </div>
-      <span className="text-muted-foreground tabular-nums shrink-0">{met}/{total} ready</span>
+
+      {/* Expanded detail */}
+      {expanded && (
+        <div className="mt-3 space-y-2 text-[11px] text-muted-foreground">
+          <p>{project.summary}</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px]">
+            <span><strong className="text-foreground">NDC target:</strong> {project.ndcTarget}</span>
+            <span><strong className="text-foreground">Region:</strong> {project.region}</span>
+            <span>
+              <strong className="text-foreground">Secured:</strong>{" "}
+              {fmtUSD(project.securedM)} of {fmtUSD(project.totalInvestmentM)}{" "}
+              ({Math.round((project.securedM / project.totalInvestmentM) * 100)}%)
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function PipelineCard({ pitch }: { pitch: DealPitch }) {
-  return (
-    <Link
-      to={`/mwp-marketplace/${pitch.id}`}
-      className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
-    >
-      <Card className="h-full     ">
-        <CardContent className="p-4 space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-semibold text-foreground leading-snug  ">
-                {pitch.title}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">{pitch.ministry}</p>
-            </div>
-            <Badge variant="outline" className={cn("text-[10px] h-5 px-1.5 shrink-0", stageTone(pitch.stage))}>
-              {pitch.stage}
-            </Badge>
-          </div>
-
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" /> {pitch.sector}
-            </span>
-            <span className="flex items-center gap-1">
-              <Banknote className="h-3 w-3" /> {fmtUSD(pitch.askM)} ask
-            </span>
-            <span className="flex items-center gap-1">
-              <Leaf className="h-3 w-3" /> <span title="Expected annual reduction, in million tonnes of carbon dioxide equivalent">{pitch.annualMtCO2e} million tonnes CO₂e/year (estimate)</span>
-            </span>
-          </div>
-
-          <ReadinessBar pitch={pitch} />
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              {pitch.evaluation?.decision === "interest" && (
-                <><CheckCircle2 className="h-3 w-3 text-on-track" /> Funder interest</>
-              )}
-              {pitch.evaluation?.decision === "questions" && (
-                <><Circle className="h-3 w-3 text-at-risk" /> Questions pending</>
-              )}
-              {pitch.evaluation?.decision === "pass" && (
-                <><Circle className="h-3 w-3 text-muted-foreground" /> Not ready</>
-              )}
-            </div>
-            <span className="text-[10px] text-primary opacity-0   flex items-center gap-0.5">
-              Open deal room <ArrowRight className="h-3 w-3" />
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
-  );
-}
+/* ── Page ─────────────────────────────────────────────────────────────── */
 
 export default function MwpMarketplace() {
-  const [searchParams] = useSearchParams();
-  const fromClimateFinance = searchParams.get("from") === "climate-finance";
-  const sectorParam = searchParams.get("sector");
-  const { authenticated } = useOperatorSession();
-  const [createOpen, setCreateOpen] = useState(false);
-  const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [sectorFilter, setSectorFilter] = useState<Sector | "">("");
+  const [stageFilter, setStageFilter] = useState<ProjectStage | "">("");
 
-  const dealsQuery = useQuery({
-    queryKey: ["marketplace", "deals"],
-    queryFn: () => marketplaceApi.listDeals(),
-    staleTime: 60_000,
-  });
+  const filtered = useMemo(() => {
+    let list = PROJECTS;
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.country.toLowerCase().includes(q) ||
+          p.sector.toLowerCase().includes(q),
+      );
+    }
+    if (sectorFilter) list = list.filter((p) => p.sector === sectorFilter);
+    if (stageFilter) list = list.filter((p) => p.stage === stageFilter);
+    return list;
+  }, [search, sectorFilter, stageFilter]);
 
-  const deals = useMemo<DealPitch[]>(() => dealsQuery.data?.deals ?? [], [dealsQuery.data]);
-
-  const highlighted = useMemo(() => {
-    if (!fromClimateFinance || !sectorParam || deals.length === 0) return null;
-    const s = sectorParam.toLowerCase();
-    return deals.find((d) => d.sectorId.toLowerCase() === s) ?? null;
-  }, [fromClimateFinance, sectorParam, deals]);
+  const stats = useMemo(() => computeStats(PROJECTS), []);
+  const filteredStats = useMemo(() => computeStats(filtered), [filtered]);
+  const hasFilters = search || sectorFilter || stageFilter;
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-4 space-y-6 max-w-5xl">
+      <div className="p-4 space-y-5 max-w-5xl">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
               <Store className="h-4 w-4 text-primary" />
-              Marketplace
+              MWP Implementation Marketplace
             </h2>
-            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              Submitted project pipeline. Package projects as investment pitches,
-              track funder evaluation, and follow delivery milestones — from NDC gap to
-              first disbursement. Funding requests, expected emissions savings and review outcomes
-              are supplied by contributors and require independent verification.
+            <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl">
+              Country-led climate projects moving from NDC priorities to investable implementation.
+              Connects mitigation gaps with finance, technology and delivery partners.
             </p>
           </div>
-          {authenticated && (
-            <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setCreateOpen(true)}>
-              <Plus className="h-3.5 w-3.5" />
-              Add to pipeline
-            </Button>
-          )}
+          <DataHonestyBadge kind="illustrative" />
         </div>
 
-        {/* Handoff banner */}
-        {highlighted && fromClimateFinance && (
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span>
-                <span className="font-semibold text-foreground">From Climate Finance screening</span>
-                {" → "}best match: <span className="font-medium">{highlighted.title}</span>
-              </span>
-              <Button size="sm" variant="default" className="h-7 text-[11px] gap-1" asChild>
-                <Link to={`/mwp-marketplace/${highlighted.id}`}>
-                  Open deal room <ArrowRight className="h-3 w-3" />
-                </Link>
+        {/* Pipeline summary */}
+        <section className="space-y-3">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            Pipeline overview
+          </h3>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <StatTile icon={Building2} label="Projects in pipeline" value={String(stats.count)} />
+            <StatTile icon={Banknote} label="Total investment" value={fmtUSD(stats.totalInvestment)} />
+            <StatTile
+              icon={Target}
+              label="Financing gap"
+              value={fmtUSD(stats.totalGap)}
+              sub={`${fmtUSD(stats.totalSecured)} secured`}
+            />
+            <StatTile
+              icon={Globe2}
+              label="Countries"
+              value={String(stats.countries)}
+              sub={`${stats.sectors} sectors`}
+            />
+          </div>
+        </section>
+
+        {/* Emissions impact callout */}
+        <Card className="border-emerald-500/20 bg-emerald-500/5">
+          <CardContent className="p-3 flex items-center gap-3 text-[11px]">
+            <Leaf className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>
+              <span className="font-semibold text-foreground">
+                {stats.totalMtCO2e.toFixed(1)} MtCO₂e/year
+              </span>{" "}
+              combined annual reduction potential across all pipeline projects.
+            </span>
+          </CardContent>
+        </Card>
+
+        {/* Project list */}
+        <section className="space-y-3">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+            <Banknote className="h-4 w-4 text-primary" />
+            Project pipeline
+          </h3>
+
+          {/* Search + filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search projects, countries…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-8 pl-8 text-xs"
+              />
+            </div>
+            <span className="text-[10px] text-muted-foreground">
+              {filtered.length} of {PROJECTS.length} projects
+            </span>
+          </div>
+
+          {/* Filter chips */}
+          <div className="flex flex-wrap gap-1">
+            <Button
+              size="sm"
+              variant={!sectorFilter ? "default" : "outline"}
+              className="h-6 text-[10px] px-2"
+              onClick={() => setSectorFilter("")}
+            >
+              All sectors
+            </Button>
+            {SECTORS.map((s) => (
+              <Button
+                key={s}
+                size="sm"
+                variant={sectorFilter === s ? "default" : "outline"}
+                className="h-6 text-[10px] px-2"
+                onClick={() => setSectorFilter(sectorFilter === s ? "" : s)}
+              >
+                {s}
               </Button>
+            ))}
+          </div>
+
+          {/* Project cards */}
+          <Card>
+            <CardContent className="p-0">
+              {filtered.length === 0 ? (
+                <p className="p-4 text-xs text-muted-foreground text-center">
+                  No projects match the current filters.
+                </p>
+              ) : (
+                filtered.map((p) => <ProjectRow key={p.id} project={p} />)
+              )}
             </CardContent>
           </Card>
-        )}
-
-        {/* Pipeline */}
-        <section className="space-y-3">
-          <h3 className="text-sm font-bold text-foreground">Your pipeline</h3>
-
-          {dealsQuery.isLoading && (
-            <p className="text-xs text-muted-foreground py-8 text-center">Loading pipeline…</p>
-          )}
-
-          {dealsQuery.isError && (
-            <Card>
-              <CardContent className="p-4 text-xs text-muted-foreground text-center">
-                Could not load the pipeline. {(dealsQuery.error as Error)?.message}
-              </CardContent>
-            </Card>
-          )}
-
-          {!dealsQuery.isLoading && !dealsQuery.isError && deals.length === 0 && (
-            <Card>
-              <CardContent className="p-6 text-center space-y-2">
-                <p className="text-sm text-muted-foreground">No deals in the pipeline yet.</p>
-                {authenticated && (
-                  <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setCreateOpen(true)}>
-                    <Plus className="h-3 w-3" /> Create the first deal
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {deals.length > 0 && (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {deals.map((d) => (
-                <PipelineCard key={d.id} pitch={d} />
-              ))}
-            </div>
-          )}
         </section>
-      </div>
 
-      {authenticated && (
-        <DealFormDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          onSaved={() => queryClient.invalidateQueries({ queryKey: ["marketplace", "deals"] })}
-        />
-      )}
+        {/* Disclaimer */}
+        <p className="text-[9px] text-muted-foreground/60 leading-relaxed max-w-2xl">
+          This demonstration does not represent investment advice, project endorsement, credit
+          assessment or a financing commitment. All project information and indicators are
+          illustrative prototype data authored for demonstration purposes only.
+        </p>
+      </div>
     </ScrollArea>
   );
 }

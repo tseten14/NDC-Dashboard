@@ -1,16 +1,13 @@
-/**
- * Maps Tailwind utilities to the application design tokens and the system font stack.
- *
- * Read the owning guide before changing source, unit, authentication, or availability rules.
- */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 import typography from "@tailwindcss/typography";
 
 const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 export default {
+  darkMode: ["class"],
   content: [
     path.join(frontendRoot, "index.html"),
     path.join(frontendRoot, "pages/**/*.{ts,tsx}"),
@@ -29,9 +26,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Arial", "Helvetica", "system-ui", "sans-serif"],
-        brand: ["Arial", "Helvetica", "system-ui", "sans-serif"],
-        display: ["Arial", "Helvetica", "system-ui", "sans-serif"],
+        sans: ['"Plus Jakarta Sans"', "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+        brand: ['"Plus Jakarta Sans"', "system-ui", "sans-serif"],
+        display: ['"Space Grotesk"', '"Plus Jakarta Sans"', "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -99,7 +96,29 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      keyframes: {
+        "accordion-down": {
+          from: {
+            height: "0",
+          },
+          to: {
+            height: "var(--radix-accordion-content-height)",
+          },
+        },
+        "accordion-up": {
+          from: {
+            height: "var(--radix-accordion-content-height)",
+          },
+          to: {
+            height: "0",
+          },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+      },
     },
   },
-  plugins: [typography],
+  plugins: [tailwindcssAnimate, typography],
 } satisfies Config;

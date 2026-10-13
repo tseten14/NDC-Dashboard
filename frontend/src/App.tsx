@@ -13,11 +13,13 @@ import { Suspense, useEffect, useRef, type ReactNode } from "react";
 import { lazyWithRetry as lazy } from "@/lib/lazy-with-retry";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
+import { AmbientBackground } from "@/components/AmbientBackground";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { useAppState, AppStateContext } from "@/hooks/use-app-state";
 import { CockpitProvider } from "@/hooks/use-cockpit";
@@ -151,6 +153,7 @@ function ProtectedShell() {
     <AppStateContext.Provider value={state}>
       <CockpitProvider>
           <div data-app-shell className="h-dvh flex flex-col w-full relative bg-background">
+            <AmbientBackground />
             <TopNav />
             <main ref={mainRef} id="main-content" tabIndex={-1} className="flex-1 min-h-0 min-w-0 overflow-auto relative z-10 outline-none">
                 <ErrorBoundary key={location.pathname} label="Page">
@@ -235,6 +238,7 @@ function ProtectedShell() {
 
 const App = () => (
   <ErrorBoundary>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
@@ -273,6 +277,7 @@ const App = () => (
         </CountryProvider>
       </TooltipProvider>
     </QueryClientProvider>
+    </ThemeProvider>
   </ErrorBoundary>
 );
 

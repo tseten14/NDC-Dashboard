@@ -12,6 +12,7 @@ import { LOGIN_AUTH_ENABLED } from "@/lib/auth-config";
 import { lockOperatorSession } from "@/lib/operator-session";
 import { isPrimaryNavVisible } from "@/lib/role-capabilities";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -76,6 +77,7 @@ export function TopNav() {
           </Button>
           <span className="h-6 w-px bg-border" aria-hidden="true" />
           {!loading && <RoleSwitcher />}
+          <ThemeToggle />
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {LOGIN_AUTH_ENABLED && <DropdownMenu>
