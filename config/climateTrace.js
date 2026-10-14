@@ -10,6 +10,8 @@ import {
 } from "../shared/schemas/climateTrace.schema.js";
 import { safeParseOrLog } from "../shared/validate.js";
 import { toMtco2eFromTonnes } from "../shared/emissionsUnits.js";
+import { latestInventoryYear } from "../shared/inventoryYears.js";
+export { INVENTORY_YEAR_MIN, latestInventoryYear, defaultInventoryRange } from "../shared/inventoryYears.js";
 
 export const CLIMATE_TRACE_API_VERSION = "v7";
 export const CLIMATE_TRACE_BASE_URL = `https://api.climatetrace.org/${CLIMATE_TRACE_API_VERSION}`;
@@ -26,21 +28,6 @@ export const TRACE_RELEASE = {
   verified_at: "2026-09-28",
   url: "https://climatetrace.org/data",
 };
-
-/** Country-level annual totals in v7 sources/emissions (GADM0). */
-export const INVENTORY_YEAR_MIN = 2015;
-
-/** Latest complete inventory year (current calendar year may be incomplete). */
-export function latestInventoryYear() {
-  const y = new Date().getFullYear();
-  // Cap at the last verified complete annual year; 2026 remains partial.
-  return Math.min(2025, Math.max(INVENTORY_YEAR_MIN, y >= 2026 ? y - 1 : y));
-}
-
-export function defaultInventoryRange() {
-  const to = latestInventoryYear();
-  return { since: INVENTORY_YEAR_MIN, to };
-}
 
 /** v7 aggregate emissions are reported in tonnes (co2e_100yr). */
 export function toMtco2e(tonnes) {

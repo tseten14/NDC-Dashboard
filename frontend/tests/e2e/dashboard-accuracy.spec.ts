@@ -19,6 +19,8 @@ test("dashboard displays the actual all-sector API total and isolates district f
   // not the smaller NDC-sector subset or a bundled sample value.
   const latestLabel = page.getByText(`Latest measured (${latest.year}):`, { exact: false }).first();
   await expect(latestLabel).toContainText(latest.value.toFixed(1));
+  await expect(page.locator(".recharts-bar-rectangle").first()).toBeVisible();
+  await page.screenshot({ path: "test-results/dashboard-national-verified.png", fullPage: true });
   await expect(page.getByText("Uganda GHG National Inventory", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "District", exact: true }).click();
   await expect(page.getByText("District progress is not scored against national NDC targets.", { exact: false })).toBeVisible();

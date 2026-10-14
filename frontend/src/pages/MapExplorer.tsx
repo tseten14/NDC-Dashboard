@@ -10,7 +10,6 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
-import { geoContains } from "d3-geo";
 import type { FeatureCollection } from "geojson";
 import { emissionsApi, type MapSourcePoint } from "@/lib/api";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,8 +25,10 @@ import {
   TrendingUp, TrendingDown, Factory,
 } from "lucide-react";
 import ugandaGeo from "@/data/uganda-adm2.geo.json";
+import { createDistrictLookup } from "@/lib/district-lookup";
 
 const GEO = ugandaGeo as unknown as FeatureCollection;
+const findDistrictIndex = createDistrictLookup(GEO);
 // Climate TRACE v7 (March 2026 dataset) is confirmed through 2025.
 const YEARS = [2021, 2022, 2023, 2024, 2025];
 
@@ -54,14 +55,6 @@ function aggregateByDistrict(points: MapSourcePoint[]): Float64Array {
   return sums;
 }
 
-function findDistrictIndex(lng: number, lat: number): number {
-  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return -1;
-  for (let i = 0; i < GEO.features.length; i++) {
-    if (geoContains(GEO.features[i], [lng, lat])) return i;
-  }
-  return -1;
-}
-
 export default function MapExplorer() {
   const [year, setYear] = useState<number>(2025);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -72,7 +65,7 @@ export default function MapExplorer() {
 
   const query = useQuery({
     queryKey: ["emissions", "map", year],
-    queryFn: () => emissionsApi.map(undefined, year),
+    queryFn: ({ signal }) => emissionsApi.map(undefined, year, signal),
     staleTime: 60 * 60 * 1000,
     retry: 1,
   });
@@ -80,7 +73,7 @@ export default function MapExplorer() {
   const trendQueries = useQueries({
     queries: YEARS.map((y) => ({
       queryKey: ["emissions", "map", y],
-      queryFn: () => emissionsApi.map(undefined, y),
+      queryFn: ({ signal }) => emissionsApi.map(undefined, y, signal),
       staleTime: 60 * 60 * 1000,
       retry: 1,
     })),

@@ -4,6 +4,14 @@ All notable changes to the Uganda NDC Data Explorer are documented here.
 
 ## [Unreleased]
 
+### October 2026 responsiveness and bug fixes
+
+- Dashboard indicator requests run independently of Climate TRACE, retain national coverage in district views, and use the same verified inventory window as the API. Read requests have a deadline; superseded dashboard and map requests can be cancelled.
+- Sector filters update shareable URLs and Back/reload restore the matching target. The all-sector list includes all eleven targets, including the national pledge, with keyboard selection.
+- Decorative blurred backgrounds stay static and target columns no longer fade on every selection. Country search updates without remounting and animating its results.
+- Map area membership uses ring-direction-independent polygon tests with precomputed bounds and a bounded coordinate cache. Source values and national totals remain unchanged.
+- Restored readable print output, improved mixed-target badge contrast and back-to-top placement, and made the theme toggle available in the phone tools menu.
+
 ### October 2026 NDC exports and ingestion
 
 - Full official NDC catalogue and annual Climate TRACE-based versus synthetic Uganda comparison CSVs are available for Qlik, with source references, indicator coverage and comparison limits.

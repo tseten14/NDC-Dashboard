@@ -1,5 +1,5 @@
 /**
- * Site-wide ambient layer: slow-drifting gradient orbs + faint topographic
+ * Site-wide static decoration: gradient orbs and a faint topographic
  * contour pattern. Sits behind all page content at very low opacity.
  */
 export function AmbientBackground() {

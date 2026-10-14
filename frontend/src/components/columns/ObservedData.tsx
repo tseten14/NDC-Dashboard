@@ -482,7 +482,7 @@ export function ObservedDataColumn({ selectedTarget, selectedMitigationOptions: 
             </div>
           )}
 
-          <Card className="dash-card-hover dash-fade-up">
+          <Card className="dash-card-hover">
             <CardContent className="p-2 pt-3 pb-2">
               {!isProjected && showNdcTarget && latestObserved?.value != null && ndcGoal != null && (
                 <div className="mb-2 px-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">

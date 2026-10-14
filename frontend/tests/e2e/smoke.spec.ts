@@ -18,7 +18,7 @@ test.describe("NDC Data Explorer smoke", () => {
     await waitForApi(page);
     // The country picker is the front door: nothing else is reachable until a
     // country is chosen, so this failing means the whole app is unreachable.
-    await expect(page.getByRole("heading", { name: "Select a country" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Select country" })).toBeVisible();
     await expect(page.getByText("Uganda", { exact: true }).first()).toBeVisible();
   });
 

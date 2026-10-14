@@ -8,7 +8,7 @@ import { test, expect, type Page } from "@playwright/test";
 async function openUganda(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: /^Uganda Full cockpit available/ }).click();
-  await expect(page.getByRole("heading", { name: "Climate evidence and planning" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Climate evidence/ })).toBeVisible();
 }
 
 test("home loads without dashboard requests; all tools remain accessible", async ({ page }) => {
@@ -21,11 +21,11 @@ test("home loads without dashboard requests; all tools remain accessible", async
   const primaryLinks = page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link");
   await expect(primaryLinks.nth(0)).toHaveText("Home");
   await expect(primaryLinks.nth(1)).toHaveText("Dashboard");
-  await expect(page.locator("#workspace-tools-heading + p + div").getByRole("link").first()).toHaveText(/Dashboard/);
+  await expect(page.getByRole("region", { name: "Your tools, in one place." }).getByRole("link").first()).toHaveText(/Dashboard/);
   expect(requests.filter((url) => /\/emissions\/(dashboard|districts)|\/catalog\/|\/indicators\/panel/.test(url))).toEqual([]);
   await expect(page.getByRole("combobox", { name: "Switch active role" })).toContainText("Admin");
   await page.screenshot({ path: "test-results/ux-home-desktop-light.png" });
-  await expect(page.getByRole("button", { name: /Switch to .* mode/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
   await page.getByRole("button", { name: "Open all tools" }).click();
   await expect(page.getByRole("navigation", { name: "All workspace tools" }).getByRole("link")).toHaveCount(14);
   await page.keyboard.press("Escape");

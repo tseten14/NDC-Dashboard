@@ -11,6 +11,8 @@
  */
 
 import type { IndicatorPanelEntry } from "./emissions-integration";
+import { readJson } from "./api-request";
+import { defaultInventoryRange } from "../../../shared/inventoryYears.js";
 import type {
   PolicyCatalogDocumentResponse,
   PolicyPassageCorpusMetaResponse,
@@ -62,16 +64,11 @@ const BASE = resolveApiHost();
 const withCredentials: Pick<RequestInit, "credentials"> = { credentials: "include" };
 
 async function getJSON<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, init);
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`API ${res.status} ${res.statusText}: ${body || path}`);
-  }
-  return res.json() as Promise<T>;
+  return readJson<T>(`${BASE}${path}`, init);
 }
 
-async function getJSONValidated<T>(path: string, schema: ZodType<T>, label: string): Promise<T> {
-  const raw = await getJSON<unknown>(path);
+async function getJSONValidated<T>(path: string, schema: ZodType<T>, label: string, init: RequestInit = {}): Promise<T> {
+  const raw = await getJSON<unknown>(path, init);
   const parsed = safeParseOrLog(schema, raw, label);
   if (!parsed.ok) {
     throw new Error(`Invalid API response (${label})`);
@@ -578,7 +575,7 @@ function applyGeography(q: URLSearchParams, opts?: GeographyOpts) {
 }
 
 export const emissionsApi = {
-  dashboard: (since?: number, to?: number, opts?: GeographyOpts) => {
+  dashboard: (since?: number, to?: number, opts?: GeographyOpts, signal?: AbortSignal) => {
     const q = new URLSearchParams();
     if (since != null) q.set("since", String(since));
     if (to != null) q.set("to", String(to));
@@ -588,6 +585,7 @@ export const emissionsApi = {
       `/api/v1/emissions/dashboard${qs ? `?${qs}` : ""}`,
       emissionsDashboardSchema,
       "emissions.dashboard",
+      { signal },
     );
   },
   districts: () => getJSON<DistrictsResponse>("/api/v1/emissions/districts"),
@@ -617,12 +615,12 @@ export const emissionsApi = {
     const qs = q.toString();
     return getJSON<SpatialConfidenceResponse>(`/api/v1/emissions/spatial-confidence${qs ? `?${qs}` : ""}`);
   },
-  map: (opts?: GeographyOpts, year?: number) => {
+  map: (opts?: GeographyOpts, year?: number, signal?: AbortSignal) => {
     const q = new URLSearchParams();
     applyGeography(q, opts);
     if (year != null) q.set("year", String(year));
     const qs = q.toString();
-    return getJSON<EmissionsMapResponse>(`/api/v1/emissions/map${qs ? `?${qs}` : ""}`);
+    return getJSON<EmissionsMapResponse>(`/api/v1/emissions/map${qs ? `?${qs}` : ""}`, { signal });
   },
   translatorMetadata: (signal?: AbortSignal) => getJSON<TranslatorMetadata>("/api/v1/emissions/translator/metadata", { signal }),
   translatorDistricts: (signal?: AbortSignal) => getJSON<GeoJSON.FeatureCollection<TranslatorGeometry>>("/api/v1/emissions/translator/districts", { signal }),
@@ -937,11 +935,12 @@ export const ingestApi = {
 };
 
 export const cockpitApi = {
-  indicatorPanel: (since = 2015, to = 2024) =>
+  indicatorPanel: (since = defaultInventoryRange().since, to = defaultInventoryRange().to, signal?: AbortSignal) =>
     getJSONValidated<IndicatorPanelResponse>(
       `/api/v1/indicators/panel?since=${since}&to=${to}`,
       indicatorPanelResponseSchema,
       "indicators.panel",
+      { signal },
     ),
   catalogActivities: () => getJSON<{ activities: CatalogActivityRow[]; data_source: string }>("/api/v1/catalog/activities"),
   catalogMitigationOptions: () =>

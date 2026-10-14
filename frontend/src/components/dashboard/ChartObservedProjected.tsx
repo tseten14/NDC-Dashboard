@@ -589,6 +589,7 @@ export function ObservedProjectedComposedChart({
             ) : (
               <Bar
                 dataKey="observedValue"
+                isAnimationActive={false}
                 name={observedSeriesLabel}
                 fill="hsl(var(--chart-4))"
                 radius={[2, 2, 0, 0]}

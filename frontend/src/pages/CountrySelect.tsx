@@ -197,16 +197,15 @@ export default function CountrySelect() {
                 </div>
               </CardHeader>
               <CardContent className="pb-5">
-                <ul key={query.trim().toLowerCase()} className="grid gap-2 sm:grid-cols-1 dash-crossfade">
+                <ul aria-label="Country options" className="grid gap-2 sm:grid-cols-1">
                   {filteredCountries.length === 0 && (
                     <li className="rounded-xl border border-dashed border-border/70 px-4 py-6 text-center text-xs text-muted-foreground">
                       No countries match “{query.trim()}”.
                     </li>
                   )}
-                  {filteredCountries.map((c, i) => (
+                  {filteredCountries.map((c) => (
                     <li
                       key={c.code}
-                      className={cn("landing-fade-up", `landing-stagger-${Math.min(i + 3, 5)}`)}
                     >
                       <button
                         type="button"

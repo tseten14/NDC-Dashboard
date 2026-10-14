@@ -261,8 +261,7 @@
   }
 
   .landing-orb {
-    will-change: transform;
-    animation: landing-float 14s ease-in-out infinite;
+    /* Keep the soft decoration static while visitors interact with the page. */
   }
 
   .landing-orb-delay-1 {
@@ -729,12 +728,10 @@
 
 @layer utilities {
   .ambient-orb-a {
-    will-change: transform;
-    animation: ambient-drift-a 22s ease-in-out infinite;
+    /* Blurred layers stay static to avoid continuous GPU compositing. */
   }
   .ambient-orb-b {
-    will-change: transform;
-    animation: ambient-drift-b 28s ease-in-out infinite;
+    /* Match the static first orb without reserving a compositor layer. */
   }
   /* Faint topographic contour lines evoking terrain maps. */
   .ambient-contours {
@@ -824,9 +821,25 @@
 /* ── Scroll-to-top button fade ── */
 .scroll-top-btn {
   opacity: 0;
-  transform: translateY(8px);
   pointer-events: none;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.15s ease;
+}
+
+/* Keep the full report readable when exported through the browser print dialog. */
+@media print {
+  :root, .dark { color-scheme: light; --background: 0 0% 100%; --foreground: 210 13% 12%; --card: 0 0% 100%; --card-foreground: 210 13% 12%; --muted: 0 0% 96%; --muted-foreground: 210 10% 32%; --border: 210 11% 70%; }
+  html, body, #root, main { height: auto !important; min-height: 0 !important; overflow: visible !important; background: #fff !important; color: #1b1f23 !important; }
+  [data-app-shell] { display: block; height: auto !important; }
+  main [data-radix-scroll-area-viewport] { height: auto !important; overflow: visible !important; }
+  header[data-top-nav] nav, .scroll-top-btn, button:not([data-print-content]), [role="dialog"], [data-radix-popper-content-wrapper] { display: none !important; }
+  [data-app-shell] > [aria-hidden="true"] { display: none !important; }
+  header[data-top-nav], footer { position: static !important; }
+  main > div, main section, main article { break-inside: avoid-page; }
+  main table { width: 100%; min-width: 0 !important; font-size: 10pt; }
+  main table thead { display: table-header-group; }
+  main table tr { break-inside: avoid; }
+  a[href]::after { content: none; }
+  @page { margin: 16mm; }
 }
 .scroll-top-btn.scroll-top-visible {
   opacity: 1;

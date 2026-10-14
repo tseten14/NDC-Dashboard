@@ -225,7 +225,7 @@ export function ProgressTowardTargetColumn({ selectedTarget, footer, scroll = tr
         <div className="p-3 space-y-3">
           {districtNote}
 
-          <Card className={cn("ring-2 dash-card-hover dash-fade-up", cfg.ring)}>
+          <Card className={cn("ring-2 dash-card-hover", cfg.ring)}>
             <CardContent className="p-4 flex flex-col items-center text-center">
               <div className="relative w-28 h-28 mb-3">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">

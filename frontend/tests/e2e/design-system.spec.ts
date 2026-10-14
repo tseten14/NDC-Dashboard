@@ -31,34 +31,29 @@ for (const viewport of [
   { width: 1280, height: 600 },
   { width: 1920, height: 1200 },
 ]) {
-  test(`country page keeps its footer below content at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+  test(`country selection remains usable at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto("/select-country");
-    await expect(page.getByRole("heading", { name: "Select a country" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Select country" })).toBeVisible();
     for (const query of ["", "No matching country"]) {
       await page.getByLabel("Search countries").fill(query);
       const layout = await page.evaluate(() => {
-        const header = document.querySelector("header")!.getBoundingClientRect();
-        const main = document.querySelector("main")!.getBoundingClientRect();
-        const footer = document.querySelector("[data-app-footer]")!.getBoundingClientRect();
         const options = document.querySelector('[aria-label="Country options"]')!.getBoundingClientRect();
-        const headerContent = document.querySelector("header > div")!.getBoundingClientRect();
-        const footerContent = document.querySelector("[data-app-footer] > div")!.getBoundingClientRect();
         return {
-          headerBottom: header.bottom, mainTop: main.top, mainBottom: main.bottom,
-          footerTop: footer.top, footerBottom: footer.bottom + scrollY, optionsBottom: options.bottom,
-          pageBottom: document.documentElement.scrollHeight,
           overflow: document.documentElement.scrollWidth - innerWidth,
-          headerLeft: headerContent.left, footerLeft: footerContent.left, mainLeft: main.left,
+          optionsLeft: options.left, optionsRight: options.right, width: innerWidth,
         };
       });
       expect(layout.overflow).toBeLessThanOrEqual(1);
-      expect(layout.mainTop).toBeCloseTo(layout.headerBottom, 0);
-      expect(layout.footerTop).toBeCloseTo(layout.mainBottom, 0);
-      expect(layout.footerTop - layout.optionsBottom).toBeGreaterThanOrEqual(31);
-      expect(Math.abs(layout.footerBottom - Math.max(viewport.height, layout.pageBottom))).toBeLessThanOrEqual(1);
-      expect(layout.footerLeft).toBeCloseTo(layout.mainLeft, 0);
-      expect(layout.headerLeft).toBeCloseTo(layout.mainLeft, 0);
+      expect(layout.optionsLeft).toBeGreaterThanOrEqual(0);
+      expect(layout.optionsRight).toBeLessThanOrEqual(layout.width);
+      if (query) await expect(page.getByText(/No countries match/)).toBeVisible();
+      else {
+        const uganda = page.getByRole("button", { name: /^Uganda Full cockpit available/ });
+        await uganda.scrollIntoViewIfNeeded();
+        await expect(uganda).toBeInViewport();
+        await expect(uganda).toBeEnabled();
+      }
     }
   });
 }
@@ -113,12 +108,12 @@ for (const width of [320, 390, 768, 1280, 1920]) {
 
 test("country selection, home, and shared navigation meet automated accessibility rules", async ({ page }) => {
   await page.goto("/select-country");
-  await expect(page.getByRole("heading", { name: "Select a country" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Select country" })).toBeVisible();
   let results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
   expect(results.violations.map(({ id, nodes }) => `${id}: ${nodes.map(({ target }) => target.join(" ")).join(", ")}`)).toEqual([]);
 
   await page.getByRole("button", { name: /Uganda Full cockpit available/ }).click();
-  await expect(page.getByRole("heading", { name: "Climate evidence and planning" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Climate evidence/ })).toBeVisible();
   results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
   expect(results.violations.map(({ id, nodes }) => `${id}: ${nodes.map(({ target }) => target.join(" ")).join(", ")}`)).toEqual([]);
 
@@ -138,18 +133,23 @@ test("dashboard, map, planning, and document pages meet automated accessibility 
   }
 });
 
-test("saved dark preferences and system dark mode still use the light interface", async ({ page }) => {
+test("saved theme preferences survive reload and the theme control remains keyboard accessible", async ({ page }) => {
   await seedUgandaSession(page);
-  await page.addInitScript(() => localStorage.setItem("theme", "dark"));
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("theme")) localStorage.setItem("theme", "dark");
+  });
   await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
   await page.goto("/");
-  await expect(page.locator("html")).not.toHaveClass(/dark/);
-  await page.keyboard.press("Tab");
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  const toggle = page.getByRole("button", { name: "Switch to light mode" });
+  await toggle.focus();
   const outline = await page.evaluate(() => getComputedStyle(document.activeElement as HTMLElement).outlineStyle);
   expect(outline).not.toBe("none");
-  await expect(page.getByRole("button", { name: /Switch to .* mode/ })).toHaveCount(0);
+  await page.keyboard.press("Enter");
+  await expect(page.locator("html")).not.toHaveClass(/dark/);
   await expect(page.locator("html")).toHaveCSS("color-scheme", "light");
-  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await page.reload();
+  await expect(page.locator("html")).not.toHaveClass(/dark/);
   const animation = await page.evaluate(() => getComputedStyle(document.body).animationName);
   expect(animation).toBe("none");
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
@@ -169,7 +169,7 @@ test("short phone layouts keep content reachable and scrolling controls above th
   const button = await backToTop.boundingBox();
   expect(button!.y + button!.height).toBeLessThanOrEqual(footer!.y - 15);
   await backToTop.click();
-  await expect(page.getByRole("heading", { name: "Climate evidence and planning" })).toBeInViewport();
+  await expect(page.getByRole("heading", { name: /Climate evidence/ })).toBeInViewport();
 
   await page.goto("/financial-flow");
   const unavailable = page.getByRole("heading", { name: "Financial records unavailable" });

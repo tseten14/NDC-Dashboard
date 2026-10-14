@@ -48,6 +48,7 @@ import { reconciliationDeltaPercent } from "@/lib/progress";
 import { ndcTargets, calculateProgress, type NDCTarget, type NDCActivity, type MitigationOption } from "@/data/uganda-ndc-data";
 import type { ProgressStatus } from "@/data/uganda-ndc-data";
 import { validateDashboardTimeseries, reportIssues } from "@/lib/data-validation";
+import { defaultInventoryRange } from "../../../shared/inventoryYears.js";
 
 const STALE_MS = 15 * 60 * 1000;
 
@@ -114,18 +115,20 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
 
   const dashboardQuery = useQuery({
     queryKey: ["emissions", "dashboard", geographyKey],
-    queryFn: () =>
+    queryFn: ({ signal }) =>
       emissionsApi.dashboard(
         undefined,
         undefined,
         districtName ? { district: districtName } : undefined,
+        signal,
       ),
     staleTime: STALE_MS,
     retry: 1,
   });
 
-  const since = dashboardQuery.data?.since ?? 2015;
-  const to = dashboardQuery.data?.to ?? dashboardQuery.data?.inventory_year ?? 2024;
+  // National non-emissions indicators have their own coverage. District TRACE
+  // responses must not truncate them or delay them behind an unrelated request.
+  const { since, to } = defaultInventoryRange();
 
   const healthQuery = useQuery({
     queryKey: ["emissions", "health", "climatetrace"],
@@ -136,10 +139,9 @@ export function EmissionsDataProvider({ children }: { children: ReactNode }) {
 
   const indicatorPanelQuery = useQuery({
     queryKey: ["cockpit", "indicators", "panel", since, to],
-    queryFn: () => cockpitApi.indicatorPanel(since, to),
+    queryFn: ({ signal }) => cockpitApi.indicatorPanel(since, to, signal),
     staleTime: STALE_MS,
     retry: 1,
-    enabled: dashboardQuery.isSuccess || dashboardQuery.isError,
   });
 
   const catalogActivitiesQuery = useQuery({

@@ -25,7 +25,7 @@ interface NDCTargetsProps {
 const conditionalityColors: Record<string, string> = {
   Unconditional: "bg-on-track/15 text-on-track border-on-track/30",
   Conditional: "bg-muted text-muted-foreground border-border",
-  Mixed: "bg-chart-4/15 text-chart-4 border-chart-4/30",
+  Mixed: "bg-chart-4/15 text-foreground border-chart-4/30",
 };
 
 const metricLabels: Record<string, string> = {
@@ -51,7 +51,7 @@ export function NDCTargetsColumn({ selectedSector, selectedTargetId, onSelectTar
   }, [selectedTargetId]);
 
   const grouped = selectedSector === "economy-wide"
-    ? sectorDefinitions.filter(s => s.id !== "economy-wide").map(s => ({
+    ? sectorDefinitions.map(s => ({
         sector: s,
         targets: targets.filter(t => t.sectorId === s.id),
       })).filter(g => g.targets.length > 0)
@@ -148,9 +148,15 @@ function TargetCard({
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
             )}
           </button>
-          <p className="text-xs leading-relaxed text-foreground flex-1 line-clamp-3 font-medium">
+          <button
+            type="button"
+            data-print-content
+            aria-label={`Select target ${target.id}: ${plain.summary}`}
+            aria-pressed={isActive}
+            className="text-left text-xs leading-relaxed text-foreground flex-1 line-clamp-3 font-medium"
+          >
             {target.targetText}
-          </p>
+          </button>
         </div>
         <div className="flex items-center gap-1.5 flex-wrap mt-2">
           <Badge variant="outline" className="text-[9px] h-4 px-1.5">

@@ -71,12 +71,11 @@ export default function NDCLayer() {
 
   // Deep-link support: /dashboard?target=...&sector=...
   useEffect(() => {
-    const t = searchParams.get("target");
-    const s = searchParams.get("sector");
-    if (s && s !== state.selectedSector) {
-      state.setSelectedSector(s, { preserveTarget: Boolean(t) });
-    }
-    if (t && t !== state.selectedTargetId) state.setSelectedTargetId(t);
+    const target = ndcTargets.find((t) => t.id === searchParams.get("target"));
+    const sector = sectorDefinitions.find((s) => s.id === searchParams.get("sector"));
+    const sectorId = sector?.id ?? target?.sectorId ?? "economy-wide";
+    state.setSelectedSector(sectorId, { preserveTarget: true });
+    state.setSelectedTargetId(target && target.sectorId === sectorId ? target.id : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -143,8 +142,10 @@ export default function NDCLayer() {
     setIsRefreshing(true);
     toast.info("Refreshing Climate TRACE dashboard...");
     try {
-      await queryClient.invalidateQueries({ queryKey: ["emissions"] });
-      await queryClient.invalidateQueries({ queryKey: ["cockpit"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["emissions"] }, { throwOnError: true }),
+        queryClient.invalidateQueries({ queryKey: ["cockpit"] }, { throwOnError: true }),
+      ]);
       toast.success("Dashboard data refreshed");
     } catch {
       toast.error("Refresh failed — check API health");
@@ -212,7 +213,7 @@ export default function NDCLayer() {
 
         <div className="flex items-center gap-1.5">
           <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Sector</span>
-          <Select value={state.selectedSector} onValueChange={(v) => state.setSelectedSector(v)}>
+          <Select value={state.selectedSector} onValueChange={handleGapSectorSelect}>
             <SelectTrigger aria-label="Select sector" className="w-[140px] h-7 text-xs">
               <span className="truncate">
                 {sectorDefinitions.find((s) => s.id === state.selectedSector)?.name ?? "Sector"}
@@ -361,26 +362,26 @@ export default function NDCLayer() {
         <NdcGapSummary variant="compact" onSelectSector={handleGapSectorSelect} />
       )}
 
-      {/* Three-column layout over a slow-drifting climate gradient — one shared scroll */}
+      {/* Three-column layout with a static background and one shared scroll. */}
       <div className="flex-1 relative isolate overflow-hidden">
         <div aria-hidden className="absolute inset-0 -z-10 dash-animated-bg" />
         <div aria-hidden className="absolute inset-0 -z-10 dash-grid-pattern" />
         <ScrollArea className="h-full">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <div
-          className="min-w-0 h-full flex flex-col dash-crossfade border-border border-b md:border-b-0 md:border-r lg:border-r"
+          className="min-w-0 h-full flex flex-col border-border border-b md:border-b-0 md:border-r lg:border-r"
           key={`targets-${state.selectedSector}-${state.geographyLevel}`}
         >
           <NDCTargetsColumn scroll={false} selectedSector={state.selectedSector as SectorId} selectedTargetId={state.selectedTargetId} onSelectTarget={handleSelectTarget} />
         </div>
         <div
-          className="min-w-0 h-full flex flex-col dash-crossfade border-border border-b md:border-b-0 lg:border-r"
+          className="min-w-0 h-full flex flex-col border-border border-b md:border-b-0 lg:border-r"
           key={`observed-${state.selectedTargetId}-${state.selectedSector}-${state.geographyLevel}-${state.selectedDistrictId}-${state.timeMode}`}
         >
           <ObservedDataColumn scroll={false} selectedTarget={selectedTarget} selectedMitigationOptions={state.selectedMitigationOptions} timeMode={state.timeMode as TimeMode} />
         </div>
         <div
-          className="min-w-0 h-full flex flex-col dash-crossfade border-border md:border-t lg:border-t-0"
+          className="min-w-0 h-full flex flex-col border-border md:border-t lg:border-t-0"
           key={`progress-${state.selectedTargetId}-${state.selectedSector}-${state.geographyLevel}-${state.selectedDistrictId}`}
         >
           <ProgressTowardTargetColumn

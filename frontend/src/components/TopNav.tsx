@@ -111,6 +111,7 @@ export function TopNav() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4 md:hidden">
                 <Button variant="outline" size="sm" className="h-10" onClick={changeCountry} aria-label="Change country">{country?.flag} {country?.name ?? "Select country"}</Button>
                 {!loading && <RoleSwitcher />}
+                <ThemeToggle />
               </div>
               <nav aria-label="All workspace tools" className="space-y-5 p-4">
                 {["Explore", "Plan & deliver", "Manage & learn"].map((group) => {

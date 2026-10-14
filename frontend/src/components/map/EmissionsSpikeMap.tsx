@@ -5,7 +5,8 @@
  * making rapid change visible geographically.
  */
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { geoIdentity, geoPath, geoContains } from "d3-geo";
+import { geoIdentity, geoPath } from "d3-geo";
+import { createDistrictLookup } from "@/lib/district-lookup";
 import type { FeatureCollection } from "geojson";
 import type { MapSourcePoint } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -232,10 +233,4 @@ export function EmissionsSpikeMap({
   );
 }
 
-function findDistrictIndex(lng: number, lat: number): number {
-  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return -1;
-  for (let i = 0; i < GEO.features.length; i++) {
-    if (geoContains(GEO.features[i], [lng, lat])) return i;
-  }
-  return -1;
-}
+const findDistrictIndex = createDistrictLookup(GEO);
