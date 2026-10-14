@@ -71,7 +71,7 @@ describe("ingest confirm flow", () => {
     expect(observations[0].targetId).toBe(resolveTargetId("t2"));
   });
 
-  it("staged upload → confirm returns target keys and dashboard hint", async () => {
+  it("staged upload → confirm works without an operator key and returns target keys", async () => {
     const parsed = parseCsvText(CSV);
     const columnMapping = suggestColumnMapping(parsed.headers);
     const jobId = randomUUID();
@@ -87,7 +87,6 @@ describe("ingest confirm flow", () => {
     const confirmRes = await fetch(`${baseUrl}/ingest/confirm`, {
       method: "POST",
       headers: {
-        "x-api-key": API_KEY,
         "content-type": "application/json",
       },
       body: JSON.stringify({

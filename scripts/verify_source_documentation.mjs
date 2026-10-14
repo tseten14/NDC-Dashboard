@@ -6,7 +6,7 @@
  * excluded because adding comments would invalidate or corrupt those formats.
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const ROOT = new URL("../", import.meta.url);
 const SOURCE_EXTENSIONS = new Set([
@@ -23,7 +23,7 @@ function trackedAndNewFiles() {
     "git",
     ["ls-files", "--cached", "--others", "--exclude-standard"],
     { cwd: ROOT, encoding: "utf8" },
-  ).trim().split("\n").filter(Boolean);
+  ).trim().split("\n").filter((path) => path && existsSync(new URL(path, ROOT)));
 }
 
 function extension(path) {

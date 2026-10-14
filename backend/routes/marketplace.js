@@ -2,7 +2,7 @@
  * Marketplace deal pipeline API.
  *
  * GET endpoints are public (anyone can browse the pipeline).
- * POST/PUT/DELETE require the operator session (same auth as ingest).
+ * POST/PUT/DELETE require the operator session or API key.
  */
 import express from "express";
 import { requireWriteApiKey } from "../server/middleware/apiKeyAuth.js";

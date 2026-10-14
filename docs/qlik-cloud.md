@@ -1,11 +1,13 @@
 # Use the NDC Data Explorer with Qlik Cloud
 
+For the full official NDC catalogue and the Climate TRACE versus synthetic Uganda file comparison, use [Full Uganda NDC and emissions comparison in Qlik](qlik-full-ndc-comparison.md). The API workflow below exports only the eleven dashboard commitments.
+
 This guide imports two tables into a Qlik Cloud analytics app:
 
 | Table | Source | What it represents |
 | --- | --- | --- |
 | Observed emissions | Live Climate TRACE API through this app | Annual Uganda national emissions by app sector, in MtCO2e |
-| NDC targets | Targets transcribed in this app from Uganda's Updated NDC (2022) | Eleven commitments, including five sector emissions targets and other indicators |
+| NDC targets | Eleven selected, source-checked rows from the full Uganda Updated NDC (2022) catalogue | National and sector emissions ceilings plus forest cover, wetlands, electricity capacity, farmer practices and electricity access |
 
 The NDC values **do not come from Climate TRACE**. Climate TRACE measures observed emissions; Uganda's NDC states the commitments. These sources use different methods and sector boundaries. A chart that places them together is context, not an official compliance determination.
 
@@ -28,7 +30,7 @@ The targets endpoint works without Climate TRACE. The emissions endpoint calls t
 4. Repeat with a second REST connection for the targets URL. Load all columns into a table named `NdcTargets`; name the first table `ObservedEmissions` if Qlik asks for a table name.
 5. Check the loaded data: `NdcTargets` should have **11 rows**. `ObservedEmissions` should have one row per sector and available inventory year; as of the current 2015–2025 range, that is **66 rows** (six sectors × eleven years). The end year advances as Climate TRACE's available inventory range advances. Missing observations remain empty, never zero.
 
-If your Qlik tenant does not allow REST connections, download the two CSVs from those URLs and upload them as datasets in the Analytics activity center. This allows an initial dashboard, but refreshes then require uploading new emissions data. The repository also contains the [NDC target CSV](../data/exports/uganda-ndc-targets-2022.csv) for an offline first import.
+If your Qlik tenant does not allow REST connections, download the two CSVs from those URLs and upload them as datasets in the Analytics activity center. This allows an initial dashboard, but refreshes then require uploading new emissions data. The repository also contains the [NDC target CSV](../data/exports/uganda-ndc-targets.csv) for an offline first import.
 
 Qlik may infer text for numeric columns in a CSV. Check that `year`, `emissions_mtco2e`, `baseline_year`, `baseline_value`, `target_year`, and `target_value` are usable as numbers before making measures. Keep `target_id`, sector keys, units, and source fields as text.
 
@@ -44,7 +46,9 @@ The tables share only `climate_trace_sector_key`, which links the five emissions
 
 In the Qlik app, run **Reload** to fetch the current emissions CSV. Once the first reload succeeds, use the app's **Reload** > **Schedule** option if your tenant permits it. A daily reload is sufficient for this dataset. Check reload history after scheduling; Qlik does not update the app merely because the public endpoint changes.
 
-The target table is a versioned reference extract. The app build regenerates it from the NDC targets currently displayed by the app. When target definitions change, deploy the updated app and reload Qlik.
+The target table is a versioned reference extract. The app build regenerates it from the source-referenced full NDC catalogue, preserving the eleven selected target IDs. It does not copy unverified dashboard draft wording. When the catalogue changes, deploy the updated app and reload Qlik.
+
+The compact CSV keeps the original fifteen columns and adds numeric 2025 milestones, 2030 BAU values, source-reported reduction percentages, source page references and notes. Each row represents one primary indicator. Unknown baseline years are blank for electricity capacity and sustainable land management. The agriculture 2030 target is explicitly estimated; wetland coverage is approximate in the mitigation table. Conditionality is not inferred for individual targets, and `implementation_scenario` identifies the full NDC emissions scenario separately. Percentages use 0–100, and `MtCO2e` means million tonnes of CO2-equivalent.
 
 ## Data cautions
 

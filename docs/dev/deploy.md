@@ -28,11 +28,11 @@ No `VITE_API_BASE_URL` is required in production — the frontend calls `/api/v1
 | `DATABASE_URL` | For mapped ingest | Postgres connection string (e.g. [Neon](https://neon.tech) or [Supabase](https://supabase.com) via Vercel Marketplace). Enables `POST /api/v1/ingest/confirm` → dashboard provenance |
 | `SEED_DB` | No | Set `true` on first deploy to seed `targets` / `observations` from bundled catalog |
 | `USE_DB_FALLBACK` | No | Set `true` to serve in-memory seed when Postgres is unavailable (dev/demo only) |
-| `INGEST_API_KEY` | For ingest writes | Server-side key for `POST /api/v1/ingest/*` confirm/upload |
+| `INGEST_API_KEY` | For marketplace writes | Server-side operator key; ingestion does not require it |
 | `VITE_INGEST_API_KEY` | No | Legacy setting; leave unset. Do not expose the operator passphrase in a browser bundle. |
 | `FRONTEND_ORIGIN` | Production | Your Vercel app URL (e.g. `https://your-project.vercel.app`) for CORS |
 
-Site-wide Supabase login is temporarily off through `LOGIN_AUTH_ENABLED=false` in `frontend/src/lib/auth-config.ts`. The `/auth` route redirects to country selection. `INGEST_API_KEY` still protects server writes: the browser exchanges an operator passphrase at `/api/v1/auth/session` for an HttpOnly cookie; non-browser jobs can send the key in `x-api-key`. Keep the server key private.
+Site-wide Supabase login is temporarily off through `LOGIN_AUTH_ENABLED=false` in `frontend/src/lib/auth-config.ts`. The `/auth` route redirects to country selection. Ingestion opens without an operator passphrase. `INGEST_API_KEY` still protects marketplace writes: an operator session or an `x-api-key` header is required there. Keep the server key private.
 
 ### Postgres setup (ministry pilot)
 

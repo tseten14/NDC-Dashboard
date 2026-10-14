@@ -62,7 +62,7 @@ The route and API remain in place, but production does not return a socio-econom
 | Quick scan | No | Profiling report only |
 | Mapped import (confirm) | Yes, when `DATABASE_URL` set | Indicator targets (forest, electricity, CSA, wetlands, capacity) show ingested observations + provenance badge |
 
-Does **not** replace Climate TRACE MtCO₂e on emissions sectors. Both browser import paths require an operator session obtained with the server-side `INGEST_API_KEY` passphrase; automated clients can use an `x-api-key` header. Do not put the key in a `VITE_` variable.
+Does **not** replace Climate TRACE MtCO₂e on emissions sectors. Quick scan and Data Pipeline do not require an operator passphrase or API key. Ingestion keeps origin checks, rate limits, file validation, mapping and confirmation before saving. Marketplace writes still use operator authorization; do not put server keys in a `VITE_` variable.
 
 ## Browser-only
 

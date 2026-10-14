@@ -35,7 +35,7 @@ import { mapRowsToObservations } from "../lib/ingest/confirmRows.ts";
 import { resolveTargetId } from "../../database/id.ts";
 import { safeParseOrLog } from "../../shared/validate.js";
 import { ingestScanReportSchema } from "../../shared/schemas/ingestScan.schema.js";
-import { requireWriteApiKey } from "../server/middleware/apiKeyAuth.js";
+import { requireSameSiteRequest } from "../server/middleware/apiKeyAuth.js";
 import { validateUploadMime, validateScanContent } from "../server/middleware/uploadValidation.js";
 import { logIngestEvent } from "../server/logger.js";
 import { sendServerError } from "../server/errors.js";
@@ -865,7 +865,7 @@ function uploadMiddleware(req, res, next) {
   });
 }
 
-router.post("/ingest/scan", requireWriteApiKey, uploadMiddleware, async (req, res) => {
+router.post("/ingest/scan", requireSameSiteRequest, uploadMiddleware, async (req, res) => {
   try {
     const files = req.files ?? [];
     if (!files.length) {
@@ -954,7 +954,7 @@ router.post("/ingest/scan", requireWriteApiKey, uploadMiddleware, async (req, re
   }
 });
 
-router.post("/ingest/files/import", requireWriteApiKey, async (req, res) => {
+router.post("/ingest/files/import", requireSameSiteRequest, async (req, res) => {
   try {
     const validation = validateImportPayload(req.body ?? {});
     if (!validation.ok) {
@@ -1060,7 +1060,7 @@ function formatParseWarnings(warnings) {
   );
 }
 
-router.post("/ingest/upload", requireWriteApiKey, uploadSingle.single("file"), async (req, res) => {
+router.post("/ingest/upload", requireSameSiteRequest, uploadSingle.single("file"), async (req, res) => {
   try {
     const file = req.file;
     if (!file) {
@@ -1239,10 +1239,10 @@ async function handlePipelineClean(req, res) {
   }
 }
 
-router.post("/ingest/pipeline/scan", requireWriteApiKey, handlePipelineClean);
-router.post("/ingest/clean", requireWriteApiKey, handlePipelineClean);
+router.post("/ingest/pipeline/scan", requireSameSiteRequest, handlePipelineClean);
+router.post("/ingest/clean", requireSameSiteRequest, handlePipelineClean);
 
-router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
+router.post("/ingest/confirm", requireSameSiteRequest, async (req, res) => {
   try {
     const { jobId, finalColumnMapping, pipelineFilters, executionMode } = req.body ?? {};
     if (!jobId || typeof jobId !== "string") {
@@ -1447,7 +1447,7 @@ router.post("/ingest/confirm", requireWriteApiKey, async (req, res) => {
  * so it needs the same operator authority as the imports themselves, even
  * though it only reads.
  */
-router.get("/ingest/jobs", requireWriteApiKey, async (req, res) => {
+router.get("/ingest/jobs", requireSameSiteRequest, async (req, res) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.query.limit ?? "20", 10) || 20, 1), 100);
     const jobs = await getRecentIngestJobs(limit);

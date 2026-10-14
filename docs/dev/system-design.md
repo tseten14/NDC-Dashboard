@@ -194,19 +194,16 @@ sequenceDiagram
 
 ### 5.2 Data ingestion (mapped import)
 
-**Entry:** `/ingest` opens Quick scan. Both Quick scan and Data Pipeline require an operator unlock. Data Pipeline maps and confirms CSV/JSON observations.
+**Entry:** `/ingest` opens Quick scan. Both Quick scan and Data Pipeline open without an operator passphrase. Data Pipeline maps and confirms CSV/JSON observations.
 
 ```mermaid
 sequenceDiagram
   participant User
   participant SPA as Ingest page
   participant API as ingest API
-  participant Auth as Operator session
   participant PG as PostgreSQL
   participant Dash as Dashboard
 
-  User->>Auth: Unlock with operator passphrase
-  Auth-->>SPA: HttpOnly session cookie
   User->>SPA: Upload + map columns
   SPA->>API: POST /ingest/scan
   API-->>SPA: Suggested mapping
@@ -222,7 +219,7 @@ sequenceDiagram
   end
 ```
 
-**Requires:** `DATABASE_URL` for persistent mapped import and server-only `INGEST_API_KEY` for protected actions. Do not put the key in a `VITE_` variable. Quick scan profiles files but does not persist observations.
+**Requires:** `DATABASE_URL` for persistent mapped import. Ingestion requires no operator key or session; origin checks, upload validation, rate limits and confirmation still apply. Quick scan profiles files but does not persist observations.
 **Affects:** Indicator-panel targets only (not Climate TRACE MtCO₂e sectors yet).
 
 ---
@@ -499,9 +496,9 @@ Client recalculates from live API fields in `progressFromLiveApiFields` so stale
 | Concern | Approach |
 |---------|----------|
 | Site access | `LOGIN_AUTH_ENABLED=false` bypasses `AuthGate`, redirects `/auth` to country selection and uses `LOCAL_USER`; Supabase login code remains in source |
-| Operator writes | `POST /api/v1/auth/session` exchanges an operator passphrase for an HttpOnly cookie; browser writes require a valid session and same-site origin; server jobs can use `x-api-key` |
+| Marketplace writes | `POST /api/v1/auth/session` exchanges an operator passphrase for an HttpOnly cookie; browser marketplace writes require a valid session and same-site origin; server jobs can use `x-api-key` |
 | AI features | `OPENAI_API_KEY` required for NDC AI (`/dashboard/analyze`) and Policy document AI |
-| Ingest writes | Fail closed without configured `INGEST_API_KEY`; never expose it through a `VITE_` variable |
+| Ingest writes | No operator passphrase or API key; origin checks, rate limits, file validation and explicit save confirmation remain |
 | CORS | `FRONTEND_ORIGIN` allowlist |
 | Rate limits | Read vs ingest-write limiters on `/v1` |
 | Mock mode | `USE_MOCK_DATA=true` — fixtures, no CT calls |

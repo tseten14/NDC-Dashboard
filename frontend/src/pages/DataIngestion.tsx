@@ -12,7 +12,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Upload, Zap, ShieldCheck } from "lucide-react";
 import { FilesIngest } from "@/components/ingest/FilesIngest";
 import { ScanReportIngest } from "@/components/ingest/ScanReportIngest";
-import { OperatorUnlockGate, OperatorSessionBadge } from "@/components/ingest/OperatorUnlock";
 import { useCurrentRole } from "@/hooks/use-current-role";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -46,7 +45,6 @@ export default function DataIngestion() {
           <div>
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h1 className="text-lg font-bold text-foreground flex items-center gap-2"><Upload className="h-4 w-4" /> Data Ingestion</h1>
-              <OperatorSessionBadge />
             </div>
             <p className="text-xs text-muted-foreground">Two ways to bring data in. There is a real trade-off between speed and trust — pick the path that fits how ready your data is.</p>
           </div>
@@ -83,16 +81,13 @@ export default function DataIngestion() {
             </button>
           </div>
 
-          {/* Both paths write to the server, so both sit behind the same unlock. */}
           <div className="mt-1">
-            <OperatorUnlockGate>
-              {tab === "files" && (
-                <Card><CardContent className="p-3"><FilesIngest /></CardContent></Card>
-              )}
-              {tab === "scan" && (
-                <Card><CardContent className="p-3"><ScanReportIngest /></CardContent></Card>
-              )}
-            </OperatorUnlockGate>
+            {tab === "files" && (
+              <Card><CardContent className="p-3"><FilesIngest /></CardContent></Card>
+            )}
+            {tab === "scan" && (
+              <Card><CardContent className="p-3"><ScanReportIngest /></CardContent></Card>
+            )}
           </div>
         </div>
       </div>

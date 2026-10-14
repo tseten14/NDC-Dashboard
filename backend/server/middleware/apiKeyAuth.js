@@ -1,10 +1,8 @@
 /**
- * The gate in front of every endpoint that changes stored data.
+ * Operator authorization for marketplace writes, and origin checks for ingestion.
  *
- * Reading from this API is open to anyone — the emissions figures and policy
- * documents it serves are public. Writing is not: an import can overwrite the
- * numbers the dashboard reports, so it has to be proven to come from an
- * authorised operator.
+ * Ingestion is available without a passphrase. Marketplace writes still require
+ * an operator session or machine API key.
  *
  * Two ways of proving it are accepted, because there are two kinds of caller:
  *
@@ -46,6 +44,14 @@ function isSameSiteRequest(req) {
     }
   }
   return true;
+}
+
+/** Ingestion needs no operator passphrase; still reject writes from other sites. */
+export function requireSameSiteRequest(req, res, next) {
+  if (!isSameSiteRequest(req)) {
+    return res.status(403).json({ error: "cross_site_request_blocked" });
+  }
+  return next();
 }
 
 /**

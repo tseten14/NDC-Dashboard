@@ -14,6 +14,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createServer } from "node:http";
+import Papa from "papaparse";
 
 const PASSPHRASE = "test-operator-passphrase-do-not-reuse";
 const ALLOWED_ORIGIN = "http://localhost:8080";
@@ -58,13 +59,9 @@ afterAll(async () => {
 
 /** Endpoints that change data or expose operational detail. */
 const PROTECTED_ENDPOINTS = [
-  ["POST", "/api/v1/ingest/files/import"],
-  ["POST", "/api/v1/ingest/clean"],
-  ["POST", "/api/v1/ingest/pipeline/scan"],
-  ["POST", "/api/v1/ingest/confirm"],
-  ["POST", "/api/v1/ingest/upload"],
-  ["POST", "/api/v1/ingest/scan"],
-  ["GET", "/api/v1/ingest/jobs"],
+  ["POST", "/api/v1/marketplace/deals"],
+  ["PUT", "/api/v1/marketplace/deals/not-a-real-deal"],
+  ["DELETE", "/api/v1/marketplace/deals/not-a-real-deal"],
 ];
 
 describe("write authorisation", () => {
@@ -87,10 +84,52 @@ describe("write authorisation", () => {
   });
 
   it("accepts the correct key for machine callers", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/ingest/jobs`, {
-      headers: { "x-api-key": PASSPHRASE },
+    const res = await fetch(`${baseUrl}/api/v1/marketplace/deals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": PASSPHRASE },
+      body: "{}",
     });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: "missing_fields" });
+  });
+});
+
+describe("ingestion without an operator passphrase", () => {
+  const endpoints = [
+    ["POST", "/api/v1/ingest/files/import", 400],
+    ["POST", "/api/v1/ingest/clean", 400],
+    ["POST", "/api/v1/ingest/pipeline/scan", 400],
+    ["POST", "/api/v1/ingest/confirm", 400],
+    ["POST", "/api/v1/ingest/upload", 400],
+    ["POST", "/api/v1/ingest/scan", 400],
+    ["GET", "/api/v1/ingest/jobs", 200],
+  ];
+
+  it.each(endpoints)("%s %s reaches validation without credentials", async (method, path, expected) => {
+    const res = await fetch(`${baseUrl}${path}`, {
+      method,
+      headers: { "Content-Type": "application/json", Origin: ALLOWED_ORIGIN },
+      body: method === "POST" ? "{}" : undefined,
+    });
+    expect(res.status).toBe(expected);
+  });
+
+  it("does not need a configured import key", async () => {
+    const key = process.env.INGEST_API_KEY;
+    delete process.env.INGEST_API_KEY;
+    try {
+      const res = await fetch(`${baseUrl}/api/v1/ingest/jobs`);
+      expect(res.status).toBe(200);
+    } finally {
+      process.env.INGEST_API_KEY = key;
+    }
+  });
+
+  it("rejects a foreign Referer even without the CORS middleware", async () => {
+    const { requireSameSiteRequest } = await import("./middleware/apiKeyAuth.js");
+    const next = () => { throw new Error("foreign request reached the handler"); };
+    const response = { status(code) { expect(code).toBe(403); return this; }, json(body) { expect(body.error).toBe("cross_site_request_blocked"); } };
+    requireSameSiteRequest({ headers: { referer: "https://evil.example.com/" } }, response, next);
   });
 });
 
@@ -102,6 +141,19 @@ describe("Qlik public exports", () => {
     const csv = await response.text();
     expect(csv).toMatch(/^ndc_country,target_id,/);
     expect(csv.trim().split("\r\n")).toHaveLength(12);
+    const parsed = Papa.parse(csv, { header: true, skipEmptyLines: true });
+    expect(parsed.errors).toEqual([]);
+    const targets = Object.fromEntries(parsed.data.map((row) => [row.target_id, row]));
+    expect(Object.keys(targets)).toHaveLength(11);
+    expect(targets.t1.baseline_value).toBe("77.4");
+    expect(targets.t3.baseline_year).toBe("");
+    expect(targets.t8.baseline_year).toBe("");
+    expect(targets.t8.target_value_status).toBe("estimated");
+    expect(targets.t8.target_2025_value).toBe("51.2");
+    expect(targets.t9.target_value_status).toBe("approximate");
+    expect(targets.t4.target_text).not.toMatch(/65000|65,000|cookstoves/);
+    expect(parsed.data.every((row) => row.source_url === "https://unfccc.int/sites/default/files/NDC/2022-09/Updated%20NDC%20_Uganda_2022%20Final.pdf")).toBe(true);
+    expect(parsed.data.every((row) => !row.target_unit.includes("₂"))).toBe(true);
   });
 
   it("does not export illustrative mock emissions", async () => {
@@ -150,10 +202,13 @@ describe("operator session", () => {
     });
     const cookie = (login.headers.get("set-cookie") ?? "").split(";")[0];
 
-    const res = await fetch(`${baseUrl}/api/v1/ingest/jobs`, {
-      headers: { Cookie: cookie, Origin: ALLOWED_ORIGIN },
+    const res = await fetch(`${baseUrl}/api/v1/marketplace/deals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie, Origin: ALLOWED_ORIGIN },
+      body: "{}",
     });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: "missing_fields" });
   });
 
   it("blocks a cookie-authenticated write started by another website", async () => {
@@ -216,8 +271,10 @@ describe("operator session", () => {
   });
 
   it("refuses a tampered session token", async () => {
-    const res = await fetch(`${baseUrl}/api/v1/ingest/jobs`, {
-      headers: { Cookie: "ndc_ops_session=v1.99999999999.abc.forgedsignature" },
+    const res = await fetch(`${baseUrl}/api/v1/marketplace/deals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: "ndc_ops_session=v1.99999999999.abc.forgedsignature" },
+      body: "{}",
     });
     expect(res.status).toBe(401);
   });

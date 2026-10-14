@@ -15,7 +15,7 @@ import { sendServerError } from "../server/errors.js";
 
 const router = express.Router();
 // Node and Vercel start at the repository root; Vitest starts in frontend/.
-const targetFile = "data/exports/uganda-ndc-targets-2022.csv";
+const targetFile = "data/exports/uganda-ndc-targets.csv";
 const targetsCsvPath = [path.resolve(targetFile), path.resolve("..", targetFile)]
   .find((candidate) => fs.existsSync(candidate)) ?? path.resolve(targetFile);
 

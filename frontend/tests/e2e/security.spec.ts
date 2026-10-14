@@ -60,43 +60,42 @@ test.describe("security hardening does not break the app", () => {
     }
   });
 
-  test("import screens are hidden behind the unlock box until the passphrase is given", async ({
+  test("both import screens open without an operator passphrase", async ({
     page,
   }) => {
     await seedUgandaSession(page, "Admin");
     await page.goto("/ingest");
     await page.waitForLoadState("networkidle");
 
-    const unlock = page.getByRole("heading", { name: /unlock importing/i });
-    await expect(unlock).toBeVisible();
-
-    // A wrong passphrase must not open anything.
-    await page.getByLabel(/operator passphrase/i).fill("definitely-not-the-passphrase");
-    await page.getByRole("button", { name: /unlock/i }).click();
-    await expect(page.getByRole("alert")).toBeVisible();
-    await expect(unlock).toBeVisible();
-
-    // The correct one does.
-    await page.getByLabel(/operator passphrase/i).fill("dev-ingest-key-change-me");
-    await page.getByRole("button", { name: /unlock/i }).click();
-    await expect(page.getByText(/unlocked · lock now/i)).toBeVisible({ timeout: 10_000 });
-    await expect(unlock).toBeHidden();
+    await expect(page.getByText(/Drop .csv, .json, .txt or .pdf here/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /unlock importing/i })).toHaveCount(0);
+    await expect(page.getByLabel(/operator passphrase/i)).toHaveCount(0);
+    await page.getByRole("button", { name: /Data Pipeline/i }).click();
+    await expect(page.locator("#pipeline-file-input")).toBeAttached();
+    await expect(page.getByLabel(/operator passphrase/i)).toHaveCount(0);
   });
 
-  test("the unlock survives a reload but the passphrase is not stored in the page", async ({
+  test("quick scan uploads a CSV after reload without a session or key", async ({
     page,
   }) => {
     await seedUgandaSession(page, "Admin");
     await page.goto("/ingest");
-    await page.getByLabel(/operator passphrase/i).fill("dev-ingest-key-change-me");
-    await page.getByRole("button", { name: /unlock/i }).click();
-    await expect(page.getByText(/unlocked · lock now/i)).toBeVisible({ timeout: 10_000 });
-
     await page.reload();
-    await expect(page.getByText(/unlocked · lock now/i)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByLabel(/operator passphrase/i)).toHaveCount(0);
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "passphrase-free-scan.csv",
+      mimeType: "text/csv",
+      buffer: Buffer.from("year,value,sector\n2024,2.5,energy\n"),
+    });
+    const scanned = page.waitForResponse((response) => response.url().includes("/api/v1/ingest/scan") && response.request().method() === "POST");
+    await page.getByRole("button", { name: /Review my files/i }).click();
+    const response = await scanned;
+    expect(response.status()).toBe(200);
+    const report = await response.json();
+    expect(report.files[0].filename).toBe("passphrase-free-scan.csv");
+    expect(response.request().headers()["x-api-key"]).toBeUndefined();
+    expect((await page.context().cookies()).some((cookie) => cookie.name === "ndc_ops_session")).toBe(false);
 
-    // The whole point of the redesign: page scripts must not be able to reach
-    // the credential, and it must not have been squirrelled away in storage.
     const exposure = await page.evaluate(() => ({
       cookie: document.cookie,
       storage: JSON.stringify(window.localStorage) + JSON.stringify(window.sessionStorage),

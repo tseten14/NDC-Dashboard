@@ -4,7 +4,7 @@ The **canonical** application and engineering guide is **[NDC-Data-Explorer-Comp
 
 The in-app **Documentation** page (`/docs`) renders the user guide and route directory from the frontend, the [codebase guide](../dev/codebase-guide.md), and the [system design](../dev/system-design.md). Keep these sources aligned with the application.
 
-No site-wide account is required at present. Choose Uganda, then use the role selector in the top bar as a workspace preference. **All tools** opens Explore, Plan & deliver, and Manage & learn; role selection changes visible tools but is not authorization for protected writes. Data Ingestion and other operator actions retain a separate server-side unlock.
+No site-wide account is required at present. Choose Uganda, then use the role selector in the top bar as a workspace preference. **All tools** opens Explore, Plan & deliver, and Manage & learn; role selection changes visible tools but is not authorization for protected writes. Data Ingestion opens directly without a passphrase. Marketplace writes retain separate operator authorization.
 
 ---
 
@@ -19,7 +19,7 @@ No site-wide account is required at present. Choose Uganda, then use the role se
 | Scenario Analysis | `/scenario-analysis` | Compare actions, timing, and policy evidence |
 | Dashboard | `/dashboard` | NDC targets vs Climate TRACE emissions; compact gap panel; export |
 | Policy Impact | `/policy-impact` | Unavailable until quantitatively verified case evidence is connected |
-| Data Ingestion | `/ingest` | Operator-unlocked Quick scan (opens first) and Data Pipeline import → Postgres |
+| Data Ingestion | `/ingest` | Quick scan (opens first) and Data Pipeline import → Postgres, without a passphrase |
 | Climate Finance | `/climate-finance` | Partial register of provider-sourced commitments |
 | AI 2030 | `/ai-2030` | Trend to 2030 with uncertainty (indicative) |
 | Policy documents | `/documents` | CPR corpus + intervention pathway diagram |
