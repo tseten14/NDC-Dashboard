@@ -1,5 +1,11 @@
 # Full Uganda NDC and emissions comparison in Qlik
 
+For the NDC targets currently included on the dashboard, use `data/exports/uganda-qlik.csv`. This snapshot contains all 11 dashboard targets in 48 columns, including the verified primary-indicator fields from `uganda-ndc-targets.csv`, the current bundled dashboard wording and values, all 14 linked reference activities and all nine planning concepts. Activities and concepts are text fields on their parent target so target quantities are not duplicated. This file covers the dashboard's NDC reference catalogue; live API emissions, calculated progress and user-captured database activities require separate exports.
+
+Use the unprefixed `baseline_value`, `baseline_year`, `target_value`, `target_unit` and source fields for source-based visualizations. The `dashboard_*` columns retain the current application content for comparison and are not separately verified NDC requirements. In particular, the dashboard still contains an AFOLU baseline of 77.6 while the specified UNFCCC PDF shows 77.4; `dashboard_alignment_notes` explains this and other differences. Blank baseline years remain blank in the verified fields. Planning concepts do not imply funded projects or measured reductions. The snapshot date is in `export_date`.
+
+Load `uganda-qlik.csv` instead of `uganda-ndc-targets.csv` when you need the additional dashboard context. Do not load both as separate associated tables: they contain the same 11 target records. It can associate with `uganda-ndc-emissions-comparison-qlik.csv` through `comparison_key` alone, using the same source and scope restrictions below. For full-document coverage, use the 262-record catalogue below instead of this dashboard subset.
+
 Upload these two CSVs into the same Qlik analytics app:
 
 | File | Contents |

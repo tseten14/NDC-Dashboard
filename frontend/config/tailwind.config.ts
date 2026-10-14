@@ -1,3 +1,4 @@
+/** Defines the shared colors, fonts and animation utilities used throughout the dashboard. */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Config } from "tailwindcss";

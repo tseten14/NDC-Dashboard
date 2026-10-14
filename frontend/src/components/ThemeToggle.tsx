@@ -1,3 +1,4 @@
+/** Switches the dashboard between light and dark appearance with an optional transition. */
 /**
  * Light and dark mode switch.
  */

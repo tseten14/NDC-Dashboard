@@ -1,3 +1,4 @@
+/** Presents the dashboard landing page and navigation options available to each role. */
 import { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, BookOpen, Layers3, MapPinned, ShieldCheck, Target } from "lucide-react";

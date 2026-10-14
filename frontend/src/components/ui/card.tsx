@@ -1,3 +1,4 @@
+/** Provides shared card containers, headings and content layouts for dashboard panels. */
 import * as React from "react";
 
 import { cn } from "@/lib/utils";

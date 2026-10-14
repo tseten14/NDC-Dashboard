@@ -1,3 +1,4 @@
+/* Defines global dashboard colors, typography and reusable light and dark theme styles. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

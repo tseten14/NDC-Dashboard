@@ -1,3 +1,4 @@
+/** Provides consistent status badges and variants for labels throughout the dashboard. */
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
